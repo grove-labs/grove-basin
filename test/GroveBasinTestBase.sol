@@ -19,7 +19,7 @@ contract GroveBasinTestBase is Test {
     GroveBasin public groveBasin;
 
     MockERC20 public usdc;
-    MockERC20 public usds;
+    MockERC20 public collateralToken;
     MockERC20 public creditToken;
 
     IRateProviderLike public creditTokenRateProvider;  // Can be overridden by ssrOracle using same interface
@@ -33,14 +33,14 @@ contract GroveBasinTestBase is Test {
     }
 
     // 1,000,000,000,000 of each token
-    uint256 public constant USDS_TOKEN_MAX  = 1e30;
-    uint256 public constant CREDIT_TOKEN_MAX = 1e30;
-    uint256 public constant USDC_TOKEN_MAX  = 1e18;
+    uint256 public constant COLLATERAL_TOKEN_MAX = 1e30;
+    uint256 public constant CREDIT_TOKEN_MAX     = 1e30;
+    uint256 public constant USDC_TOKEN_MAX       = 1e18;
 
     function setUp() public virtual {
-        usdc  = new MockERC20("usdc",  "usdc",  6);
-        usds  = new MockERC20("usds",  "usds",  18);
-        creditToken = new MockERC20("creditToken", "creditToken", 18);
+        usdc            = new MockERC20("usdc",            "usdc",            6);
+        collateralToken = new MockERC20("collateralToken", "collateralToken", 18);
+        creditToken     = new MockERC20("creditToken",     "creditToken",     18);
 
         mockCreditTokenRateProvider = new MockRateProvider();
 
@@ -49,7 +49,7 @@ contract GroveBasinTestBase is Test {
 
         creditTokenRateProvider = IRateProviderLike(address(mockCreditTokenRateProvider));
 
-        groveBasin = new GroveBasin(owner, address(usdc), address(usds), address(creditToken), address(creditTokenRateProvider));
+        groveBasin = new GroveBasin(owner, address(usdc), address(collateralToken), address(creditToken), address(creditTokenRateProvider));
 
         vm.prank(owner);
         groveBasin.setPocket(pocket);
@@ -57,15 +57,15 @@ contract GroveBasinTestBase is Test {
         vm.prank(pocket);
         usdc.approve(address(groveBasin), type(uint256).max);
 
-        vm.label(address(usds),  "USDS");
-        vm.label(address(usdc),  "USDC");
-        vm.label(address(creditToken), "creditToken");
+        vm.label(address(collateralToken), "collateralToken");
+        vm.label(address(usdc),            "USDC");
+        vm.label(address(creditToken),     "creditToken");
     }
 
     function _getGroveBasinValue() internal view returns (uint256) {
         return (creditToken.balanceOf(address(groveBasin)) * creditTokenRateProvider.getConversionRate() / 1e27)
             + usdc.balanceOf(groveBasin.pocket()) * 1e12
-            + usds.balanceOf(address(groveBasin));
+            + collateralToken.balanceOf(address(groveBasin));
     }
 
     function _deposit(address asset, address user, uint256 amount) internal {

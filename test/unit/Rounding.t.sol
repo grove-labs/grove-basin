@@ -15,7 +15,7 @@ contract RoundingTests is GroveBasinTestBase {
         super.setUp();
 
         // Seed the GroveBasin with max liquidity so withdrawals can always be performed
-        _deposit(address(usds),  address(this), USDS_TOKEN_MAX);
+        _deposit(address(collateralToken),  address(this), COLLATERAL_TOKEN_MAX);
         _deposit(address(creditToken), address(this), CREDIT_TOKEN_MAX);
         _deposit(address(usdc),  address(this), USDC_TOKEN_MAX);
 
@@ -23,15 +23,15 @@ contract RoundingTests is GroveBasinTestBase {
         mockCreditTokenRateProvider.__setConversionRate(1.25e27 * uint256(100) / 99);
     }
 
-    function test_roundAgainstUser_usds() public {
-        _deposit(address(usds), address(user), 1e18);
+    function test_roundAgainstUser_collateralToken() public {
+        _deposit(address(collateralToken), address(user), 1e18);
 
-        assertEq(usds.balanceOf(address(user)), 0);
+        assertEq(collateralToken.balanceOf(address(user)), 0);
 
         vm.prank(user);
-        groveBasin.withdraw(address(usds), address(user), 1e18);
+        groveBasin.withdraw(address(collateralToken), address(user), 1e18);
 
-        assertEq(usds.balanceOf(address(user)), 1e18 - 1);  // Rounds against user
+        assertEq(collateralToken.balanceOf(address(user)), 1e18 - 1);  // Rounds against user
     }
 
     function test_roundAgainstUser_usdc() public {
@@ -56,7 +56,7 @@ contract RoundingTests is GroveBasinTestBase {
         assertEq(creditToken.balanceOf(address(user)), 1e18 - 1);  // Rounds against user
     }
 
-    function testFuzz_roundingAgainstUser_multiUser_usds(
+    function testFuzz_roundingAgainstUser_multiUser_collateralToken(
         uint256 rate1,
         uint256 rate2,
         uint256 amount1,
@@ -65,8 +65,8 @@ contract RoundingTests is GroveBasinTestBase {
         public
     {
         _runRoundingAgainstUsersFuzzTest(
-            usds,
-            USDS_TOKEN_MAX,
+            collateralToken,
+            COLLATERAL_TOKEN_MAX,
             rate1,
             rate2,
             amount1,

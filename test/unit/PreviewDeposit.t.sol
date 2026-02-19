@@ -18,19 +18,19 @@ contract GroveBasinPreviewDeposit_SuccessTests is GroveBasinTestBase {
 
     address depositor = makeAddr("depositor");
 
-    function test_previewDeposit_usds_firstDeposit() public view {
-        assertEq(groveBasin.previewDeposit(address(usds), 1), 1);
-        assertEq(groveBasin.previewDeposit(address(usds), 2), 2);
-        assertEq(groveBasin.previewDeposit(address(usds), 3), 3);
+    function test_previewDeposit_collateralToken_firstDeposit() public view {
+        assertEq(groveBasin.previewDeposit(address(collateralToken), 1), 1);
+        assertEq(groveBasin.previewDeposit(address(collateralToken), 2), 2);
+        assertEq(groveBasin.previewDeposit(address(collateralToken), 3), 3);
 
-        assertEq(groveBasin.previewDeposit(address(usds), 1e18), 1e18);
-        assertEq(groveBasin.previewDeposit(address(usds), 2e18), 2e18);
-        assertEq(groveBasin.previewDeposit(address(usds), 3e18), 3e18);
+        assertEq(groveBasin.previewDeposit(address(collateralToken), 1e18), 1e18);
+        assertEq(groveBasin.previewDeposit(address(collateralToken), 2e18), 2e18);
+        assertEq(groveBasin.previewDeposit(address(collateralToken), 3e18), 3e18);
     }
 
-    function testFuzz_previewDeposit_usds_firstDeposit(uint256 amount) public view {
-        amount = _bound(amount, 0, USDS_TOKEN_MAX);
-        assertEq(groveBasin.previewDeposit(address(usds), amount), amount);
+    function testFuzz_previewDeposit_collateralToken_firstDeposit(uint256 amount) public view {
+        amount = _bound(amount, 0, COLLATERAL_TOKEN_MAX);
+        assertEq(groveBasin.previewDeposit(address(collateralToken), amount), amount);
     }
 
     function test_previewDeposit_usdc_firstDeposit() public view {
@@ -68,7 +68,7 @@ contract GroveBasinPreviewDeposit_SuccessTests is GroveBasinTestBase {
     function test_previewDeposit_afterDepositsAndExchangeRateIncrease() public {
         _assertOneToOne();
 
-        _deposit(address(usds), depositor, 1e18);
+        _deposit(address(collateralToken), depositor, 1e18);
         _assertOneToOne();
 
         _deposit(address(usdc), depositor, 1e6);
@@ -82,7 +82,7 @@ contract GroveBasinPreviewDeposit_SuccessTests is GroveBasinTestBase {
         // $300 dollars of value deposited, 300 shares minted.
         // creditToken portion becomes worth $160, full pool worth $360, each share worth $1.20
         // 1 USDC = 1/1.20 = 0.833...
-        assertEq(groveBasin.previewDeposit(address(usds),  1e18), 0.833333333333333333e18);
+        assertEq(groveBasin.previewDeposit(address(collateralToken),  1e18), 0.833333333333333333e18);
         assertEq(groveBasin.previewDeposit(address(usdc),  1e6),  0.833333333333333333e18);
         assertEq(groveBasin.previewDeposit(address(creditToken), 1e18), 1.666666666666666666e18);  // 1 creditToken = $2
     }
@@ -94,15 +94,15 @@ contract GroveBasinPreviewDeposit_SuccessTests is GroveBasinTestBase {
         uint256 conversionRate,
         uint256 previewAmount
     ) public {
-        amount1        = _bound(amount1,        1,       USDS_TOKEN_MAX);
+        amount1        = _bound(amount1,        1,       COLLATERAL_TOKEN_MAX);
         amount2        = _bound(amount2,        1,       USDC_TOKEN_MAX);
         amount3        = _bound(amount3,        1,       CREDIT_TOKEN_MAX);
         conversionRate = _bound(conversionRate, 1.00e27, 1000e27);
-        previewAmount  = _bound(previewAmount,  0,       USDS_TOKEN_MAX);
+        previewAmount  = _bound(previewAmount,  0,       COLLATERAL_TOKEN_MAX);
 
         _assertOneToOne();
 
-        _deposit(address(usds), depositor, amount1);
+        _deposit(address(collateralToken), depositor, amount1);
         _assertOneToOne();
 
         _deposit(address(usdc), depositor, amount2);
@@ -117,13 +117,13 @@ contract GroveBasinPreviewDeposit_SuccessTests is GroveBasinTestBase {
         uint256 totalValue        = amount1 + amount2 * 1e12 + amount3 * conversionRate / 1e27;
         uint256 usdcPreviewAmount = previewAmount / 1e12;
 
-        assertEq(groveBasin.previewDeposit(address(usds),  previewAmount),     previewAmount                           * totalSharesMinted / totalValue);
+        assertEq(groveBasin.previewDeposit(address(collateralToken),  previewAmount),     previewAmount                           * totalSharesMinted / totalValue);
         assertEq(groveBasin.previewDeposit(address(usdc),  usdcPreviewAmount), usdcPreviewAmount * 1e12                * totalSharesMinted / totalValue);  // Divide then multiply to replicate rounding
         assertEq(groveBasin.previewDeposit(address(creditToken), previewAmount),     (previewAmount * conversionRate / 1e27) * totalSharesMinted / totalValue);
     }
 
     function _assertOneToOne() internal view {
-        assertEq(groveBasin.previewDeposit(address(usds),  1e18), 1e18);
+        assertEq(groveBasin.previewDeposit(address(collateralToken),  1e18), 1e18);
         assertEq(groveBasin.previewDeposit(address(usdc),  1e6),  1e18);
         assertEq(groveBasin.previewDeposit(address(creditToken), 1e18), 1.25e18);
     }

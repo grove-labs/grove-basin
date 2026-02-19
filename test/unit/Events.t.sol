@@ -39,12 +39,12 @@ contract GroveBasinEventTests is GroveBasinTestBase {
     function test_deposit_events() public {
         vm.startPrank(sender);
 
-        usds.mint(sender, 100e18);
-        usds.approve(address(groveBasin), 100e18);
+        collateralToken.mint(sender, 100e18);
+        collateralToken.approve(address(groveBasin), 100e18);
 
         vm.expectEmit(address(groveBasin));
-        emit Deposit(address(usds), sender, receiver, 100e18, 100e18);
-        groveBasin.deposit(address(usds), receiver, 100e18);
+        emit Deposit(address(collateralToken), sender, receiver, 100e18, 100e18);
+        groveBasin.deposit(address(collateralToken), receiver, 100e18);
 
         usdc.mint(sender, 100e6);
         usdc.approve(address(groveBasin), 100e6);
@@ -62,15 +62,15 @@ contract GroveBasinEventTests is GroveBasinTestBase {
     }
 
     function test_withdraw_events() public {
-        _deposit(address(usds),  sender, 100e18);
+        _deposit(address(collateralToken),  sender, 100e18);
         _deposit(address(usdc), sender, 100e6);
         _deposit(address(creditToken), sender, 100e18);
 
         vm.startPrank(sender);
 
         vm.expectEmit(address(groveBasin));
-        emit Withdraw(address(usds), sender, receiver, 100e18, 100e18);
-        groveBasin.withdraw(address(usds), receiver, 100e18);
+        emit Withdraw(address(collateralToken), sender, receiver, 100e18, 100e18);
+        groveBasin.withdraw(address(collateralToken), receiver, 100e18);
 
         vm.expectEmit(address(groveBasin));
         emit Withdraw(address(usdc), sender, receiver, 100e6, 100e18);
@@ -82,19 +82,19 @@ contract GroveBasinEventTests is GroveBasinTestBase {
     }
 
     function test_swap_events() public {
-        usds.mint(address(groveBasin),  1000e18);
+        collateralToken.mint(address(groveBasin),  1000e18);
         usdc.mint(pocket, 1000e6);
         creditToken.mint(address(groveBasin), 1000e18);
 
         vm.startPrank(sender);
 
-        _swapEventTest(address(usds), address(usdc),  100e18, 100e6, 1);
-        _swapEventTest(address(usds), address(creditToken), 100e18, 80e18, 2);
+        _swapEventTest(address(collateralToken), address(usdc),  100e18, 100e6, 1);
+        _swapEventTest(address(collateralToken), address(creditToken), 100e18, 80e18, 2);
 
-        _swapEventTest(address(usdc), address(usds),  100e6, 100e18, 3);
+        _swapEventTest(address(usdc), address(collateralToken),  100e6, 100e18, 3);
         _swapEventTest(address(usdc), address(creditToken), 100e6, 80e18,  4);
 
-        _swapEventTest(address(creditToken), address(usds), 100e18, 125e18, 5);
+        _swapEventTest(address(creditToken), address(collateralToken), 100e18, 125e18, 5);
         _swapEventTest(address(creditToken), address(usdc), 100e18, 125e6,  6);
     }
 

@@ -85,10 +85,10 @@ interface IGroveBasin {
     function usdc() external view returns (IERC20);
 
     /**
-     *  @dev    Returns the IERC20 interface representing USDS.
-     *  @return The IERC20 interface of USDS.
+     *  @dev    Returns the IERC20 interface representing the collateral token.
+     *  @return The IERC20 interface of the collateral token.
      */
-    function usds() external view returns (IERC20);
+    function collateralToken() external view returns (IERC20);
 
     /**
      *  @dev    Returns the IERC20 interface representing the credit token. This asset is the
@@ -296,7 +296,7 @@ interface IGroveBasin {
 
     /**
      *  @dev    View function that converts an amount of assetValue (18 decimal value denominated in
-     *          USDC and USDS) to shares in the GroveBasin based on the current exchange rate.
+     *          USDC and collateral token) to shares in the GroveBasin based on the current exchange rate.
      *          Note that this rounds down on calculation so is intended to be used for quoting the
      *          current exchange rate.
      *  @param  assetValue 18 decimal value denominated in USDC (e.g., 1e6 USDC = 1e18)
@@ -320,7 +320,7 @@ interface IGroveBasin {
 
     /**
      *  @dev View function that returns the total value of the balance of all assets in the GroveBasin
-     *       converted to USDC/USDS terms denominated in 18 decimal precision.
+     *       converted to USDC/collateral token terms denominated in 18 decimal precision.
      */
     function totalAssets() external view returns (uint256);
 

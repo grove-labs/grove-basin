@@ -23,7 +23,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         groveBasin.withdraw(address(usdc), receiver1, 0);
     }
 
-    function test_withdraw_notUsdcOrUsds() public {
+    function test_withdraw_notUsdcOrCollateralToken() public {
         vm.expectRevert("GroveBasin/invalid-asset");
         groveBasin.withdraw(makeAddr("new-asset"), receiver1, 100e6);
     }
@@ -39,12 +39,12 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         groveBasin.withdraw(address(usdc), receiver1, 100e18 + 1);
     }
 
-    function test_withdraw_onlyUsdsInGroveBasin() public {
-        _deposit(address(usds), user1, 100e18);
+    function test_withdraw_onlyCollateralTokenInGroveBasin() public {
+        _deposit(address(collateralToken), user1, 100e18);
 
-        assertEq(usds.balanceOf(user1),        0);
-        assertEq(usds.balanceOf(receiver1),    0);
-        assertEq(usds.balanceOf(address(groveBasin)), 100e18);
+        assertEq(collateralToken.balanceOf(user1),        0);
+        assertEq(collateralToken.balanceOf(receiver1),    0);
+        assertEq(collateralToken.balanceOf(address(groveBasin)), 100e18);
 
         assertEq(groveBasin.totalShares(), 100e18);
         assertEq(groveBasin.shares(user1), 100e18);
@@ -52,13 +52,13 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         assertEq(groveBasin.convertToShares(1e18), 1e18);
 
         vm.prank(user1);
-        uint256 amount = groveBasin.withdraw(address(usds), receiver1, 100e18);
+        uint256 amount = groveBasin.withdraw(address(collateralToken), receiver1, 100e18);
 
         assertEq(amount, 100e18);
 
-        assertEq(usds.balanceOf(user1),        0);
-        assertEq(usds.balanceOf(receiver1),    100e18);
-        assertEq(usds.balanceOf(address(groveBasin)), 0);
+        assertEq(collateralToken.balanceOf(user1),        0);
+        assertEq(collateralToken.balanceOf(receiver1),    100e18);
+        assertEq(collateralToken.balanceOf(address(groveBasin)), 0);
 
         assertEq(groveBasin.totalShares(), 0);
         assertEq(groveBasin.shares(user1), 0);
@@ -123,7 +123,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         assertEq(groveBasin.convertToShares(1e18), 1e18);
     }
 
-    function test_withdraw_onlySUsdsInGroveBasin() public {
+    function test_withdraw_onlyCreditTokenInGroveBasin() public {
         _deposit(address(creditToken), user1, 80e18);
 
         assertEq(creditToken.balanceOf(user1),        0);
