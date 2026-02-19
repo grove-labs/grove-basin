@@ -22,9 +22,11 @@ contract GroveBasinTestBase is Test {
     MockERC20 public collateralToken;
     MockERC20 public creditToken;
 
-    IRateProviderLike public creditTokenRateProvider;  // Can be overridden by ssrOracle using same interface
+    IRateProviderLike public collateralTokenRateProvider;  // Can be overridden using same interface
+    IRateProviderLike public creditTokenRateProvider;      // Can be overridden by ssrOracle using same interface
 
-    MockRateProvider public mockCreditTokenRateProvider;  // Interface used for mocking
+    MockRateProvider public mockCollateralTokenRateProvider;  // Interface used for mocking
+    MockRateProvider public mockCreditTokenRateProvider;      // Interface used for mocking
 
     modifier assertAtomicGroveBasinValueDoesNotChange {
         uint256 beforeValue = _getGroveBasinValue();
@@ -42,14 +44,19 @@ contract GroveBasinTestBase is Test {
         collateralToken = new MockERC20("collateralToken", "collateralToken", 18);
         creditToken     = new MockERC20("creditToken",     "creditToken",     18);
 
-        mockCreditTokenRateProvider = new MockRateProvider();
+        mockCollateralTokenRateProvider = new MockRateProvider();
+        mockCreditTokenRateProvider     = new MockRateProvider();
+
+        // Collateral token is priced at $1 by default
+        mockCollateralTokenRateProvider.__setConversionRate(1e27);
 
         // NOTE: Using 1.25 for easy two way conversions
         mockCreditTokenRateProvider.__setConversionRate(1.25e27);
 
-        creditTokenRateProvider = IRateProviderLike(address(mockCreditTokenRateProvider));
+        collateralTokenRateProvider = IRateProviderLike(address(mockCollateralTokenRateProvider));
+        creditTokenRateProvider     = IRateProviderLike(address(mockCreditTokenRateProvider));
 
-        groveBasin = new GroveBasin(owner, address(secondaryToken), address(collateralToken), address(creditToken), address(creditTokenRateProvider));
+        groveBasin = new GroveBasin(owner, address(secondaryToken), address(collateralToken), address(creditToken), address(collateralTokenRateProvider), address(creditTokenRateProvider));
 
         vm.prank(owner);
         groveBasin.setPocket(pocket);
@@ -65,7 +72,7 @@ contract GroveBasinTestBase is Test {
     function _getGroveBasinValue() internal view returns (uint256) {
         return (creditToken.balanceOf(address(groveBasin)) * creditTokenRateProvider.getConversionRate() / 1e27)
             + secondaryToken.balanceOf(groveBasin.pocket()) * 1e12
-            + collateralToken.balanceOf(address(groveBasin));
+            + (collateralToken.balanceOf(address(groveBasin)) * collateralTokenRateProvider.getConversionRate() / 1e27);
     }
 
     function _deposit(address asset, address user, uint256 amount) internal {

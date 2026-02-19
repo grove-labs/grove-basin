@@ -18,11 +18,12 @@ contract DeployEthereum is Script {
         vm.startBroadcast();
 
         address groveBasin = GroveBasinDeploy.deploy({
-            owner                   : Ethereum.GROVE_PROXY,
-            secondaryToken          : Ethereum.USDC,
-            collateralToken         : Ethereum.USDS,
-            creditToken             : Ethereum.SUSDS,
-            creditTokenRateProvider : address(0) // TODO: set up rate provider
+            owner                       : Ethereum.GROVE_PROXY,
+            secondaryToken              : Ethereum.USDC,
+            collateralToken             : Ethereum.USDS,
+            creditToken                 : Ethereum.SUSDS,
+            collateralTokenRateProvider : address(0), // TODO: set up rate provider
+            creditTokenRateProvider     : address(0)  // TODO: set up rate provider
         });
 
         vm.stopBroadcast();

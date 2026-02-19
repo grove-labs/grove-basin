@@ -23,6 +23,7 @@ contract GroveBasin is IGroveBasin, Ownable {
     IERC20 public override immutable collateralToken;
     IERC20 public override immutable creditToken;
 
+    address public override immutable collateralTokenRateProvider;
     address public override immutable creditTokenRateProvider;
 
     address public override pocket;
@@ -36,14 +37,16 @@ contract GroveBasin is IGroveBasin, Ownable {
         address secondaryToken_,
         address collateralToken_,
         address creditToken_,
+        address collateralTokenRateProvider_,
         address creditTokenRateProvider_
     )
         Ownable(owner_)
     {
-        require(secondaryToken_          != address(0), "GroveBasin/invalid-secondaryToken");
-        require(collateralToken_         != address(0), "GroveBasin/invalid-collateralToken");
-        require(creditToken_             != address(0), "GroveBasin/invalid-creditToken");
-        require(creditTokenRateProvider_ != address(0), "GroveBasin/invalid-creditTokenRateProvider");
+        require(secondaryToken_              != address(0), "GroveBasin/invalid-secondaryToken");
+        require(collateralToken_             != address(0), "GroveBasin/invalid-collateralToken");
+        require(creditToken_                 != address(0), "GroveBasin/invalid-creditToken");
+        require(collateralTokenRateProvider_ != address(0), "GroveBasin/invalid-collateralTokenRateProvider");
+        require(creditTokenRateProvider_     != address(0), "GroveBasin/invalid-creditTokenRateProvider");
 
         require(secondaryToken_ != collateralToken_, "GroveBasin/secondaryToken-collateralToken-same");
         require(secondaryToken_ != creditToken_,     "GroveBasin/secondaryToken-creditToken-same");
@@ -53,12 +56,18 @@ contract GroveBasin is IGroveBasin, Ownable {
         collateralToken = IERC20(collateralToken_);
         creditToken     = IERC20(creditToken_);
 
-        creditTokenRateProvider = creditTokenRateProvider_;
-        pocket                  = address(this);
+        collateralTokenRateProvider = collateralTokenRateProvider_;
+        creditTokenRateProvider     = creditTokenRateProvider_;
+        pocket                      = address(this);
+
+        require(
+            IRateProviderLike(collateralTokenRateProvider_).getConversionRate() != 0,
+            "GroveBasin/collateral-rate-provider-returns-zero"
+        );
 
         require(
             IRateProviderLike(creditTokenRateProvider_).getConversionRate() != 0,
-            "GroveBasin/rate-provider-returns-zero"
+            "GroveBasin/credit-rate-provider-returns-zero"
         );
 
         _secondaryTokenPrecision  = 10 ** IERC20(secondaryToken_).decimals();
@@ -246,8 +255,15 @@ contract GroveBasin is IGroveBasin, Ownable {
 
         uint256 assetValue = convertToAssetValue(numShares);
 
-        if      (asset == address(secondaryToken))   return assetValue * _secondaryTokenPrecision / 1e18;
-        else if (asset == address(collateralToken)) return assetValue * _collateralTokenPrecision / 1e18;
+        if (asset == address(secondaryToken)) return assetValue * _secondaryTokenPrecision / 1e18;
+        else if (asset == address(collateralToken)) {
+            // assetValue is in 1e18, rate is 1e27, precision is native decimals
+            // amount = assetValue * 1e27 / rate * precision / 1e18 = assetValue * 1e9 * precision / rate
+            return assetValue
+                * 1e9
+                * _collateralTokenPrecision
+                / IRateProviderLike(collateralTokenRateProvider).getConversionRate();
+        }
 
         // NOTE: Multiplying by 1e27 and dividing by 1e18 cancels to 1e9 in numerator
         return assetValue
@@ -304,7 +320,12 @@ contract GroveBasin is IGroveBasin, Ownable {
     }
 
     function _getCollateralTokenValue(uint256 amount) internal view returns (uint256) {
-        return amount * 1e18 / _collateralTokenPrecision;
+        // amount * rate / 1e27 gives USD value, then scale to 1e18
+        // amount * rate / 1e9 / precision = amount * rate / (1e9 * precision)
+        return amount
+            * IRateProviderLike(collateralTokenRateProvider).getConversionRate()
+            / 1e9
+            / _collateralTokenPrecision;
     }
 
     function _getCreditTokenValue(uint256 amount, bool roundUp) internal view returns (uint256) {
@@ -334,12 +355,12 @@ contract GroveBasin is IGroveBasin, Ownable {
 
         else if (asset == address(collateralToken)) {
             if      (quoteAsset == address(secondaryToken)) revert("GroveBasin/invalid-swap");
-            else if (quoteAsset == address(creditToken))    return _convertToCreditToken(amount, _collateralTokenPrecision, roundUp);
+            else if (quoteAsset == address(creditToken))    return _convertCollateralToCreditToken(amount, roundUp);
         }
 
         else if (asset == address(creditToken)) {
             if      (quoteAsset == address(secondaryToken))  return _convertFromCreditToken(amount, _secondaryTokenPrecision, roundUp);
-            else if (quoteAsset == address(collateralToken)) return _convertFromCreditToken(amount, _collateralTokenPrecision, roundUp);
+            else if (quoteAsset == address(collateralToken)) return _convertCreditTokenToCollateral(amount, roundUp);
         }
 
         revert("GroveBasin/invalid-asset");
@@ -367,6 +388,42 @@ contract GroveBasin is IGroveBasin, Ownable {
 
         return Math.ceilDiv(
             Math.ceilDiv(amount * rate, 1e27) * assetPrecision,
+            _creditTokenPrecision
+        );
+    }
+
+    function _convertCollateralToCreditToken(uint256 amount, bool roundUp)
+        internal view returns (uint256)
+    {
+        // collateral -> USD value -> credit
+        // USD value = amount * collateralRate / 1e9 / collateralPrecision (in 1e18)
+        // credit = USD value * 1e27 / creditRate * creditPrecision / 1e18
+        //        = amount * collateralRate / creditRate * creditPrecision / collateralPrecision
+        uint256 collateralRate = IRateProviderLike(collateralTokenRateProvider).getConversionRate();
+        uint256 creditRate     = IRateProviderLike(creditTokenRateProvider).getConversionRate();
+
+        if (!roundUp) return amount * collateralRate / creditRate * _creditTokenPrecision / _collateralTokenPrecision;
+
+        return Math.ceilDiv(
+            Math.ceilDiv(amount * collateralRate, creditRate) * _creditTokenPrecision,
+            _collateralTokenPrecision
+        );
+    }
+
+    function _convertCreditTokenToCollateral(uint256 amount, bool roundUp)
+        internal view returns (uint256)
+    {
+        // credit -> USD value -> collateral
+        // USD value = amount * creditRate / 1e9 / creditPrecision (in 1e18)
+        // collateral = USD value * 1e27 / collateralRate * collateralPrecision / 1e18
+        //            = amount * creditRate / collateralRate * collateralPrecision / creditPrecision
+        uint256 collateralRate = IRateProviderLike(collateralTokenRateProvider).getConversionRate();
+        uint256 creditRate     = IRateProviderLike(creditTokenRateProvider).getConversionRate();
+
+        if (!roundUp) return amount * creditRate / collateralRate * _collateralTokenPrecision / _creditTokenPrecision;
+
+        return Math.ceilDiv(
+            Math.ceilDiv(amount * creditRate, collateralRate) * _collateralTokenPrecision,
             _creditTokenPrecision
         );
     }

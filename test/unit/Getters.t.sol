@@ -18,6 +18,7 @@ contract GroveBasinHarnessTests is GroveBasinTestBase {
             address(secondaryToken),
             address(collateralToken),
             address(creditToken),
+            address(collateralTokenRateProvider),
             address(creditTokenRateProvider)
         );
 

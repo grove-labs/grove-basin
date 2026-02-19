@@ -19,14 +19,16 @@ contract GroveBasinDeployTests is GroveBasinTestBase {
             address(secondaryToken),
             address(collateralToken),
             address(creditToken),
+            address(collateralTokenRateProvider),
             address(creditTokenRateProvider)
         ));
 
-        assertEq(address(newGroveBasin.owner()),                   address(owner));
-        assertEq(address(newGroveBasin.secondaryToken()),                    address(secondaryToken));
-        assertEq(address(newGroveBasin.collateralToken()),         address(collateralToken));
-        assertEq(address(newGroveBasin.creditToken()),             address(creditToken));
-        assertEq(address(newGroveBasin.creditTokenRateProvider()), address(creditTokenRateProvider));
+        assertEq(address(newGroveBasin.owner()),                       address(owner));
+        assertEq(address(newGroveBasin.secondaryToken()),              address(secondaryToken));
+        assertEq(address(newGroveBasin.collateralToken()),             address(collateralToken));
+        assertEq(address(newGroveBasin.creditToken()),                 address(creditToken));
+        assertEq(address(newGroveBasin.collateralTokenRateProvider()), address(collateralTokenRateProvider));
+        assertEq(address(newGroveBasin.creditTokenRateProvider()),     address(creditTokenRateProvider));
 
         assertEq(secondaryToken.allowance(address(this), address(newGroveBasin)), 0);
 
