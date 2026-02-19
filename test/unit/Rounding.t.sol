@@ -17,7 +17,7 @@ contract RoundingTests is GroveBasinTestBase {
         // Seed the GroveBasin with max liquidity so withdrawals can always be performed
         _deposit(address(collateralToken),  address(this), COLLATERAL_TOKEN_MAX);
         _deposit(address(creditToken), address(this), CREDIT_TOKEN_MAX);
-        _deposit(address(usdc),  address(this), USDC_TOKEN_MAX);
+        _deposit(address(secondaryToken),  address(this), SECONDARY_TOKEN_MAX);
 
         // Set an exchange rate that will cause rounding
         mockCreditTokenRateProvider.__setConversionRate(1.25e27 * uint256(100) / 99);
@@ -34,15 +34,15 @@ contract RoundingTests is GroveBasinTestBase {
         assertEq(collateralToken.balanceOf(address(user)), 1e18 - 1);  // Rounds against user
     }
 
-    function test_roundAgainstUser_usdc() public {
-        _deposit(address(usdc), address(user), 1e6);
+    function test_roundAgainstUser_secondaryToken() public {
+        _deposit(address(secondaryToken), address(user), 1e6);
 
-        assertEq(usdc.balanceOf(address(user)), 0);
+        assertEq(secondaryToken.balanceOf(address(user)), 0);
 
         vm.prank(user);
-        groveBasin.withdraw(address(usdc), address(user), 1e6);
+        groveBasin.withdraw(address(secondaryToken), address(user), 1e6);
 
-        assertEq(usdc.balanceOf(address(user)), 1e6 - 1);  // Rounds against user
+        assertEq(secondaryToken.balanceOf(address(user)), 1e6 - 1);  // Rounds against user
     }
 
     function test_roundAgainstUser_creditToken() public {
@@ -75,7 +75,7 @@ contract RoundingTests is GroveBasinTestBase {
         );
     }
 
-    function testFuzz_roundingAgainstUser_multiUser_usdc(
+    function testFuzz_roundingAgainstUser_multiUser_secondaryToken(
         uint256 rate1,
         uint256 rate2,
         uint256 amount1,
@@ -84,8 +84,8 @@ contract RoundingTests is GroveBasinTestBase {
         public
     {
         _runRoundingAgainstUsersFuzzTest(
-            usdc,
-            USDC_TOKEN_MAX,
+            secondaryToken,
+            SECONDARY_TOKEN_MAX,
             rate1,
             rate2,
             amount1,

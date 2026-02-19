@@ -56,12 +56,12 @@ contract InflationAttackTests is GroveBasinTestBase {
 
         // Step 2: Front runner transfers 10m USDC to inflate the exchange rate to 1:(10m + 1)
 
-        deal(address(usdc), frontRunner, 10_000_000e6);
+        deal(address(secondaryToken), frontRunner, 10_000_000e6);
 
         assertEq(groveBasin.convertToAssetValue(1), 1);
 
         vm.prank(frontRunner);
-        usdc.transfer(pocket, 10_000_000e6);
+        secondaryToken.transfer(pocket, 10_000_000e6);
 
         // Highly inflated exchange rate
         assertEq(groveBasin.convertToAssetValue(1), 10_000_000e18 + 1);
@@ -69,7 +69,7 @@ contract InflationAttackTests is GroveBasinTestBase {
         // Step 3: First depositor deposits 20 million USDC, only gets one share because rounding
         //         error gives them 1 instead of 2 shares, worth 15m USDC
 
-        _deposit(address(usdc), firstDepositor, 20_000_000e6);
+        _deposit(address(secondaryToken), firstDepositor, 20_000_000e6);
 
         assertEq(groveBasin.shares(firstDepositor), 1);
 
@@ -78,14 +78,14 @@ contract InflationAttackTests is GroveBasinTestBase {
 
         // Step 4: Both users withdraw the max amount of funds they can
 
-        _withdraw(address(usdc), firstDepositor, type(uint256).max);
-        _withdraw(address(usdc), frontRunner,    type(uint256).max);
+        _withdraw(address(secondaryToken), firstDepositor, type(uint256).max);
+        _withdraw(address(secondaryToken), frontRunner,    type(uint256).max);
 
-        assertEq(usdc.balanceOf(pocket), 0);
+        assertEq(secondaryToken.balanceOf(pocket), 0);
 
         // Front runner profits 5m USDC, first depositor loses 5m USDC
-        assertEq(usdc.balanceOf(firstDepositor), 15_000_000e6);
-        assertEq(usdc.balanceOf(frontRunner),    15_000_000e6);
+        assertEq(secondaryToken.balanceOf(firstDepositor), 15_000_000e6);
+        assertEq(secondaryToken.balanceOf(frontRunner),    15_000_000e6);
     }
 
     function _runInflationAttack_useInitialDepositTest() internal {
@@ -95,10 +95,10 @@ contract InflationAttackTests is GroveBasinTestBase {
 
         assertEq(groveBasin.convertToAssetValue(1), 1);
 
-        deal(address(usdc), frontRunner, 10_000_000e6);
+        deal(address(secondaryToken), frontRunner, 10_000_000e6);
 
         vm.prank(frontRunner);
-        usdc.transfer(pocket, 10_000_000e6);
+        secondaryToken.transfer(pocket, 10_000_000e6);
 
         // Still inflated, but all value is transferred to existing holder, deployer
         assertEq(groveBasin.convertToAssetValue(1), 0.00000000001e18);
@@ -106,7 +106,7 @@ contract InflationAttackTests is GroveBasinTestBase {
         // Step 3: First depositor deposits 20 million USDC, this time rounding is not an issue
         //         so value reflected is much more accurate
 
-        _deposit(address(usdc), firstDepositor, 20_000_000e6);
+        _deposit(address(secondaryToken), firstDepositor, 20_000_000e6);
 
         assertEq(groveBasin.shares(firstDepositor), 1.999999800000020001e18);
 
@@ -115,14 +115,14 @@ contract InflationAttackTests is GroveBasinTestBase {
 
         // Step 4: Both users withdraw the max amount of funds they can
 
-        _withdraw(address(usdc), firstDepositor, type(uint256).max);
-        _withdraw(address(usdc), frontRunner,    type(uint256).max);
-        _withdraw(address(usdc), deployer,       type(uint256).max);
+        _withdraw(address(secondaryToken), firstDepositor, type(uint256).max);
+        _withdraw(address(secondaryToken), frontRunner,    type(uint256).max);
+        _withdraw(address(secondaryToken), deployer,       type(uint256).max);
 
         // Front runner loses full 10m USDC to the deployer that had all shares at the beginning, first depositor loses nothing (1e-6 USDC)
-        assertEq(usdc.balanceOf(firstDepositor), 19_999_999.999999e6);
-        assertEq(usdc.balanceOf(frontRunner),    0);
-        assertEq(usdc.balanceOf(deployer),       10_000_000.000001e6);
+        assertEq(secondaryToken.balanceOf(firstDepositor), 19_999_999.999999e6);
+        assertEq(secondaryToken.balanceOf(frontRunner),    0);
+        assertEq(secondaryToken.balanceOf(deployer),       10_000_000.000001e6);
     }
 
 }
