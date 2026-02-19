@@ -3,17 +3,17 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 
-import { MockRateProvider, PSMTestBase } from "test/PSMTestBase.sol";
+import { MockRateProvider, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
-import { PSM3Harness } from "test/unit/harnesses/PSM3Harness.sol";
+import { GroveBasinHarness } from "test/unit/harnesses/GroveBasinHarness.sol";
 
-contract PSMHarnessTests is PSMTestBase {
+contract PSMHarnessTests is GroveBasinTestBase {
 
-    PSM3Harness psmHarness;
+    GroveBasinHarness psmHarness;
 
     function setUp() public override {
         super.setUp();
-        psmHarness = new PSM3Harness(
+        psmHarness = new GroveBasinHarness(
             address(owner),
             address(usdc),
             address(usds),
@@ -211,7 +211,7 @@ contract PSMHarnessTests is PSMTestBase {
     }
 
     function test_getAssetValue_zeroAddress() public {
-        vm.expectRevert("PSM3/invalid-asset-for-value");
+        vm.expectRevert("GroveBasin/invalid-asset-for-value");
         psmHarness.getAssetValue(address(0), 1, false);
     }
 
@@ -223,68 +223,68 @@ contract PSMHarnessTests is PSMTestBase {
 
 }
 
-contract GetPsmTotalValueTests is PSMTestBase {
+contract GetPsmTotalValueTests is GroveBasinTestBase {
 
     function test_totalAssets_balanceChanges() public {
-        usds.mint(address(psm), 1e18);
+        usds.mint(address(groveBasin), 1e18);
 
-        assertEq(psm.totalAssets(), 1e18);
+        assertEq(groveBasin.totalAssets(), 1e18);
 
         usdc.mint(address(pocket), 1e6);
 
-        assertEq(psm.totalAssets(), 2e18);
+        assertEq(groveBasin.totalAssets(), 2e18);
 
-        susds.mint(address(psm), 1e18);
+        susds.mint(address(groveBasin), 1e18);
 
-        assertEq(psm.totalAssets(), 3.25e18);
+        assertEq(groveBasin.totalAssets(), 3.25e18);
 
-        usds.burn(address(psm), 1e18);
+        usds.burn(address(groveBasin), 1e18);
 
-        assertEq(psm.totalAssets(), 2.25e18);
+        assertEq(groveBasin.totalAssets(), 2.25e18);
 
         usdc.burn(address(pocket), 1e6);
 
-        assertEq(psm.totalAssets(), 1.25e18);
+        assertEq(groveBasin.totalAssets(), 1.25e18);
 
-        susds.burn(address(psm), 1e18);
+        susds.burn(address(groveBasin), 1e18);
 
-        assertEq(psm.totalAssets(), 0);
+        assertEq(groveBasin.totalAssets(), 0);
     }
 
     function test_totalAssets_conversionRateChanges() public {
-        assertEq(psm.totalAssets(), 0);
+        assertEq(groveBasin.totalAssets(), 0);
 
-        usds.mint(address(psm), 1e18);
+        usds.mint(address(groveBasin), 1e18);
         usdc.mint(address(pocket), 1e6);
-        susds.mint(address(psm), 1e18);
+        susds.mint(address(groveBasin), 1e18);
 
-        assertEq(psm.totalAssets(), 3.25e18);
+        assertEq(groveBasin.totalAssets(), 3.25e18);
 
         mockRateProvider.__setConversionRate(1.5e27);
 
-        assertEq(psm.totalAssets(), 3.5e18);
+        assertEq(groveBasin.totalAssets(), 3.5e18);
 
         mockRateProvider.__setConversionRate(0.8e27);
 
-        assertEq(psm.totalAssets(), 2.8e18);
+        assertEq(groveBasin.totalAssets(), 2.8e18);
     }
 
     function test_totalAssets_bothChange() public {
-        assertEq(psm.totalAssets(), 0);
+        assertEq(groveBasin.totalAssets(), 0);
 
-        usds.mint(address(psm), 1e18);
+        usds.mint(address(groveBasin), 1e18);
         usdc.mint(address(pocket), 1e6);
-        susds.mint(address(psm), 1e18);
+        susds.mint(address(groveBasin), 1e18);
 
-        assertEq(psm.totalAssets(), 3.25e18);
+        assertEq(groveBasin.totalAssets(), 3.25e18);
 
         mockRateProvider.__setConversionRate(1.5e27);
 
-        assertEq(psm.totalAssets(), 3.5e18);
+        assertEq(groveBasin.totalAssets(), 3.5e18);
 
-        susds.mint(address(psm), 1e18);
+        susds.mint(address(groveBasin), 1e18);
 
-        assertEq(psm.totalAssets(), 5e18);
+        assertEq(groveBasin.totalAssets(), 5e18);
     }
 
     function testFuzz_totalAssets(
@@ -300,14 +300,14 @@ contract GetPsmTotalValueTests is PSMTestBase {
         susdsAmount    = _bound(susdsAmount,    0,         SUSDS_TOKEN_MAX);
         conversionRate = _bound(conversionRate, 0.0001e27, 1000e27);
 
-        usds.mint(address(psm), usdsAmount);
+        usds.mint(address(groveBasin), usdsAmount);
         usdc.mint(address(pocket), usdcAmount);
-        susds.mint(address(psm), susdsAmount);
+        susds.mint(address(groveBasin), susdsAmount);
 
         mockRateProvider.__setConversionRate(conversionRate);
 
         assertEq(
-            psm.totalAssets(),
+            groveBasin.totalAssets(),
             usdsAmount + (usdcAmount * 1e12) + (susdsAmount * conversionRate / 1e27)
         );
     }

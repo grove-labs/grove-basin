@@ -3,9 +3,9 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 
-import { MockERC20, PSMTestBase } from "test/PSMTestBase.sol";
+import { MockERC20, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
-contract PSMEventTests is PSMTestBase {
+contract PSMEventTests is GroveBasinTestBase {
 
     event Swap(
         address indexed assetIn,
@@ -40,25 +40,25 @@ contract PSMEventTests is PSMTestBase {
         vm.startPrank(sender);
 
         usds.mint(sender, 100e18);
-        usds.approve(address(psm), 100e18);
+        usds.approve(address(groveBasin), 100e18);
 
-        vm.expectEmit(address(psm));
+        vm.expectEmit(address(groveBasin));
         emit Deposit(address(usds), sender, receiver, 100e18, 100e18);
-        psm.deposit(address(usds), receiver, 100e18);
+        groveBasin.deposit(address(usds), receiver, 100e18);
 
         usdc.mint(sender, 100e6);
-        usdc.approve(address(psm), 100e6);
+        usdc.approve(address(groveBasin), 100e6);
 
-        vm.expectEmit(address(psm));
+        vm.expectEmit(address(groveBasin));
         emit Deposit(address(usdc), sender, receiver, 100e6, 100e18);
-        psm.deposit(address(usdc), receiver, 100e6);
+        groveBasin.deposit(address(usdc), receiver, 100e6);
 
         susds.mint(sender, 100e18);
-        susds.approve(address(psm), 100e18);
+        susds.approve(address(groveBasin), 100e18);
 
-        vm.expectEmit(address(psm));
+        vm.expectEmit(address(groveBasin));
         emit Deposit(address(susds), sender, receiver, 100e18, 125e18);
-        psm.deposit(address(susds), receiver, 100e18);
+        groveBasin.deposit(address(susds), receiver, 100e18);
     }
 
     function test_withdraw_events() public {
@@ -68,23 +68,23 @@ contract PSMEventTests is PSMTestBase {
 
         vm.startPrank(sender);
 
-        vm.expectEmit(address(psm));
+        vm.expectEmit(address(groveBasin));
         emit Withdraw(address(usds), sender, receiver, 100e18, 100e18);
-        psm.withdraw(address(usds), receiver, 100e18);
+        groveBasin.withdraw(address(usds), receiver, 100e18);
 
-        vm.expectEmit(address(psm));
+        vm.expectEmit(address(groveBasin));
         emit Withdraw(address(usdc), sender, receiver, 100e6, 100e18);
-        psm.withdraw(address(usdc), receiver, 100e6);
+        groveBasin.withdraw(address(usdc), receiver, 100e6);
 
-        vm.expectEmit(address(psm));
+        vm.expectEmit(address(groveBasin));
         emit Withdraw(address(susds), sender, receiver, 100e18, 125e18);
-        psm.withdraw(address(susds), receiver, 100e18);
+        groveBasin.withdraw(address(susds), receiver, 100e18);
     }
 
     function test_swap_events() public {
-        usds.mint(address(psm),  1000e18);
+        usds.mint(address(groveBasin),  1000e18);
         usdc.mint(pocket, 1000e6);
-        susds.mint(address(psm), 1000e18);
+        susds.mint(address(groveBasin), 1000e18);
 
         vm.startPrank(sender);
 
@@ -106,11 +106,11 @@ contract PSMEventTests is PSMTestBase {
         uint16  referralCode
     ) internal {
         MockERC20(assetIn).mint(sender, amountIn);
-        MockERC20(assetIn).approve(address(psm), amountIn);
+        MockERC20(assetIn).approve(address(groveBasin), amountIn);
 
-        vm.expectEmit(address(psm));
+        vm.expectEmit(address(groveBasin));
         emit Swap(assetIn, assetOut, sender, receiver, amountIn, expectedAmountOut, referralCode);
-        psm.swapExactIn(assetIn, assetOut, amountIn, 0, receiver, referralCode);
+        groveBasin.swapExactIn(assetIn, assetOut, amountIn, 0, receiver, referralCode);
     }
 
 }

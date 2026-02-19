@@ -3,11 +3,11 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 
-import { PSM3 } from "src/PSM3.sol";
+import { GroveBasin } from "src/GroveBasin.sol";
 
-import { MockERC20, PSMTestBase } from "test/PSMTestBase.sol";
+import { MockERC20, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
-contract PSMSwapExactOutFailureTests is PSMTestBase {
+contract PSMSwapExactOutFailureTests is GroveBasinTestBase {
 
     address public swapper  = makeAddr("swapper");
     address public receiver = makeAddr("receiver");
@@ -17,42 +17,42 @@ contract PSMSwapExactOutFailureTests is PSMTestBase {
 
         // Needed for boundary success conditions
         usdc.mint(pocket, 100e6);
-        susds.mint(address(psm), 100e18);
+        susds.mint(address(groveBasin), 100e18);
     }
 
     function test_swapExactOut_amountZero() public {
-        vm.expectRevert("PSM3/invalid-amountOut");
-        psm.swapExactOut(address(usdc), address(susds), 0, 0, receiver, 0);
+        vm.expectRevert("GroveBasin/invalid-amountOut");
+        groveBasin.swapExactOut(address(usdc), address(susds), 0, 0, receiver, 0);
     }
 
     function test_swapExactOut_receiverZero() public {
-        vm.expectRevert("PSM3/invalid-receiver");
-        psm.swapExactOut(address(usdc), address(susds), 100e6, 80e18, address(0), 0);
+        vm.expectRevert("GroveBasin/invalid-receiver");
+        groveBasin.swapExactOut(address(usdc), address(susds), 100e6, 80e18, address(0), 0);
     }
 
     function test_swapExactOut_invalid_assetIn() public {
-        vm.expectRevert("PSM3/invalid-asset");
-        psm.swapExactOut(makeAddr("other-token"), address(susds), 100e6, 80e18, receiver, 0);
+        vm.expectRevert("GroveBasin/invalid-asset");
+        groveBasin.swapExactOut(makeAddr("other-token"), address(susds), 100e6, 80e18, receiver, 0);
     }
 
     function test_swapExactOut_invalid_assetOut() public {
-        vm.expectRevert("PSM3/invalid-asset");
-        psm.swapExactOut(address(usdc), makeAddr("other-token"), 100e6, 80e18, receiver, 0);
+        vm.expectRevert("GroveBasin/invalid-asset");
+        groveBasin.swapExactOut(address(usdc), makeAddr("other-token"), 100e6, 80e18, receiver, 0);
     }
 
     function test_swapExactOut_bothUsdc() public {
-        vm.expectRevert("PSM3/invalid-asset");
-        psm.swapExactOut(address(usdc), address(usdc), 100e6, 80e18, receiver, 0);
+        vm.expectRevert("GroveBasin/invalid-asset");
+        groveBasin.swapExactOut(address(usdc), address(usdc), 100e6, 80e18, receiver, 0);
     }
 
     function test_swapExactOut_bothUsds() public {
-        vm.expectRevert("PSM3/invalid-asset");
-        psm.swapExactOut(address(usds), address(usds), 100e6, 80e18, receiver, 0);
+        vm.expectRevert("GroveBasin/invalid-asset");
+        groveBasin.swapExactOut(address(usds), address(usds), 100e6, 80e18, receiver, 0);
     }
 
     function test_swapExactOut_bothSUsds() public {
-        vm.expectRevert("PSM3/invalid-asset");
-        psm.swapExactOut(address(susds), address(susds), 100e6, 80e18, receiver, 0);
+        vm.expectRevert("GroveBasin/invalid-asset");
+        groveBasin.swapExactOut(address(susds), address(susds), 100e6, 80e18, receiver, 0);
     }
 
     function test_swapExactOut_maxAmountBoundary() public {
@@ -60,16 +60,16 @@ contract PSMSwapExactOutFailureTests is PSMTestBase {
 
         vm.startPrank(swapper);
 
-        usdc.approve(address(psm), 100e6);
+        usdc.approve(address(groveBasin), 100e6);
 
-        uint256 expectedAmountIn = psm.previewSwapExactOut(address(usdc), address(susds), 80e18);
+        uint256 expectedAmountIn = groveBasin.previewSwapExactOut(address(usdc), address(susds), 80e18);
 
         assertEq(expectedAmountIn, 100e6);
 
-        vm.expectRevert("PSM3/amountIn-too-high");
-        psm.swapExactOut(address(usdc), address(susds), 80e18, 100e6 - 1, receiver, 0);
+        vm.expectRevert("GroveBasin/amountIn-too-high");
+        groveBasin.swapExactOut(address(usdc), address(susds), 80e18, 100e6 - 1, receiver, 0);
 
-        psm.swapExactOut(address(usdc), address(susds), 80e18, 100e6, receiver, 0);
+        groveBasin.swapExactOut(address(usdc), address(susds), 80e18, 100e6, receiver, 0);
     }
 
     function test_swapExactOut_insufficientApproveBoundary() public {
@@ -77,14 +77,14 @@ contract PSMSwapExactOutFailureTests is PSMTestBase {
 
         vm.startPrank(swapper);
 
-        usdc.approve(address(psm), 100e6 - 1);
+        usdc.approve(address(groveBasin), 100e6 - 1);
 
         vm.expectRevert("SafeERC20/transfer-from-failed");
-        psm.swapExactOut(address(usdc), address(susds), 80e18, 100e6, receiver, 0);
+        groveBasin.swapExactOut(address(usdc), address(susds), 80e18, 100e6, receiver, 0);
 
-        usdc.approve(address(psm), 100e6);
+        usdc.approve(address(groveBasin), 100e6);
 
-        psm.swapExactOut(address(usdc), address(susds), 80e18, 100e6, receiver, 0);
+        groveBasin.swapExactOut(address(usdc), address(susds), 80e18, 100e6, receiver, 0);
     }
 
     function test_swapExactOut_insufficientUserBalanceBoundary() public {
@@ -92,14 +92,14 @@ contract PSMSwapExactOutFailureTests is PSMTestBase {
 
         vm.startPrank(swapper);
 
-        usdc.approve(address(psm), 100e6);
+        usdc.approve(address(groveBasin), 100e6);
 
         vm.expectRevert("SafeERC20/transfer-from-failed");
-        psm.swapExactOut(address(usdc), address(susds), 80e18, 100e6, receiver, 0);
+        groveBasin.swapExactOut(address(usdc), address(susds), 80e18, 100e6, receiver, 0);
 
         usdc.mint(swapper, 1);
 
-        psm.swapExactOut(address(usdc), address(susds), 80e18, 100e6, receiver, 0);
+        groveBasin.swapExactOut(address(usdc), address(susds), 80e18, 100e6, receiver, 0);
     }
 
     function test_swapExactOut_insufficientPsmBalanceBoundary() public {
@@ -108,17 +108,17 @@ contract PSMSwapExactOutFailureTests is PSMTestBase {
 
         vm.startPrank(swapper);
 
-        usdc.approve(address(psm), 125e6 + 1);
+        usdc.approve(address(groveBasin), 125e6 + 1);
 
         vm.expectRevert("SafeERC20/transfer-failed");
-        psm.swapExactOut(address(usdc), address(susds), 100e18 + 1, 125e6 + 1, receiver, 0);
+        groveBasin.swapExactOut(address(usdc), address(susds), 100e18 + 1, 125e6 + 1, receiver, 0);
 
-        psm.swapExactOut(address(usdc), address(susds), 100e18, 125e6 + 1, receiver, 0);
+        groveBasin.swapExactOut(address(usdc), address(susds), 100e18, 125e6 + 1, receiver, 0);
     }
 
 }
 
-contract PSMSwapExactOutSuccessTestsBase is PSMTestBase {
+contract PSMSwapExactOutSuccessTestsBase is GroveBasinTestBase {
 
     address public swapper  = makeAddr("swapper");
     address public receiver = makeAddr("receiver");
@@ -128,9 +128,9 @@ contract PSMSwapExactOutSuccessTestsBase is PSMTestBase {
 
         // Mint 100x higher than max amount for each token (max conversion rate)
         // Covers both lower and upper bounds of conversion rate (1% to 10,000% are both 100x)
-        usds.mint(address(psm),  USDS_TOKEN_MAX  * 100);
+        usds.mint(address(groveBasin),  USDS_TOKEN_MAX  * 100);
         usdc.mint(pocket,        USDC_TOKEN_MAX  * 100);
-        susds.mint(address(psm), SUSDS_TOKEN_MAX * 100);
+        susds.mint(address(groveBasin), SUSDS_TOKEN_MAX * 100);
     }
 
     function _swapExactOutTest(
@@ -145,16 +145,16 @@ contract PSMSwapExactOutSuccessTestsBase is PSMTestBase {
         uint256 psmAssetInBalance  = 100_000_000_000_000 * 10 ** assetIn.decimals();
         uint256 psmAssetOutBalance = 100_000_000_000_000 * 10 ** assetOut.decimals();
 
-        address assetInCustodian  = address(assetIn)  == address(usdc) ? pocket : address(psm);
-        address assetOutCustodian = address(assetOut) == address(usdc) ? pocket : address(psm);
+        address assetInCustodian  = address(assetIn)  == address(usdc) ? pocket : address(groveBasin);
+        address assetOutCustodian = address(assetOut) == address(usdc) ? pocket : address(groveBasin);
 
         assetIn.mint(swapper_, amountIn);
 
         vm.startPrank(swapper_);
 
-        assetIn.approve(address(psm), amountIn);
+        assetIn.approve(address(groveBasin), amountIn);
 
-        assertEq(assetIn.allowance(swapper_, address(psm)), amountIn);
+        assertEq(assetIn.allowance(swapper_, address(groveBasin)), amountIn);
 
         assertEq(assetIn.balanceOf(swapper_),         amountIn);
         assertEq(assetIn.balanceOf(assetInCustodian), psmAssetInBalance);
@@ -162,7 +162,7 @@ contract PSMSwapExactOutSuccessTestsBase is PSMTestBase {
         assertEq(assetOut.balanceOf(receiver_),         0);
         assertEq(assetOut.balanceOf(assetOutCustodian), psmAssetOutBalance);
 
-        uint256 returnedAmountIn = psm.swapExactOut(
+        uint256 returnedAmountIn = groveBasin.swapExactOut(
             address(assetIn),
             address(assetOut),
             amountOut,
@@ -173,7 +173,7 @@ contract PSMSwapExactOutSuccessTestsBase is PSMTestBase {
 
         assertEq(returnedAmountIn, amountIn);
 
-        assertEq(assetIn.allowance(swapper_, address(psm)), 0);
+        assertEq(assetIn.allowance(swapper_, address(groveBasin)), 0);
 
         assertEq(assetIn.balanceOf(swapper_),         0);
         assertEq(assetIn.balanceOf(assetInCustodian), psmAssetInBalance + amountIn);
@@ -186,19 +186,19 @@ contract PSMSwapExactOutSuccessTestsBase is PSMTestBase {
 
 contract PSMSwapExactOutUsdsAssetInTests is PSMSwapExactOutSuccessTestsBase {
 
-    function test_swapExactOut_usdsToUsdc_sameReceiver() public assertAtomicPsmValueDoesNotChange {
+    function test_swapExactOut_usdsToUsdc_sameReceiver() public assertAtomicGroveBasinValueDoesNotChange {
         _swapExactOutTest(usds, usdc, 100e6, 100e18, swapper, swapper);
     }
 
-    function test_swapExactOut_usdsToSUsds_sameReceiver() public assertAtomicPsmValueDoesNotChange {
+    function test_swapExactOut_usdsToSUsds_sameReceiver() public assertAtomicGroveBasinValueDoesNotChange {
         _swapExactOutTest(usds, susds, 80e18, 100e18, swapper, swapper);
     }
 
-    function test_swapExactOut_usdsToUsdc_differentReceiver() public assertAtomicPsmValueDoesNotChange {
+    function test_swapExactOut_usdsToUsdc_differentReceiver() public assertAtomicGroveBasinValueDoesNotChange {
         _swapExactOutTest(usds, usdc, 100e6, 100e18, swapper, receiver);
     }
 
-    function test_swapExactOut_usdsToSUsds_differentReceiver() public assertAtomicPsmValueDoesNotChange {
+    function test_swapExactOut_usdsToSUsds_differentReceiver() public assertAtomicGroveBasinValueDoesNotChange {
         _swapExactOutTest(usds, susds, 80e18, 100e18, swapper, receiver);
     }
 
@@ -207,9 +207,9 @@ contract PSMSwapExactOutUsdsAssetInTests is PSMSwapExactOutSuccessTestsBase {
         address fuzzSwapper,
         address fuzzReceiver
     ) public {
-        vm.assume(fuzzSwapper  != address(psm));
+        vm.assume(fuzzSwapper  != address(groveBasin));
         vm.assume(fuzzSwapper  != address(pocket));
-        vm.assume(fuzzReceiver != address(psm));
+        vm.assume(fuzzReceiver != address(groveBasin));
         vm.assume(fuzzReceiver != address(pocket));
         vm.assume(fuzzReceiver != address(0));
 
@@ -224,9 +224,9 @@ contract PSMSwapExactOutUsdsAssetInTests is PSMSwapExactOutSuccessTestsBase {
         address fuzzSwapper,
         address fuzzReceiver
     ) public {
-        vm.assume(fuzzSwapper  != address(psm));
+        vm.assume(fuzzSwapper  != address(groveBasin));
         vm.assume(fuzzSwapper  != address(pocket));
-        vm.assume(fuzzReceiver != address(psm));
+        vm.assume(fuzzReceiver != address(groveBasin));
         vm.assume(fuzzReceiver != address(pocket));
         vm.assume(fuzzReceiver != address(0));
 
@@ -236,7 +236,7 @@ contract PSMSwapExactOutUsdsAssetInTests is PSMSwapExactOutSuccessTestsBase {
 
         uint256 amountIn = amountOut * conversionRate / 1e27;
 
-        uint256 returnedAmountIn = psm.previewSwapExactOut(address(usds), address(susds), amountOut);
+        uint256 returnedAmountIn = groveBasin.previewSwapExactOut(address(usds), address(susds), amountOut);
 
         // Assert that returnedAmount is within 1 of the expected amount and rounding up
         // Use returnedAmountIn in helper function so all values are exact
@@ -249,19 +249,19 @@ contract PSMSwapExactOutUsdsAssetInTests is PSMSwapExactOutSuccessTestsBase {
 
 contract PSMSwapExactOutUsdcAssetInTests is PSMSwapExactOutSuccessTestsBase {
 
-    function test_swapExactOut_usdcToUsds_sameReceiver() public assertAtomicPsmValueDoesNotChange {
+    function test_swapExactOut_usdcToUsds_sameReceiver() public assertAtomicGroveBasinValueDoesNotChange {
         _swapExactOutTest(usdc, usds, 100e18, 100e6, swapper, swapper);
     }
 
-    function test_swapExactOut_usdcToSUsds_sameReceiver() public assertAtomicPsmValueDoesNotChange {
+    function test_swapExactOut_usdcToSUsds_sameReceiver() public assertAtomicGroveBasinValueDoesNotChange {
         _swapExactOutTest(usdc, susds, 80e18, 100e6, swapper, swapper);
     }
 
-    function test_swapExactOut_usdcToUsds_differentReceiver() public assertAtomicPsmValueDoesNotChange {
+    function test_swapExactOut_usdcToUsds_differentReceiver() public assertAtomicGroveBasinValueDoesNotChange {
         _swapExactOutTest(usdc, usds, 100e18, 100e6, swapper, receiver);
     }
 
-    function test_swapExactOut_usdcToSUsds_differentReceiver() public assertAtomicPsmValueDoesNotChange {
+    function test_swapExactOut_usdcToSUsds_differentReceiver() public assertAtomicGroveBasinValueDoesNotChange {
         _swapExactOutTest(usdc, susds, 80e18, 100e6, swapper, receiver);
     }
 
@@ -270,16 +270,16 @@ contract PSMSwapExactOutUsdcAssetInTests is PSMSwapExactOutSuccessTestsBase {
         address fuzzSwapper,
         address fuzzReceiver
     ) public {
-        vm.assume(fuzzSwapper  != address(psm));
+        vm.assume(fuzzSwapper  != address(groveBasin));
         vm.assume(fuzzSwapper  != address(pocket));
-        vm.assume(fuzzReceiver != address(psm));
+        vm.assume(fuzzReceiver != address(groveBasin));
         vm.assume(fuzzReceiver != address(pocket));
         vm.assume(fuzzReceiver != address(0));
 
         amountOut = _bound(amountOut, 1, USDS_TOKEN_MAX);  // Zero amount reverts
         uint256 amountIn = amountOut / 1e12;
 
-        uint256 returnedAmountIn = psm.previewSwapExactOut(address(usdc), address(usds), amountOut);
+        uint256 returnedAmountIn = groveBasin.previewSwapExactOut(address(usdc), address(usds), amountOut);
 
         // Assert that returnedAmount is within 1 of the expected amount and rounding up
         // Use returnedAmountIn in helper function so all values are exact
@@ -294,9 +294,9 @@ contract PSMSwapExactOutUsdcAssetInTests is PSMSwapExactOutSuccessTestsBase {
         address fuzzSwapper,
         address fuzzReceiver
     ) public {
-        vm.assume(fuzzSwapper  != address(psm));
+        vm.assume(fuzzSwapper  != address(groveBasin));
         vm.assume(fuzzSwapper  != address(pocket));
-        vm.assume(fuzzReceiver != address(psm));
+        vm.assume(fuzzReceiver != address(groveBasin));
         vm.assume(fuzzReceiver != address(pocket));
         vm.assume(fuzzReceiver != address(0));
 
@@ -307,7 +307,7 @@ contract PSMSwapExactOutUsdcAssetInTests is PSMSwapExactOutSuccessTestsBase {
 
         uint256 amountIn = amountOut * conversionRate / 1e27 / 1e12;
 
-        uint256 returnedAmountIn = psm.previewSwapExactOut(address(usdc), address(susds), amountOut);
+        uint256 returnedAmountIn = groveBasin.previewSwapExactOut(address(usdc), address(susds), amountOut);
 
         // Assert that returnedAmount is within 1 of the expected amount and rounding up
         // Use returnedAmountIn in helper function so all values are exact
@@ -320,19 +320,19 @@ contract PSMSwapExactOutUsdcAssetInTests is PSMSwapExactOutSuccessTestsBase {
 
 contract PSMSwapExactOutSUsdsAssetInTests is PSMSwapExactOutSuccessTestsBase {
 
-    function test_swapExactOut_susdsToUsds_sameReceiver() public assertAtomicPsmValueDoesNotChange {
+    function test_swapExactOut_susdsToUsds_sameReceiver() public assertAtomicGroveBasinValueDoesNotChange {
         _swapExactOutTest(susds, usds, 125e18, 100e18, swapper, swapper);
     }
 
-    function test_swapExactOut_susdsToUsdc_sameReceiver() public assertAtomicPsmValueDoesNotChange {
+    function test_swapExactOut_susdsToUsdc_sameReceiver() public assertAtomicGroveBasinValueDoesNotChange {
         _swapExactOutTest(susds, usdc, 125e6, 100e18, swapper, swapper);
     }
 
-    function test_swapExactOut_susdsToUsds_differentReceiver() public assertAtomicPsmValueDoesNotChange {
+    function test_swapExactOut_susdsToUsds_differentReceiver() public assertAtomicGroveBasinValueDoesNotChange {
         _swapExactOutTest(susds, usds, 125e18, 100e18, swapper, receiver);
     }
 
-    function test_swapExactOut_susdsToUsdc_differentReceiver() public assertAtomicPsmValueDoesNotChange {
+    function test_swapExactOut_susdsToUsdc_differentReceiver() public assertAtomicGroveBasinValueDoesNotChange {
         _swapExactOutTest(susds, usdc, 125e6, 100e18, swapper, receiver);
     }
 
@@ -342,9 +342,9 @@ contract PSMSwapExactOutSUsdsAssetInTests is PSMSwapExactOutSuccessTestsBase {
         address fuzzSwapper,
         address fuzzReceiver
     ) public {
-        vm.assume(fuzzSwapper  != address(psm));
+        vm.assume(fuzzSwapper  != address(groveBasin));
         vm.assume(fuzzSwapper  != address(pocket));
-        vm.assume(fuzzReceiver != address(psm));
+        vm.assume(fuzzReceiver != address(groveBasin));
         vm.assume(fuzzReceiver != address(pocket));
         vm.assume(fuzzReceiver != address(0));
 
@@ -355,7 +355,7 @@ contract PSMSwapExactOutSUsdsAssetInTests is PSMSwapExactOutSuccessTestsBase {
 
         uint256 amountIn = amountOut * 1e27 / conversionRate;
 
-        uint256 returnedAmountIn = psm.previewSwapExactOut(address(susds), address(usds), amountOut);
+        uint256 returnedAmountIn = groveBasin.previewSwapExactOut(address(susds), address(usds), amountOut);
 
         // Assert that returnedAmount is within 1 of the expected amount and rounding up
         // Use returnedAmountIn in helper function so all values are exact
@@ -370,9 +370,9 @@ contract PSMSwapExactOutSUsdsAssetInTests is PSMSwapExactOutSuccessTestsBase {
         address fuzzSwapper,
         address fuzzReceiver
     ) public {
-        vm.assume(fuzzSwapper  != address(psm));
+        vm.assume(fuzzSwapper  != address(groveBasin));
         vm.assume(fuzzSwapper  != address(pocket));
-        vm.assume(fuzzReceiver != address(psm));
+        vm.assume(fuzzReceiver != address(groveBasin));
         vm.assume(fuzzReceiver != address(pocket));
         vm.assume(fuzzReceiver != address(0));
 
@@ -383,7 +383,7 @@ contract PSMSwapExactOutSUsdsAssetInTests is PSMSwapExactOutSuccessTestsBase {
 
         uint256 amountIn = amountOut * 1e27 / conversionRate * 1e12;
 
-        uint256 returnedAmountIn = psm.previewSwapExactOut(address(susds), address(usdc), amountOut);
+        uint256 returnedAmountIn = groveBasin.previewSwapExactOut(address(susds), address(usdc), amountOut);
 
         // Assert that returnedAmount is within 1 of the expected amount and rounding up
         // Use returnedAmountIn in helper function so all asserted values are exact
@@ -395,7 +395,7 @@ contract PSMSwapExactOutSUsdsAssetInTests is PSMSwapExactOutSuccessTestsBase {
 
 }
 
-contract PSMSwapExactOutFuzzTests is PSMTestBase {
+contract PSMSwapExactOutFuzzTests is GroveBasinTestBase {
 
     address lp0 = makeAddr("lp0");
     address lp1 = makeAddr("lp1");
@@ -435,10 +435,10 @@ contract PSMSwapExactOutFuzzTests is PSMTestBase {
 
         FuzzVars memory vars;
 
-        vars.lp0StartingValue = psm.convertToAssetValue(psm.shares(lp0));
-        vars.lp1StartingValue = psm.convertToAssetValue(psm.shares(lp1));
-        vars.lp2StartingValue = psm.convertToAssetValue(psm.shares(lp2));
-        vars.psmStartingValue = psm.totalAssets();
+        vars.lp0StartingValue = groveBasin.convertToAssetValue(groveBasin.shares(lp0));
+        vars.lp1StartingValue = groveBasin.convertToAssetValue(groveBasin.shares(lp1));
+        vars.lp2StartingValue = groveBasin.convertToAssetValue(groveBasin.shares(lp2));
+        vars.psmStartingValue = groveBasin.totalAssets();
 
         vm.startPrank(swapper);
 
@@ -450,47 +450,47 @@ contract PSMSwapExactOutFuzzTests is PSMTestBase {
                 assetOut = _getAsset(_hash(i, "assetOut") + 1);
             }
 
-            address assetOutCustodian = address(assetOut) == address(usdc) ? pocket : address(psm);
+            address assetOutCustodian = address(assetOut) == address(usdc) ? pocket : address(groveBasin);
 
             uint256 amountOut
                 = _bound(_hash(i, "amountOut"), 0, assetOut.balanceOf(assetOutCustodian));
 
             uint256 amountIn
-                = psm.previewSwapExactOut(address(assetIn), address(assetOut), amountOut);
+                = groveBasin.previewSwapExactOut(address(assetIn), address(assetOut), amountOut);
 
-            vars.lp0CachedValue = psm.convertToAssetValue(psm.shares(lp0));
-            vars.lp1CachedValue = psm.convertToAssetValue(psm.shares(lp1));
-            vars.lp2CachedValue = psm.convertToAssetValue(psm.shares(lp2));
-            vars.psmCachedValue = psm.totalAssets();
+            vars.lp0CachedValue = groveBasin.convertToAssetValue(groveBasin.shares(lp0));
+            vars.lp1CachedValue = groveBasin.convertToAssetValue(groveBasin.shares(lp1));
+            vars.lp2CachedValue = groveBasin.convertToAssetValue(groveBasin.shares(lp2));
+            vars.psmCachedValue = groveBasin.totalAssets();
 
             assetIn.mint(swapper, amountIn);
-            assetIn.approve(address(psm), amountIn);
-            psm.swapExactOut(address(assetIn), address(assetOut), amountOut, amountIn, swapper, 0);
+            assetIn.approve(address(groveBasin), amountIn);
+            groveBasin.swapExactOut(address(assetIn), address(assetOut), amountOut, amountIn, swapper, 0);
 
             // Rounding is always in favour of the LPs
-            assertGe(psm.convertToAssetValue(psm.shares(lp0)), vars.lp0CachedValue);
-            assertGe(psm.convertToAssetValue(psm.shares(lp1)), vars.lp1CachedValue);
-            assertGe(psm.convertToAssetValue(psm.shares(lp2)), vars.lp2CachedValue);
-            assertGe(psm.totalAssets(),                        vars.psmCachedValue);
+            assertGe(groveBasin.convertToAssetValue(groveBasin.shares(lp0)), vars.lp0CachedValue);
+            assertGe(groveBasin.convertToAssetValue(groveBasin.shares(lp1)), vars.lp1CachedValue);
+            assertGe(groveBasin.convertToAssetValue(groveBasin.shares(lp2)), vars.lp2CachedValue);
+            assertGe(groveBasin.totalAssets(),                        vars.psmCachedValue);
 
             // Up to 2e12 rounding on each swap
-            assertApproxEqAbs(psm.convertToAssetValue(psm.shares(lp0)), vars.lp0CachedValue, 2e12);
-            assertApproxEqAbs(psm.convertToAssetValue(psm.shares(lp1)), vars.lp1CachedValue, 2e12);
-            assertApproxEqAbs(psm.convertToAssetValue(psm.shares(lp2)), vars.lp2CachedValue, 2e12);
-            assertApproxEqAbs(psm.totalAssets(),                        vars.psmCachedValue, 2e12);
+            assertApproxEqAbs(groveBasin.convertToAssetValue(groveBasin.shares(lp0)), vars.lp0CachedValue, 2e12);
+            assertApproxEqAbs(groveBasin.convertToAssetValue(groveBasin.shares(lp1)), vars.lp1CachedValue, 2e12);
+            assertApproxEqAbs(groveBasin.convertToAssetValue(groveBasin.shares(lp2)), vars.lp2CachedValue, 2e12);
+            assertApproxEqAbs(groveBasin.totalAssets(),                        vars.psmCachedValue, 2e12);
         }
 
         // Rounding is always in favour of the LPs
-        assertGe(psm.convertToAssetValue(psm.shares(lp0)), vars.lp0StartingValue);
-        assertGe(psm.convertToAssetValue(psm.shares(lp1)), vars.lp1StartingValue);
-        assertGe(psm.convertToAssetValue(psm.shares(lp2)), vars.lp2StartingValue);
-        assertGe(psm.totalAssets(),                        vars.psmStartingValue);
+        assertGe(groveBasin.convertToAssetValue(groveBasin.shares(lp0)), vars.lp0StartingValue);
+        assertGe(groveBasin.convertToAssetValue(groveBasin.shares(lp1)), vars.lp1StartingValue);
+        assertGe(groveBasin.convertToAssetValue(groveBasin.shares(lp2)), vars.lp2StartingValue);
+        assertGe(groveBasin.totalAssets(),                        vars.psmStartingValue);
 
         // Up to 2e12 rounding on each swap, for 1000 swaps
-        assertApproxEqAbs(psm.convertToAssetValue(psm.shares(lp0)), vars.lp0StartingValue, 2000e12);
-        assertApproxEqAbs(psm.convertToAssetValue(psm.shares(lp1)), vars.lp1StartingValue, 2000e12);
-        assertApproxEqAbs(psm.convertToAssetValue(psm.shares(lp2)), vars.lp2StartingValue, 2000e12);
-        assertApproxEqAbs(psm.totalAssets(),                        vars.psmStartingValue, 2000e12);
+        assertApproxEqAbs(groveBasin.convertToAssetValue(groveBasin.shares(lp0)), vars.lp0StartingValue, 2000e12);
+        assertApproxEqAbs(groveBasin.convertToAssetValue(groveBasin.shares(lp1)), vars.lp1StartingValue, 2000e12);
+        assertApproxEqAbs(groveBasin.convertToAssetValue(groveBasin.shares(lp2)), vars.lp2StartingValue, 2000e12);
+        assertApproxEqAbs(groveBasin.totalAssets(),                        vars.psmStartingValue, 2000e12);
     }
 
     function _hash(uint256 number_, string memory salt) internal pure returns (uint256 hash_) {

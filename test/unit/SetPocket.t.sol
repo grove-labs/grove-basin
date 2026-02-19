@@ -1,57 +1,57 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.13;
 
-import { PSMTestBase } from "test/PSMTestBase.sol";
+import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
-contract PSMSetPocketFailureTests is PSMTestBase {
+contract PSMSetPocketFailureTests is GroveBasinTestBase {
 
     function test_setPocket_invalidOwner() public {
         vm.expectRevert(
             abi.encodeWithSignature("OwnableUnauthorizedAccount(address)",
             address(this))
         );
-        psm.setPocket(address(1));
+        groveBasin.setPocket(address(1));
     }
 
     function test_setPocket_invalidPocket() public {
         vm.prank(owner);
-        vm.expectRevert("PSM3/invalid-pocket");
-        psm.setPocket(address(0));
+        vm.expectRevert("GroveBasin/invalid-pocket");
+        groveBasin.setPocket(address(0));
     }
 
     function test_setPocket_samePocket() public {
         vm.prank(owner);
-        vm.expectRevert("PSM3/same-pocket");
-        psm.setPocket(pocket);
+        vm.expectRevert("GroveBasin/same-pocket");
+        groveBasin.setPocket(pocket);
     }
 
 
-    // NOTE: In practice this won't happen because pockets will infinite approve PSM
+    // NOTE: In practice this won't happen because pockets will infinite approve GroveBasin
     function test_setPocket_insufficientAllowanceBoundary() public {
         address pocket1 = makeAddr("pocket1");
         address pocket2 = makeAddr("pocket2");
 
         vm.prank(owner);
-        psm.setPocket(pocket1);
+        groveBasin.setPocket(pocket1);
 
         vm.prank(pocket1);
-        usdc.approve(address(psm), 1_000_000e6);
+        usdc.approve(address(groveBasin), 1_000_000e6);
 
         deal(address(usdc), pocket1, 1_000_000e6 + 1);
 
         vm.prank(owner);
         vm.expectRevert("SafeERC20/transfer-from-failed");
-        psm.setPocket(pocket2);
+        groveBasin.setPocket(pocket2);
 
         deal(address(usdc), pocket1, 1_000_000e6);
 
         vm.prank(owner);
-        psm.setPocket(pocket2);
+        groveBasin.setPocket(pocket2);
     }
 
 }
 
-contract PSMSetPocketSuccessTests is PSMTestBase {
+contract PSMSetPocketSuccessTests is GroveBasinTestBase {
 
     address pocket1 = makeAddr("pocket1");
     address pocket2 = makeAddr("pocket2");
@@ -64,79 +64,79 @@ contract PSMSetPocketSuccessTests is PSMTestBase {
 
     function test_setPocket_pocketIsPsm() public {
         vm.prank(owner);
-        psm.setPocket(address(psm));
+        groveBasin.setPocket(address(groveBasin));
 
-        deal(address(usdc), address(psm), 1_000_000e6);
+        deal(address(usdc), address(groveBasin), 1_000_000e6);
 
-        assertEq(usdc.balanceOf(address(psm)), 1_000_000e6);
+        assertEq(usdc.balanceOf(address(groveBasin)), 1_000_000e6);
         assertEq(usdc.balanceOf(pocket1),      0);
 
-        assertEq(psm.totalAssets(), 1_000_000e18);
+        assertEq(groveBasin.totalAssets(), 1_000_000e18);
 
-        assertEq(psm.pocket(), address(psm));
+        assertEq(groveBasin.pocket(), address(groveBasin));
 
         vm.prank(owner);
-        vm.expectEmit(address(psm));
-        emit PocketSet(address(psm), pocket1, 1_000_000e6);
-        psm.setPocket(pocket1);
+        vm.expectEmit(address(groveBasin));
+        emit PocketSet(address(groveBasin), pocket1, 1_000_000e6);
+        groveBasin.setPocket(pocket1);
 
-        assertEq(usdc.balanceOf(address(psm)), 0);
+        assertEq(usdc.balanceOf(address(groveBasin)), 0);
         assertEq(usdc.balanceOf(pocket1),      1_000_000e6);
 
-        assertEq(psm.totalAssets(), 1_000_000e18);
+        assertEq(groveBasin.totalAssets(), 1_000_000e18);
 
-        assertEq(psm.pocket(), pocket1);
+        assertEq(groveBasin.pocket(), pocket1);
     }
 
     function test_setPocket_pocketIsNotPsm() public {
         vm.prank(owner);
-        psm.setPocket(pocket1);
+        groveBasin.setPocket(pocket1);
 
         vm.prank(pocket1);
-        usdc.approve(address(psm), 1_000_000e6);
+        usdc.approve(address(groveBasin), 1_000_000e6);
 
         deal(address(usdc), address(pocket1), 1_000_000e6);
 
-        assertEq(usdc.allowance(pocket1, address(psm)), 1_000_000e6);
+        assertEq(usdc.allowance(pocket1, address(groveBasin)), 1_000_000e6);
 
         assertEq(usdc.balanceOf(pocket1), 1_000_000e6);
         assertEq(usdc.balanceOf(pocket2), 0);
 
-        assertEq(psm.totalAssets(), 1_000_000e18);
+        assertEq(groveBasin.totalAssets(), 1_000_000e18);
 
-        assertEq(psm.pocket(), pocket1);
+        assertEq(groveBasin.pocket(), pocket1);
 
         vm.prank(owner);
-        vm.expectEmit(address(psm));
+        vm.expectEmit(address(groveBasin));
         emit PocketSet(pocket1, pocket2, 1_000_000e6);
-        psm.setPocket(pocket2);
+        groveBasin.setPocket(pocket2);
 
-        assertEq(usdc.allowance(pocket1, address(psm)), 0);
+        assertEq(usdc.allowance(pocket1, address(groveBasin)), 0);
 
         assertEq(usdc.balanceOf(pocket1), 0);
         assertEq(usdc.balanceOf(pocket2), 1_000_000e6);
 
-        assertEq(psm.totalAssets(), 1_000_000e18);
+        assertEq(groveBasin.totalAssets(), 1_000_000e18);
 
-        assertEq(psm.pocket(), pocket2);
+        assertEq(groveBasin.pocket(), pocket2);
     }
 
     function test_setPocket_valueStaysConstant() public {
-        // NOTE: Need to set pocket to PSM because setUp sets pocket to `pocket`, and zero funds
+        // NOTE: Need to set pocket to GroveBasin because setUp sets pocket to `pocket`, and zero funds
         //       are transferred from `pocket1` to `pocket`
         vm.prank(owner);
-        psm.setPocket(address(psm));
+        groveBasin.setPocket(address(groveBasin));
 
         _deposit(address(usdc),  owner, 1_000_000e6);
         _deposit(address(usds),  owner, 1_000_000e18);
         _deposit(address(susds), owner, 800_000e18);
 
-        assertEq(psm.totalAssets(), 3_000_000e18);
+        assertEq(groveBasin.totalAssets(), 3_000_000e18);
 
         vm.prank(owner);
-        psm.setPocket(pocket1);
+        groveBasin.setPocket(pocket1);
 
-        assertEq(psm.totalAssets(), 3_000_000e18);
+        assertEq(groveBasin.totalAssets(), 3_000_000e18);
     }
 
 }

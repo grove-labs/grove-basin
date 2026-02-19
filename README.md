@@ -9,42 +9,42 @@
 
 ## Overview
 
-This repository contains the implementation of a Peg Stability Module (PSM) contract, which facilitates the swapping, depositing, and withdrawing of three given assets to maintain stability and ensure the peg of involved assets. The PSM supports both yield-bearing and non-yield-bearing assets.
+This repository contains the implementation of the Grove Basin contract, which facilitates the swapping, depositing, and withdrawing of tokenized credit, the collateral they can be redeemed to, and another stablecoin to unlock atomic swaps for tokenized credit holders. Grove Basin is a fork of [Spark PSM3](https://github.com/sparkdotfi/spark-psm).
 
-The PSM contract allows users to swap between USDC, USDS, and sUSDS, deposit any of the assets to mint shares, and withdraw any of the assets by burning shares.
+The Basin contract allows users to swap between a tokenized credit asset, its underlying collateral, and another stablecoin, deposit any of the assets to mint shares, and withdraw any of the assets by burning shares.
 
-The conversion between a stablecoin and `susds` is provided by a rate provider contract. The rate provider returns the conversion rate between `susds` and the stablecoin in 1e27 precision. The conversion between the stablecoins is one to one.
+The conversion between a stablecoin and the tokenized credit asset is provided by a rate provider contract. The rate provider returns the conversion rate between the tokenized credit asset and the stablecoin in 1e27 precision. The conversion between the stablecoins is determined by a different rate provider
 
-The conversion rate between assets and shares is based on the total value of assets within the PSM. This includes USDS and sUSDS held custody by the PSM, and USDC held custody by the `pocket`. The total value is calculated by converting the assets to their equivalent value in USD with 18 decimal precision. The shares represent the ownership of the underlying assets in the PSM. Since three assets are used, each with different precisions and values, they are converted to a common USD-denominated value for share conversions.
+The conversion rate between assets and shares is based on the total value of assets within Basin. The total value is calculated by converting the assets to their equivalent value in USD with 18 decimal precision. The shares represent the ownership of the underlying assets in Grove Basin. Since three assets are used, each with different precisions and values, they are converted to a common USD-denominated value for share conversions.
 
-For detailed implementation, refer to the contract code and `IPSM3` interface documentation.
+For detailed implementation, refer to the contract code and `IGroveBasin` interface documentation.
 
 ## Contracts
 
-- **`src/PSM3.sol`**: The core contract implementing the `IPSM3` interface, providing functionality for swapping, depositing, and withdrawing assets.
-- **`src/interfaces/IPSM3.sol`**: Defines the essential functions and events that the PSM contract implements.
+- **`src/GroveBasin.sol`**: The core contract implementing the `IGroveBasin` interface, providing functionality for swapping, depositing, and withdrawing assets.
+- **`src/interfaces/IGroveBasin.sol`**: Defines the essential functions and events that Grove Basin contract implements.
 
 ## [CRITICAL]: First Depositor Attack Prevention on Deployment
 
-On the deployment of the PSM, the deployer **MUST make an initial deposit to get AT LEAST 1e18 shares in order to protect the first depositor from getting attacked with a share inflation attack or DOS attack**. Technical details related to this can be found in `test/InflationAttack.t.sol`.
+On the deployment of Grove Basin, the deployer **MUST make an initial deposit to get AT LEAST 1e18 shares in order to protect the first depositor from getting attacked with a share inflation attack or DOS attack**. Technical details related to this can be found in `test/InflationAttack.t.sol`.
 
 The DOS attack is performed by:
-1. Attacker sends funds directly to the PSM. `totalAssets` now returns a non-zero value.
+1. Attacker sends funds directly to Grove Basin. `totalAssets` now returns a non-zero value.
 2. Victim calls deposit. `convertToShares` returns `amount * totalShares / totalValue`. In this case, `totalValue` is non-zero and `totalShares` is zero, so it performs `amount * 0 / totalValue` and returns zero.
-3. The victim has `transferFrom` called moving their funds into the PSM, but they receive zero shares so they cannot recover any of their underlying assets. This renders the PSM unusable for all users since this issue will persist. `totalShares` can never be increased in this state.
+3. The victim has `transferFrom` called moving their funds into Grove Basin, but they receive zero shares so they cannot recover any of their underlying assets. This renders Grove Basin unusable for all users since this issue will persist. `totalShares` can never be increased in this state.
 
-The deployment library (`deploy/PSM3Deploy.sol`) in this repo contains logic for the deployer to perform this initial deposit, so it is **HIGHLY RECOMMENDED** to use this deployment library when deploying the PSM. Reasoning for the technical implementation approach taken is outlined in more detail [here](https://github.com/marsfoundation/spark-psm/pull/2).
+The deployment library (`deploy/GroveBasinDeploy.sol`) in this repo contains logic for the deployer to perform this initial deposit, so it is **HIGHLY RECOMMENDED** to use this deployment library when deploying Grove Basin. Reasoning for the technical implementation approach taken is outlined in more detail [here](https://github.com/marsfoundation/spark-psm/pull/2).
 
-## PSM Contract Details
+## Grove Basin Contract Details
 
 ### State Variables and Immutables
 
 - **`usdc`**: IERC20 interface of USDC.
 - **`usds`**: IERC20 interface of USDS.
 - **`susds`**: IERC20 interface of sUSDS. Note that this is an ERC20 and not a ERC4626 because it's not on mainnet.
-- **`pocket`**: Address that holds custody of USDC. The `pocket` can deploy USDC to yield-bearing strategies. Defaulted to the address of the PSM itself.
+- **`pocket`**: Address that holds custody of USDC. The `pocket` can deploy USDC to yield-bearing strategies. Defaulted to the address of Grove Basin itself.
 - **`rateProvider`**: Contract that returns a conversion rate between and sUSDS and USD in 1e27 precision.
-- **`totalShares`**: Total shares in the PSM. Shares represent the ownership of the underlying assets in the PSM.
+- **`totalShares`**: Total shares in Grove Basin. Shares represent the ownership of the underlying assets in Grove Basin.
 - **`shares`**: Mapping of user addresses to their shares.
 
 ### Functions
@@ -60,11 +60,11 @@ The deployment library (`deploy/PSM3Deploy.sol`) in this repo contains logic for
 
 #### Liquidity Provision Functions
 
-- **`deposit`**: Deposits assets into the PSM, minting new shares. Includes a referral code.
-- **`withdraw`**: Withdraws assets from the PSM by burning shares. Ensures the user has sufficient shares for the withdrawal and adjusts the total shares accordingly. Includes a referral code.
+- **`deposit`**: Deposits assets into Grove Basin, minting new shares. Includes a referral code.
+- **`withdraw`**: Withdraws assets from Grove Basin by burning shares. Ensures the user has sufficient shares for the withdrawal and adjusts the total shares accordingly. Includes a referral code.
 
 #### Redemption Functions
-- **`initiateRedeem`**: Initiates a redemption of TBill for collateral. This function is only available to the `owner` of the PSM. It transfers the specified amount of TBill from the `pocket` to the PSM and emits a `RedeemInitiated` event.
+- **`initiateRedeem`**: Initiates a redemption of TBill for collateral. This function is only available to the `owner` of Grove Basin. It transfers the specified amount of TBill from the `pocket` to Grove Basin and emits a `RedeemInitiated` event.
 
 #### Preview Functions
 
@@ -83,7 +83,7 @@ NOTE: These functions do not round in the same way as preview functions, so they
 
 #### Asset Value Functions
 
-- **`totalAssets`**: Returns the total value of all assets held by the PSM denominated in USD with 18 decimal precision.
+- **`totalAssets`**: Returns the total value of all assets held by Grove Basin denominated in USD with 18 decimal precision.
 
 ### Events
 

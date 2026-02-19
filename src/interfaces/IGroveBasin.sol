@@ -3,14 +3,14 @@ pragma solidity ^0.8.13;
 
 import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
 
-interface IPSM3 {
+interface IGroveBasin {
 
     /**********************************************************************************************/
     /*** Events                                                                                 ***/
     /**********************************************************************************************/
 
     /**
-     *  @dev   Emitted when a new pocket is set in the PSM, transferring the balance of USDC.
+     *  @dev   Emitted when a new pocket is set in the GroveBasin, transferring the balance of USDC.
      *         of the old pocket to the new pocket.
      *  @param oldPocket         Address of the old `pocket`.
      *  @param newPocket         Address of the new `pocket`.
@@ -23,7 +23,7 @@ interface IPSM3 {
     );
 
     /**
-     *  @dev   Emitted when an asset is swapped in the PSM.
+     *  @dev   Emitted when an asset is swapped in the GroveBasin.
      *  @param assetIn       Address of the asset swapped in.
      *  @param assetOut      Address of the asset swapped out.
      *  @param sender        Address of the sender of the swap.
@@ -43,7 +43,7 @@ interface IPSM3 {
     );
 
     /**
-     *  @dev   Emitted when an asset is deposited into the PSM.
+     *  @dev   Emitted when an asset is deposited into the GroveBasin.
      *  @param asset           Address of the asset deposited.
      *  @param user            Address of the user that deposited the asset.
      *  @param receiver        Address of the receiver of the resulting shares from the deposit.
@@ -59,7 +59,7 @@ interface IPSM3 {
     );
 
     /**
-     *  @dev   Emitted when an asset is withdrawn from the PSM.
+     *  @dev   Emitted when an asset is withdrawn from the GroveBasin.
      *  @param asset           Address of the asset withdrawn.
      *  @param user            Address of the user that withdrew the asset.
      *  @param receiver        Address of the receiver of the withdrawn assets.
@@ -92,28 +92,28 @@ interface IPSM3 {
 
     /**
      *  @dev    Returns the IERC20 interface representing sUSDS. This asset is the yield-bearing
-     *          asset in the PSM. The value of this asset is queried from the rate provider.
+     *          asset in the GroveBasin. The value of this asset is queried from the rate provider.
      *  @return The IERC20 interface of sUSDS.
      */
     function susds() external view returns (IERC20);
 
     /**
      *  @dev    Returns the address of the pocket, an address that holds custody of USDC in the
-     *          PSM and can deploy it to yield-bearing strategies. Settable by the owner.
+     *          GroveBasin and can deploy it to yield-bearing strategies. Settable by the owner.
      *  @return The address of the pocket.
      */
     function pocket() external view returns (address);
 
     /**
      *  @dev    Returns the address of the rate provider, a contract that provides the conversion
-     *          rate between sUSDS and the other two assets in the PSM (e.g., sUSDS to USD).
+     *          rate between sUSDS and the other two assets in the GroveBasin (e.g., sUSDS to USD).
      *  @return The address of the rate provider.
      */
     function rateProvider() external view returns (address);
 
     /**
-     *  @dev    Returns the total number of shares in the PSM. Shares represent ownership of the
-     *          assets in the PSM and can be converted to assets at any time.
+     *  @dev    Returns the total number of shares in the GroveBasin. Shares represent ownership of the
+     *          assets in the GroveBasin and can be converted to assets at any time.
      *  @return The total number of shares.
      */
     function totalShares() external view returns (uint256);
@@ -130,9 +130,9 @@ interface IPSM3 {
     /**********************************************************************************************/
 
     /**
-     *  @dev    Sets the address of the pocket, an address that holds custody of USDC in the PSM
+     *  @dev    Sets the address of the pocket, an address that holds custody of USDC in the GroveBasin
      *          and can deploy it to yield-bearing strategies. This function will transfer the
-     *          balance of USDC in the PSM to the new pocket. Callable only by the owner.
+     *          balance of USDC in the GroveBasin to the new pocket. Callable only by the owner.
      *  @param  newPocket Address of the new pocket.
      */
     function setPocket(address newPocket) external;
@@ -142,10 +142,10 @@ interface IPSM3 {
     /**********************************************************************************************/
 
     /**
-     *  @dev    Swaps a specified amount of assetIn for assetOut in the PSM. The amount swapped is
+     *  @dev    Swaps a specified amount of assetIn for assetOut in the GroveBasin. The amount swapped is
      *          converted based on the current value of the two assets used in the swap. This
-     *          function will revert if there is not enough balance in the PSM to facilitate the
-     *          swap. Both assets must be supported in the PSM in order to succeed.
+     *          function will revert if there is not enough balance in the GroveBasin to facilitate the
+     *          swap. Both assets must be supported in the GroveBasin in order to succeed.
      *  @param  assetIn      Address of the ERC-20 asset to swap in.
      *  @param  assetOut     Address of the ERC-20 asset to swap out.
      *  @param  amountIn     Amount of the asset to swap in.
@@ -164,10 +164,10 @@ interface IPSM3 {
     ) external returns (uint256 amountOut);
 
     /**
-     *  @dev    Swaps a derived amount of assetIn for a specific amount of assetOut in the PSM. The
+     *  @dev    Swaps a derived amount of assetIn for a specific amount of assetOut in the GroveBasin. The
      *          amount swapped is converted based on the current value of the two assets used in
-     *          the swap. This function will revert if there is not enough balance in the PSM to
-     *          facilitate the swap. Both assets must be supported in the PSM in order to succeed.
+     *          the swap. This function will revert if there is not enough balance in the GroveBasin to
+     *          facilitate the swap. Both assets must be supported in the GroveBasin in order to succeed.
      *  @param  assetIn      Address of the ERC-20 asset to swap in.
      *  @param  assetOut     Address of the ERC-20 asset to swap out.
      *  @param  amountOut    Amount of the asset to receive from the swap.
@@ -190,26 +190,26 @@ interface IPSM3 {
     /**********************************************************************************************/
 
     /**
-     *  @dev    Deposits an amount of a given asset into the PSM. Must be one of the supported
+     *  @dev    Deposits an amount of a given asset into the GroveBasin. Must be one of the supported
      *          assets in order to succeed. The amount deposited is converted to shares based on
      *          the current exchange rate.
      *  @param  asset           Address of the ERC-20 asset to deposit.
      *  @param  receiver        Address of the receiver of the resulting shares from the deposit.
-     *  @param  assetsToDeposit Amount of the asset to deposit into the PSM.
+     *  @param  assetsToDeposit Amount of the asset to deposit into the GroveBasin.
      *  @return newShares       Number of shares minted to the user.
      */
     function deposit(address asset, address receiver, uint256 assetsToDeposit)
         external returns (uint256 newShares);
 
     /**
-     *  @dev    Withdraws an amount of a given asset from the PSM up to `maxAssetsToWithdraw`.
+     *  @dev    Withdraws an amount of a given asset from the GroveBasin up to `maxAssetsToWithdraw`.
      *          Must be one of the supported assets in order to succeed. The amount withdrawn is
-     *          the minimum of the balance of the PSM, the max amount, and the max amount of assets
+     *          the minimum of the balance of the GroveBasin, the max amount, and the max amount of assets
      *          that the user's shares can be converted to.
      *  @param  asset               Address of the ERC-20 asset to withdraw.
      *  @param  receiver            Address of the receiver of the withdrawn assets.
      *  @param  maxAssetsToWithdraw Max amount that the user is willing to withdraw.
-     *  @return assetsWithdrawn     Resulting amount of the asset withdrawn from the PSM.
+     *  @return assetsWithdrawn     Resulting amount of the asset withdrawn from the GroveBasin.
      */
     function withdraw(
         address asset,
@@ -225,7 +225,7 @@ interface IPSM3 {
      *  @dev    View function that returns the exact number of shares that would be minted for a
      *          given asset and amount to deposit.
      *  @param  asset  Address of the ERC-20 asset to deposit.
-     *  @param  assets Amount of the asset to deposit into the PSM.
+     *  @param  assets Amount of the asset to deposit into the GroveBasin.
      *  @return shares Number of shares to be minted to the user.
      */
     function previewDeposit(address asset, uint256 assets) external view returns (uint256 shares);
@@ -233,13 +233,13 @@ interface IPSM3 {
     /**
      *  @dev    View function that returns the exact number of assets that would be withdrawn and
      *          corresponding shares that would be burned in a withdrawal for a given asset and max
-     *          withdraw amount. The amount returned is the minimum of the balance of the PSM,
+     *          withdraw amount. The amount returned is the minimum of the balance of the GroveBasin,
      *          the max amount, and the max amount of assets that the user's shares
      *          can be converted to.
      *  @param  asset               Address of the ERC-20 asset to withdraw.
      *  @param  maxAssetsToWithdraw Max amount that the user is willing to withdraw.
      *  @return sharesToBurn        Number of shares that would be burned in the withdrawal.
-     *  @return assetsWithdrawn     Resulting amount of the asset withdrawn from the PSM.
+     *  @return assetsWithdrawn     Resulting amount of the asset withdrawn from the GroveBasin.
      */
     function previewWithdraw(address asset, uint256 maxAssetsToWithdraw)
         external view returns (uint256 sharesToBurn, uint256 assetsWithdrawn);
@@ -295,7 +295,7 @@ interface IPSM3 {
 
     /**
      *  @dev    View function that converts an amount of assetValue (18 decimal value denominated in
-     *          USDC and USDS) to shares in the PSM based on the current exchange rate.
+     *          USDC and USDS) to shares in the GroveBasin based on the current exchange rate.
      *          Note that this rounds down on calculation so is intended to be used for quoting the
      *          current exchange rate.
      *  @param  assetValue 18 decimal value denominated in USDC (e.g., 1e6 USDC = 1e18)
@@ -304,7 +304,7 @@ interface IPSM3 {
     function convertToShares(uint256 assetValue) external view returns (uint256);
 
     /**
-     *  @dev    View function that converts an amount of a given asset to shares in the PSM based
+     *  @dev    View function that converts an amount of a given asset to shares in the GroveBasin based
      *          on the current exchange rate. Note that this rounds down on calculation so is
      *          intended to be used for quoting the current exchange rate.
      *  @param  asset  Address of the ERC-20 asset to convert to shares.
@@ -318,7 +318,7 @@ interface IPSM3 {
     /**********************************************************************************************/
 
     /**
-     *  @dev View function that returns the total value of the balance of all assets in the PSM
+     *  @dev View function that returns the total value of the balance of all assets in the GroveBasin
      *       converted to USDC/USDS terms denominated in 18 decimal precision.
      */
     function totalAssets() external view returns (uint256);

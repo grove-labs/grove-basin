@@ -5,7 +5,7 @@ import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
 import { HandlerBase } from "test/invariant/handlers/HandlerBase.sol";
 
-import { PSM3 } from "src/PSM3.sol";
+import { GroveBasin } from "src/GroveBasin.sol";
 
 contract TransferHandler is HandlerBase {
 
@@ -16,7 +16,7 @@ contract TransferHandler is HandlerBase {
     mapping(address asset => uint256) public transfersIn;
 
     constructor(
-        PSM3      psm_,
+        GroveBasin      psm_,
         MockERC20 usdc,
         MockERC20 usds,
         MockERC20 susds
@@ -36,15 +36,15 @@ contract TransferHandler is HandlerBase {
         address   sender = makeAddr(senderSeed);
 
         // 2. Cache starting state
-        uint256 startingConversion = psm.convertToAssetValue(1e18);
-        uint256 startingValue      = psm.totalAssets();
+        uint256 startingConversion = groveBasin.convertToAssetValue(1e18);
+        uint256 startingValue      = groveBasin.totalAssets();
 
         // Bounding to 10 million here because 1 trillion introduces unrealistic conditions with
         // large rounding errors. Would rather keep tolerances smaller with a lower upper bound
         // on transfer amounts.
         amount = _bound(amount, 1, 10_000_000 * 10 ** asset.decimals());
 
-        address custodian = address(asset) == address(assets[0]) ? psm.pocket() : address(psm);
+        address custodian = address(asset) == address(assets[0]) ? groveBasin.pocket() : address(groveBasin);
 
         // 3. Perform action against protocol
         asset.mint(sender, amount);
@@ -56,15 +56,15 @@ contract TransferHandler is HandlerBase {
 
         // 5. Perform action-specific assertions
         assertGe(
-            psm.convertToAssetValue(1e18) + 1,
+            groveBasin.convertToAssetValue(1e18) + 1,
             startingConversion,
             "TransferHandler/transfer/conversion-rate-decrease"
         );
 
         assertGe(
-            psm.totalAssets() + 1,
+            groveBasin.totalAssets() + 1,
             startingValue,
-            "TransferHandler/transfer/psm-total-value-decrease"
+            "TransferHandler/transfer/groveBasin-total-value-decrease"
         );
 
         // 6. Update metrics tracking state

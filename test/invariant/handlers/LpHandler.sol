@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
-import { HandlerBase, PSM3 } from "test/invariant/handlers/HandlerBase.sol";
+import { HandlerBase, GroveBasin } from "test/invariant/handlers/HandlerBase.sol";
 
 contract LpHandler is HandlerBase {
 
@@ -18,7 +18,7 @@ contract LpHandler is HandlerBase {
     mapping(address user => mapping(address asset => uint256 withdrawals)) public lpWithdrawals;
 
     constructor(
-        PSM3      psm_,
+        GroveBasin      psm_,
         MockERC20 usdc,
         MockERC20 usds,
         MockERC20 susds,
@@ -49,14 +49,14 @@ contract LpHandler is HandlerBase {
         amount = _bound(amount, 1, 1e12 * 10 ** asset.decimals());
 
         // 2. Cache starting state
-        uint256 startingConversion = psm.convertToAssetValue(1e18);
-        uint256 startingValue      = psm.totalAssets();
+        uint256 startingConversion = groveBasin.convertToAssetValue(1e18);
+        uint256 startingValue      = groveBasin.totalAssets();
 
         // 3. Perform action against protocol
         vm.startPrank(lp);
         asset.mint(lp, amount);
-        asset.approve(address(psm), amount);
-        psm.deposit(address(asset), lp, amount);
+        asset.approve(address(groveBasin), amount);
+        groveBasin.deposit(address(asset), lp, amount);
         vm.stopPrank();
 
         // 4. Update ghost variable(s)
@@ -66,7 +66,7 @@ contract LpHandler is HandlerBase {
 
         // Larger tolerance for rounding errors because of asset valuation changing
         assertApproxEqAbs(
-            psm.convertToAssetValue(1e18),
+            groveBasin.convertToAssetValue(1e18),
             startingConversion,
             1e12,
             "LpHandler/deposit/conversion-rate-change"
@@ -74,15 +74,15 @@ contract LpHandler is HandlerBase {
 
         // Exchange rate always increases, never decreases from rounding
         assertGe(
-            psm.convertToAssetValue(1e18),
+            groveBasin.convertToAssetValue(1e18),
             startingConversion,
             "LpHandler/deposit/conversion-rate-decrease"
         );
 
         assertGe(
-            psm.totalAssets() + 1,
+            groveBasin.totalAssets() + 1,
             startingValue,
-            "LpHandler/deposit/psm-total-value-decrease"
+            "LpHandler/deposit/groveBasin-total-value-decrease"
         );
 
         // 6. Update metrics tracking state
@@ -97,12 +97,12 @@ contract LpHandler is HandlerBase {
         amount = _bound(amount, 1, 1e12 * 10 ** asset.decimals());
 
         // 2. Cache starting state
-        uint256 startingConversion = psm.convertToAssetValue(1e18);
-        uint256 startingValue      = psm.totalAssets();
+        uint256 startingConversion = groveBasin.convertToAssetValue(1e18);
+        uint256 startingValue      = groveBasin.totalAssets();
 
         // 3. Perform action against protocol
         vm.prank(lp);
-        uint256 withdrawAmount = psm.withdraw(address(asset), lp, amount);
+        uint256 withdrawAmount = groveBasin.withdraw(address(asset), lp, amount);
         vm.stopPrank();
 
         // 4. Update ghost variable(s)
@@ -112,7 +112,7 @@ contract LpHandler is HandlerBase {
 
         // Larger tolerance for rounding errors because of burning more shares on USDC withdraw
         assertApproxEqAbs(
-            psm.convertToAssetValue(1e18),
+            groveBasin.convertToAssetValue(1e18),
             startingConversion,
             1e12,
             "LpHandler/withdraw/conversion-rate-change"
@@ -120,15 +120,15 @@ contract LpHandler is HandlerBase {
 
         // Exchange rate always increases, never decreases from rounding
         assertGe(
-            psm.convertToAssetValue(1e18),
+            groveBasin.convertToAssetValue(1e18),
             startingConversion,
             "LpHandler/withdraw/conversion-rate-decrease"
         );
 
         assertLe(
-            psm.totalAssets(),
+            groveBasin.totalAssets(),
             startingValue + 1,
-            "LpHandler/withdraw/psm-total-value-increase"
+            "LpHandler/withdraw/groveBasin-total-value-increase"
         );
 
         // 6. Update metrics tracking state

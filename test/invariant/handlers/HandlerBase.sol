@@ -7,14 +7,14 @@ import { StdCheatsSafe } from "forge-std/StdCheats.sol";
 import { stdMath }       from "forge-std/StdMath.sol";
 import { StdUtils }      from "forge-std/StdUtils.sol";
 
-import { PSM3 } from "src/PSM3.sol";
+import { GroveBasin } from "src/GroveBasin.sol";
 
 contract HandlerBase is CommonBase, StdCheatsSafe, StdUtils {
 
-    PSM3 public psm;
+    GroveBasin public groveBasin;
 
-    constructor(PSM3 psm_) {
-        psm = psm_;
+    constructor(GroveBasin psm_) {
+        groveBasin = psm_;
     }
 
     function _hash(uint256 number_, string memory salt) internal pure returns (uint256 hash_) {

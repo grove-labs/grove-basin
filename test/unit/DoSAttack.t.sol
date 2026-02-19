@@ -3,9 +3,9 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 
-import { PSMTestBase } from "test/PSMTestBase.sol";
+import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
-contract InflationAttackTests is PSMTestBase {
+contract InflationAttackTests is GroveBasinTestBase {
 
     address user1 = makeAddr("user1");
     address user2 = makeAddr("user2");
@@ -17,9 +17,9 @@ contract InflationAttackTests is PSMTestBase {
 
         assertEq(usdc.balanceOf(pocket), 100e6);
 
-        assertEq(psm.totalShares(), 0);
-        assertEq(psm.shares(user1), 0);
-        assertEq(psm.shares(user2), 0);
+        assertEq(groveBasin.totalShares(), 0);
+        assertEq(groveBasin.shares(user1), 0);
+        assertEq(groveBasin.shares(user2), 0);
 
         _deposit(address(usdc), address(user1), 1_000_000e6);
 
@@ -29,9 +29,9 @@ contract InflationAttackTests is PSMTestBase {
         // to recover them.
         assertEq(usdc.balanceOf(pocket), 1_000_100e6);
 
-        assertEq(psm.totalShares(), 0);
-        assertEq(psm.shares(user1), 0);
-        assertEq(psm.shares(user2), 0);
+        assertEq(groveBasin.totalShares(), 0);
+        assertEq(groveBasin.shares(user1), 0);
+        assertEq(groveBasin.shares(user2), 0);
 
         // This issue is not related to the first deposit only because totalShares cannot
         // get above zero.
@@ -39,9 +39,9 @@ contract InflationAttackTests is PSMTestBase {
 
         assertEq(usdc.balanceOf(pocket), 2_000_100e6);
 
-        assertEq(psm.totalShares(), 0);
-        assertEq(psm.shares(user1), 0);
-        assertEq(psm.shares(user2), 0);
+        assertEq(groveBasin.totalShares(), 0);
+        assertEq(groveBasin.shares(user1), 0);
+        assertEq(groveBasin.shares(user2), 0);
     }
 
 }

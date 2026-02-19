@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 
-import { PSM3 } from "src/PSM3.sol";
+import { GroveBasin } from "src/GroveBasin.sol";
 
 import { IRateProviderLike } from "src/interfaces/IRateProviderLike.sol";
 
@@ -11,12 +11,12 @@ import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 
-contract PSMTestBase is Test {
+contract GroveBasinTestBase is Test {
 
     address public owner  = makeAddr("owner");
     address public pocket = makeAddr("pocket");
 
-    PSM3 public psm;
+    GroveBasin public groveBasin;
 
     MockERC20 public usdc;
     MockERC20 public usds;
@@ -26,10 +26,10 @@ contract PSMTestBase is Test {
 
     MockRateProvider public mockRateProvider;  // Interface used for mocking
 
-    modifier assertAtomicPsmValueDoesNotChange {
-        uint256 beforeValue = _getPsmValue();
+    modifier assertAtomicGroveBasinValueDoesNotChange {
+        uint256 beforeValue = _getGroveBasinValue();
         _;
-        assertEq(_getPsmValue(), beforeValue);
+        assertEq(_getGroveBasinValue(), beforeValue);
     }
 
     // 1,000,000,000,000 of each token
@@ -49,23 +49,23 @@ contract PSMTestBase is Test {
 
         rateProvider = IRateProviderLike(address(mockRateProvider));
 
-        psm = new PSM3(owner, address(usdc), address(usds), address(susds), address(rateProvider));
+        groveBasin = new GroveBasin(owner, address(usdc), address(usds), address(susds), address(rateProvider));
 
         vm.prank(owner);
-        psm.setPocket(pocket);
+        groveBasin.setPocket(pocket);
 
         vm.prank(pocket);
-        usdc.approve(address(psm), type(uint256).max);
+        usdc.approve(address(groveBasin), type(uint256).max);
 
         vm.label(address(usds),  "USDS");
         vm.label(address(usdc),  "USDC");
         vm.label(address(susds), "sUSDS");
     }
 
-    function _getPsmValue() internal view returns (uint256) {
-        return (susds.balanceOf(address(psm)) * rateProvider.getConversionRate() / 1e27)
-            + usdc.balanceOf(psm.pocket()) * 1e12
-            + usds.balanceOf(address(psm));
+    function _getGroveBasinValue() internal view returns (uint256) {
+        return (susds.balanceOf(address(groveBasin)) * rateProvider.getConversionRate() / 1e27)
+            + usdc.balanceOf(groveBasin.pocket()) * 1e12
+            + usds.balanceOf(address(groveBasin));
     }
 
     function _deposit(address asset, address user, uint256 amount) internal {
@@ -75,8 +75,8 @@ contract PSMTestBase is Test {
     function _deposit(address asset, address user, address receiver, uint256 amount) internal {
         vm.startPrank(user);
         MockERC20(asset).mint(user, amount);
-        MockERC20(asset).approve(address(psm), amount);
-        psm.deposit(asset, receiver, amount);
+        MockERC20(asset).approve(address(groveBasin), amount);
+        groveBasin.deposit(asset, receiver, amount);
         vm.stopPrank();
     }
 
@@ -86,7 +86,7 @@ contract PSMTestBase is Test {
 
     function _withdraw(address asset, address user, address receiver, uint256 amount) internal {
         vm.prank(user);
-        psm.withdraw(asset, receiver, amount);
+        groveBasin.withdraw(asset, receiver, amount);
         vm.stopPrank();
     }
 

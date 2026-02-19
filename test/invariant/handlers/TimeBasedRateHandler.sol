@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.13;
 
-import { HandlerBase, PSM3 } from "test/invariant/handlers/HandlerBase.sol";
+import { HandlerBase, GroveBasin } from "test/invariant/handlers/HandlerBase.sol";
 
 import { StdCheats } from "forge-std/StdCheats.sol";
 
@@ -19,7 +19,7 @@ contract TimeBasedRateHandler is HandlerBase, StdCheats {
     uint256 public setSUSDSDataCount;
     uint256 public warpCount;
 
-    constructor(PSM3 psm_, SSRAuthOracle ssrOracle_) HandlerBase(psm_) {
+    constructor(GroveBasin psm_, SSRAuthOracle ssrOracle_) HandlerBase(psm_) {
         ssrOracle = ssrOracle_;
     }
 
@@ -33,8 +33,8 @@ contract TimeBasedRateHandler is HandlerBase, StdCheats {
         uint256 chi = ssrOracle.getConversionRate(rho);
 
         // 2. Cache starting state
-        uint256 startingConversion = psm.convertToAssetValue(1e18);
-        uint256 startingValue      = psm.totalAssets();
+        uint256 startingConversion = groveBasin.convertToAssetValue(1e18);
+        uint256 startingValue      = groveBasin.totalAssets();
 
         // 3. Perform action against protocol
         ssrOracle.setSUSDSData(ISSROracle.SUSDSData({
@@ -45,15 +45,15 @@ contract TimeBasedRateHandler is HandlerBase, StdCheats {
 
         // 4. Perform action-specific assertions
         assertGe(
-            psm.convertToAssetValue(1e18) + 1,
+            groveBasin.convertToAssetValue(1e18) + 1,
             startingConversion,
             "TimeBasedRateHandler/getSUSDSData/conversion-rate-decrease"
         );
 
         assertGe(
-            psm.totalAssets() + 1,
+            groveBasin.totalAssets() + 1,
             startingValue,
-            "TimeBasedRateHandler/getSUSDSData/psm-total-value-decrease"
+            "TimeBasedRateHandler/getSUSDSData/groveBasin-total-value-decrease"
         );
 
         // 5. Update metrics tracking state
@@ -65,23 +65,23 @@ contract TimeBasedRateHandler is HandlerBase, StdCheats {
         uint256 warpTime = _bound(skipTime, 0, 10 days);
 
         // 2. Cache starting state
-        uint256 startingConversion = psm.convertToAssetValue(1e18);
-        uint256 startingValue      = psm.totalAssets();
+        uint256 startingConversion = groveBasin.convertToAssetValue(1e18);
+        uint256 startingValue      = groveBasin.totalAssets();
 
         // 3. Perform action against protocol
         skip(warpTime);
 
         // 4. Perform action-specific assertions
         assertGe(
-            psm.convertToAssetValue(1e18),
+            groveBasin.convertToAssetValue(1e18),
             startingConversion,
             "RateSetterHandler/warp/conversion-rate-decrease"
         );
 
         assertGe(
-            psm.totalAssets(),
+            groveBasin.totalAssets(),
             startingValue,
-            "RateSetterHandler/warp/psm-total-value-decrease"
+            "RateSetterHandler/warp/groveBasin-total-value-decrease"
         );
 
         // 5. Update metrics tracking state
