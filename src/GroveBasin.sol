@@ -328,12 +328,12 @@ contract GroveBasin is IGroveBasin, Ownable {
         internal view returns (uint256 quoteAmount)
     {
         if (asset == address(secondaryToken)) {
-            if      (quoteAsset == address(collateralToken)) return _convertOneToOne(amount, _secondaryTokenPrecision, _collateralTokenPrecision, roundUp);
+            if      (quoteAsset == address(collateralToken)) revert("GroveBasin/invalid-swap");
             else if (quoteAsset == address(creditToken))     return _convertToCreditToken(amount, _secondaryTokenPrecision, roundUp);
         }
 
         else if (asset == address(collateralToken)) {
-            if      (quoteAsset == address(secondaryToken)) return _convertOneToOne(amount, _collateralTokenPrecision, _secondaryTokenPrecision, roundUp);
+            if      (quoteAsset == address(secondaryToken)) revert("GroveBasin/invalid-swap");
             else if (quoteAsset == address(creditToken))    return _convertToCreditToken(amount, _collateralTokenPrecision, roundUp);
         }
 
@@ -369,19 +369,6 @@ contract GroveBasin is IGroveBasin, Ownable {
             Math.ceilDiv(amount * rate, 1e27) * assetPrecision,
             _creditTokenPrecision
         );
-    }
-
-    function _convertOneToOne(
-        uint256 amount,
-        uint256 assetPrecision,
-        uint256 convertAssetPrecision,
-        bool roundUp
-    )
-        internal pure returns (uint256)
-    {
-        if (!roundUp) return amount * convertAssetPrecision / assetPrecision;
-
-        return Math.ceilDiv(amount * convertAssetPrecision, assetPrecision);
     }
 
     /**********************************************************************************************/

@@ -55,6 +55,16 @@ contract GroveBasinSwapExactInFailureTests is GroveBasinTestBase {
         groveBasin.swapExactIn(address(creditToken), address(creditToken), 100e6, 80e18, receiver, 0);
     }
 
+    function test_swapExactIn_collateralTokenToSecondaryToken() public {
+        vm.expectRevert("GroveBasin/invalid-swap");
+        groveBasin.swapExactIn(address(collateralToken), address(secondaryToken), 100e18, 100e6, receiver, 0);
+    }
+
+    function test_swapExactIn_secondaryTokenToCollateralToken() public {
+        vm.expectRevert("GroveBasin/invalid-swap");
+        groveBasin.swapExactIn(address(secondaryToken), address(collateralToken), 100e6, 100e18, receiver, 0);
+    }
+
     function test_swapExactIn_minAmountOutBoundary() public {
         secondaryToken.mint(swapper, 100e6);
 
@@ -192,36 +202,17 @@ contract GroveBasinSwapExactInSuccessTestsBase is GroveBasinTestBase {
 
 contract GroveBasinSwapExactInCollateralTokenAssetInTests is GroveBasinSwapExactInSuccessTestsBase {
 
-    function test_swapExactIn_collateralTokenToSecondaryToken_sameReceiver() public assertAtomicGroveBasinValueDoesNotChange {
-        _swapExactInTest(collateralToken, secondaryToken, 100e18, 100e6, swapper, swapper);
+    function test_swapExactIn_collateralTokenToSecondaryToken_reverts() public {
+        vm.expectRevert("GroveBasin/invalid-swap");
+        groveBasin.swapExactIn(address(collateralToken), address(secondaryToken), 100e18, 100e6, swapper, 0);
     }
 
     function test_swapExactIn_collateralTokenToCreditToken_sameReceiver() public assertAtomicGroveBasinValueDoesNotChange {
         _swapExactInTest(collateralToken, creditToken, 100e18, 80e18, swapper, swapper);
     }
 
-    function test_swapExactIn_collateralTokenToSecondaryToken_differentReceiver() public assertAtomicGroveBasinValueDoesNotChange {
-        _swapExactInTest(collateralToken, secondaryToken, 100e18, 100e6, swapper, receiver);
-    }
-
     function test_swapExactIn_collateralTokenToCreditToken_differentReceiver() public assertAtomicGroveBasinValueDoesNotChange {
         _swapExactInTest(collateralToken, creditToken, 100e18, 80e18, swapper, receiver);
-    }
-
-    function testFuzz_swapExactIn_collateralTokenToSecondaryToken(
-        uint256 amountIn,
-        address fuzzSwapper,
-        address fuzzReceiver
-    ) public {
-        vm.assume(fuzzSwapper  != address(groveBasin));
-        vm.assume(fuzzSwapper  != address(pocket));
-        vm.assume(fuzzReceiver != address(groveBasin));
-        vm.assume(fuzzReceiver != address(pocket));
-        vm.assume(fuzzReceiver != address(0));
-
-        amountIn = _bound(amountIn, 1, COLLATERAL_TOKEN_MAX);  // Zero amount reverts
-        uint256 amountOut = amountIn / 1e12;
-        _swapExactInTest(collateralToken, secondaryToken, amountIn, amountOut, fuzzSwapper, fuzzReceiver);
     }
 
     function testFuzz_swapExactIn_collateralTokenToCreditToken(
@@ -249,36 +240,17 @@ contract GroveBasinSwapExactInCollateralTokenAssetInTests is GroveBasinSwapExact
 
 contract GroveBasinSwapExactInSecondaryTokenAssetInTests is GroveBasinSwapExactInSuccessTestsBase {
 
-    function test_swapExactIn_secondaryTokenToCollateralToken_sameReceiver() public assertAtomicGroveBasinValueDoesNotChange {
-        _swapExactInTest(secondaryToken, collateralToken, 100e6, 100e18, swapper, swapper);
+    function test_swapExactIn_secondaryTokenToCollateralToken_reverts() public {
+        vm.expectRevert("GroveBasin/invalid-swap");
+        groveBasin.swapExactIn(address(secondaryToken), address(collateralToken), 100e6, 100e18, swapper, 0);
     }
 
     function test_swapExactIn_secondaryTokenToCreditToken_sameReceiver() public assertAtomicGroveBasinValueDoesNotChange {
         _swapExactInTest(secondaryToken, creditToken, 100e6, 80e18, swapper, swapper);
     }
 
-    function test_swapExactIn_secondaryTokenToCollateralToken_differentReceiver() public assertAtomicGroveBasinValueDoesNotChange {
-        _swapExactInTest(secondaryToken, collateralToken, 100e6, 100e18, swapper, receiver);
-    }
-
     function test_swapExactIn_secondaryTokenToCreditToken_differentReceiver() public assertAtomicGroveBasinValueDoesNotChange {
         _swapExactInTest(secondaryToken, creditToken, 100e6, 80e18, swapper, receiver);
-    }
-
-    function testFuzz_swapExactIn_secondaryTokenToCollateralToken(
-        uint256 amountIn,
-        address fuzzSwapper,
-        address fuzzReceiver
-    ) public {
-        vm.assume(fuzzSwapper  != address(groveBasin));
-        vm.assume(fuzzSwapper  != address(pocket));
-        vm.assume(fuzzReceiver != address(groveBasin));
-        vm.assume(fuzzReceiver != address(pocket));
-        vm.assume(fuzzReceiver != address(0));
-
-        amountIn = _bound(amountIn, 1, SECONDARY_TOKEN_MAX);  // Zero amount reverts
-        uint256 amountOut = amountIn * 1e12;
-        _swapExactInTest(secondaryToken, collateralToken, amountIn, amountOut, fuzzSwapper, fuzzReceiver);
     }
 
     function testFuzz_swapExactIn_secondaryTokenToCreditToken(
@@ -422,6 +394,11 @@ contract GroveBasinSwapExactInFuzzTests is GroveBasinTestBase {
 
             if (assetIn == assetOut) {
                 assetOut = _getAsset(_hash(i, "assetOut") + 1);
+            }
+
+            // Skip stable-to-stable swaps (collateralToken <-> secondaryToken)
+            if (assetIn != creditToken && assetOut != creditToken) {
+                assetOut = creditToken;
             }
 
             address assetOutCustodian = address(assetOut) == address(secondaryToken) ? pocket : address(groveBasin);

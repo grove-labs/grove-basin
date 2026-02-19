@@ -80,6 +80,11 @@ contract SwapperHandler is HandlerBase {
             assetOut = _getAsset(assetOutSeed + 2);
         }
 
+        // Skip stable-to-stable swaps (collateralToken <-> secondaryToken)
+        if (assetIn != assets[2] && assetOut != assets[2]) {
+            assetOut = assets[2];
+        }
+
         address assetOutCustodian
             = address(assetOut) == address(assets[0]) ? groveBasin.pocket() : address(groveBasin);
 
@@ -231,6 +236,11 @@ contract SwapperHandler is HandlerBase {
         // Handle case where randomly selected assets match
         if (assetIn == assetOut) {
             assetOut = _getAsset(assetOutSeed + 2);
+        }
+
+        // Skip stable-to-stable swaps (collateralToken <-> secondaryToken)
+        if (assetIn != assets[2] && assetOut != assets[2]) {
+            assetOut = assets[2];
         }
 
         address assetOutCustodian
