@@ -3,14 +3,13 @@
 	url = https://github.com/foundry-rs/forge-std
 [submodule "lib/erc20-helpers"]
 	path = lib/erc20-helpers
-	url = https://github.com/marsfoundation/erc20-helpers
+	url = https://github.com/sparkdotfi/erc20-helpers
 [submodule "lib/openzeppelin-contracts"]
 	path = lib/openzeppelin-contracts
 	url = https://github.com/openzeppelin/openzeppelin-contracts
 [submodule "lib/xchain-ssr-oracle"]
 	path = lib/xchain-ssr-oracle
-	url = https://github.com/marsfoundation/xchain-ssr-oracle
+	url = https://github.com/sparkdotfi/xchain-ssr-oracle
 [submodule "lib/grove-address-registry"]
 	path = lib/grove-address-registry
 	url = https://github.com/grove-labs/grove-address-registry
-
