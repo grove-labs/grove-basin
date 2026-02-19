@@ -3,18 +3,18 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 
-import { PSM3Deploy } from "deploy/PSM3Deploy.sol";
+import { GroveBasinDeploy } from "deploy/GroveBasinDeploy.sol";
 
-import { PSM3 } from "src/PSM3.sol";
+import { GroveBasin } from "src/GroveBasin.sol";
 
-import { PSMTestBase } from "test/PSMTestBase.sol";
+import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
-contract PSMDeployTests is PSMTestBase {
+contract PSMDeployTests is GroveBasinTestBase {
 
     function test_deploy() public {
         deal(address(usdc), address(this), 1e6);
 
-        PSM3 newPsm = PSM3(PSM3Deploy.deploy(
+        GroveBasin newPsm = GroveBasin(GroveBasinDeploy.deploy(
             address(owner),
             address(usdc),
             address(usds),

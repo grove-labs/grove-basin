@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.13;
 
-import { PSM3 } from "src/PSM3.sol";
+import { GroveBasin } from "src/GroveBasin.sol";
 
-contract PSM3Harness is PSM3 {
+contract GroveBasinHarness is GroveBasin {
 
     constructor(
         address owner_,
@@ -12,7 +12,7 @@ contract PSM3Harness is PSM3 {
         address susds_,
         address rateProvider_
     )
-        PSM3(owner_, usdc_, usds_, susds_, rateProvider_) {}
+        GroveBasin(owner_, usdc_, usds_, susds_, rateProvider_) {}
 
     function getAssetValue(address asset, uint256 amount, bool roundUp)
         external view returns (uint256)

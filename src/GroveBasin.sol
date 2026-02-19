@@ -8,10 +8,10 @@ import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
 import { Ownable } from "openzeppelin-contracts/contracts/access/Ownable.sol";
 import { Math }    from "openzeppelin-contracts/contracts/utils/math/Math.sol";
 
-import { IPSM3 }             from "src/interfaces/IPSM3.sol";
+import { IGroveBasin }             from "src/interfaces/IGroveBasin.sol";
 import { IRateProviderLike } from "src/interfaces/IRateProviderLike.sol";
 
-contract PSM3 is IPSM3, Ownable {
+contract GroveBasin is IGroveBasin, Ownable {
 
     using SafeERC20 for IERC20;
 
@@ -40,14 +40,14 @@ contract PSM3 is IPSM3, Ownable {
     )
         Ownable(owner_)
     {
-        require(usdc_         != address(0), "PSM3/invalid-usdc");
-        require(usds_         != address(0), "PSM3/invalid-usds");
-        require(susds_        != address(0), "PSM3/invalid-susds");
-        require(rateProvider_ != address(0), "PSM3/invalid-rateProvider");
+        require(usdc_         != address(0), "GroveBasin/invalid-usdc");
+        require(usds_         != address(0), "GroveBasin/invalid-usds");
+        require(susds_        != address(0), "GroveBasin/invalid-susds");
+        require(rateProvider_ != address(0), "GroveBasin/invalid-rateProvider");
 
-        require(usdc_ != usds_,  "PSM3/usdc-usds-same");
-        require(usdc_ != susds_, "PSM3/usdc-susds-same");
-        require(usds_ != susds_, "PSM3/usds-susds-same");
+        require(usdc_ != usds_,  "GroveBasin/usdc-usds-same");
+        require(usdc_ != susds_, "GroveBasin/usdc-susds-same");
+        require(usds_ != susds_, "GroveBasin/usds-susds-same");
 
         usdc  = IERC20(usdc_);
         usds  = IERC20(usds_);
@@ -58,7 +58,7 @@ contract PSM3 is IPSM3, Ownable {
 
         require(
             IRateProviderLike(rateProvider_).getConversionRate() != 0,
-            "PSM3/rate-provider-returns-zero"
+            "GroveBasin/rate-provider-returns-zero"
         );
 
         _usdcPrecision  = 10 ** IERC20(usdc_).decimals();
@@ -66,8 +66,8 @@ contract PSM3 is IPSM3, Ownable {
         _susdsPrecision = 10 ** IERC20(susds_).decimals();
 
         // Necessary to ensure rounding works as expected
-        require(_usdcPrecision <= 1e18, "PSM3/usdc-precision-too-high");
-        require(_usdsPrecision <= 1e18, "PSM3/usds-precision-too-high");
+        require(_usdcPrecision <= 1e18, "GroveBasin/usdc-precision-too-high");
+        require(_usdsPrecision <= 1e18, "GroveBasin/usds-precision-too-high");
     }
 
     /**********************************************************************************************/
@@ -75,11 +75,11 @@ contract PSM3 is IPSM3, Ownable {
     /**********************************************************************************************/
 
     function setPocket(address newPocket) external override onlyOwner {
-        require(newPocket != address(0), "PSM3/invalid-pocket");
+        require(newPocket != address(0), "GroveBasin/invalid-pocket");
 
         address pocket_ = pocket;
 
-        require(newPocket != pocket_, "PSM3/same-pocket");
+        require(newPocket != pocket_, "GroveBasin/same-pocket");
 
         uint256 amountToTransfer = usdc.balanceOf(pocket_);
 
@@ -108,12 +108,12 @@ contract PSM3 is IPSM3, Ownable {
     )
         external override returns (uint256 amountOut)
     {
-        require(amountIn != 0,          "PSM3/invalid-amountIn");
-        require(receiver != address(0), "PSM3/invalid-receiver");
+        require(amountIn != 0,          "GroveBasin/invalid-amountIn");
+        require(receiver != address(0), "GroveBasin/invalid-receiver");
 
         amountOut = previewSwapExactIn(assetIn, assetOut, amountIn);
 
-        require(amountOut >= minAmountOut, "PSM3/amountOut-too-low");
+        require(amountOut >= minAmountOut, "GroveBasin/amountOut-too-low");
 
         _pullAsset(assetIn, amountIn);
         _pushAsset(assetOut, receiver, amountOut);
@@ -131,12 +131,12 @@ contract PSM3 is IPSM3, Ownable {
     )
         external override returns (uint256 amountIn)
     {
-        require(amountOut != 0,         "PSM3/invalid-amountOut");
-        require(receiver != address(0), "PSM3/invalid-receiver");
+        require(amountOut != 0,         "GroveBasin/invalid-amountOut");
+        require(receiver != address(0), "GroveBasin/invalid-receiver");
 
         amountIn = previewSwapExactOut(assetIn, assetOut, amountOut);
 
-        require(amountIn <= maxAmountIn, "PSM3/amountIn-too-high");
+        require(amountIn <= maxAmountIn, "GroveBasin/amountIn-too-high");
 
         _pullAsset(assetIn, amountIn);
         _pushAsset(assetOut, receiver, amountOut);
@@ -151,7 +151,7 @@ contract PSM3 is IPSM3, Ownable {
     function deposit(address asset, address receiver, uint256 assetsToDeposit)
         external override returns (uint256 newShares)
     {
-        require(assetsToDeposit != 0, "PSM3/invalid-amount");
+        require(assetsToDeposit != 0, "GroveBasin/invalid-amount");
 
         newShares = previewDeposit(asset, assetsToDeposit);
 
@@ -166,7 +166,7 @@ contract PSM3 is IPSM3, Ownable {
     function withdraw(address asset, address receiver, uint256 maxAssetsToWithdraw)
         external override returns (uint256 assetsWithdrawn)
     {
-        require(maxAssetsToWithdraw != 0, "PSM3/invalid-amount");
+        require(maxAssetsToWithdraw != 0, "GroveBasin/invalid-amount");
 
         uint256 sharesToBurn;
 
@@ -198,7 +198,7 @@ contract PSM3 is IPSM3, Ownable {
     function previewWithdraw(address asset, uint256 maxAssetsToWithdraw)
         public view override returns (uint256 sharesToBurn, uint256 assetsWithdrawn)
     {
-        require(_isValidAsset(asset), "PSM3/invalid-asset");
+        require(_isValidAsset(asset), "GroveBasin/invalid-asset");
 
         uint256 assetBalance = IERC20(asset).balanceOf(_getAssetCustodian(asset));
 
@@ -242,7 +242,7 @@ contract PSM3 is IPSM3, Ownable {
     function convertToAssets(address asset, uint256 numShares)
         public view override returns (uint256)
     {
-        require(_isValidAsset(asset), "PSM3/invalid-asset");
+        require(_isValidAsset(asset), "GroveBasin/invalid-asset");
 
         uint256 assetValue = convertToAssetValue(numShares);
 
@@ -274,7 +274,7 @@ contract PSM3 is IPSM3, Ownable {
     }
 
     function convertToShares(address asset, uint256 assets) public view override returns (uint256) {
-        require(_isValidAsset(asset), "PSM3/invalid-asset");
+        require(_isValidAsset(asset), "GroveBasin/invalid-asset");
         return convertToShares(_getAssetValue(asset, assets, false));  // Round down
     }
 
@@ -296,7 +296,7 @@ contract PSM3 is IPSM3, Ownable {
         if      (asset == address(usdc))  return _getUsdcValue(amount);
         else if (asset == address(usds))  return _getUsdsValue(amount);
         else if (asset == address(susds)) return _getSUsdsValue(amount, roundUp);
-        else revert("PSM3/invalid-asset-for-value");
+        else revert("GroveBasin/invalid-asset-for-value");
     }
 
     function _getUsdcValue(uint256 amount) internal view returns (uint256) {
@@ -342,7 +342,7 @@ contract PSM3 is IPSM3, Ownable {
             else if (quoteAsset == address(usds)) return _convertFromSUsds(amount, _usdsPrecision, roundUp);
         }
 
-        revert("PSM3/invalid-asset");
+        revert("GroveBasin/invalid-asset");
     }
 
     function _convertToSUsds(uint256 amount, uint256 assetPrecision, bool roundUp)

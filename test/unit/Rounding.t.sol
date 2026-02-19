@@ -3,18 +3,18 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 
-import { MockRateProvider, PSMTestBase } from "test/PSMTestBase.sol";
+import { MockRateProvider, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
-contract RoundingTests is PSMTestBase {
+contract RoundingTests is GroveBasinTestBase {
 
     address user = makeAddr("user");
 
     function setUp() public override {
         super.setUp();
 
-        // Seed the PSM with max liquidity so withdrawals can always be performed
+        // Seed the GroveBasin with max liquidity so withdrawals can always be performed
         _deposit(address(usds),  address(this), USDS_TOKEN_MAX);
         _deposit(address(susds), address(this), SUSDS_TOKEN_MAX);
         _deposit(address(usdc),  address(this), USDC_TOKEN_MAX);
@@ -29,7 +29,7 @@ contract RoundingTests is PSMTestBase {
         assertEq(usds.balanceOf(address(user)), 0);
 
         vm.prank(user);
-        psm.withdraw(address(usds), address(user), 1e18);
+        groveBasin.withdraw(address(usds), address(user), 1e18);
 
         assertEq(usds.balanceOf(address(user)), 1e18 - 1);  // Rounds against user
     }
@@ -40,7 +40,7 @@ contract RoundingTests is PSMTestBase {
         assertEq(usdc.balanceOf(address(user)), 0);
 
         vm.prank(user);
-        psm.withdraw(address(usdc), address(user), 1e6);
+        groveBasin.withdraw(address(usdc), address(user), 1e6);
 
         assertEq(usdc.balanceOf(address(user)), 1e6 - 1);  // Rounds against user
     }
@@ -51,7 +51,7 @@ contract RoundingTests is PSMTestBase {
         assertEq(susds.balanceOf(address(user)), 0);
 
         vm.prank(user);
-        psm.withdraw(address(susds), address(user), 1e18);
+        groveBasin.withdraw(address(susds), address(user), 1e18);
 
         assertEq(susds.balanceOf(address(user)), 1e18 - 1);  // Rounds against user
     }
@@ -138,7 +138,7 @@ contract RoundingTests is PSMTestBase {
         assertEq(asset.balanceOf(address(user1)), 0);
 
         vm.prank(user1);
-        psm.withdraw(address(asset), address(user1), amount1);
+        groveBasin.withdraw(address(asset), address(user1), amount1);
 
         // Rounds against user up to one unit, always rounding down
         assertApproxEqAbs(asset.balanceOf(address(user1)), amount1, roundingTolerance);
@@ -151,7 +151,7 @@ contract RoundingTests is PSMTestBase {
         assertEq(asset.balanceOf(address(user2)), 0);
 
         vm.prank(user2);
-        psm.withdraw(address(asset), address(user2), amount2);
+        groveBasin.withdraw(address(asset), address(user2), amount2);
 
         // Rounds against user up to one unit, always rounding down
 

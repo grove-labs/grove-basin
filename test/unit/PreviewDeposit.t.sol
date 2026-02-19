@@ -3,66 +3,66 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 
-import { MockRateProvider, PSMTestBase } from "test/PSMTestBase.sol";
+import { MockRateProvider, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
-contract PSMPreviewDeposit_FailureTests is PSMTestBase {
+contract PSMPreviewDeposit_FailureTests is GroveBasinTestBase {
 
     function test_previewDeposit_invalidAsset() public {
-        vm.expectRevert("PSM3/invalid-asset-for-value");
-        psm.previewDeposit(makeAddr("other-token"), 1);
+        vm.expectRevert("GroveBasin/invalid-asset-for-value");
+        groveBasin.previewDeposit(makeAddr("other-token"), 1);
     }
 
 }
 
-contract PSMPreviewDeposit_SuccessTests is PSMTestBase {
+contract PSMPreviewDeposit_SuccessTests is GroveBasinTestBase {
 
     address depositor = makeAddr("depositor");
 
     function test_previewDeposit_usds_firstDeposit() public view {
-        assertEq(psm.previewDeposit(address(usds), 1), 1);
-        assertEq(psm.previewDeposit(address(usds), 2), 2);
-        assertEq(psm.previewDeposit(address(usds), 3), 3);
+        assertEq(groveBasin.previewDeposit(address(usds), 1), 1);
+        assertEq(groveBasin.previewDeposit(address(usds), 2), 2);
+        assertEq(groveBasin.previewDeposit(address(usds), 3), 3);
 
-        assertEq(psm.previewDeposit(address(usds), 1e18), 1e18);
-        assertEq(psm.previewDeposit(address(usds), 2e18), 2e18);
-        assertEq(psm.previewDeposit(address(usds), 3e18), 3e18);
+        assertEq(groveBasin.previewDeposit(address(usds), 1e18), 1e18);
+        assertEq(groveBasin.previewDeposit(address(usds), 2e18), 2e18);
+        assertEq(groveBasin.previewDeposit(address(usds), 3e18), 3e18);
     }
 
     function testFuzz_previewDeposit_usds_firstDeposit(uint256 amount) public view {
         amount = _bound(amount, 0, USDS_TOKEN_MAX);
-        assertEq(psm.previewDeposit(address(usds), amount), amount);
+        assertEq(groveBasin.previewDeposit(address(usds), amount), amount);
     }
 
     function test_previewDeposit_usdc_firstDeposit() public view {
-        assertEq(psm.previewDeposit(address(usdc), 1), 1e12);
-        assertEq(psm.previewDeposit(address(usdc), 2), 2e12);
-        assertEq(psm.previewDeposit(address(usdc), 3), 3e12);
+        assertEq(groveBasin.previewDeposit(address(usdc), 1), 1e12);
+        assertEq(groveBasin.previewDeposit(address(usdc), 2), 2e12);
+        assertEq(groveBasin.previewDeposit(address(usdc), 3), 3e12);
 
-        assertEq(psm.previewDeposit(address(usdc), 1e6), 1e18);
-        assertEq(psm.previewDeposit(address(usdc), 2e6), 2e18);
-        assertEq(psm.previewDeposit(address(usdc), 3e6), 3e18);
+        assertEq(groveBasin.previewDeposit(address(usdc), 1e6), 1e18);
+        assertEq(groveBasin.previewDeposit(address(usdc), 2e6), 2e18);
+        assertEq(groveBasin.previewDeposit(address(usdc), 3e6), 3e18);
     }
 
     function testFuzz_previewDeposit_usdc_firstDeposit(uint256 amount) public view {
         amount = _bound(amount, 0, USDC_TOKEN_MAX);
-        assertEq(psm.previewDeposit(address(usdc), amount), amount * 1e12);
+        assertEq(groveBasin.previewDeposit(address(usdc), amount), amount * 1e12);
     }
 
     function test_previewDeposit_susds_firstDeposit() public view {
-        assertEq(psm.previewDeposit(address(susds), 1), 1);
-        assertEq(psm.previewDeposit(address(susds), 2), 2);
-        assertEq(psm.previewDeposit(address(susds), 3), 3);
-        assertEq(psm.previewDeposit(address(susds), 4), 5);
+        assertEq(groveBasin.previewDeposit(address(susds), 1), 1);
+        assertEq(groveBasin.previewDeposit(address(susds), 2), 2);
+        assertEq(groveBasin.previewDeposit(address(susds), 3), 3);
+        assertEq(groveBasin.previewDeposit(address(susds), 4), 5);
 
-        assertEq(psm.previewDeposit(address(susds), 1e18), 1.25e18);
-        assertEq(psm.previewDeposit(address(susds), 2e18), 2.50e18);
-        assertEq(psm.previewDeposit(address(susds), 3e18), 3.75e18);
-        assertEq(psm.previewDeposit(address(susds), 4e18), 5.00e18);
+        assertEq(groveBasin.previewDeposit(address(susds), 1e18), 1.25e18);
+        assertEq(groveBasin.previewDeposit(address(susds), 2e18), 2.50e18);
+        assertEq(groveBasin.previewDeposit(address(susds), 3e18), 3.75e18);
+        assertEq(groveBasin.previewDeposit(address(susds), 4e18), 5.00e18);
     }
 
     function testFuzz_previewDeposit_susds_firstDeposit(uint256 amount) public view {
         amount = _bound(amount, 0, SUSDS_TOKEN_MAX);
-        assertEq(psm.previewDeposit(address(susds), amount), amount * 1.25e27 / 1e27);
+        assertEq(groveBasin.previewDeposit(address(susds), amount), amount * 1.25e27 / 1e27);
     }
 
     function test_previewDeposit_afterDepositsAndExchangeRateIncrease() public {
@@ -82,9 +82,9 @@ contract PSMPreviewDeposit_SuccessTests is PSMTestBase {
         // $300 dollars of value deposited, 300 shares minted.
         // sUSDS portion becomes worth $160, full pool worth $360, each share worth $1.20
         // 1 USDC = 1/1.20 = 0.833...
-        assertEq(psm.previewDeposit(address(usds),  1e18), 0.833333333333333333e18);
-        assertEq(psm.previewDeposit(address(usdc),  1e6),  0.833333333333333333e18);
-        assertEq(psm.previewDeposit(address(susds), 1e18), 1.666666666666666666e18);  // 1 sUSDS = $2
+        assertEq(groveBasin.previewDeposit(address(usds),  1e18), 0.833333333333333333e18);
+        assertEq(groveBasin.previewDeposit(address(usdc),  1e6),  0.833333333333333333e18);
+        assertEq(groveBasin.previewDeposit(address(susds), 1e18), 1.666666666666666666e18);  // 1 sUSDS = $2
     }
 
     function testFuzz_previewDeposit_afterDepositsAndExchangeRateIncrease(
@@ -117,15 +117,15 @@ contract PSMPreviewDeposit_SuccessTests is PSMTestBase {
         uint256 totalValue        = amount1 + amount2 * 1e12 + amount3 * conversionRate / 1e27;
         uint256 usdcPreviewAmount = previewAmount / 1e12;
 
-        assertEq(psm.previewDeposit(address(usds),  previewAmount),     previewAmount                           * totalSharesMinted / totalValue);
-        assertEq(psm.previewDeposit(address(usdc),  usdcPreviewAmount), usdcPreviewAmount * 1e12                * totalSharesMinted / totalValue);  // Divide then multiply to replicate rounding
-        assertEq(psm.previewDeposit(address(susds), previewAmount),     (previewAmount * conversionRate / 1e27) * totalSharesMinted / totalValue);
+        assertEq(groveBasin.previewDeposit(address(usds),  previewAmount),     previewAmount                           * totalSharesMinted / totalValue);
+        assertEq(groveBasin.previewDeposit(address(usdc),  usdcPreviewAmount), usdcPreviewAmount * 1e12                * totalSharesMinted / totalValue);  // Divide then multiply to replicate rounding
+        assertEq(groveBasin.previewDeposit(address(susds), previewAmount),     (previewAmount * conversionRate / 1e27) * totalSharesMinted / totalValue);
     }
 
     function _assertOneToOne() internal view {
-        assertEq(psm.previewDeposit(address(usds),  1e18), 1e18);
-        assertEq(psm.previewDeposit(address(usdc),  1e6),  1e18);
-        assertEq(psm.previewDeposit(address(susds), 1e18), 1.25e18);
+        assertEq(groveBasin.previewDeposit(address(usds),  1e18), 1e18);
+        assertEq(groveBasin.previewDeposit(address(usdc),  1e6),  1e18);
+        assertEq(groveBasin.previewDeposit(address(susds), 1e18), 1.25e18);
     }
 
 }

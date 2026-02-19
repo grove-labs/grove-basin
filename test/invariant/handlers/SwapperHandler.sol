@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
-import { HandlerBase, PSM3 } from "test/invariant/handlers/HandlerBase.sol";
+import { HandlerBase, GroveBasin } from "test/invariant/handlers/HandlerBase.sol";
 
 import { IRateProviderLike } from "src/interfaces/IRateProviderLike.sol";
 
@@ -29,7 +29,7 @@ contract SwapperHandler is HandlerBase {
     uint256 public zeroBalanceCount;
 
     constructor(
-        PSM3      psm_,
+        GroveBasin      psm_,
         MockERC20 usdc,
         MockERC20 usds,
         MockERC20 susds,
@@ -39,7 +39,7 @@ contract SwapperHandler is HandlerBase {
         assets[1] = usds;
         assets[2] = susds;
 
-        rateProvider = IRateProviderLike(psm.rateProvider());
+        rateProvider = IRateProviderLike(groveBasin.rateProvider());
 
         for (uint256 i = 0; i < swapperCount; i++) {
             swappers.push(makeAddr(string(abi.encodePacked("swapper-", vm.toString(i)))));
@@ -81,11 +81,11 @@ contract SwapperHandler is HandlerBase {
         }
 
         address assetOutCustodian
-            = address(assetOut) == address(assets[0]) ? psm.pocket() : address(psm);
+            = address(assetOut) == address(assets[0]) ? groveBasin.pocket() : address(groveBasin);
 
         // By calculating the amount of assetIn we can get from the max asset out, we can
         // determine the max amount of assetIn we can swap since its the same both ways.
-        uint256 maxAmountIn = psm.previewSwapExactIn(
+        uint256 maxAmountIn = groveBasin.previewSwapExactIn(
             address(assetOut),
             address(assetIn),
             assetOut.balanceOf(assetOutCustodian)
@@ -103,20 +103,20 @@ contract SwapperHandler is HandlerBase {
         minAmountOut = _bound(
             minAmountOut,
             0,
-            psm.previewSwapExactIn(address(assetIn), address(assetOut), amountIn)
+            groveBasin.previewSwapExactIn(address(assetIn), address(assetOut), amountIn)
         );
 
         // 2. Cache starting state
-        uint256 startingConversion        = psm.convertToAssetValue(1e18);
-        uint256 startingConversionMillion = psm.convertToAssetValue(1e6 * 1e18);
-        uint256 startingConversionLp0     = psm.convertToAssetValue(psm.shares(lp0));
-        uint256 startingValue             = psm.totalAssets();
+        uint256 startingConversion        = groveBasin.convertToAssetValue(1e18);
+        uint256 startingConversionMillion = groveBasin.convertToAssetValue(1e6 * 1e18);
+        uint256 startingConversionLp0     = groveBasin.convertToAssetValue(groveBasin.shares(lp0));
+        uint256 startingValue             = groveBasin.totalAssets();
 
         // 3. Perform action against protocol
         vm.startPrank(swapper);
         assetIn.mint(swapper, amountIn);
-        assetIn.approve(address(psm), amountIn);
-        uint256 amountOut = psm.swapExactIn(
+        assetIn.approve(address(groveBasin), amountIn);
+        uint256 amountOut = groveBasin.swapExactIn(
             address(assetIn),
             address(assetOut),
             amountIn,
@@ -141,7 +141,7 @@ contract SwapperHandler is HandlerBase {
         // Rounding because of USDC precision, the conversion rate of a
         // user's position can fluctuate by up to 2e12 per 1e18 shares
         assertApproxEqAbs(
-            psm.convertToAssetValue(1e18),
+            groveBasin.convertToAssetValue(1e18),
             startingConversion,
             3e12,
             "SwapperHandler/swapExactIn/conversion-rate-change"
@@ -149,7 +149,7 @@ contract SwapperHandler is HandlerBase {
 
         // Demonstrate rounding scales with shares
         assertApproxEqAbs(
-            psm.convertToAssetValue(1_000_000e18),
+            groveBasin.convertToAssetValue(1_000_000e18),
             startingConversionMillion,
             3_000_000e12, // 2e18 of value
             "SwapperHandler/swapExactIn/conversion-rate-change-million"
@@ -157,7 +157,7 @@ contract SwapperHandler is HandlerBase {
 
         // Rounding is always in favour of the protocol
         assertGe(
-            psm.convertToAssetValue(1_000_000e18),
+            groveBasin.convertToAssetValue(1_000_000e18),
             startingConversionMillion,
             "SwapperHandler/swapExactIn/conversion-rate-million-decrease"
         );
@@ -166,7 +166,7 @@ contract SwapperHandler is HandlerBase {
         if (startingConversionLp0 > 1e18) {
             // Position values can fluctuate by up to 0.00000002% on swaps
             assertApproxEqRel(
-                psm.convertToAssetValue(psm.shares(lp0)),
+                groveBasin.convertToAssetValue(groveBasin.shares(lp0)),
                 startingConversionLp0,
                 0.000002e18,
                 "SwapperHandler/swapExactIn/conversion-rate-change-lp"
@@ -175,24 +175,24 @@ contract SwapperHandler is HandlerBase {
 
         // Rounding is always in favour of the user
         assertGe(
-            psm.convertToAssetValue(psm.shares(lp0)),
+            groveBasin.convertToAssetValue(groveBasin.shares(lp0)),
             startingConversionLp0,
             "SwapperHandler/swapExactIn/conversion-rate-lp-decrease"
         );
 
-        // PSM value can fluctuate by up to 0.00000002% on swaps because of USDC rounding
+        // GroveBasin value can fluctuate by up to 0.00000002% on swaps because of USDC rounding
         assertApproxEqRel(
-            psm.totalAssets(),
+            groveBasin.totalAssets(),
             startingValue,
             0.000002e18,
-            "SwapperHandler/swapExactIn/psm-total-value-change"
+            "SwapperHandler/swapExactIn/groveBasin-total-value-change"
         );
 
         // Rounding is always in favour of the protocol
         assertGe(
-            psm.totalAssets(),
+            groveBasin.totalAssets(),
             startingValue,
-            "SwapperHandler/swapExactIn/psm-total-value-decrease"
+            "SwapperHandler/swapExactIn/groveBasin-total-value-decrease"
         );
 
         // High rates introduce larger rounding errors
@@ -234,7 +234,7 @@ contract SwapperHandler is HandlerBase {
         }
 
         address assetOutCustodian
-            = address(assetOut) == address(assets[0]) ? psm.pocket() : address(psm);
+            = address(assetOut) == address(assets[0]) ? groveBasin.pocket() : address(groveBasin);
 
         // If there's zero balance a swap can't be performed
         if (assetOut.balanceOf(assetOutCustodian) == 0) {
@@ -248,13 +248,13 @@ contract SwapperHandler is HandlerBase {
         uint256 maxAmountIn = type(uint256).max;
 
         // 2. Cache starting state
-        uint256 startingConversion        = psm.convertToAssetValue(1e18);
-        uint256 startingConversionMillion = psm.convertToAssetValue(1e6 * 1e18);
-        uint256 startingConversionLp0     = psm.convertToAssetValue(psm.shares(lp0));
-        uint256 startingValue             = psm.totalAssets();
+        uint256 startingConversion        = groveBasin.convertToAssetValue(1e18);
+        uint256 startingConversionMillion = groveBasin.convertToAssetValue(1e6 * 1e18);
+        uint256 startingConversionLp0     = groveBasin.convertToAssetValue(groveBasin.shares(lp0));
+        uint256 startingValue             = groveBasin.totalAssets();
 
         // 3. Perform action against protocol
-        uint256 amountInNeeded = psm.previewSwapExactOut(
+        uint256 amountInNeeded = groveBasin.previewSwapExactOut(
             address(assetIn),
             address(assetOut),
             amountOut
@@ -262,8 +262,8 @@ contract SwapperHandler is HandlerBase {
 
         vm.startPrank(swapper);
         assetIn.mint(swapper, amountInNeeded);
-        assetIn.approve(address(psm), amountInNeeded);
-        uint256 amountIn = psm.swapExactOut(
+        assetIn.approve(address(groveBasin), amountInNeeded);
+        uint256 amountIn = groveBasin.swapExactOut(
             address(assetIn),
             address(assetOut),
             amountOut,
@@ -288,7 +288,7 @@ contract SwapperHandler is HandlerBase {
         // Rounding because of USDC precision, the conversion rate of a
         // user's position can fluctuate by up to 2e12 per 1e18 shares
         assertApproxEqAbs(
-            psm.convertToAssetValue(1e18),
+            groveBasin.convertToAssetValue(1e18),
             startingConversion,
             3e12,
             "SwapperHandler/swapExactOut/conversion-rate-change"
@@ -296,7 +296,7 @@ contract SwapperHandler is HandlerBase {
 
         // Demonstrate rounding scales with shares
         assertApproxEqAbs(
-            psm.convertToAssetValue(1_000_000e18),
+            groveBasin.convertToAssetValue(1_000_000e18),
             startingConversionMillion,
             3_000_000e12, // 2e18 of value
             "SwapperHandler/swapExactOut/conversion-rate-change-million"
@@ -304,7 +304,7 @@ contract SwapperHandler is HandlerBase {
 
         // Rounding is always in favour of the protocol
         assertGe(
-            psm.convertToAssetValue(1_000_000e18),
+            groveBasin.convertToAssetValue(1_000_000e18),
             startingConversionMillion,
             "SwapperHandler/swapExactOut/conversion-rate-million-decrease"
         );
@@ -313,7 +313,7 @@ contract SwapperHandler is HandlerBase {
         if (startingConversionLp0 > 1e18) {
             // Position values can fluctuate by up to 0.00000003% on swaps
             assertApproxEqRel(
-                psm.convertToAssetValue(psm.shares(lp0)),
+                groveBasin.convertToAssetValue(groveBasin.shares(lp0)),
                 startingConversionLp0,
                 0.000003e18,
                 "SwapperHandler/swapExactOut/conversion-rate-change-lp"
@@ -322,24 +322,24 @@ contract SwapperHandler is HandlerBase {
 
         // Rounding is always in favour of the user
         assertGe(
-            psm.convertToAssetValue(psm.shares(lp0)),
+            groveBasin.convertToAssetValue(groveBasin.shares(lp0)),
             startingConversionLp0,
             "SwapperHandler/swapExactOut/conversion-rate-lp-decrease"
         );
 
-        // PSM value can fluctuate by up to 0.00000003% on swaps because of USDC rounding
+        // GroveBasin value can fluctuate by up to 0.00000003% on swaps because of USDC rounding
         assertApproxEqRel(
-            psm.totalAssets(),
+            groveBasin.totalAssets(),
             startingValue,
             0.000003e18,
-            "SwapperHandler/swapExactOut/psm-total-value-change"
+            "SwapperHandler/swapExactOut/groveBasin-total-value-change"
         );
 
         // Rounding is always in favour of the protocol
         assertGe(
-            psm.totalAssets(),
+            groveBasin.totalAssets(),
             startingValue,
-            "SwapperHandler/swapExactOut/psm-total-value-decrease"
+            "SwapperHandler/swapExactOut/groveBasin-total-value-decrease"
         );
 
         // High rates introduce larger rounding errors

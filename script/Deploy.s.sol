@@ -5,7 +5,7 @@ import "forge-std/Script.sol";
 
 import { Ethereum } from "lib/grove-address-registry/src/Ethereum.sol";
 
-import { PSM3Deploy } from "deploy/PSM3Deploy.sol";
+import { GroveBasinDeploy } from "deploy/GroveBasinDeploy.sol";
 
 
 contract DeployEthereum is Script {
@@ -13,11 +13,11 @@ contract DeployEthereum is Script {
     function run() external {
         vm.createSelectFork(getChain("base").rpcUrl);
 
-        console.log("Deploying PSM...");
+        console.log("Deploying GroveBasin...");
 
         vm.startBroadcast();
 
-        address psm = PSM3Deploy.deploy({
+        address groveBasin = GroveBasinDeploy.deploy({
             owner        : Ethereum.GROVE_PROXY,
             usdc         : Ethereum.USDC,
             usds         : Ethereum.USDS,
@@ -27,7 +27,7 @@ contract DeployEthereum is Script {
 
         vm.stopBroadcast();
 
-        console.log("PSM3 deployed at:", psm);
+        console.log("GroveBasin deployed at:", groveBasin);
     }
 
 }

@@ -6,11 +6,11 @@ import "forge-std/Test.sol";
 import { SSRAuthOracle } from "lib/xchain-ssr-oracle/src/SSRAuthOracle.sol";
 import { ISSROracle }    from "lib/xchain-ssr-oracle/src/interfaces/ISSROracle.sol";
 
-import { PSM3 } from "src/PSM3.sol";
+import { GroveBasin } from "src/GroveBasin.sol";
 
 import { IRateProviderLike } from "src/interfaces/IRateProviderLike.sol";
 
-import { PSMTestBase } from "test/PSMTestBase.sol";
+import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
 import { LpHandler }            from "test/invariant/handlers/LpHandler.sol";
 import { RateSetterHandler }    from "test/invariant/handlers/RateSetterHandler.sol";
@@ -19,7 +19,7 @@ import { TimeBasedRateHandler } from "test/invariant/handlers/TimeBasedRateHandl
 import { TransferHandler }      from "test/invariant/handlers/TransferHandler.sol";
 import { OwnerHandler }         from "test/invariant/handlers/OwnerHandler.sol";
 
-abstract contract PSMInvariantTestBase is PSMTestBase {
+abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
 
     LpHandler            public lpHandler;
     RateSetterHandler    public rateSetterHandler;
@@ -48,50 +48,50 @@ abstract contract PSMInvariantTestBase is PSMTestBase {
 
         // NOTE: Can be refactored to be dynamic
         for (uint256 i = 0; i < 3; i++) {
-            lpShares += psm.shares(lpHandler.lps(i));
+            lpShares += groveBasin.shares(lpHandler.lps(i));
         }
 
-        assertEq(lpShares, psm.totalShares());
+        assertEq(lpShares, groveBasin.totalShares());
     }
 
     function _checkInvariant_B() public view {
         assertApproxEqAbs(
-            psm.totalAssets(),
-            psm.convertToAssetValue(psm.totalShares()),
+            groveBasin.totalAssets(),
+            groveBasin.convertToAssetValue(groveBasin.totalShares()),
             4
         );
     }
 
     function _checkInvariant_C() public view {
-        uint256 lpAssetValue = psm.convertToAssetValue(1e18);  // Seed amount
+        uint256 lpAssetValue = groveBasin.convertToAssetValue(1e18);  // Seed amount
 
         for (uint256 i = 0; i < 3; i++) {
-            lpAssetValue += psm.convertToAssetValue(psm.shares(lpHandler.lps(i)));
+            lpAssetValue += groveBasin.convertToAssetValue(groveBasin.shares(lpHandler.lps(i)));
         }
 
-        assertApproxEqAbs(lpAssetValue, psm.totalAssets(), 4);
+        assertApproxEqAbs(lpAssetValue, groveBasin.totalAssets(), 4);
     }
 
     // This might be failing because of swap rounding errors.
     function _checkInvariant_D() public view {
         // Seed amounts
         uint256 lpDeposits   = 1e18;
-        uint256 lpAssetValue = psm.convertToAssetValue(1e18);
+        uint256 lpAssetValue = groveBasin.convertToAssetValue(1e18);
 
         for (uint256 i = 0; i < 3; i++) {
             address lp = lpHandler.lps(i);
 
             lpDeposits   += _getLpDepositsValue(lp);
-            lpAssetValue += psm.convertToAssetValue(psm.shares(lp));
+            lpAssetValue += groveBasin.convertToAssetValue(groveBasin.shares(lp));
         }
 
-        // LPs position value can increase from transfers into the PSM and from swapping rounding
-        // errors increasing the value of the PSM slightly.
+        // LPs position value can increase from transfers into the GroveBasin and from swapping rounding
+        // errors increasing the value of the GroveBasin slightly.
         // Allow a 2e12 tolerance for negative rounding on conversion calculations.
         assertGe(lpAssetValue + 2e12, lpDeposits);
 
         // Include seed deposit, allow for 2e12 negative tolerance.
-        assertGe(psm.totalAssets() + 2e12, lpDeposits);
+        assertGe(groveBasin.totalAssets() + 2e12, lpDeposits);
     }
 
     function _checkInvariant_E() public view {
@@ -130,9 +130,9 @@ abstract contract PSMInvariantTestBase is PSMTestBase {
             expectedSUsdsInflows += transferHandler.transfersIn(address(susds));
         }
 
-        assertEq(usdc.balanceOf(psm.pocket()),  expectedUsdcInflows  - expectedUsdcOutflows);
-        assertEq(usds.balanceOf(address(psm)),  expectedUsdsInflows  - expectedUsdsOutflows);
-        assertEq(susds.balanceOf(address(psm)), expectedSUsdsInflows - expectedSUsdsOutflows);
+        assertEq(usdc.balanceOf(groveBasin.pocket()),  expectedUsdcInflows  - expectedUsdcOutflows);
+        assertEq(usds.balanceOf(address(groveBasin)),  expectedUsdsInflows  - expectedUsdsOutflows);
+        assertEq(susds.balanceOf(address(groveBasin)), expectedSUsdsInflows - expectedSUsdsOutflows);
     }
 
     function _checkInvariant_F() public view {
@@ -158,7 +158,7 @@ abstract contract PSMInvariantTestBase is PSMTestBase {
             totalValueSwappedOut += valueSwappedOut;
         }
 
-        // Rounding error of up to 3e12 per swap, always rounding in favour of the PSM
+        // Rounding error of up to 3e12 per swap, always rounding in favour of the GroveBasin
         assertApproxEqAbs(
             totalValueSwappedIn,
             totalValueSwappedOut,
@@ -212,7 +212,7 @@ abstract contract PSMInvariantTestBase is PSMTestBase {
     function _getLpAPR(address lp, uint256 initialValue, uint256 warpTime)
         internal view returns (uint256)
     {
-        uint256 lpValue = psm.convertToAssetValue(psm.shares(lp));
+        uint256 lpValue = groveBasin.convertToAssetValue(groveBasin.shares(lp));
         return (lpValue - initialValue) * 1e18 * 365 days / initialValue / warpTime;
     }
 
@@ -226,20 +226,20 @@ abstract contract PSMInvariantTestBase is PSMTestBase {
         address lp2 = lpHandler.lps(2);
 
         // Get value of each LPs current deposits.
-        uint256 lp0DepositsValue = psm.convertToAssetValue(psm.shares(lp0));
-        uint256 lp1DepositsValue = psm.convertToAssetValue(psm.shares(lp1));
-        uint256 lp2DepositsValue = psm.convertToAssetValue(psm.shares(lp2));
+        uint256 lp0DepositsValue = groveBasin.convertToAssetValue(groveBasin.shares(lp0));
+        uint256 lp1DepositsValue = groveBasin.convertToAssetValue(groveBasin.shares(lp1));
+        uint256 lp2DepositsValue = groveBasin.convertToAssetValue(groveBasin.shares(lp2));
 
         // Get value of each LPs token holdings from previous withdrawals.
         uint256 lp0WithdrawsValue = _getLpTokenValue(lp0);
         uint256 lp1WithdrawsValue = _getLpTokenValue(lp1);
         uint256 lp2WithdrawsValue = _getLpTokenValue(lp2);
 
-        uint256 psmTotalValue = psm.totalAssets();
+        uint256 psmTotalValue = groveBasin.totalAssets();
 
-        uint256 startingSeedValue = psm.convertToAssetValue(1e18);
+        uint256 startingSeedValue = groveBasin.convertToAssetValue(1e18);
 
-        // Liquidity is unknown so withdraw all assets for all users to empty PSM.
+        // Liquidity is unknown so withdraw all assets for all users to empty GroveBasin.
         _withdraw(address(usds),  lp0, type(uint256).max);
         _withdraw(address(usdc),  lp0, type(uint256).max);
         _withdraw(address(susds), lp0, type(uint256).max);
@@ -253,18 +253,18 @@ abstract contract PSMInvariantTestBase is PSMTestBase {
         _withdraw(address(susds), lp2, type(uint256).max);
 
         // All funds are completely withdrawn.
-        assertEq(psm.shares(lp0), 0);
-        assertEq(psm.shares(lp1), 0);
-        assertEq(psm.shares(lp2), 0);
+        assertEq(groveBasin.shares(lp0), 0);
+        assertEq(groveBasin.shares(lp1), 0);
+        assertEq(groveBasin.shares(lp2), 0);
 
-        uint256 seedValue = psm.convertToAssetValue(1e18);
+        uint256 seedValue = groveBasin.convertToAssetValue(1e18);
 
-        // PSM is empty (besides seed amount).
-        assertEq(psm.totalShares(), 1e18);
-        assertEq(psm.totalAssets(), seedValue);
+        // GroveBasin is empty (besides seed amount).
+        assertEq(groveBasin.totalShares(), 1e18);
+        assertEq(groveBasin.totalAssets(), seedValue);
 
         // Tokens held by LPs are equal to the sum of their previous balance
-        // plus the amount of value originally represented in the PSM's shares.
+        // plus the amount of value originally represented in the GroveBasin's shares.
         // There can be rounding here because of share burning up to 2e12 when withdrawing USDC.
         // It should be noted that LP2 here has a rounding error of 4e12 since both LP0 and LP1
         // could have rounding errors that accumulate to LP2.
@@ -278,11 +278,11 @@ abstract contract PSMInvariantTestBase is PSMTestBase {
         // Current value of all LPs' token holdings.
         uint256 sumLpValue = _getLpTokenValue(lp0) + _getLpTokenValue(lp1) + _getLpTokenValue(lp2);
 
-        // Total amount just withdrawn from the PSM.
+        // Total amount just withdrawn from the GroveBasin.
         uint256 totalWithdrawals
             = sumLpValue - (lp0WithdrawsValue + lp1WithdrawsValue + lp2WithdrawsValue);
 
-        // Assert that all funds were withdrawn equals the original value of the PSM minus the
+        // Assert that all funds were withdrawn equals the original value of the GroveBasin minus the
         // 1e18 share seed deposit, rounding for each LP.
         assertApproxEqAbs(totalWithdrawals, psmTotalValue - seedValue, 3);
 
@@ -313,8 +313,8 @@ abstract contract PSMInvariantTestBase is PSMTestBase {
         );
 
         // All funds can always be withdrawn completely (rounding in withdrawal against users).
-        assertEq(psm.totalShares(), 0);
-        assertLe(psm.totalAssets(), 20);
+        assertEq(groveBasin.totalShares(), 0);
+        assertLe(groveBasin.totalAssets(), 20);
     }
 
     function _warpAndAssertConsistentValueAccrual() public {
@@ -327,9 +327,9 @@ abstract contract PSMInvariantTestBase is PSMTestBase {
         _deposit(address(usds), lp1, 100_000e18);
         _deposit(address(usds), lp2, 100_000e18);
 
-        uint256 lp0Value = psm.convertToAssetValue(psm.shares(lp0));
-        uint256 lp1Value = psm.convertToAssetValue(psm.shares(lp1));
-        uint256 lp2Value = psm.convertToAssetValue(psm.shares(lp2));
+        uint256 lp0Value = groveBasin.convertToAssetValue(groveBasin.shares(lp0));
+        uint256 lp1Value = groveBasin.convertToAssetValue(groveBasin.shares(lp1));
+        uint256 lp2Value = groveBasin.convertToAssetValue(groveBasin.shares(lp2));
 
         skip(1 days);
 
@@ -356,13 +356,13 @@ abstract contract PSMInvariantTestBase is PSMTestBase {
 
 }
 
-contract PSMInvariants_ConstantRate_NoTransfer is PSMInvariantTestBase {
+contract PSMInvariants_ConstantRate_NoTransfer is GroveBasinInvariantTestBase {
 
     function setUp() public override {
         super.setUp();
 
-        lpHandler      = new LpHandler(psm, usdc, usds, susds, 3);
-        swapperHandler = new SwapperHandler(psm, usdc, usds, susds, 3);
+        lpHandler      = new LpHandler(groveBasin, usdc, usds, susds, 3);
+        swapperHandler = new SwapperHandler(groveBasin, usdc, usds, susds, 3);
 
         targetContract(address(lpHandler));
         targetContract(address(swapperHandler));
@@ -401,14 +401,14 @@ contract PSMInvariants_ConstantRate_NoTransfer is PSMInvariantTestBase {
 
 }
 
-contract PSMInvariants_ConstantRate_WithTransfers is PSMInvariantTestBase {
+contract PSMInvariants_ConstantRate_WithTransfers is GroveBasinInvariantTestBase {
 
     function setUp() public override {
         super.setUp();
 
-        lpHandler       = new LpHandler(psm, usdc, usds, susds, 3);
-        swapperHandler  = new SwapperHandler(psm, usdc, usds, susds, 3);
-        transferHandler = new TransferHandler(psm, usdc, usds, susds);
+        lpHandler       = new LpHandler(groveBasin, usdc, usds, susds, 3);
+        swapperHandler  = new SwapperHandler(groveBasin, usdc, usds, susds, 3);
+        transferHandler = new TransferHandler(groveBasin, usdc, usds, susds);
 
         targetContract(address(lpHandler));
         targetContract(address(swapperHandler));
@@ -444,14 +444,14 @@ contract PSMInvariants_ConstantRate_WithTransfers is PSMInvariantTestBase {
 
 }
 
-contract PSMInvariants_RateSetting_NoTransfer is PSMInvariantTestBase {
+contract PSMInvariants_RateSetting_NoTransfer is GroveBasinInvariantTestBase {
 
     function setUp() public override {
         super.setUp();
 
-        lpHandler         = new LpHandler(psm, usdc, usds, susds, 3);
-        rateSetterHandler = new RateSetterHandler(psm, address(rateProvider), 1.25e27);
-        swapperHandler    = new SwapperHandler(psm, usdc, usds, susds, 3);
+        lpHandler         = new LpHandler(groveBasin, usdc, usds, susds, 3);
+        rateSetterHandler = new RateSetterHandler(groveBasin, address(rateProvider), 1.25e27);
+        swapperHandler    = new SwapperHandler(groveBasin, usdc, usds, susds, 3);
 
         targetContract(address(lpHandler));
         targetContract(address(rateSetterHandler));
@@ -490,15 +490,15 @@ contract PSMInvariants_RateSetting_NoTransfer is PSMInvariantTestBase {
 
 }
 
-contract PSMInvariants_RateSetting_WithTransfers is PSMInvariantTestBase {
+contract PSMInvariants_RateSetting_WithTransfers is GroveBasinInvariantTestBase {
 
     function setUp() public override {
         super.setUp();
 
-        lpHandler         = new LpHandler(psm, usdc, usds, susds, 3);
-        rateSetterHandler = new RateSetterHandler(psm, address(rateProvider), 1.25e27);
-        swapperHandler    = new SwapperHandler(psm, usdc, usds, susds, 3);
-        transferHandler   = new TransferHandler(psm, usdc, usds, susds);
+        lpHandler         = new LpHandler(groveBasin, usdc, usds, susds, 3);
+        rateSetterHandler = new RateSetterHandler(groveBasin, address(rateProvider), 1.25e27);
+        swapperHandler    = new SwapperHandler(groveBasin, usdc, usds, susds, 3);
+        transferHandler   = new TransferHandler(groveBasin, usdc, usds, susds);
 
         targetContract(address(lpHandler));
         targetContract(address(rateSetterHandler));
@@ -538,14 +538,14 @@ contract PSMInvariants_RateSetting_WithTransfers is PSMInvariantTestBase {
 
 }
 
-contract PSMInvariants_TimeBasedRateSetting_NoTransfer is PSMInvariantTestBase {
+contract PSMInvariants_TimeBasedRateSetting_NoTransfer is GroveBasinInvariantTestBase {
 
     function setUp() public override {
         super.setUp();
 
         SSRAuthOracle ssrOracle = new SSRAuthOracle();
 
-        // Workaround to initialize PSM with an oracle that does not return zero
+        // Workaround to initialize GroveBasin with an oracle that does not return zero
         // This gets overwritten by the handler
         ssrOracle.grantRole(ssrOracle.DATA_PROVIDER_ROLE(), address(this));
         ssrOracle.setSUSDSData(ISSROracle.SUSDSData({
@@ -555,17 +555,17 @@ contract PSMInvariants_TimeBasedRateSetting_NoTransfer is PSMInvariantTestBase {
         }));
         ssrOracle.revokeRole(ssrOracle.DATA_PROVIDER_ROLE(), address(this));
 
-        // Redeploy PSM with new rate provider
-        psm = new PSM3(owner, address(usdc), address(usds), address(susds), address(ssrOracle));
+        // Redeploy GroveBasin with new rate provider
+        groveBasin = new GroveBasin(owner, address(usdc), address(usds), address(susds), address(ssrOracle));
 
-        // NOTE: Don't need to set PSM as pocket for this suite as its default on deploy
+        // NOTE: Don't need to set GroveBasin as pocket for this suite as its default on deploy
 
-        // Seed the new PSM with 1e18 shares (1e18 of value)
+        // Seed the new GroveBasin with 1e18 shares (1e18 of value)
         _deposit(address(usds), BURN_ADDRESS, 1e18);
 
-        lpHandler            = new LpHandler(psm, usdc, usds, susds, 3);
-        swapperHandler       = new SwapperHandler(psm, usdc, usds, susds, 3);
-        timeBasedRateHandler = new TimeBasedRateHandler(psm, ssrOracle);
+        lpHandler            = new LpHandler(groveBasin, usdc, usds, susds, 3);
+        swapperHandler       = new SwapperHandler(groveBasin, usdc, usds, susds, 3);
+        timeBasedRateHandler = new TimeBasedRateHandler(groveBasin, ssrOracle);
 
         // Handler acts in the same way as a receiver on L2, so add as a data provider to the
         // oracle.
@@ -619,14 +619,14 @@ contract PSMInvariants_TimeBasedRateSetting_NoTransfer is PSMInvariantTestBase {
 
 }
 
-contract PSMInvariants_TimeBasedRateSetting_WithTransfers is PSMInvariantTestBase {
+contract PSMInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinInvariantTestBase {
 
     function setUp() public virtual override {
         super.setUp();
 
         SSRAuthOracle ssrOracle = new SSRAuthOracle();
 
-        // Workaround to initialize PSM with an oracle that does not return zero
+        // Workaround to initialize GroveBasin with an oracle that does not return zero
         // This gets overwritten by the handler
         ssrOracle.grantRole(ssrOracle.DATA_PROVIDER_ROLE(), address(this));
         ssrOracle.setSUSDSData(ISSROracle.SUSDSData({
@@ -636,19 +636,19 @@ contract PSMInvariants_TimeBasedRateSetting_WithTransfers is PSMInvariantTestBas
         }));
         ssrOracle.revokeRole(ssrOracle.DATA_PROVIDER_ROLE(), address(this));
 
-        // Redeploy PSM with new rate provider
-        psm = new PSM3(owner, address(usdc), address(usds), address(susds), address(ssrOracle));
+        // Redeploy GroveBasin with new rate provider
+        groveBasin = new GroveBasin(owner, address(usdc), address(usds), address(susds), address(ssrOracle));
 
-        // NOTE: This base test suite tests the case of the PSM being the pocket for the whole time,
+        // NOTE: This base test suite tests the case of the GroveBasin being the pocket for the whole time,
         //       where the other suites are testing with an external `pocket`.
 
-        // Seed the new PSM with 1e18 shares (1e18 of value)
+        // Seed the new GroveBasin with 1e18 shares (1e18 of value)
         _deposit(address(usds), BURN_ADDRESS, 1e18);
 
-        lpHandler            = new LpHandler(psm, usdc, usds, susds, 3);
-        swapperHandler       = new SwapperHandler(psm, usdc, usds, susds, 3);
-        timeBasedRateHandler = new TimeBasedRateHandler(psm, ssrOracle);
-        transferHandler      = new TransferHandler(psm, usdc, usds, susds);
+        lpHandler            = new LpHandler(groveBasin, usdc, usds, susds, 3);
+        swapperHandler       = new SwapperHandler(groveBasin, usdc, usds, susds, 3);
+        timeBasedRateHandler = new TimeBasedRateHandler(groveBasin, ssrOracle);
+        transferHandler      = new TransferHandler(groveBasin, usdc, usds, susds);
 
         // Handler acts in the same way as a receiver on L2, so add as a data provider to the
         // oracle.
@@ -707,21 +707,21 @@ contract PSMInvariants_TimeBasedRateSetting_WithTransfers is PSMInvariantTestBas
 //       called is too high to be considered reflective of reality (setting pocket as often as deposits for example).
 //       This inherited test suite is the most complex and realistic, so setting the pocket in this
 //       one is sufficient to ensure the expected behavior and accounting.
-contract PSMInvariants_TimeBasedRateSetting_WithTransfers_WithPocketSetting is PSMInvariants_TimeBasedRateSetting_WithTransfers {
+// contract PSMInvariants_TimeBasedRateSetting_WithTransfers_WithPocketSetting is PSMInvariants_TimeBasedRateSetting_WithTransfers {
 
-    OwnerHandler ownerHandler;
+//     OwnerHandler ownerHandler;
 
-    function setUp() public override {
-        super.setUp();
+//     function setUp() public override {
+//         super.setUp();
 
-        // NOTE: The PSM is the pocket to start, so the test suite will start with it as the pocket
-        //       and transfer it to other addresses.
+//         // NOTE: The GroveBasin is the pocket to start, so the test suite will start with it as the pocket
+//         //       and transfer it to other addresses.
 
-        ownerHandler = new OwnerHandler(psm, usdc);
-        targetContract(address(ownerHandler));
+//         ownerHandler = new OwnerHandler(groveBasin, usdc);
+//         targetContract(address(ownerHandler));
 
-        vm.prank(owner);
-        psm.transferOwnership(address(ownerHandler));
-    }
+//         vm.prank(owner);
+//         groveBasin.transferOwnership(address(ownerHandler));
+//     }
 
-}
+// }
