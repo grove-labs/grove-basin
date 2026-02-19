@@ -19,11 +19,11 @@ contract TransferHandler is HandlerBase {
         GroveBasin      psm_,
         MockERC20 usdc,
         MockERC20 usds,
-        MockERC20 susds
+        MockERC20 creditToken
     ) HandlerBase(psm_) {
         assets[0] = usdc;
         assets[1] = usds;
-        assets[2] = susds;
+        assets[2] = creditToken;
     }
 
     function _getAsset(uint256 indexSeed) internal view returns (MockERC20) {

@@ -21,7 +21,7 @@ contract DeployEthereum is Script {
             owner        : Ethereum.GROVE_PROXY,
             usdc         : Ethereum.USDC,
             usds         : Ethereum.USDS,
-            susds        : Ethereum.SUSDS,
+            creditToken  : Ethereum.SUSDS,
             rateProvider : address(0) // TODO: set up rate provider
         });
 

@@ -91,11 +91,12 @@ interface IGroveBasin {
     function usds() external view returns (IERC20);
 
     /**
-     *  @dev    Returns the IERC20 interface representing sUSDS. This asset is the yield-bearing
-     *          asset in the GroveBasin. The value of this asset is queried from the rate provider.
-     *  @return The IERC20 interface of sUSDS.
+     *  @dev    Returns the IERC20 interface representing the credit token. This asset is the
+     *          yield-bearing asset in the GroveBasin. The value of this asset is queried from the
+     *          rate provider.
+     *  @return The IERC20 interface of the credit token.
      */
-    function susds() external view returns (IERC20);
+    function creditToken() external view returns (IERC20);
 
     /**
      *  @dev    Returns the address of the pocket, an address that holds custody of USDC in the
@@ -106,7 +107,7 @@ interface IGroveBasin {
 
     /**
      *  @dev    Returns the address of the rate provider, a contract that provides the conversion
-     *          rate between sUSDS and the other two assets in the GroveBasin (e.g., sUSDS to USD).
+     *          rate between the credit token and the other two assets in the GroveBasin.
      *  @return The address of the rate provider.
      */
     function rateProvider() external view returns (address);

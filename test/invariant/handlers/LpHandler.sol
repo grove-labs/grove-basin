@@ -21,12 +21,12 @@ contract LpHandler is HandlerBase {
         GroveBasin      psm_,
         MockERC20 usdc,
         MockERC20 usds,
-        MockERC20 susds,
+        MockERC20 creditToken,
         uint256   lpCount
     ) HandlerBase(psm_) {
         assets[0] = usdc;
         assets[1] = usds;
-        assets[2] = susds;
+        assets[2] = creditToken;
 
         for (uint256 i = 0; i < lpCount; i++) {
             lps.push(makeAddr(string(abi.encodePacked("lp-", vm.toString(i)))));

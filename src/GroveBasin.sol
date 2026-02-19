@@ -17,11 +17,11 @@ contract GroveBasin is IGroveBasin, Ownable {
 
     uint256 internal immutable _usdcPrecision;
     uint256 internal immutable _usdsPrecision;
-    uint256 internal immutable _susdsPrecision;
+    uint256 internal immutable _creditTokenPrecision;
 
     IERC20 public override immutable usdc;
     IERC20 public override immutable usds;
-    IERC20 public override immutable susds;
+    IERC20 public override immutable creditToken;
 
     address public override immutable rateProvider;
 
@@ -35,23 +35,23 @@ contract GroveBasin is IGroveBasin, Ownable {
         address owner_,
         address usdc_,
         address usds_,
-        address susds_,
+        address creditToken_,
         address rateProvider_
     )
         Ownable(owner_)
     {
         require(usdc_         != address(0), "GroveBasin/invalid-usdc");
         require(usds_         != address(0), "GroveBasin/invalid-usds");
-        require(susds_        != address(0), "GroveBasin/invalid-susds");
+        require(creditToken_  != address(0), "GroveBasin/invalid-creditToken");
         require(rateProvider_ != address(0), "GroveBasin/invalid-rateProvider");
 
-        require(usdc_ != usds_,  "GroveBasin/usdc-usds-same");
-        require(usdc_ != susds_, "GroveBasin/usdc-susds-same");
-        require(usds_ != susds_, "GroveBasin/usds-susds-same");
+        require(usdc_ != usds_,         "GroveBasin/usdc-usds-same");
+        require(usdc_ != creditToken_,  "GroveBasin/usdc-creditToken-same");
+        require(usds_ != creditToken_,  "GroveBasin/usds-creditToken-same");
 
-        usdc  = IERC20(usdc_);
-        usds  = IERC20(usds_);
-        susds = IERC20(susds_);
+        usdc        = IERC20(usdc_);
+        usds        = IERC20(usds_);
+        creditToken = IERC20(creditToken_);
 
         rateProvider = rateProvider_;
         pocket       = address(this);
@@ -61,9 +61,9 @@ contract GroveBasin is IGroveBasin, Ownable {
             "GroveBasin/rate-provider-returns-zero"
         );
 
-        _usdcPrecision  = 10 ** IERC20(usdc_).decimals();
-        _usdsPrecision  = 10 ** IERC20(usds_).decimals();
-        _susdsPrecision = 10 ** IERC20(susds_).decimals();
+        _usdcPrecision        = 10 ** IERC20(usdc_).decimals();
+        _usdsPrecision        = 10 ** IERC20(usds_).decimals();
+        _creditTokenPrecision = 10 ** IERC20(creditToken_).decimals();
 
         // Necessary to ensure rounding works as expected
         require(_usdcPrecision <= 1e18, "GroveBasin/usdc-precision-too-high");
@@ -252,7 +252,7 @@ contract GroveBasin is IGroveBasin, Ownable {
         // NOTE: Multiplying by 1e27 and dividing by 1e18 cancels to 1e9 in numerator
         return assetValue
             * 1e9
-            * _susdsPrecision
+            * _creditTokenPrecision
             / IRateProviderLike(rateProvider).getConversionRate();
     }
 
@@ -285,7 +285,7 @@ contract GroveBasin is IGroveBasin, Ownable {
     function totalAssets() public view override returns (uint256) {
         return _getUsdcValue(usdc.balanceOf(pocket))
             +  _getUsdsValue(usds.balanceOf(address(this)))
-            +  _getSUsdsValue(susds.balanceOf(address(this)), false);  // Round down
+            +  _getCreditTokenValue(creditToken.balanceOf(address(this)), false);  // Round down
     }
 
     /**********************************************************************************************/
@@ -295,7 +295,7 @@ contract GroveBasin is IGroveBasin, Ownable {
     function _getAssetValue(address asset, uint256 amount, bool roundUp) internal view returns (uint256) {
         if      (asset == address(usdc))  return _getUsdcValue(amount);
         else if (asset == address(usds))  return _getUsdsValue(amount);
-        else if (asset == address(susds)) return _getSUsdsValue(amount, roundUp);
+        else if (asset == address(creditToken)) return _getCreditTokenValue(amount, roundUp);
         else revert("GroveBasin/invalid-asset-for-value");
     }
 
@@ -307,16 +307,16 @@ contract GroveBasin is IGroveBasin, Ownable {
         return amount * 1e18 / _usdsPrecision;
     }
 
-    function _getSUsdsValue(uint256 amount, bool roundUp) internal view returns (uint256) {
+    function _getCreditTokenValue(uint256 amount, bool roundUp) internal view returns (uint256) {
         // NOTE: Multiplying by 1e18 and dividing by 1e27 cancels to 1e9 in denominator
         if (!roundUp) return amount
             * IRateProviderLike(rateProvider).getConversionRate()
             / 1e9
-            / _susdsPrecision;
+            / _creditTokenPrecision;
 
         return Math.ceilDiv(
             Math.ceilDiv(amount * IRateProviderLike(rateProvider).getConversionRate(), 1e9),
-            _susdsPrecision
+            _creditTokenPrecision
         );
     }
 
@@ -328,46 +328,46 @@ contract GroveBasin is IGroveBasin, Ownable {
         internal view returns (uint256 quoteAmount)
     {
         if (asset == address(usdc)) {
-            if      (quoteAsset == address(usds))  return _convertOneToOne(amount, _usdcPrecision, _usdsPrecision, roundUp);
-            else if (quoteAsset == address(susds)) return _convertToSUsds(amount, _usdcPrecision, roundUp);
+            if      (quoteAsset == address(usds))        return _convertOneToOne(amount, _usdcPrecision, _usdsPrecision, roundUp);
+            else if (quoteAsset == address(creditToken)) return _convertToCreditToken(amount, _usdcPrecision, roundUp);
         }
 
         else if (asset == address(usds)) {
-            if      (quoteAsset == address(usdc))  return _convertOneToOne(amount, _usdsPrecision, _usdcPrecision, roundUp);
-            else if (quoteAsset == address(susds)) return _convertToSUsds(amount, _usdsPrecision, roundUp);
+            if      (quoteAsset == address(usdc))        return _convertOneToOne(amount, _usdsPrecision, _usdcPrecision, roundUp);
+            else if (quoteAsset == address(creditToken)) return _convertToCreditToken(amount, _usdsPrecision, roundUp);
         }
 
-        else if (asset == address(susds)) {
-            if      (quoteAsset == address(usdc)) return _convertFromSUsds(amount, _usdcPrecision, roundUp);
-            else if (quoteAsset == address(usds)) return _convertFromSUsds(amount, _usdsPrecision, roundUp);
+        else if (asset == address(creditToken)) {
+            if      (quoteAsset == address(usdc)) return _convertFromCreditToken(amount, _usdcPrecision, roundUp);
+            else if (quoteAsset == address(usds)) return _convertFromCreditToken(amount, _usdsPrecision, roundUp);
         }
 
         revert("GroveBasin/invalid-asset");
     }
 
-    function _convertToSUsds(uint256 amount, uint256 assetPrecision, bool roundUp)
+    function _convertToCreditToken(uint256 amount, uint256 assetPrecision, bool roundUp)
         internal view returns (uint256)
     {
         uint256 rate = IRateProviderLike(rateProvider).getConversionRate();
 
-        if (!roundUp) return amount * 1e27 / rate * _susdsPrecision / assetPrecision;
+        if (!roundUp) return amount * 1e27 / rate * _creditTokenPrecision / assetPrecision;
 
         return Math.ceilDiv(
-            Math.ceilDiv(amount * 1e27, rate) * _susdsPrecision,
+            Math.ceilDiv(amount * 1e27, rate) * _creditTokenPrecision,
             assetPrecision
         );
     }
 
-    function _convertFromSUsds(uint256 amount, uint256 assetPrecision, bool roundUp)
+    function _convertFromCreditToken(uint256 amount, uint256 assetPrecision, bool roundUp)
         internal view returns (uint256)
     {
         uint256 rate = IRateProviderLike(rateProvider).getConversionRate();
 
-        if (!roundUp) return amount * rate / 1e27 * assetPrecision / _susdsPrecision;
+        if (!roundUp) return amount * rate / 1e27 * assetPrecision / _creditTokenPrecision;
 
         return Math.ceilDiv(
             Math.ceilDiv(amount * rate, 1e27) * assetPrecision,
-            _susdsPrecision
+            _creditTokenPrecision
         );
     }
 
@@ -397,7 +397,7 @@ contract GroveBasin is IGroveBasin, Ownable {
     }
 
     function _isValidAsset(address asset) internal view returns (bool) {
-        return asset == address(usdc) || asset == address(usds) || asset == address(susds);
+        return asset == address(usdc) || asset == address(usds) || asset == address(creditToken);
     }
 
     function _getAssetCustodian(address asset) internal view returns (address custodian) {

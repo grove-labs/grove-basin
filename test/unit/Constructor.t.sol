@@ -15,80 +15,80 @@ contract PSMConstructorTests is GroveBasinTestBase {
 
     function test_constructor_invalidOwner() public {
         vm.expectRevert(abi.encodeWithSignature("OwnableInvalidOwner(address)", address(0)));
-        new GroveBasin(address(0), address(usdc), address(usds), address(susds), address(rateProvider));
+        new GroveBasin(address(0), address(usdc), address(usds), address(creditToken), address(rateProvider));
     }
 
     function test_constructor_invalidUsdc() public {
         vm.expectRevert("GroveBasin/invalid-usdc");
-        new GroveBasin(owner, address(0), address(usds), address(susds), address(rateProvider));
+        new GroveBasin(owner, address(0), address(usds), address(creditToken), address(rateProvider));
     }
 
     function test_constructor_invalidUsds() public {
         vm.expectRevert("GroveBasin/invalid-usds");
-        new GroveBasin(owner, address(usdc), address(0), address(susds), address(rateProvider));
+        new GroveBasin(owner, address(usdc), address(0), address(creditToken), address(rateProvider));
     }
 
-    function test_constructor_invalidSUsds() public {
-        vm.expectRevert("GroveBasin/invalid-susds");
+    function test_constructor_invalidCreditToken() public {
+        vm.expectRevert("GroveBasin/invalid-creditToken");
         new GroveBasin(owner, address(usdc), address(usds), address(0), address(rateProvider));
     }
 
     function test_constructor_invalidRateProvider() public {
         vm.expectRevert("GroveBasin/invalid-rateProvider");
-        new GroveBasin(owner, address(usdc), address(usds), address(susds), address(0));
+        new GroveBasin(owner, address(usdc), address(usds), address(creditToken), address(0));
     }
 
     function test_constructor_usdcUsdsMatch() public {
         vm.expectRevert("GroveBasin/usdc-usds-same");
-        new GroveBasin(owner, address(usdc), address(usdc), address(susds), address(rateProvider));
+        new GroveBasin(owner, address(usdc), address(usdc), address(creditToken), address(rateProvider));
     }
 
-    function test_constructor_usdcSUsdsMatch() public {
-        vm.expectRevert("GroveBasin/usdc-susds-same");
+    function test_constructor_usdcCreditTokenMatch() public {
+        vm.expectRevert("GroveBasin/usdc-creditToken-same");
         new GroveBasin(owner, address(usdc), address(usds), address(usdc), address(rateProvider));
     }
 
-    function test_constructor_usdsSUsdsMatch() public {
-        vm.expectRevert("GroveBasin/usds-susds-same");
+    function test_constructor_usdsCreditTokenMatch() public {
+        vm.expectRevert("GroveBasin/usds-creditToken-same");
         new GroveBasin(owner, address(usdc), address(usds), address(usds), address(rateProvider));
     }
 
     function test_constructor_rateProviderZero() public {
         MockRateProvider(address(rateProvider)).__setConversionRate(0);
         vm.expectRevert("GroveBasin/rate-provider-returns-zero");
-        new GroveBasin(owner, address(usdc), address(usds), address(susds), address(rateProvider));
+        new GroveBasin(owner, address(usdc), address(usds), address(creditToken), address(rateProvider));
     }
 
     function test_constructor_usdcDecimalsToHighBoundary() public {
         MockERC20 usdc = new MockERC20("USDC", "USDC", 19);
 
         vm.expectRevert("GroveBasin/usdc-precision-too-high");
-        new GroveBasin(owner, address(usdc), address(usds), address(susds), address(rateProvider));
+        new GroveBasin(owner, address(usdc), address(usds), address(creditToken), address(rateProvider));
 
         usdc = new MockERC20("USDC", "USDC", 18);
 
-        new GroveBasin(owner, address(usdc), address(usds), address(susds), address(rateProvider));
+        new GroveBasin(owner, address(usdc), address(usds), address(creditToken), address(rateProvider));
     }
 
     function test_constructor_usdsDecimalsToHighBoundary() public {
         MockERC20 usds = new MockERC20("USDS", "USDS", 19);
 
         vm.expectRevert("GroveBasin/usds-precision-too-high");
-        new GroveBasin(owner, address(usdc), address(usds), address(susds), address(rateProvider));
+        new GroveBasin(owner, address(usdc), address(usds), address(creditToken), address(rateProvider));
 
         usds = new MockERC20("USDS", "USDS", 18);
 
-        new GroveBasin(owner, address(usdc), address(usds), address(susds), address(rateProvider));
+        new GroveBasin(owner, address(usdc), address(usds), address(creditToken), address(rateProvider));
     }
 
     function test_constructor() public {
         // Deploy new GroveBasin to get test coverage
-        groveBasin = new GroveBasin(owner, address(usdc), address(usds), address(susds), address(rateProvider));
+        groveBasin = new GroveBasin(owner, address(usdc), address(usds), address(creditToken), address(rateProvider));
 
         assertEq(address(groveBasin.owner()),        address(owner));
         assertEq(address(groveBasin.usdc()),         address(usdc));
         assertEq(address(groveBasin.usds()),         address(usds));
-        assertEq(address(groveBasin.susds()),        address(susds));
+        assertEq(address(groveBasin.creditToken()),        address(creditToken));
         assertEq(address(groveBasin.rateProvider()), address(rateProvider));
     }
 

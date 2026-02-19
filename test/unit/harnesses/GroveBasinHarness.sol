@@ -9,10 +9,10 @@ contract GroveBasinHarness is GroveBasin {
         address owner_,
         address usdc_,
         address usds_,
-        address susds_,
+        address creditToken_,
         address rateProvider_
     )
-        GroveBasin(owner_, usdc_, usds_, susds_, rateProvider_) {}
+        GroveBasin(owner_, usdc_, usds_, creditToken_, rateProvider_) {}
 
     function getAssetValue(address asset, uint256 amount, bool roundUp)
         external view returns (uint256)
@@ -28,8 +28,8 @@ contract GroveBasinHarness is GroveBasin {
         return _getUsdsValue(amount);
     }
 
-    function getSUsdsValue(uint256 amount, bool roundUp) external view returns (uint256) {
-        return _getSUsdsValue(amount, roundUp);
+    function getCreditTokenValue(uint256 amount, bool roundUp) external view returns (uint256) {
+        return _getCreditTokenValue(amount, roundUp);
     }
 
     function getAssetCustodian(address asset) external view returns (address) {

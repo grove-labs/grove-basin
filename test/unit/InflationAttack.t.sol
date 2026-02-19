@@ -11,17 +11,17 @@ contract InflationAttackTests is GroveBasinTestBase {
     address frontRunner    = makeAddr("frontRunner");
     address deployer       = makeAddr("deployer");
 
-    function test_inflationAttack_noInitialDeposit_susds() public {
-        // Step 1: Front runner deposits 1 sUSDS to get 1 share
+    function test_inflationAttack_noInitialDeposit_creditToken() public {
+        // Step 1: Front runner deposits 1 creditToken to get 1 share
 
-        // Have to use susds because 1 USDC mints 1e12 shares
-        _deposit(address(susds), frontRunner, 1);
+        // Have to use creditToken because 1 USDC mints 1e12 shares
+        _deposit(address(creditToken), frontRunner, 1);
 
         _runInflationAttack_noInitialDepositTest();
     }
 
     function test_inflationAttack_noInitialDeposit_usds() public {
-        // Step 1: Front runner deposits 1 sUSDS to get 1 share
+        // Step 1: Front runner deposits 1 creditToken to get 1 share
 
         // Have to use USDS because 1 USDC mints 1e12 shares
         _deposit(address(usds), frontRunner, 1);
@@ -29,13 +29,13 @@ contract InflationAttackTests is GroveBasinTestBase {
         _runInflationAttack_noInitialDepositTest();
     }
 
-    function test_inflationAttack_useInitialDeposit_susds() public {
-        _deposit(address(susds), address(deployer), 0.8e18);  // 1e18 shares
+    function test_inflationAttack_useInitialDeposit_creditToken() public {
+        _deposit(address(creditToken), address(deployer), 0.8e18);  // 1e18 shares
 
-        // Step 1: Front runner deposits sUSDS to get 1 share
+        // Step 1: Front runner deposits creditToken to get 1 share
 
-        // User tries to do the same attack, depositing one sUSDS for 1 share
-        _deposit(address(susds), frontRunner, 1);
+        // User tries to do the same attack, depositing one creditToken for 1 share
+        _deposit(address(creditToken), frontRunner, 1);
 
         _runInflationAttack_useInitialDepositTest();
     }
@@ -45,7 +45,7 @@ contract InflationAttackTests is GroveBasinTestBase {
 
         // Step 1: Front runner deposits usds to get 1 share
 
-        // User tries to do the same attack, depositing one sUSDS for 1 share
+        // User tries to do the same attack, depositing one creditToken for 1 share
         _deposit(address(usds), frontRunner, 1);
 
         _runInflationAttack_useInitialDepositTest();

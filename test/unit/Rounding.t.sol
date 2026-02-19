@@ -16,7 +16,7 @@ contract RoundingTests is GroveBasinTestBase {
 
         // Seed the GroveBasin with max liquidity so withdrawals can always be performed
         _deposit(address(usds),  address(this), USDS_TOKEN_MAX);
-        _deposit(address(susds), address(this), SUSDS_TOKEN_MAX);
+        _deposit(address(creditToken), address(this), CREDIT_TOKEN_MAX);
         _deposit(address(usdc),  address(this), USDC_TOKEN_MAX);
 
         // Set an exchange rate that will cause rounding
@@ -45,15 +45,15 @@ contract RoundingTests is GroveBasinTestBase {
         assertEq(usdc.balanceOf(address(user)), 1e6 - 1);  // Rounds against user
     }
 
-    function test_roundAgainstUser_susds() public {
-        _deposit(address(susds), address(user), 1e18);
+    function test_roundAgainstUser_creditToken() public {
+        _deposit(address(creditToken), address(user), 1e18);
 
-        assertEq(susds.balanceOf(address(user)), 0);
+        assertEq(creditToken.balanceOf(address(user)), 0);
 
         vm.prank(user);
-        groveBasin.withdraw(address(susds), address(user), 1e18);
+        groveBasin.withdraw(address(creditToken), address(user), 1e18);
 
-        assertEq(susds.balanceOf(address(user)), 1e18 - 1);  // Rounds against user
+        assertEq(creditToken.balanceOf(address(user)), 1e18 - 1);  // Rounds against user
     }
 
     function testFuzz_roundingAgainstUser_multiUser_usds(
@@ -94,7 +94,7 @@ contract RoundingTests is GroveBasinTestBase {
         );
     }
 
-    function testFuzz_roundingAgainstUser_multiUser_susds(
+    function testFuzz_roundingAgainstUser_multiUser_creditToken(
         uint256 rate1,
         uint256 rate2,
         uint256 amount1,
@@ -103,13 +103,13 @@ contract RoundingTests is GroveBasinTestBase {
         public
     {
         _runRoundingAgainstUsersFuzzTest(
-            susds,
-            SUSDS_TOKEN_MAX,
+            creditToken,
+            CREDIT_TOKEN_MAX,
             rate1,
             rate2,
             amount1,
             amount2,
-            4  // susds has higher rounding errors that can be introduced because of rate conversion
+            4  // creditToken has higher rounding errors that can be introduced because of rate conversion
         );
     }
 
