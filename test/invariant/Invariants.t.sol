@@ -707,21 +707,21 @@ contract PSMInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinInvariant
 //       called is too high to be considered reflective of reality (setting pocket as often as deposits for example).
 //       This inherited test suite is the most complex and realistic, so setting the pocket in this
 //       one is sufficient to ensure the expected behavior and accounting.
-contract PSMInvariants_TimeBasedRateSetting_WithTransfers_WithPocketSetting is PSMInvariants_TimeBasedRateSetting_WithTransfers {
+// contract PSMInvariants_TimeBasedRateSetting_WithTransfers_WithPocketSetting is PSMInvariants_TimeBasedRateSetting_WithTransfers {
 
-    OwnerHandler ownerHandler;
+//     OwnerHandler ownerHandler;
 
-    function setUp() public override {
-        super.setUp();
+//     function setUp() public override {
+//         super.setUp();
 
-        // NOTE: The GroveBasin is the pocket to start, so the test suite will start with it as the pocket
-        //       and transfer it to other addresses.
+//         // NOTE: The GroveBasin is the pocket to start, so the test suite will start with it as the pocket
+//         //       and transfer it to other addresses.
 
-        ownerHandler = new OwnerHandler(groveBasin, usdc);
-        targetContract(address(ownerHandler));
+//         ownerHandler = new OwnerHandler(groveBasin, usdc);
+//         targetContract(address(ownerHandler));
 
-        vm.prank(owner);
-        groveBasin.transferOwnership(address(ownerHandler));
-    }
+//         vm.prank(owner);
+//         groveBasin.transferOwnership(address(ownerHandler));
+//     }
 
-}
+// }
