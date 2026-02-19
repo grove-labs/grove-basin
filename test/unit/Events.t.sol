@@ -53,18 +53,18 @@ contract PSMEventTests is GroveBasinTestBase {
         emit Deposit(address(usdc), sender, receiver, 100e6, 100e18);
         groveBasin.deposit(address(usdc), receiver, 100e6);
 
-        susds.mint(sender, 100e18);
-        susds.approve(address(groveBasin), 100e18);
+        creditToken.mint(sender, 100e18);
+        creditToken.approve(address(groveBasin), 100e18);
 
         vm.expectEmit(address(groveBasin));
-        emit Deposit(address(susds), sender, receiver, 100e18, 125e18);
-        groveBasin.deposit(address(susds), receiver, 100e18);
+        emit Deposit(address(creditToken), sender, receiver, 100e18, 125e18);
+        groveBasin.deposit(address(creditToken), receiver, 100e18);
     }
 
     function test_withdraw_events() public {
         _deposit(address(usds),  sender, 100e18);
         _deposit(address(usdc), sender, 100e6);
-        _deposit(address(susds), sender, 100e18);
+        _deposit(address(creditToken), sender, 100e18);
 
         vm.startPrank(sender);
 
@@ -77,25 +77,25 @@ contract PSMEventTests is GroveBasinTestBase {
         groveBasin.withdraw(address(usdc), receiver, 100e6);
 
         vm.expectEmit(address(groveBasin));
-        emit Withdraw(address(susds), sender, receiver, 100e18, 125e18);
-        groveBasin.withdraw(address(susds), receiver, 100e18);
+        emit Withdraw(address(creditToken), sender, receiver, 100e18, 125e18);
+        groveBasin.withdraw(address(creditToken), receiver, 100e18);
     }
 
     function test_swap_events() public {
         usds.mint(address(groveBasin),  1000e18);
         usdc.mint(pocket, 1000e6);
-        susds.mint(address(groveBasin), 1000e18);
+        creditToken.mint(address(groveBasin), 1000e18);
 
         vm.startPrank(sender);
 
         _swapEventTest(address(usds), address(usdc),  100e18, 100e6, 1);
-        _swapEventTest(address(usds), address(susds), 100e18, 80e18, 2);
+        _swapEventTest(address(usds), address(creditToken), 100e18, 80e18, 2);
 
         _swapEventTest(address(usdc), address(usds),  100e6, 100e18, 3);
-        _swapEventTest(address(usdc), address(susds), 100e6, 80e18,  4);
+        _swapEventTest(address(usdc), address(creditToken), 100e6, 80e18,  4);
 
-        _swapEventTest(address(susds), address(usds), 100e18, 125e18, 5);
-        _swapEventTest(address(susds), address(usdc), 100e18, 125e6,  6);
+        _swapEventTest(address(creditToken), address(usds), 100e18, 125e18, 5);
+        _swapEventTest(address(creditToken), address(usdc), 100e18, 125e6,  6);
     }
 
     function _swapEventTest(

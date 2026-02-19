@@ -16,7 +16,7 @@ contract TimeBasedRateHandler is HandlerBase, StdCheats {
 
     SSRAuthOracle public ssrOracle;
 
-    uint256 public setSUSDSDataCount;
+    uint256 public setRateDataCount;
     uint256 public warpCount;
 
     constructor(GroveBasin psm_, SSRAuthOracle ssrOracle_) HandlerBase(psm_) {
@@ -24,7 +24,7 @@ contract TimeBasedRateHandler is HandlerBase, StdCheats {
     }
 
     // This acts as a receiver on an L2.
-    function setSUSDSData(uint256 newSsr) external {
+    function setRateData(uint256 newSsr) external {
         // 1. Setup and bounds
         ssr = _bound(newSsr, 1e27, TWENTY_PCT_APY_SSR);
 
@@ -47,17 +47,17 @@ contract TimeBasedRateHandler is HandlerBase, StdCheats {
         assertGe(
             groveBasin.convertToAssetValue(1e18) + 1,
             startingConversion,
-            "TimeBasedRateHandler/getSUSDSData/conversion-rate-decrease"
+            "TimeBasedRateHandler/setRateData/conversion-rate-decrease"
         );
 
         assertGe(
             groveBasin.totalAssets() + 1,
             startingValue,
-            "TimeBasedRateHandler/getSUSDSData/groveBasin-total-value-decrease"
+            "TimeBasedRateHandler/setRateData/groveBasin-total-value-decrease"
         );
 
         // 5. Update metrics tracking state
-        setSUSDSDataCount++;
+        setRateDataCount++;
     }
 
     function warp(uint256 skipTime) external {

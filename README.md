@@ -41,9 +41,9 @@ The deployment library (`deploy/GroveBasinDeploy.sol`) in this repo contains log
 
 - **`usdc`**: IERC20 interface of USDC.
 - **`usds`**: IERC20 interface of USDS.
-- **`susds`**: IERC20 interface of sUSDS. Note that this is an ERC20 and not a ERC4626 because it's not on mainnet.
+- **`creditToken`**: IERC20 interface of the tokenized credit asset. Supports both rebasing and yield-accruing tokens.
 - **`pocket`**: Address that holds custody of USDC. The `pocket` can deploy USDC to yield-bearing strategies. Defaulted to the address of Grove Basin itself.
-- **`rateProvider`**: Contract that returns a conversion rate between and sUSDS and USD in 1e27 precision.
+- **`creditTokenRateProvider`**: Contract that returns a conversion rate between and creditToken and USD in 1e27 precision.
 - **`totalShares`**: Total shares in Grove Basin. Shares represent the ownership of the underlying assets in Grove Basin.
 - **`shares`**: Mapping of user addresses to their shares.
 

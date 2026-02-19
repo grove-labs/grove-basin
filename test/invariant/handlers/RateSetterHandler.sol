@@ -9,12 +9,12 @@ contract RateSetterHandler is HandlerBase {
 
     uint256 public rate;
 
-    MockRateProvider public rateProvider;
+    MockRateProvider public creditTokenRateProvider;
 
     uint256 public setRateCount;
 
-    constructor(GroveBasin psm_, address rateProvider_, uint256 initialRate) HandlerBase(psm_) {
-        rateProvider = MockRateProvider(rateProvider_);
+    constructor(GroveBasin psm_, address creditTokenRateProvider_, uint256 initialRate) HandlerBase(psm_) {
+        creditTokenRateProvider = MockRateProvider(creditTokenRateProvider_);
         rate         = initialRate;
     }
 
@@ -29,7 +29,7 @@ contract RateSetterHandler is HandlerBase {
         uint256 startingValue      = groveBasin.totalAssets();
 
         // 3. Perform action against protocol
-        rateProvider.__setConversionRate(rate);
+        creditTokenRateProvider.__setConversionRate(rate);
 
         // 4. Perform action-specific assertions
         assertGe(

@@ -13,7 +13,7 @@ contract SwapperHandler is HandlerBase {
 
     address[] public swappers;
 
-    IRateProviderLike public rateProvider;
+    IRateProviderLike public creditTokenRateProvider;
 
     mapping(address user => mapping(address asset => uint256 deposits)) public swapsIn;
     mapping(address user => mapping(address asset => uint256 deposits)) public swapsOut;
@@ -32,14 +32,14 @@ contract SwapperHandler is HandlerBase {
         GroveBasin      psm_,
         MockERC20 usdc,
         MockERC20 usds,
-        MockERC20 susds,
+        MockERC20 creditToken,
         uint256   swapperCount
     ) HandlerBase(psm_) {
         assets[0] = usdc;
         assets[1] = usds;
-        assets[2] = susds;
+        assets[2] = creditToken;
 
-        rateProvider = IRateProviderLike(groveBasin.rateProvider());
+        creditTokenRateProvider = IRateProviderLike(groveBasin.creditTokenRateProvider());
 
         for (uint256 i = 0; i < swapperCount; i++) {
             swappers.push(makeAddr(string(abi.encodePacked("swapper-", vm.toString(i)))));
@@ -196,7 +196,7 @@ contract SwapperHandler is HandlerBase {
         );
 
         // High rates introduce larger rounding errors
-        uint256 rateIntroducedRounding = rateProvider.getConversionRate() / 1e27;
+        uint256 rateIntroducedRounding = creditTokenRateProvider.getConversionRate() / 1e27;
 
         assertApproxEqAbs(
             valueIn,
@@ -343,7 +343,7 @@ contract SwapperHandler is HandlerBase {
         );
 
         // High rates introduce larger rounding errors
-        uint256 rateIntroducedRounding = rateProvider.getConversionRate() / 1e27;
+        uint256 rateIntroducedRounding = creditTokenRateProvider.getConversionRate() / 1e27;
 
         assertApproxEqAbs(
             valueIn,
@@ -361,7 +361,7 @@ contract SwapperHandler is HandlerBase {
     function _getAssetValue(address asset, uint256 amount) internal view returns (uint256) {
         if      (asset == address(assets[0])) return amount * 1e12;
         else if (asset == address(assets[1])) return amount;
-        else if (asset == address(assets[2])) return amount * rateProvider.getConversionRate() / 1e27;
+        else if (asset == address(assets[2])) return amount * creditTokenRateProvider.getConversionRate() / 1e27;
         else revert("SwapperHandler/asset-not-found");
     }
 

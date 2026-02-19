@@ -20,11 +20,11 @@ contract GroveBasinTestBase is Test {
 
     MockERC20 public usdc;
     MockERC20 public usds;
-    MockERC20 public susds;
+    MockERC20 public creditToken;
 
-    IRateProviderLike public rateProvider;  // Can be overridden by ssrOracle using same interface
+    IRateProviderLike public creditTokenRateProvider;  // Can be overridden by ssrOracle using same interface
 
-    MockRateProvider public mockRateProvider;  // Interface used for mocking
+    MockRateProvider public mockCreditTokenRateProvider;  // Interface used for mocking
 
     modifier assertAtomicGroveBasinValueDoesNotChange {
         uint256 beforeValue = _getGroveBasinValue();
@@ -34,22 +34,22 @@ contract GroveBasinTestBase is Test {
 
     // 1,000,000,000,000 of each token
     uint256 public constant USDS_TOKEN_MAX  = 1e30;
-    uint256 public constant SUSDS_TOKEN_MAX = 1e30;
+    uint256 public constant CREDIT_TOKEN_MAX = 1e30;
     uint256 public constant USDC_TOKEN_MAX  = 1e18;
 
     function setUp() public virtual {
         usdc  = new MockERC20("usdc",  "usdc",  6);
         usds  = new MockERC20("usds",  "usds",  18);
-        susds = new MockERC20("susds", "susds", 18);
+        creditToken = new MockERC20("creditToken", "creditToken", 18);
 
-        mockRateProvider = new MockRateProvider();
+        mockCreditTokenRateProvider = new MockRateProvider();
 
         // NOTE: Using 1.25 for easy two way conversions
-        mockRateProvider.__setConversionRate(1.25e27);
+        mockCreditTokenRateProvider.__setConversionRate(1.25e27);
 
-        rateProvider = IRateProviderLike(address(mockRateProvider));
+        creditTokenRateProvider = IRateProviderLike(address(mockCreditTokenRateProvider));
 
-        groveBasin = new GroveBasin(owner, address(usdc), address(usds), address(susds), address(rateProvider));
+        groveBasin = new GroveBasin(owner, address(usdc), address(usds), address(creditToken), address(creditTokenRateProvider));
 
         vm.prank(owner);
         groveBasin.setPocket(pocket);
@@ -59,11 +59,11 @@ contract GroveBasinTestBase is Test {
 
         vm.label(address(usds),  "USDS");
         vm.label(address(usdc),  "USDC");
-        vm.label(address(susds), "sUSDS");
+        vm.label(address(creditToken), "creditToken");
     }
 
     function _getGroveBasinValue() internal view returns (uint256) {
-        return (susds.balanceOf(address(groveBasin)) * rateProvider.getConversionRate() / 1e27)
+        return (creditToken.balanceOf(address(groveBasin)) * creditTokenRateProvider.getConversionRate() / 1e27)
             + usdc.balanceOf(groveBasin.pocket()) * 1e12
             + usds.balanceOf(address(groveBasin));
     }

@@ -18,15 +18,15 @@ contract PSMDeployTests is GroveBasinTestBase {
             address(owner),
             address(usdc),
             address(usds),
-            address(susds),
-            address(rateProvider)
+            address(creditToken),
+            address(creditTokenRateProvider)
         ));
 
         assertEq(address(newPsm.owner()),        address(owner));
         assertEq(address(newPsm.usdc()),         address(usdc));
         assertEq(address(newPsm.usds()),         address(usds));
-        assertEq(address(newPsm.susds()),        address(susds));
-        assertEq(address(newPsm.rateProvider()), address(rateProvider));
+        assertEq(address(newPsm.creditToken()),        address(creditToken));
+        assertEq(address(newPsm.creditTokenRateProvider()), address(creditTokenRateProvider));
 
         assertEq(usdc.allowance(address(this), address(newPsm)), 0);
 

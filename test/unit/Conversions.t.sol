@@ -12,7 +12,7 @@ contract PSMConversionTestBase is GroveBasinTestBase {
     struct FuzzVars {
         uint256 usdsAmount;
         uint256 usdcAmount;
-        uint256 susdsAmount;
+        uint256 creditTokenAmount;
         uint256 expectedShares;
     }
 
@@ -22,22 +22,22 @@ contract PSMConversionTestBase is GroveBasinTestBase {
         uint256 initialConversionRate,
         uint256 usdsAmount,
         uint256 usdcAmount,
-        uint256 susdsAmount
+        uint256 creditTokenAmount
     )
         internal returns (FuzzVars memory vars)
     {
         vars.usdsAmount  = _bound(usdsAmount,  1, USDS_TOKEN_MAX);
         vars.usdcAmount  = _bound(usdcAmount,  1, USDC_TOKEN_MAX);
-        vars.susdsAmount = _bound(susdsAmount, 1, SUSDS_TOKEN_MAX);
+        vars.creditTokenAmount = _bound(creditTokenAmount, 1, CREDIT_TOKEN_MAX);
 
         _deposit(address(usds),  address(this), vars.usdsAmount);
         _deposit(address(usdc),  address(this), vars.usdcAmount);
-        _deposit(address(susds), address(this), vars.susdsAmount);
+        _deposit(address(creditToken), address(this), vars.creditTokenAmount);
 
         vars.expectedShares =
             vars.usdsAmount +
             vars.usdcAmount * 1e12 +
-            vars.susdsAmount * initialConversionRate / 1e27;
+            vars.creditTokenAmount * initialConversionRate / 1e27;
 
         // Assert that shares to be used for calcs are correct
         assertEq(groveBasin.totalShares(), vars.expectedShares);
@@ -68,13 +68,13 @@ contract PSMConvertToAssetsTests is GroveBasinTestBase {
         assertEq(groveBasin.convertToAssets(address(usdc), 2e18), 2e6);
         assertEq(groveBasin.convertToAssets(address(usdc), 3e18), 3e6);
 
-        assertEq(groveBasin.convertToAssets(address(susds), 1), 0);
-        assertEq(groveBasin.convertToAssets(address(susds), 2), 1);
-        assertEq(groveBasin.convertToAssets(address(susds), 3), 2);
+        assertEq(groveBasin.convertToAssets(address(creditToken), 1), 0);
+        assertEq(groveBasin.convertToAssets(address(creditToken), 2), 1);
+        assertEq(groveBasin.convertToAssets(address(creditToken), 3), 2);
 
-        assertEq(groveBasin.convertToAssets(address(susds), 1e18), 0.8e18);
-        assertEq(groveBasin.convertToAssets(address(susds), 2e18), 1.6e18);
-        assertEq(groveBasin.convertToAssets(address(susds), 3e18), 2.4e18);
+        assertEq(groveBasin.convertToAssets(address(creditToken), 1e18), 0.8e18);
+        assertEq(groveBasin.convertToAssets(address(creditToken), 2e18), 1.6e18);
+        assertEq(groveBasin.convertToAssets(address(creditToken), 3e18), 2.4e18);
     }
 
     function testFuzz_convertToAssets_usdc(uint256 amount) public view {
@@ -89,14 +89,14 @@ contract PSMConvertToAssetsTests is GroveBasinTestBase {
         assertEq(groveBasin.convertToAssets(address(usdc), amount), amount / 1e12);
     }
 
-    function testFuzz_convertToAssets_susds(uint256 conversionRate, uint256 amount) public {
+    function testFuzz_convertToAssets_creditToken(uint256 conversionRate, uint256 amount) public {
         // NOTE: 0.0001e27 considered lower bound for overflow considerations
         conversionRate = _bound(conversionRate, 0.0001e27, 1000e27);
-        amount         = _bound(amount,         0,         SUSDS_TOKEN_MAX);
+        amount         = _bound(amount,         0,         CREDIT_TOKEN_MAX);
 
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
-        assertEq(groveBasin.convertToAssets(address(susds), amount), amount * 1e27 / conversionRate);
+        assertEq(groveBasin.convertToAssets(address(creditToken), amount), amount * 1e27 / conversionRate);
     }
 
 }
@@ -110,32 +110,32 @@ contract PSMConvertToAssetValueTests is PSMConversionTestBase {
     function test_convertToAssetValue() public {
         _deposit(address(usds),  address(this), 100e18);
         _deposit(address(usdc),  address(this), 100e6);
-        _deposit(address(susds), address(this), 80e18);
+        _deposit(address(creditToken), address(this), 80e18);
 
         assertEq(groveBasin.convertToAssetValue(1e18), 1e18);
 
-        mockRateProvider.__setConversionRate(2e27);
+        mockCreditTokenRateProvider.__setConversionRate(2e27);
 
         // $300 dollars of value deposited, 300 shares minted.
-        // sUSDS portion becomes worth $160, full pool worth $360, each share worth $1.20
+        // creditToken portion becomes worth $160, full pool worth $360, each share worth $1.20
         assertEq(groveBasin.convertToAssetValue(1e18), 1.2e18);
     }
 
     function testFuzz_convertToAssetValue_conversionRateIncrease(
         uint256 usdsAmount,
         uint256 usdcAmount,
-        uint256 susdsAmount,
+        uint256 creditTokenAmount,
         uint256 conversionRate
     )
         public
     {
-        mockRateProvider.__setConversionRate(1e27);  // Start lower than 1.25 for this test
+        mockCreditTokenRateProvider.__setConversionRate(1e27);  // Start lower than 1.25 for this test
 
         FuzzVars memory vars = _setUpConversionFuzzTest(
             1e27,
             usdsAmount,
             usdcAmount,
-            susdsAmount
+            creditTokenAmount
         );
 
         // These two values are always the same at the beginning
@@ -146,32 +146,32 @@ contract PSMConvertToAssetValueTests is PSMConversionTestBase {
         // 1:1 between shares and dollar value
         assertEq(groveBasin.convertToAssetValue(vars.expectedShares), initialValue);
 
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 newValue
-            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.susdsAmount * conversionRate / 1e27;
+            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
 
         assertEq(groveBasin.convertToAssetValue(vars.expectedShares), newValue);
 
-        // Value change is only from sUSDS exchange rate increasing
-        assertEq(newValue - initialValue, vars.susdsAmount * (conversionRate - 1e27) / 1e27);
+        // Value change is only from creditToken exchange rate increasing
+        assertEq(newValue - initialValue, vars.creditTokenAmount * (conversionRate - 1e27) / 1e27);
     }
 
     function testFuzz_convertToAssetValue_conversionRateDecrease(
         uint256 usdsAmount,
         uint256 usdcAmount,
-        uint256 susdsAmount,
+        uint256 creditTokenAmount,
         uint256 conversionRate
     )
         public
     {
-        mockRateProvider.__setConversionRate(2e27);  // Start higher than 1.25 for this test
+        mockCreditTokenRateProvider.__setConversionRate(2e27);  // Start higher than 1.25 for this test
 
         FuzzVars memory vars = _setUpConversionFuzzTest(
             2e27,
             usdsAmount,
             usdcAmount,
-            susdsAmount
+            creditTokenAmount
         );
 
         // These two values are always the same at the beginning
@@ -182,17 +182,17 @@ contract PSMConvertToAssetValueTests is PSMConversionTestBase {
         // 1:1 between shares and dollar value
         assertEq(groveBasin.convertToAssetValue(vars.expectedShares), initialValue);
 
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 newValue
-            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.susdsAmount * conversionRate / 1e27;
+            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
 
         assertEq(groveBasin.convertToAssetValue(vars.expectedShares), newValue);
 
-        // Value change is only from sUSDS exchange rate decreasing
+        // Value change is only from creditToken exchange rate decreasing
         assertApproxEqAbs(
             initialValue - newValue,
-            vars.susdsAmount * (2e27 - conversionRate) / 1e27,
+            vars.creditTokenAmount * (2e27 - conversionRate) / 1e27,
             1
         );
     }
@@ -209,32 +209,32 @@ contract PSMConvertToSharesTests is PSMConversionTestBase {
         assertEq(groveBasin.convertToShares(amount), amount);
     }
 
-    function test_convertToShares_depositAndWithdrawUsdcAndSUsds_noChange() public {
+    function test_convertToShares_depositAndWithdrawUsdcAndCreditToken_noChange() public {
         _assertOneToOneConversion();
 
         _deposit(address(usdc), address(this), 100e6);
         _assertOneToOneConversion();
 
-        _deposit(address(susds), address(this), 80e18);
+        _deposit(address(creditToken), address(this), 80e18);
         _assertOneToOneConversion();
 
         _withdraw(address(usdc), address(this), 100e6);
         _assertOneToOneConversion();
 
-        _withdraw(address(susds), address(this), 80e18);
+        _withdraw(address(creditToken), address(this), 80e18);
         _assertOneToOneConversion();
     }
 
     function test_convertToShares_conversionRateIncrease() public {
         // 200 shares minted at 1:1 ratio, $200 of value in pool
         _deposit(address(usdc), address(this), 100e6);
-        _deposit(address(susds), address(this), 80e18);
+        _deposit(address(creditToken), address(this), 80e18);
 
         _assertOneToOneConversion();
 
-        // 80 sUSDS now worth $120, 200 shares in pool with $220 of value
+        // 80 creditToken now worth $120, 200 shares in pool with $220 of value
         // Each share should be worth $1.10.
-        mockRateProvider.__setConversionRate(1.5e27);
+        mockCreditTokenRateProvider.__setConversionRate(1.5e27);
 
         assertEq(groveBasin.convertToShares(10), 9);
         assertEq(groveBasin.convertToShares(11), 10);
@@ -248,18 +248,18 @@ contract PSMConvertToSharesTests is PSMConversionTestBase {
     function testFuzz_convertToShares_conversionRateIncrease(
         uint256 usdsAmount,
         uint256 usdcAmount,
-        uint256 susdsAmount,
+        uint256 creditTokenAmount,
         uint256 conversionRate
     )
         public
     {
-        mockRateProvider.__setConversionRate(1e27);  // Start lower than 1.25 for this test
+        mockCreditTokenRateProvider.__setConversionRate(1e27);  // Start lower than 1.25 for this test
 
         FuzzVars memory vars = _setUpConversionFuzzTest(
             1e27,
             usdsAmount,
             usdcAmount,
-            susdsAmount
+            creditTokenAmount
         );
 
         // These two values are always the same at the beginning
@@ -270,32 +270,32 @@ contract PSMConvertToSharesTests is PSMConversionTestBase {
         // 1:1 between shares and dollar value
         assertEq(groveBasin.convertToShares(initialValue), vars.expectedShares);
 
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 newValue
-            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.susdsAmount * conversionRate / 1e27;
+            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
 
         assertEq(groveBasin.convertToShares(newValue), vars.expectedShares);
 
-        // Value change is only from sUSDS exchange rate increasing
-        assertEq(newValue - initialValue, vars.susdsAmount * (conversionRate - 1e27) / 1e27);
+        // Value change is only from creditToken exchange rate increasing
+        assertEq(newValue - initialValue, vars.creditTokenAmount * (conversionRate - 1e27) / 1e27);
     }
 
     function testFuzz_convertToAssetValue_conversionRateDecrease(
         uint256 usdsAmount,
         uint256 usdcAmount,
-        uint256 susdsAmount,
+        uint256 creditTokenAmount,
         uint256 conversionRate
     )
         public
     {
-        mockRateProvider.__setConversionRate(2e27);  // Start higher than 1.25 for this test
+        mockCreditTokenRateProvider.__setConversionRate(2e27);  // Start higher than 1.25 for this test
 
         FuzzVars memory vars = _setUpConversionFuzzTest(
             2e27,
             usdsAmount,
             usdcAmount,
-            susdsAmount
+            creditTokenAmount
         );
 
         // These two values are always the same at the beginning
@@ -306,17 +306,17 @@ contract PSMConvertToSharesTests is PSMConversionTestBase {
         // 1:1 between shares and dollar value
         assertEq(groveBasin.convertToShares(initialValue), vars.expectedShares);
 
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 newValue
-            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.susdsAmount * conversionRate / 1e27;
+            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
 
         assertEq(groveBasin.convertToShares(newValue), vars.expectedShares);
 
-        // Value change is only from sUSDS exchange rate decreasing
+        // Value change is only from creditToken exchange rate decreasing
         assertApproxEqAbs(
             initialValue - newValue,
-            vars.susdsAmount * (2e27 - conversionRate) / 1e27,
+            vars.creditTokenAmount * (2e27 - conversionRate) / 1e27,
             1
         );
     }
@@ -355,32 +355,32 @@ contract PSMConvertToSharesWithUsdsTests is PSMConversionTestBase {
         assertEq(groveBasin.convertToShares(address(usds), amount), amount);
     }
 
-    function test_convertToShares_depositAndWithdrawUsdsAndSUsds_noChange() public {
+    function test_convertToShares_depositAndWithdrawUsdsAndCreditToken_noChange() public {
         _assertOneToOneConversionUsds();
 
         _deposit(address(usds), address(this), 100e18);
         _assertOneToOneConversionUsds();
 
-        _deposit(address(susds), address(this), 80e18);
+        _deposit(address(creditToken), address(this), 80e18);
         _assertOneToOneConversionUsds();
 
         _withdraw(address(usds), address(this), 100e18);
         _assertOneToOneConversionUsds();
 
-        _withdraw(address(susds), address(this), 80e18);
+        _withdraw(address(creditToken), address(this), 80e18);
         _assertOneToOneConversionUsds();
     }
 
     function test_convertToShares_conversionRateIncrease() public {
         // 200 shares minted at 1:1 ratio, $200 of value in pool
         _deposit(address(usds),  address(this), 100e18);
-        _deposit(address(susds), address(this), 80e18);
+        _deposit(address(creditToken), address(this), 80e18);
 
         _assertOneToOneConversionUsds();
 
-        // 80 sUSDS now worth $120, 200 shares in pool with $220 of value
+        // 80 creditToken now worth $120, 200 shares in pool with $220 of value
         // Each share should be worth $1.10.
-        mockRateProvider.__setConversionRate(1.5e27);
+        mockCreditTokenRateProvider.__setConversionRate(1.5e27);
 
         assertEq(groveBasin.convertToShares(address(usds), 10), 9);
         assertEq(groveBasin.convertToShares(address(usds), 11), 10);
@@ -397,18 +397,18 @@ contract PSMConvertToSharesWithUsdsTests is PSMConversionTestBase {
     function testFuzz_convertToShares_conversionRateIncrease(
         uint256 usdsAmount,
         uint256 usdcAmount,
-        uint256 susdsAmount,
+        uint256 creditTokenAmount,
         uint256 conversionRate
     )
         public
     {
-        mockRateProvider.__setConversionRate(1e27);  // Start lower than 1.25 for this test
+        mockCreditTokenRateProvider.__setConversionRate(1e27);  // Start lower than 1.25 for this test
 
         FuzzVars memory vars = _setUpConversionFuzzTest(
             1e27,
             usdsAmount,
             usdcAmount,
-            susdsAmount
+            creditTokenAmount
         );
 
         // These two values are always the same at the beginning
@@ -419,32 +419,32 @@ contract PSMConvertToSharesWithUsdsTests is PSMConversionTestBase {
         // 1:1 between shares and dollar value
         assertEq(groveBasin.convertToShares(address(usds), initialValue), vars.expectedShares);
 
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 newValue
-            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.susdsAmount * conversionRate / 1e27;
+            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
 
         assertEq(groveBasin.convertToShares(address(usds), newValue), vars.expectedShares);
 
-        // Value change is only from sUSDS exchange rate increasing
-        assertEq(newValue - initialValue, vars.susdsAmount * (conversionRate - 1e27) / 1e27);
+        // Value change is only from creditToken exchange rate increasing
+        assertEq(newValue - initialValue, vars.creditTokenAmount * (conversionRate - 1e27) / 1e27);
     }
 
     function testFuzz_convertToAssetValue_conversionRateDecrease(
         uint256 usdsAmount,
         uint256 usdcAmount,
-        uint256 susdsAmount,
+        uint256 creditTokenAmount,
         uint256 conversionRate
     )
         public
     {
-        mockRateProvider.__setConversionRate(2e27);  // Start higher than 1.25 for this test
+        mockCreditTokenRateProvider.__setConversionRate(2e27);  // Start higher than 1.25 for this test
 
         FuzzVars memory vars = _setUpConversionFuzzTest(
             2e27,
             usdsAmount,
             usdcAmount,
-            susdsAmount
+            creditTokenAmount
         );
 
         // These two values are always the same at the beginning
@@ -455,17 +455,17 @@ contract PSMConvertToSharesWithUsdsTests is PSMConversionTestBase {
         // 1:1 between shares and dollar value
         assertEq(groveBasin.convertToShares(address(usds), initialValue), vars.expectedShares);
 
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 newValue
-            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.susdsAmount * conversionRate / 1e27;
+            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
 
         assertEq(groveBasin.convertToShares(address(usds), newValue), vars.expectedShares);
 
-        // Value change is only from sUSDS exchange rate decreasing
+        // Value change is only from creditToken exchange rate decreasing
         assertApproxEqAbs(
             initialValue - newValue,
-            vars.susdsAmount * (2e27 - conversionRate) / 1e27,
+            vars.creditTokenAmount * (2e27 - conversionRate) / 1e27,
             1
         );
     }
@@ -495,32 +495,32 @@ contract PSMConvertToSharesWithUsdcTests is PSMConversionTestBase {
         assertEq(groveBasin.convertToShares(address(usdc), amount), amount * 1e12);
     }
 
-    function test_convertToShares_depositAndWithdrawUsdcAndSUsds_noChange() public {
+    function test_convertToShares_depositAndWithdrawUsdcAndCreditToken_noChange() public {
         _assertOneToOneConversionUsdc();
 
         _deposit(address(usdc), address(this), 100e6);
         _assertOneToOneConversionUsdc();
 
-        _deposit(address(susds), address(this), 80e18);
+        _deposit(address(creditToken), address(this), 80e18);
         _assertOneToOneConversionUsdc();
 
         _withdraw(address(usdc), address(this), 100e6);
         _assertOneToOneConversionUsdc();
 
-        _withdraw(address(susds), address(this), 80e18);
+        _withdraw(address(creditToken), address(this), 80e18);
         _assertOneToOneConversionUsdc();
     }
 
     function test_convertToShares_conversionRateIncrease() public {
         // 200 shares minted at 1:1 ratio, $200 of value in pool
         _deposit(address(usdc),  address(this), 100e6);
-        _deposit(address(susds), address(this), 80e18);
+        _deposit(address(creditToken), address(this), 80e18);
 
         _assertOneToOneConversionUsdc();
 
-        // 80 sUSDS now worth $120, 200 shares in pool with $220 of value
+        // 80 creditToken now worth $120, 200 shares in pool with $220 of value
         // Each share should be worth $1.10.
-        mockRateProvider.__setConversionRate(1.5e27);
+        mockCreditTokenRateProvider.__setConversionRate(1.5e27);
 
         assertEq(groveBasin.convertToShares(address(usdc), 10), 9.090909090909e12);
         assertEq(groveBasin.convertToShares(address(usdc), 11), 10e12);
@@ -534,18 +534,18 @@ contract PSMConvertToSharesWithUsdcTests is PSMConversionTestBase {
     function testFuzz_convertToShares_conversionRateIncrease(
         uint256 usdsAmount,
         uint256 usdcAmount,
-        uint256 susdsAmount,
+        uint256 creditTokenAmount,
         uint256 conversionRate
     )
         public
     {
-        mockRateProvider.__setConversionRate(1e27);  // Start lower than 1.25 for this test
+        mockCreditTokenRateProvider.__setConversionRate(1e27);  // Start lower than 1.25 for this test
 
         FuzzVars memory vars = _setUpConversionFuzzTest(
             1e27,
             usdsAmount,
             usdcAmount,
-            susdsAmount
+            creditTokenAmount
         );
 
         // These two values are always the same at the beginning
@@ -560,10 +560,10 @@ contract PSMConvertToSharesWithUsdcTests is PSMConversionTestBase {
             vars.expectedShares / 1e12 * 1e12
         );
 
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 newValue
-            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.susdsAmount * conversionRate / 1e27;
+            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
 
         // Larger rounding error because of 1e6 precision
         assertApproxEqAbs(
@@ -584,25 +584,25 @@ contract PSMConvertToSharesWithUsdcTests is PSMConversionTestBase {
             (newValue / 1e12 * 1e12) * vars.expectedShares / newValue
         );
 
-        // Value change is only from sUSDS exchange rate increasing
-        assertEq(newValue - initialValue, vars.susdsAmount * (conversionRate - 1e27) / 1e27);
+        // Value change is only from creditToken exchange rate increasing
+        assertEq(newValue - initialValue, vars.creditTokenAmount * (conversionRate - 1e27) / 1e27);
     }
 
     function testFuzz_convertToAssetValue_conversionRateDecrease(
         uint256 usdsAmount,
         uint256 usdcAmount,
-        uint256 susdsAmount,
+        uint256 creditTokenAmount,
         uint256 conversionRate
     )
         public
     {
-        mockRateProvider.__setConversionRate(2e27);  // Start higher than 1.25 for this test
+        mockCreditTokenRateProvider.__setConversionRate(2e27);  // Start higher than 1.25 for this test
 
         FuzzVars memory vars = _setUpConversionFuzzTest(
             2e27,
             usdsAmount,
             usdcAmount,
-            susdsAmount
+            creditTokenAmount
         );
 
         // These two values are always the same at the beginning
@@ -617,10 +617,10 @@ contract PSMConvertToSharesWithUsdcTests is PSMConversionTestBase {
             vars.expectedShares / 1e12 * 1e12
         );
 
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 newValue
-            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.susdsAmount * conversionRate / 1e27;
+            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
 
         // Rounding scales with difference between expectedShares and newValue
         assertApproxEqAbs(
@@ -641,10 +641,10 @@ contract PSMConvertToSharesWithUsdcTests is PSMConversionTestBase {
             (newValue / 1e12 * 1e12) * vars.expectedShares / newValue
         );
 
-        // Value change is only from sUSDS exchange rate decreasing
+        // Value change is only from creditToken exchange rate decreasing
         assertApproxEqAbs(
             initialValue - newValue,
-            vars.susdsAmount * (2e27 - conversionRate) / 1e27,
+            vars.creditTokenAmount * (2e27 - conversionRate) / 1e27,
             1
         );
     }
@@ -663,121 +663,121 @@ contract PSMConvertToSharesWithUsdcTests is PSMConversionTestBase {
 
 }
 
-contract PSMConvertToSharesWithSUsdsTests is PSMConversionTestBase {
+contract PSMConvertToSharesWithCreditTokenTests is PSMConversionTestBase {
 
     function test_convertToShares_noValue() public view {
         _assertOneToOneConversion();
     }
 
     function testFuzz_convertToShares_noValue(uint256 amount, uint256 conversionRate) public {
-        amount         = _bound(amount,         1000,    SUSDS_TOKEN_MAX);
+        amount         = _bound(amount,         1000,    CREDIT_TOKEN_MAX);
         conversionRate = _bound(conversionRate, 0.01e27, 1000e27);
 
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
-        assertEq(groveBasin.convertToShares(address(susds), amount), amount * conversionRate / 1e27);
+        assertEq(groveBasin.convertToShares(address(creditToken), amount), amount * conversionRate / 1e27);
     }
 
-    function test_convertToShares_depositAndWithdrawUsdcAndSUsds_noChange() public {
+    function test_convertToShares_depositAndWithdrawUsdcAndCreditToken_noChange() public {
         _assertOneToOneConversion();
 
         _deposit(address(usdc), address(this), 100e6);
-        _assertStartingConversionSUsds();
+        _assertStartingConversionCreditToken();
 
-        _deposit(address(susds), address(this), 80e18);
-        _assertStartingConversionSUsds();
+        _deposit(address(creditToken), address(this), 80e18);
+        _assertStartingConversionCreditToken();
 
         _withdraw(address(usdc), address(this), 100e6);
-        _assertStartingConversionSUsds();
+        _assertStartingConversionCreditToken();
 
-        _withdraw(address(susds), address(this), 80e18);
-        _assertStartingConversionSUsds();
+        _withdraw(address(creditToken), address(this), 80e18);
+        _assertStartingConversionCreditToken();
     }
 
     function test_convertToShares_conversionRateIncrease() public {
         // 200 shares minted at 1:1 ratio, $200 of value in pool
         _deposit(address(usdc), address(this), 100e6);
-        _deposit(address(susds), address(this), 80e18);
+        _deposit(address(creditToken), address(this), 80e18);
 
-        _assertStartingConversionSUsds();
+        _assertStartingConversionCreditToken();
 
-        // 80 sUSDS now worth $120, 200 shares in pool with $220 of value
-        // Each share should be worth $1.10. Since 1 sUSDS is now worth 1.5 USDC, 1 sUSDS is worth
+        // 80 creditToken now worth $120, 200 shares in pool with $220 of value
+        // Each share should be worth $1.10. Since 1 creditToken is now worth 1.5 USDC, 1 creditToken is worth
         // 1.50/1.10 = 1.3636... shares
-        mockRateProvider.__setConversionRate(1.5e27);
+        mockCreditTokenRateProvider.__setConversionRate(1.5e27);
 
-        assertEq(groveBasin.convertToShares(address(susds), 1), 0);
-        assertEq(groveBasin.convertToShares(address(susds), 2), 2);
-        assertEq(groveBasin.convertToShares(address(susds), 3), 3);  // 3 * 1.5 / 1.1 = 3 because of rounding on first operation
-        assertEq(groveBasin.convertToShares(address(susds), 4), 5);
+        assertEq(groveBasin.convertToShares(address(creditToken), 1), 0);
+        assertEq(groveBasin.convertToShares(address(creditToken), 2), 2);
+        assertEq(groveBasin.convertToShares(address(creditToken), 3), 3);  // 3 * 1.5 / 1.1 = 3 because of rounding on first operation
+        assertEq(groveBasin.convertToShares(address(creditToken), 4), 5);
 
-        assertEq(groveBasin.convertToShares(address(susds), 1e18), 1.363636363636363636e18);
-        assertEq(groveBasin.convertToShares(address(susds), 2e18), 2.727272727272727272e18);
-        assertEq(groveBasin.convertToShares(address(susds), 3e18), 4.090909090909090909e18);
-        assertEq(groveBasin.convertToShares(address(susds), 4e18), 5.454545454545454545e18);
+        assertEq(groveBasin.convertToShares(address(creditToken), 1e18), 1.363636363636363636e18);
+        assertEq(groveBasin.convertToShares(address(creditToken), 2e18), 2.727272727272727272e18);
+        assertEq(groveBasin.convertToShares(address(creditToken), 3e18), 4.090909090909090909e18);
+        assertEq(groveBasin.convertToShares(address(creditToken), 4e18), 5.454545454545454545e18);
     }
 
     function testFuzz_convertToShares_conversionRateIncrease(
         uint256 usdsAmount,
         uint256 usdcAmount,
-        uint256 susdsAmount,
+        uint256 creditTokenAmount,
         uint256 conversionRate
     )
         public
     {
-        // NOTE: Not using 1e27 for this test because initialSUsdsValue needs to be different
-        mockRateProvider.__setConversionRate(1.1e27);  // Start lower than 1.25 for this test
+        // NOTE: Not using 1e27 for this test because initialCreditTokenValue needs to be different
+        mockCreditTokenRateProvider.__setConversionRate(1.1e27);  // Start lower than 1.25 for this test
 
         FuzzVars memory vars = _setUpConversionFuzzTest(
             1.1e27,
             usdsAmount,
             usdcAmount,
-            susdsAmount
+            creditTokenAmount
         );
 
         // These two values are always the same at the beginning
         uint256 initialValue     = vars.expectedShares;
-        uint256 initialSUsdsValue = initialValue * 1e27 / 1.1e27;
+        uint256 initialCreditTokenValue = initialValue * 1e27 / 1.1e27;
 
         conversionRate = _bound(conversionRate, 1.1e27, 1000e27);
 
         // 1:1 between shares and dollar value
         assertApproxEqAbs(
-            groveBasin.convertToShares(address(susds), initialSUsdsValue),
+            groveBasin.convertToShares(address(creditToken), initialCreditTokenValue),
             vars.expectedShares,
             1
         );
 
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 newValue
-            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.susdsAmount * conversionRate / 1e27;
+            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
 
-        uint256 newSUsdsValue = newValue * 1e27 / conversionRate;
+        uint256 newCreditTokenValue = newValue * 1e27 / conversionRate;
 
-        // Depositing derived sUSDS amount yields the same amount of shares (approx)
+        // Depositing derived creditToken amount yields the same amount of shares (approx)
         assertApproxEqAbs(
-            groveBasin.convertToShares(address(susds), newSUsdsValue),
+            groveBasin.convertToShares(address(creditToken), newCreditTokenValue),
             vars.expectedShares,
             1000
         );
 
         // Make sure that rounding error here is always against the user
         assertLe(
-            groveBasin.convertToShares(address(susds), newSUsdsValue),
+            groveBasin.convertToShares(address(creditToken), newCreditTokenValue),
             vars.expectedShares
         );
 
         // This is the exact calculation of what is happening
         assertEq(
-            groveBasin.convertToShares(address(susds), newSUsdsValue),
-            (newSUsdsValue * conversionRate / 1e27) * vars.expectedShares / newValue
+            groveBasin.convertToShares(address(creditToken), newCreditTokenValue),
+            (newCreditTokenValue * conversionRate / 1e27) * vars.expectedShares / newValue
         );
 
-        // Value change is only from sUSDS exchange rate increasing
+        // Value change is only from creditToken exchange rate increasing
         assertApproxEqAbs(
             newValue - initialValue,
-            vars.susdsAmount * (conversionRate - 1.1e27) / 1e27,
+            vars.creditTokenAmount * (conversionRate - 1.1e27) / 1e27,
             3
         );
     }
@@ -785,63 +785,63 @@ contract PSMConvertToSharesWithSUsdsTests is PSMConversionTestBase {
     function testFuzz_convertToAssetValue_conversionRateDecrease(
         uint256 usdsAmount,
         uint256 usdcAmount,
-        uint256 susdsAmount,
+        uint256 creditTokenAmount,
         uint256 conversionRate
     )
         public
     {
-        mockRateProvider.__setConversionRate(2e27);  // Start higher than 1.25 for this test
+        mockCreditTokenRateProvider.__setConversionRate(2e27);  // Start higher than 1.25 for this test
 
         FuzzVars memory vars = _setUpConversionFuzzTest(
             2e27,
             usdsAmount,
             usdcAmount,
-            susdsAmount
+            creditTokenAmount
         );
 
         // These two values are always the same at the beginning
         uint256 initialValue      = vars.expectedShares;
-        uint256 initialSUsdsValue = initialValue * 1e27 / 2e27;
+        uint256 initialCreditTokenValue = initialValue * 1e27 / 2e27;
 
         conversionRate = _bound(conversionRate, 0.001e27, 2e27);
 
         // 1:1 between shares and dollar value
         assertApproxEqAbs(
-            groveBasin.convertToShares(address(susds), initialSUsdsValue),
+            groveBasin.convertToShares(address(creditToken), initialCreditTokenValue),
             vars.expectedShares,
             1
         );
 
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 newValue
-            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.susdsAmount * conversionRate / 1e27;
+            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
 
-        uint256 newSUsdsValue = newValue * 1e27 / conversionRate;
+        uint256 newCreditTokenValue = newValue * 1e27 / conversionRate;
 
-        // Depositing derived sUSDS amount yields the same amount of shares (approx)
+        // Depositing derived creditToken amount yields the same amount of shares (approx)
         assertApproxEqAbs(
-            groveBasin.convertToShares(address(susds), newSUsdsValue),
+            groveBasin.convertToShares(address(creditToken), newCreditTokenValue),
             vars.expectedShares,
             2000
         );
 
         // Make sure that rounding error here is always against the user
         assertLe(
-            groveBasin.convertToShares(address(susds), newSUsdsValue),
+            groveBasin.convertToShares(address(creditToken), newCreditTokenValue),
             vars.expectedShares
         );
 
         // This is the exact calculation of what is happening
         assertEq(
-            groveBasin.convertToShares(address(susds), newSUsdsValue),
-            (newSUsdsValue * conversionRate / 1e27) * vars.expectedShares / newValue
+            groveBasin.convertToShares(address(creditToken), newCreditTokenValue),
+            (newCreditTokenValue * conversionRate / 1e27) * vars.expectedShares / newValue
         );
 
-        // Value change is only from sUSDS exchange rate increasing
+        // Value change is only from creditToken exchange rate increasing
         assertApproxEqAbs(
             initialValue - newValue,
-            vars.susdsAmount * (2e27 - conversionRate) / 1e27,
+            vars.creditTokenAmount * (2e27 - conversionRate) / 1e27,
             3
         );
     }
@@ -858,17 +858,17 @@ contract PSMConvertToSharesWithSUsdsTests is PSMConversionTestBase {
         assertEq(groveBasin.convertToShares(4e18), 4e18);
     }
 
-    // NOTE: This is different because the dollar value of sUSDS is 1.25x that of USDC
-    function _assertStartingConversionSUsds() internal view {
-        assertEq(groveBasin.convertToShares(address(susds), 1), 1);
-        assertEq(groveBasin.convertToShares(address(susds), 2), 2);
-        assertEq(groveBasin.convertToShares(address(susds), 3), 3);
-        assertEq(groveBasin.convertToShares(address(susds), 4), 5);
+    // NOTE: This is different because the dollar value of creditToken is 1.25x that of USDC
+    function _assertStartingConversionCreditToken() internal view {
+        assertEq(groveBasin.convertToShares(address(creditToken), 1), 1);
+        assertEq(groveBasin.convertToShares(address(creditToken), 2), 2);
+        assertEq(groveBasin.convertToShares(address(creditToken), 3), 3);
+        assertEq(groveBasin.convertToShares(address(creditToken), 4), 5);
 
-        assertEq(groveBasin.convertToShares(address(susds), 1e18), 1.25e18);
-        assertEq(groveBasin.convertToShares(address(susds), 2e18), 2.5e18);
-        assertEq(groveBasin.convertToShares(address(susds), 3e18), 3.75e18);
-        assertEq(groveBasin.convertToShares(address(susds), 4e18), 5e18);
+        assertEq(groveBasin.convertToShares(address(creditToken), 1e18), 1.25e18);
+        assertEq(groveBasin.convertToShares(address(creditToken), 2e18), 2.5e18);
+        assertEq(groveBasin.convertToShares(address(creditToken), 3e18), 3.75e18);
+        assertEq(groveBasin.convertToShares(address(creditToken), 4e18), 5e18);
     }
 
 }

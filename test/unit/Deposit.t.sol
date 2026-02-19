@@ -154,16 +154,16 @@ contract PSMDepositTests is GroveBasinTestBase {
         assertEq(groveBasin.convertToShares(1e18), 1e18);
     }
 
-    function test_deposit_firstDepositSUsds() public {
-        susds.mint(user1, 100e18);
+    function test_deposit_firstDepositCreditToken() public {
+        creditToken.mint(user1, 100e18);
 
         vm.startPrank(user1);
 
-        susds.approve(address(groveBasin), 100e18);
+        creditToken.approve(address(groveBasin), 100e18);
 
-        assertEq(susds.allowance(user1, address(groveBasin)), 100e18);
-        assertEq(susds.balanceOf(user1),               100e18);
-        assertEq(susds.balanceOf(address(groveBasin)),        0);
+        assertEq(creditToken.allowance(user1, address(groveBasin)), 100e18);
+        assertEq(creditToken.balanceOf(user1),               100e18);
+        assertEq(creditToken.balanceOf(address(groveBasin)),        0);
 
         assertEq(groveBasin.totalShares(),     0);
         assertEq(groveBasin.shares(user1),     0);
@@ -171,13 +171,13 @@ contract PSMDepositTests is GroveBasinTestBase {
 
         assertEq(groveBasin.convertToShares(1e18), 1e18);
 
-        uint256 newShares = groveBasin.deposit(address(susds), receiver1, 100e18);
+        uint256 newShares = groveBasin.deposit(address(creditToken), receiver1, 100e18);
 
         assertEq(newShares, 125e18);
 
-        assertEq(susds.allowance(user1, address(groveBasin)), 0);
-        assertEq(susds.balanceOf(user1),               0);
-        assertEq(susds.balanceOf(address(groveBasin)),        100e18);
+        assertEq(creditToken.allowance(user1, address(groveBasin)), 0);
+        assertEq(creditToken.balanceOf(user1),               0);
+        assertEq(creditToken.balanceOf(address(groveBasin)),        100e18);
 
         assertEq(groveBasin.totalShares(),     125e18);
         assertEq(groveBasin.shares(user1),     0);
@@ -186,7 +186,7 @@ contract PSMDepositTests is GroveBasinTestBase {
         assertEq(groveBasin.convertToShares(1e18), 1e18);
     }
 
-    function test_deposit_usdcThenSUsds() public {
+    function test_deposit_usdcThenCreditToken() public {
         usdc.mint(user1, 100e6);
 
         vm.startPrank(user1);
@@ -197,14 +197,14 @@ contract PSMDepositTests is GroveBasinTestBase {
 
         assertEq(newShares, 100e18);
 
-        susds.mint(user1, 100e18);
-        susds.approve(address(groveBasin), 100e18);
+        creditToken.mint(user1, 100e18);
+        creditToken.approve(address(groveBasin), 100e18);
 
         assertEq(usdc.balanceOf(pocket), 100e6);
 
-        assertEq(susds.allowance(user1, address(groveBasin)), 100e18);
-        assertEq(susds.balanceOf(user1),               100e18);
-        assertEq(susds.balanceOf(address(groveBasin)),        0);
+        assertEq(creditToken.allowance(user1, address(groveBasin)), 100e18);
+        assertEq(creditToken.balanceOf(user1),               100e18);
+        assertEq(creditToken.balanceOf(address(groveBasin)),        0);
 
         assertEq(groveBasin.totalShares(),     100e18);
         assertEq(groveBasin.shares(user1),     0);
@@ -212,15 +212,15 @@ contract PSMDepositTests is GroveBasinTestBase {
 
         assertEq(groveBasin.convertToShares(1e18), 1e18);
 
-        newShares = groveBasin.deposit(address(susds), receiver1, 100e18);
+        newShares = groveBasin.deposit(address(creditToken), receiver1, 100e18);
 
         assertEq(newShares, 125e18);
 
         assertEq(usdc.balanceOf(pocket), 100e6);
 
-        assertEq(susds.allowance(user1, address(groveBasin)), 0);
-        assertEq(susds.balanceOf(user1),               0);
-        assertEq(susds.balanceOf(address(groveBasin)),        100e18);
+        assertEq(creditToken.allowance(user1, address(groveBasin)), 0);
+        assertEq(creditToken.balanceOf(user1),               0);
+        assertEq(creditToken.balanceOf(address(groveBasin)),        100e18);
 
         assertEq(groveBasin.totalShares(),     225e18);
         assertEq(groveBasin.shares(user1),     0);
@@ -229,10 +229,10 @@ contract PSMDepositTests is GroveBasinTestBase {
         assertEq(groveBasin.convertToShares(1e18), 1e18);
     }
 
-    function testFuzz_deposit_usdcThenSUsds(uint256 usdcAmount, uint256 susdsAmount) public {
+    function testFuzz_deposit_usdcThenCreditToken(uint256 usdcAmount, uint256 creditTokenAmount) public {
         // Zero amounts revert
         usdcAmount = _bound(usdcAmount, 1, USDC_TOKEN_MAX);
-        susdsAmount = _bound(susdsAmount, 1, SUSDS_TOKEN_MAX);
+        creditTokenAmount = _bound(creditTokenAmount, 1, CREDIT_TOKEN_MAX);
 
         usdc.mint(user1, usdcAmount);
 
@@ -244,14 +244,14 @@ contract PSMDepositTests is GroveBasinTestBase {
 
         assertEq(newShares, usdcAmount * 1e12);
 
-        susds.mint(user1, susdsAmount);
-        susds.approve(address(groveBasin), susdsAmount);
+        creditToken.mint(user1, creditTokenAmount);
+        creditToken.approve(address(groveBasin), creditTokenAmount);
 
         assertEq(usdc.balanceOf(pocket), usdcAmount);
 
-        assertEq(susds.allowance(user1, address(groveBasin)), susdsAmount);
-        assertEq(susds.balanceOf(user1),               susdsAmount);
-        assertEq(susds.balanceOf(address(groveBasin)),        0);
+        assertEq(creditToken.allowance(user1, address(groveBasin)), creditTokenAmount);
+        assertEq(creditToken.balanceOf(user1),               creditTokenAmount);
+        assertEq(creditToken.balanceOf(address(groveBasin)),        0);
 
         assertEq(groveBasin.totalShares(),     usdcAmount * 1e12);
         assertEq(groveBasin.shares(user1),     0);
@@ -259,19 +259,19 @@ contract PSMDepositTests is GroveBasinTestBase {
 
         assertEq(groveBasin.convertToShares(1e18), 1e18);
 
-        newShares = groveBasin.deposit(address(susds), receiver1, susdsAmount);
+        newShares = groveBasin.deposit(address(creditToken), receiver1, creditTokenAmount);
 
-        assertEq(newShares, susdsAmount * 125/100);
+        assertEq(newShares, creditTokenAmount * 125/100);
 
         assertEq(usdc.balanceOf(pocket), usdcAmount);
 
-        assertEq(susds.allowance(user1, address(groveBasin)), 0);
-        assertEq(susds.balanceOf(user1),               0);
-        assertEq(susds.balanceOf(address(groveBasin)),        susdsAmount);
+        assertEq(creditToken.allowance(user1, address(groveBasin)), 0);
+        assertEq(creditToken.balanceOf(user1),               0);
+        assertEq(creditToken.balanceOf(address(groveBasin)),        creditTokenAmount);
 
-        assertEq(groveBasin.totalShares(),     usdcAmount * 1e12 + susdsAmount * 125/100);
+        assertEq(groveBasin.totalShares(),     usdcAmount * 1e12 + creditTokenAmount * 125/100);
         assertEq(groveBasin.shares(user1),     0);
-        assertEq(groveBasin.shares(receiver1), usdcAmount * 1e12 + susdsAmount * 125/100);
+        assertEq(groveBasin.shares(receiver1), usdcAmount * 1e12 + creditTokenAmount * 125/100);
 
         assertEq(groveBasin.convertToShares(1e18), 1e18);
     }
@@ -287,10 +287,10 @@ contract PSMDepositTests is GroveBasinTestBase {
 
         assertEq(newShares, 100e18);
 
-        susds.mint(user1, 100e18);
-        susds.approve(address(groveBasin), 100e18);
+        creditToken.mint(user1, 100e18);
+        creditToken.approve(address(groveBasin), 100e18);
 
-        newShares = groveBasin.deposit(address(susds), receiver1, 100e18);
+        newShares = groveBasin.deposit(address(creditToken), receiver1, 100e18);
 
         assertEq(newShares, 125e18);
 
@@ -298,9 +298,9 @@ contract PSMDepositTests is GroveBasinTestBase {
 
         assertEq(usdc.balanceOf(pocket), 100e6);
 
-        assertEq(susds.allowance(user1, address(groveBasin)), 0);
-        assertEq(susds.balanceOf(user1),               0);
-        assertEq(susds.balanceOf(address(groveBasin)),        100e18);
+        assertEq(creditToken.allowance(user1, address(groveBasin)), 0);
+        assertEq(creditToken.balanceOf(user1),               0);
+        assertEq(creditToken.balanceOf(address(groveBasin)),        100e18);
 
         assertEq(groveBasin.totalShares(),     225e18);
         assertEq(groveBasin.shares(user1),     0);
@@ -310,9 +310,9 @@ contract PSMDepositTests is GroveBasinTestBase {
 
         assertEq(groveBasin.convertToAssetValue(groveBasin.shares(receiver1)), 225e18);
 
-        mockRateProvider.__setConversionRate(1.5e27);
+        mockCreditTokenRateProvider.__setConversionRate(1.5e27);
 
-        // Total shares / (100 USDC + 150 sUSDS value)
+        // Total shares / (100 USDC + 150 creditToken value)
         uint256 expectedConversionRate = 225 * 1e18 / 250;
 
         assertEq(expectedConversionRate, 0.9e18);
@@ -321,25 +321,25 @@ contract PSMDepositTests is GroveBasinTestBase {
 
         vm.startPrank(user2);
 
-        susds.mint(user2, 100e18);
-        susds.approve(address(groveBasin), 100e18);
+        creditToken.mint(user2, 100e18);
+        creditToken.approve(address(groveBasin), 100e18);
 
-        assertEq(susds.allowance(user2, address(groveBasin)), 100e18);
-        assertEq(susds.balanceOf(user2),               100e18);
-        assertEq(susds.balanceOf(address(groveBasin)),        100e18);
+        assertEq(creditToken.allowance(user2, address(groveBasin)), 100e18);
+        assertEq(creditToken.balanceOf(user2),               100e18);
+        assertEq(creditToken.balanceOf(address(groveBasin)),        100e18);
 
         assertEq(groveBasin.convertToAssetValue(groveBasin.shares(receiver1)), 250e18);
         assertEq(groveBasin.convertToAssetValue(groveBasin.shares(receiver2)), 0);
 
         assertEq(groveBasin.totalAssets(), 250e18);
 
-        newShares = groveBasin.deposit(address(susds), receiver2, 100e18);
+        newShares = groveBasin.deposit(address(creditToken), receiver2, 100e18);
 
         assertEq(newShares, 135e18);
 
-        assertEq(susds.allowance(user2, address(groveBasin)), 0);
-        assertEq(susds.balanceOf(user2),               0);
-        assertEq(susds.balanceOf(address(groveBasin)),        200e18);
+        assertEq(creditToken.allowance(user2, address(groveBasin)), 0);
+        assertEq(creditToken.balanceOf(user2),               0);
+        assertEq(creditToken.balanceOf(address(groveBasin)),        200e18);
 
         // Depositing 150 dollars of value at 0.9 exchange rate
         uint256 expectedShares = 150e18 * 9/10;
@@ -361,19 +361,19 @@ contract PSMDepositTests is GroveBasinTestBase {
 
     function testFuzz_deposit_multiUser_changeConversionRate(
         uint256 usdcAmount,
-        uint256 susdsAmount1,
-        uint256 susdsAmount2,
+        uint256 creditTokenAmount1,
+        uint256 creditTokenAmount2,
         uint256 newRate
     )
         public
     {
         // Zero amounts revert
         usdcAmount   = _bound(usdcAmount,   1,       USDC_TOKEN_MAX);
-        susdsAmount1 = _bound(susdsAmount1, 1,       SUSDS_TOKEN_MAX);
-        susdsAmount2 = _bound(susdsAmount2, 1,       SUSDS_TOKEN_MAX);
+        creditTokenAmount1 = _bound(creditTokenAmount1, 1,       CREDIT_TOKEN_MAX);
+        creditTokenAmount2 = _bound(creditTokenAmount2, 1,       CREDIT_TOKEN_MAX);
         newRate      = _bound(newRate,      1.25e27, 1000e27);
 
-        uint256 user1DepositValue = usdcAmount * 1e12 + susdsAmount1 * 125/100;
+        uint256 user1DepositValue = usdcAmount * 1e12 + creditTokenAmount1 * 125/100;
 
         usdc.mint(user1, usdcAmount);
 
@@ -385,19 +385,19 @@ contract PSMDepositTests is GroveBasinTestBase {
 
         assertEq(newShares, usdcAmount * 1e12);
 
-        susds.mint(user1, susdsAmount1);
-        susds.approve(address(groveBasin), susdsAmount1);
+        creditToken.mint(user1, creditTokenAmount1);
+        creditToken.approve(address(groveBasin), creditTokenAmount1);
 
-        newShares = groveBasin.deposit(address(susds), receiver1, susdsAmount1);
+        newShares = groveBasin.deposit(address(creditToken), receiver1, creditTokenAmount1);
 
-        assertEq(newShares, susdsAmount1 * 125/100);
+        assertEq(newShares, creditTokenAmount1 * 125/100);
 
         vm.stopPrank();
 
         assertEq(usdc.balanceOf(pocket), usdcAmount);
 
-        assertEq(susds.balanceOf(user1),        0);
-        assertEq(susds.balanceOf(address(groveBasin)), susdsAmount1);
+        assertEq(creditToken.balanceOf(user1),        0);
+        assertEq(creditToken.balanceOf(address(groveBasin)), creditTokenAmount1);
 
         // Deposited at 1:1 conversion
         uint256 receiver1Shares = user1DepositValue;
@@ -406,19 +406,19 @@ contract PSMDepositTests is GroveBasinTestBase {
         assertEq(groveBasin.shares(user1),     0);
         assertEq(groveBasin.shares(receiver1), receiver1Shares);
 
-        mockRateProvider.__setConversionRate(newRate);
+        mockCreditTokenRateProvider.__setConversionRate(newRate);
 
         vm.startPrank(user2);
 
-        susds.mint(user2, susdsAmount2);
-        susds.approve(address(groveBasin), susdsAmount2);
+        creditToken.mint(user2, creditTokenAmount2);
+        creditToken.approve(address(groveBasin), creditTokenAmount2);
 
-        assertEq(susds.allowance(user2, address(groveBasin)), susdsAmount2);
-        assertEq(susds.balanceOf(user2),               susdsAmount2);
-        assertEq(susds.balanceOf(address(groveBasin)),        susdsAmount1);
+        assertEq(creditToken.allowance(user2, address(groveBasin)), creditTokenAmount2);
+        assertEq(creditToken.balanceOf(user2),               creditTokenAmount2);
+        assertEq(creditToken.balanceOf(address(groveBasin)),        creditTokenAmount1);
 
         // Receiver1 has gained from conversion change
-        uint256 receiver1NewValue = user1DepositValue + susdsAmount1 * (newRate - 1.25e27) / 1e27;
+        uint256 receiver1NewValue = user1DepositValue + creditTokenAmount1 * (newRate - 1.25e27) / 1e27;
 
         // Receiver1 has gained from conversion change
         assertApproxEqAbs(
@@ -431,18 +431,18 @@ contract PSMDepositTests is GroveBasinTestBase {
 
         assertApproxEqAbs(groveBasin.totalAssets(), receiver1NewValue, 1);
 
-        newShares = groveBasin.deposit(address(susds), receiver2, susdsAmount2);
+        newShares = groveBasin.deposit(address(creditToken), receiver2, creditTokenAmount2);
 
         // Using queried values here instead of derived to avoid larger errors getting introduced
         // Assertions above prove that these values are as expected.
         uint256 receiver2Shares
-            = (susdsAmount2 * newRate / 1e27) * groveBasin.totalShares() / groveBasin.totalAssets();
+            = (creditTokenAmount2 * newRate / 1e27) * groveBasin.totalShares() / groveBasin.totalAssets();
 
         assertApproxEqAbs(newShares, receiver2Shares, 2);
 
-        assertEq(susds.allowance(user2, address(groveBasin)), 0);
-        assertEq(susds.balanceOf(user2),               0);
-        assertEq(susds.balanceOf(address(groveBasin)),        susdsAmount1 + susdsAmount2);
+        assertEq(creditToken.allowance(user2, address(groveBasin)), 0);
+        assertEq(creditToken.balanceOf(user2),               0);
+        assertEq(creditToken.balanceOf(address(groveBasin)),        creditTokenAmount1 + creditTokenAmount2);
 
         assertEq(groveBasin.shares(user1), 0);
         assertEq(groveBasin.shares(user2), 0);
@@ -451,7 +451,7 @@ contract PSMDepositTests is GroveBasinTestBase {
         assertApproxEqAbs(groveBasin.shares(receiver1), receiver1Shares,                   2);
         assertApproxEqAbs(groveBasin.shares(receiver2), receiver2Shares,                   2);
 
-        uint256 receiver2NewValue = susdsAmount2 * newRate / 1e27;
+        uint256 receiver2NewValue = creditTokenAmount2 * newRate / 1e27;
 
         // Rate change of up to 1000x introduces errors
         assertApproxEqAbs(groveBasin.convertToAssetValue(groveBasin.shares(receiver1)), receiver1NewValue, 1000);
