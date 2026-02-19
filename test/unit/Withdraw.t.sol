@@ -17,26 +17,26 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
     address receiver2 = makeAddr("receiver2");
 
     function test_withdraw_zeroAmount() public {
-        _deposit(address(usdc), user1, 100e6);
+        _deposit(address(secondaryToken), user1, 100e6);
 
         vm.expectRevert("GroveBasin/invalid-amount");
-        groveBasin.withdraw(address(usdc), receiver1, 0);
+        groveBasin.withdraw(address(secondaryToken), receiver1, 0);
     }
 
-    function test_withdraw_notUsdcOrCollateralToken() public {
+    function test_withdraw_notSecondaryTokenOrCollateralToken() public {
         vm.expectRevert("GroveBasin/invalid-asset");
         groveBasin.withdraw(makeAddr("new-asset"), receiver1, 100e6);
     }
 
     function test_withdraw_pocketInsufficientApprovalBoundary() public {
         vm.prank(pocket);
-        usdc.approve(address(groveBasin), 100e18);
+        secondaryToken.approve(address(groveBasin), 100e18);
 
-        _deposit(address(usdc), user1, 100e18 + 1);
+        _deposit(address(secondaryToken), user1, 100e18 + 1);
 
         vm.prank(user1);
         vm.expectRevert("SafeERC20/transfer-from-failed");
-        groveBasin.withdraw(address(usdc), receiver1, 100e18 + 1);
+        groveBasin.withdraw(address(secondaryToken), receiver1, 100e18 + 1);
     }
 
     function test_withdraw_onlyCollateralTokenInGroveBasin() public {
@@ -66,12 +66,12 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         assertEq(groveBasin.convertToShares(1e18), 1e18);
     }
 
-    function test_withdraw_onlyUsdcInGroveBasin() public {
-        _deposit(address(usdc), user1, 100e6);
+    function test_withdraw_onlySecondaryTokenInGroveBasin() public {
+        _deposit(address(secondaryToken), user1, 100e6);
 
-        assertEq(usdc.balanceOf(user1),     0);
-        assertEq(usdc.balanceOf(receiver1), 0);
-        assertEq(usdc.balanceOf(pocket),    100e6);
+        assertEq(secondaryToken.balanceOf(user1),     0);
+        assertEq(secondaryToken.balanceOf(receiver1), 0);
+        assertEq(secondaryToken.balanceOf(pocket),    100e6);
 
         assertEq(groveBasin.totalShares(), 100e18);
         assertEq(groveBasin.shares(user1), 100e18);
@@ -79,13 +79,13 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         assertEq(groveBasin.convertToShares(1e18), 1e18);
 
         vm.prank(user1);
-        uint256 amount = groveBasin.withdraw(address(usdc), receiver1, 100e6);
+        uint256 amount = groveBasin.withdraw(address(secondaryToken), receiver1, 100e6);
 
         assertEq(amount, 100e6);
 
-        assertEq(usdc.balanceOf(user1),     0);
-        assertEq(usdc.balanceOf(receiver1), 100e6);
-        assertEq(usdc.balanceOf(pocket),    0);
+        assertEq(secondaryToken.balanceOf(user1),     0);
+        assertEq(secondaryToken.balanceOf(receiver1), 100e6);
+        assertEq(secondaryToken.balanceOf(pocket),    0);
 
         assertEq(groveBasin.totalShares(), 0);
         assertEq(groveBasin.shares(user1), 0);
@@ -93,15 +93,15 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         assertEq(groveBasin.convertToShares(1e18), 1e18);
     }
 
-    function test_withdraw_onlyUsdcInGroveBasin_pocketIsGroveBasin() public {
+    function test_withdraw_onlySecondaryTokenInGroveBasin_pocketIsGroveBasin() public {
         vm.prank(owner);
         groveBasin.setPocket(address(groveBasin));
 
-        _deposit(address(usdc), user1, 100e6);
+        _deposit(address(secondaryToken), user1, 100e6);
 
-        assertEq(usdc.balanceOf(user1),        0);
-        assertEq(usdc.balanceOf(receiver1),    0);
-        assertEq(usdc.balanceOf(address(groveBasin)), 100e6);
+        assertEq(secondaryToken.balanceOf(user1),        0);
+        assertEq(secondaryToken.balanceOf(receiver1),    0);
+        assertEq(secondaryToken.balanceOf(address(groveBasin)), 100e6);
 
         assertEq(groveBasin.totalShares(), 100e18);
         assertEq(groveBasin.shares(user1), 100e18);
@@ -109,13 +109,13 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         assertEq(groveBasin.convertToShares(1e18), 1e18);
 
         vm.prank(user1);
-        uint256 amount = groveBasin.withdraw(address(usdc), receiver1, 100e6);
+        uint256 amount = groveBasin.withdraw(address(secondaryToken), receiver1, 100e6);
 
         assertEq(amount, 100e6);
 
-        assertEq(usdc.balanceOf(user1),        0);
-        assertEq(usdc.balanceOf(receiver1),    100e6);
-        assertEq(usdc.balanceOf(address(groveBasin)), 0);
+        assertEq(secondaryToken.balanceOf(user1),        0);
+        assertEq(secondaryToken.balanceOf(receiver1),    100e6);
+        assertEq(secondaryToken.balanceOf(address(groveBasin)), 0);
 
         assertEq(groveBasin.totalShares(), 0);
         assertEq(groveBasin.shares(user1), 0);
@@ -150,13 +150,13 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         assertEq(groveBasin.convertToShares(1e18), 1e18);
     }
 
-    function test_withdraw_usdcThenCreditToken() public {
-        _deposit(address(usdc), user1, 100e6);
+    function test_withdraw_secondaryTokenThenCreditToken() public {
+        _deposit(address(secondaryToken), user1, 100e6);
         _deposit(address(creditToken), user1, 100e18);
 
-        assertEq(usdc.balanceOf(user1),     0);
-        assertEq(usdc.balanceOf(receiver1), 0);
-        assertEq(usdc.balanceOf(pocket),    100e6);
+        assertEq(secondaryToken.balanceOf(user1),     0);
+        assertEq(secondaryToken.balanceOf(receiver1), 0);
+        assertEq(secondaryToken.balanceOf(pocket),    100e6);
 
         assertEq(creditToken.balanceOf(user1),        0);
         assertEq(creditToken.balanceOf(receiver1),    0);
@@ -168,13 +168,13 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         assertEq(groveBasin.convertToShares(1e18), 1e18);
 
         vm.prank(user1);
-        uint256 amount = groveBasin.withdraw(address(usdc), receiver1, 100e6);
+        uint256 amount = groveBasin.withdraw(address(secondaryToken), receiver1, 100e6);
 
         assertEq(amount, 100e6);
 
-        assertEq(usdc.balanceOf(user1),     0);
-        assertEq(usdc.balanceOf(receiver1), 100e6);
-        assertEq(usdc.balanceOf(pocket),    0);
+        assertEq(secondaryToken.balanceOf(user1),     0);
+        assertEq(secondaryToken.balanceOf(receiver1), 100e6);
+        assertEq(secondaryToken.balanceOf(pocket),    0);
 
         assertEq(creditToken.balanceOf(user1),        0);
         assertEq(creditToken.balanceOf(receiver1),    0);
@@ -190,9 +190,9 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
 
         assertEq(amount, 100e18);
 
-        assertEq(usdc.balanceOf(user1),     0);
-        assertEq(usdc.balanceOf(receiver1), 100e6);
-        assertEq(usdc.balanceOf(pocket),    0);
+        assertEq(secondaryToken.balanceOf(user1),     0);
+        assertEq(secondaryToken.balanceOf(receiver1), 100e6);
+        assertEq(secondaryToken.balanceOf(pocket),    0);
 
         assertEq(creditToken.balanceOf(user1),        0);
         assertEq(creditToken.balanceOf(receiver1),    100e18);
@@ -205,12 +205,12 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
     }
 
     function test_withdraw_amountHigherThanBalanceOfAsset() public {
-        _deposit(address(usdc),  user1, 100e6);
+        _deposit(address(secondaryToken),  user1, 100e6);
         _deposit(address(creditToken), user1, 100e18);
 
-        assertEq(usdc.balanceOf(user1),     0);
-        assertEq(usdc.balanceOf(receiver1), 0);
-        assertEq(usdc.balanceOf(pocket),    100e6);
+        assertEq(secondaryToken.balanceOf(user1),     0);
+        assertEq(secondaryToken.balanceOf(receiver1), 0);
+        assertEq(secondaryToken.balanceOf(pocket),    100e6);
 
         assertEq(groveBasin.totalShares(), 225e18);
         assertEq(groveBasin.shares(user1), 225e18);
@@ -218,26 +218,26 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         assertEq(groveBasin.convertToShares(1e18), 1e18);
 
         vm.prank(user1);
-        uint256 amount = groveBasin.withdraw(address(usdc), receiver1, 125e6);
+        uint256 amount = groveBasin.withdraw(address(secondaryToken), receiver1, 125e6);
 
         assertEq(amount, 100e6);
 
-        assertEq(usdc.balanceOf(user1),     0);
-        assertEq(usdc.balanceOf(receiver1), 100e6);
-        assertEq(usdc.balanceOf(pocket),    0);
+        assertEq(secondaryToken.balanceOf(user1),     0);
+        assertEq(secondaryToken.balanceOf(receiver1), 100e6);
+        assertEq(secondaryToken.balanceOf(pocket),    0);
 
         assertEq(groveBasin.totalShares(), 125e18);  // Only burns $100 of shares
         assertEq(groveBasin.shares(user1), 125e18);
     }
 
     function test_withdraw_amountHigherThanUserShares() public {
-        _deposit(address(usdc),  user1, 100e6);
+        _deposit(address(secondaryToken),  user1, 100e6);
         _deposit(address(creditToken), user1, 100e18);
-        _deposit(address(usdc),  user2, 200e6);
+        _deposit(address(secondaryToken),  user2, 200e6);
 
-        assertEq(usdc.balanceOf(user2),     0);
-        assertEq(usdc.balanceOf(receiver2), 0);
-        assertEq(usdc.balanceOf(pocket),    300e6);
+        assertEq(secondaryToken.balanceOf(user2),     0);
+        assertEq(secondaryToken.balanceOf(receiver2), 0);
+        assertEq(secondaryToken.balanceOf(pocket),    300e6);
 
         assertEq(groveBasin.totalShares(), 425e18);
         assertEq(groveBasin.shares(user2), 200e18);
@@ -245,13 +245,13 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         assertEq(groveBasin.convertToShares(1e18), 1e18);
 
         vm.prank(user2);
-        uint256 amount = groveBasin.withdraw(address(usdc), receiver2, 225e6);
+        uint256 amount = groveBasin.withdraw(address(secondaryToken), receiver2, 225e6);
 
         assertEq(amount, 200e6);
 
-        assertEq(usdc.balanceOf(user2),     0);
-        assertEq(usdc.balanceOf(receiver2), 200e6);  // Gets highest amount possible
-        assertEq(usdc.balanceOf(pocket),    100e6);
+        assertEq(secondaryToken.balanceOf(user2),     0);
+        assertEq(secondaryToken.balanceOf(receiver2), 200e6);  // Gets highest amount possible
+        assertEq(secondaryToken.balanceOf(pocket),    100e6);
 
         assertEq(groveBasin.totalShares(), 225e18);
         assertEq(groveBasin.shares(user2), 0);  // Burns the users full amount of shares
@@ -272,12 +272,12 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         public
     {
         // Zero amounts revert
-        depositAmount1 = _bound(depositAmount1, 1, USDC_TOKEN_MAX);
-        depositAmount2 = _bound(depositAmount2, 1, USDC_TOKEN_MAX);
+        depositAmount1 = _bound(depositAmount1, 1, SECONDARY_TOKEN_MAX);
+        depositAmount2 = _bound(depositAmount2, 1, SECONDARY_TOKEN_MAX);
         depositAmount3 = _bound(depositAmount3, 1, CREDIT_TOKEN_MAX);
 
         // Zero amounts revert
-        withdrawAmount1 = _bound(withdrawAmount1, 1, USDC_TOKEN_MAX);
+        withdrawAmount1 = _bound(withdrawAmount1, 1, SECONDARY_TOKEN_MAX);
         withdrawAmount2 = _bound(withdrawAmount2, 1, depositAmount2);  // User can't burn up to 1e12 shares for 0 USDC in this case
         withdrawAmount3 = _bound(withdrawAmount3, 1, CREDIT_TOKEN_MAX);
 
@@ -304,13 +304,13 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         public
     {
         // Zero amounts revert
-        depositAmount1 = _bound(depositAmount1, 1, USDC_TOKEN_MAX);
-        depositAmount2 = _bound(depositAmount2, 1, USDC_TOKEN_MAX);
+        depositAmount1 = _bound(depositAmount1, 1, SECONDARY_TOKEN_MAX);
+        depositAmount2 = _bound(depositAmount2, 1, SECONDARY_TOKEN_MAX);
         depositAmount3 = _bound(depositAmount3, 1, CREDIT_TOKEN_MAX);
 
         // Zero amounts revert
-        withdrawAmount1 = _bound(withdrawAmount1, 1, USDC_TOKEN_MAX);
-        withdrawAmount2 = _bound(withdrawAmount2, 1, USDC_TOKEN_MAX);
+        withdrawAmount1 = _bound(withdrawAmount1, 1, SECONDARY_TOKEN_MAX);
+        withdrawAmount2 = _bound(withdrawAmount2, 1, SECONDARY_TOKEN_MAX);
         withdrawAmount3 = _bound(withdrawAmount3, 1, CREDIT_TOKEN_MAX);
 
         // Run with 1e12 share tolerance because the rounding error will be introduced with the above constraints.
@@ -326,7 +326,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
     }
 
     struct WithdrawFuzzTestVars {
-        uint256 totalUsdc;
+        uint256 totalSecondaryToken;
         uint256 totalValue;
         uint256 expectedWithdrawnAmount1;
         uint256 expectedWithdrawnAmount2;
@@ -337,7 +337,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
     // the two values because this approach inherently asserts that the shares remaining are lower than the
     // theoretical value, proving the GroveBasin rounds against the user.
     function _runWithdrawFuzzTests(
-        uint256 usdcShareTolerance,
+        uint256 secondaryTokenShareTolerance,
         uint256 depositAmount1,
         uint256 depositAmount2,
         uint256 depositAmount3,
@@ -347,68 +347,68 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
     )
         internal
     {
-        _deposit(address(usdc),  user1, depositAmount1);
-        _deposit(address(usdc),  user2, depositAmount2);
+        _deposit(address(secondaryToken),  user1, depositAmount1);
+        _deposit(address(secondaryToken),  user2, depositAmount2);
         _deposit(address(creditToken), user2, depositAmount3);
 
         WithdrawFuzzTestVars memory vars;
 
-        vars.totalUsdc  = depositAmount1 + depositAmount2;
-        vars.totalValue = vars.totalUsdc * 1e12 + depositAmount3 * 125/100;
+        vars.totalSecondaryToken  = depositAmount1 + depositAmount2;
+        vars.totalValue = vars.totalSecondaryToken * 1e12 + depositAmount3 * 125/100;
 
-        assertEq(usdc.balanceOf(user1),     0);
-        assertEq(usdc.balanceOf(receiver1), 0);
-        assertEq(usdc.balanceOf(pocket),    vars.totalUsdc);
+        assertEq(secondaryToken.balanceOf(user1),     0);
+        assertEq(secondaryToken.balanceOf(receiver1), 0);
+        assertEq(secondaryToken.balanceOf(pocket),    vars.totalSecondaryToken);
 
         assertEq(groveBasin.shares(user1), depositAmount1 * 1e12);
         assertEq(groveBasin.totalShares(), vars.totalValue);
 
-        vars.expectedWithdrawnAmount1 = _getExpectedWithdrawnAmount(usdc, user1, withdrawAmount1);
+        vars.expectedWithdrawnAmount1 = _getExpectedWithdrawnAmount(secondaryToken, user1, withdrawAmount1);
 
         vm.prank(user1);
-        uint256 amount = groveBasin.withdraw(address(usdc), receiver1, withdrawAmount1);
+        uint256 amount = groveBasin.withdraw(address(secondaryToken), receiver1, withdrawAmount1);
 
         assertEq(amount, vars.expectedWithdrawnAmount1);
 
         _checkGroveBasinInvariant();
 
         assertEq(
-            usdc.balanceOf(receiver1) * 1e12 + groveBasin.totalAssets(),
+            secondaryToken.balanceOf(receiver1) * 1e12 + groveBasin.totalAssets(),
             vars.totalValue
         );
 
         // NOTE: User 1 doesn't need a tolerance because their shares are 1e6 precision because they only
         //       deposited USDC. User 2 has a tolerance because they deposited creditToken which has 1e18 precision
         //       so there is a chance that the rounding will be off by up to 1e12.
-        assertEq(usdc.balanceOf(user1),     0);
-        assertEq(usdc.balanceOf(receiver1), vars.expectedWithdrawnAmount1);
-        assertEq(usdc.balanceOf(user2),     0);
-        assertEq(usdc.balanceOf(receiver2), 0);
-        assertEq(usdc.balanceOf(pocket),    vars.totalUsdc - vars.expectedWithdrawnAmount1);
+        assertEq(secondaryToken.balanceOf(user1),     0);
+        assertEq(secondaryToken.balanceOf(receiver1), vars.expectedWithdrawnAmount1);
+        assertEq(secondaryToken.balanceOf(user2),     0);
+        assertEq(secondaryToken.balanceOf(receiver2), 0);
+        assertEq(secondaryToken.balanceOf(pocket),    vars.totalSecondaryToken - vars.expectedWithdrawnAmount1);
 
         assertEq(groveBasin.shares(user1), (depositAmount1 - vars.expectedWithdrawnAmount1) * 1e12);
         assertEq(groveBasin.shares(user2), depositAmount2 * 1e12 + depositAmount3 * 125/100);  // Includes creditToken deposit
         assertEq(groveBasin.totalShares(), vars.totalValue - vars.expectedWithdrawnAmount1 * 1e12);
 
-        vars.expectedWithdrawnAmount2 = _getExpectedWithdrawnAmount(usdc, user2, withdrawAmount2);
+        vars.expectedWithdrawnAmount2 = _getExpectedWithdrawnAmount(secondaryToken, user2, withdrawAmount2);
 
         vm.prank(user2);
-        amount = groveBasin.withdraw(address(usdc), receiver2, withdrawAmount2);
+        amount = groveBasin.withdraw(address(secondaryToken), receiver2, withdrawAmount2);
 
         assertEq(amount, vars.expectedWithdrawnAmount2);
 
         _checkGroveBasinInvariant();
 
         assertEq(
-            (usdc.balanceOf(receiver1) + usdc.balanceOf(receiver2)) * 1e12 + groveBasin.totalAssets(),
+            (secondaryToken.balanceOf(receiver1) + secondaryToken.balanceOf(receiver2)) * 1e12 + groveBasin.totalAssets(),
             vars.totalValue
         );
 
-        assertEq(usdc.balanceOf(user1),     0);
-        assertEq(usdc.balanceOf(receiver1), vars.expectedWithdrawnAmount1);
-        assertEq(usdc.balanceOf(user2),     0);
-        assertEq(usdc.balanceOf(receiver2), vars.expectedWithdrawnAmount2);
-        assertEq(usdc.balanceOf(pocket),    vars.totalUsdc - (vars.expectedWithdrawnAmount1 + vars.expectedWithdrawnAmount2));
+        assertEq(secondaryToken.balanceOf(user1),     0);
+        assertEq(secondaryToken.balanceOf(receiver1), vars.expectedWithdrawnAmount1);
+        assertEq(secondaryToken.balanceOf(user2),     0);
+        assertEq(secondaryToken.balanceOf(receiver2), vars.expectedWithdrawnAmount2);
+        assertEq(secondaryToken.balanceOf(pocket),    vars.totalSecondaryToken - (vars.expectedWithdrawnAmount1 + vars.expectedWithdrawnAmount2));
 
         assertEq(creditToken.balanceOf(user2),        0);
         assertEq(creditToken.balanceOf(receiver2),    0);
@@ -419,13 +419,13 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         assertApproxEqAbs(
             ((depositAmount2 * 1e12) + (depositAmount3 * 125/100) - (vars.expectedWithdrawnAmount2 * 1e12)) - groveBasin.shares(user2),
             0,
-            usdcShareTolerance
+            secondaryTokenShareTolerance
         );
 
         assertApproxEqAbs(
             (vars.totalValue - (vars.expectedWithdrawnAmount1 + vars.expectedWithdrawnAmount2) * 1e12) - groveBasin.totalShares(),
             0,
-            usdcShareTolerance
+            secondaryTokenShareTolerance
         );
 
         vars.expectedWithdrawnAmount3 = _getExpectedWithdrawnAmount(creditToken, user2, withdrawAmount3);
@@ -438,18 +438,18 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         _checkGroveBasinInvariant();
 
         assertApproxEqAbs(
-            (usdc.balanceOf(receiver1) + usdc.balanceOf(receiver2)) * 1e12
+            (secondaryToken.balanceOf(receiver1) + secondaryToken.balanceOf(receiver2)) * 1e12
                 + (creditToken.balanceOf(receiver2) * creditTokenRateProvider.getConversionRate() / 1e27)
                 + groveBasin.totalAssets(),
             vars.totalValue,
             1
         );
 
-        assertEq(usdc.balanceOf(user1),     0);
-        assertEq(usdc.balanceOf(receiver1), vars.expectedWithdrawnAmount1);
-        assertEq(usdc.balanceOf(user2),     0);
-        assertEq(usdc.balanceOf(receiver2), vars.expectedWithdrawnAmount2);
-        assertEq(usdc.balanceOf(pocket),    vars.totalUsdc - (vars.expectedWithdrawnAmount1 + vars.expectedWithdrawnAmount2));
+        assertEq(secondaryToken.balanceOf(user1),     0);
+        assertEq(secondaryToken.balanceOf(receiver1), vars.expectedWithdrawnAmount1);
+        assertEq(secondaryToken.balanceOf(user2),     0);
+        assertEq(secondaryToken.balanceOf(receiver2), vars.expectedWithdrawnAmount2);
+        assertEq(secondaryToken.balanceOf(pocket),    vars.totalSecondaryToken - (vars.expectedWithdrawnAmount1 + vars.expectedWithdrawnAmount2));
 
         assertApproxEqAbs(creditToken.balanceOf(user2),        0,                                              0);
         assertApproxEqAbs(creditToken.balanceOf(receiver2),    vars.expectedWithdrawnAmount3,                  1);
@@ -460,18 +460,18 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         assertApproxEqAbs(
             ((depositAmount2 * 1e12) + (depositAmount3 * 125/100) - (vars.expectedWithdrawnAmount2 * 1e12) - (vars.expectedWithdrawnAmount3 * 125/100)) - groveBasin.shares(user2),
             0,
-            usdcShareTolerance + 1  // 1 is added to the tolerance because of rounding error in creditToken calculations
+            secondaryTokenShareTolerance + 1  // 1 is added to the tolerance because of rounding error in creditToken calculations
         );
 
         assertApproxEqAbs(
             vars.totalValue - (vars.expectedWithdrawnAmount1 + vars.expectedWithdrawnAmount2) * 1e12 - (vars.expectedWithdrawnAmount3 * 125/100) - groveBasin.totalShares(),
             0,
-            usdcShareTolerance + 1  // 1 is added to the tolerance because of rounding error in creditToken calculations
+            secondaryTokenShareTolerance + 1  // 1 is added to the tolerance because of rounding error in creditToken calculations
         );
     }
 
     function test_withdraw_changeConversionRate() public {
-        _deposit(address(usdc),  user1, 100e6);
+        _deposit(address(secondaryToken),  user1, 100e6);
         _deposit(address(creditToken), user2, 100e18);
 
         assertEq(groveBasin.convertToShares(1e18), 1e18);
@@ -485,8 +485,8 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
 
         assertEq(groveBasin.convertToShares(1e18), 0.9e18);
 
-        assertEq(usdc.balanceOf(user1),  0);
-        assertEq(usdc.balanceOf(pocket), 100e6);
+        assertEq(secondaryToken.balanceOf(user1),  0);
+        assertEq(secondaryToken.balanceOf(pocket), 100e6);
 
         assertEq(groveBasin.totalShares(), 225e18);
         assertEq(groveBasin.shares(user1), 100e18);
@@ -494,12 +494,12 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
 
         // NOTE: Users shares have more value than the balance of USDC now
         vm.prank(user1);
-        uint256 amount = groveBasin.withdraw(address(usdc), user1, type(uint256).max);
+        uint256 amount = groveBasin.withdraw(address(secondaryToken), user1, type(uint256).max);
 
         assertEq(amount, 100e6);
 
-        assertEq(usdc.balanceOf(user1),  100e6);
-        assertEq(usdc.balanceOf(pocket), 0);
+        assertEq(secondaryToken.balanceOf(user1),  100e6);
+        assertEq(secondaryToken.balanceOf(pocket), 0);
 
         assertEq(creditToken.balanceOf(user1),        0);
         assertEq(creditToken.balanceOf(user2),        0);
@@ -538,7 +538,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         assertEq(groveBasin.shares(user1), 0);
         assertEq(groveBasin.shares(user2), 0);
 
-        uint256 user1ResultingValue = usdc.balanceOf(user1) * 1e12 + creditToken.balanceOf(user1) * 150/100;
+        uint256 user1ResultingValue = secondaryToken.balanceOf(user1) * 1e12 + creditToken.balanceOf(user1) * 150/100;
         uint256 user2ResultingValue = creditToken.balanceOf(user2) * 150/100;  // Use 1.5 conversion rate
 
         assertEq(user1ResultingValue, 111.111111111111111110e18);
@@ -552,7 +552,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
     }
 
     function testFuzz_withdraw_changeConversionRate(
-        uint256 usdcAmount,
+        uint256 secondaryTokenAmount,
         uint256 creditTokenAmount,
         uint256 conversionRate
     )
@@ -562,19 +562,19 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         // Always increase exchange rate so accrual of value can be checked.
         // Since rounding is against user if it stays the same the value can decrease and
         // the check will underflow
-        usdcAmount     = _bound(usdcAmount,     1e6,     USDC_TOKEN_MAX);
+        secondaryTokenAmount     = _bound(secondaryTokenAmount,     1e6,     SECONDARY_TOKEN_MAX);
         creditTokenAmount    = _bound(creditTokenAmount,    1e18,    CREDIT_TOKEN_MAX);
         conversionRate = _bound(conversionRate, 1.26e27, 1000e27);
 
-        _deposit(address(usdc), user1, usdcAmount);
+        _deposit(address(secondaryToken), user1, secondaryTokenAmount);
         _deposit(address(creditToken), user2, creditTokenAmount);
 
         mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
-        uint256 user1Shares = usdcAmount * 1e12;
+        uint256 user1Shares = secondaryTokenAmount * 1e12;
         uint256 user2Shares = creditTokenAmount * 125/100;
         uint256 totalShares = user1Shares + user2Shares;
-        uint256 totalValue  = usdcAmount * 1e12 + creditTokenAmount * conversionRate / 1e27;
+        uint256 totalValue  = secondaryTokenAmount * 1e12 + creditTokenAmount * conversionRate / 1e27;
 
         assertEq(groveBasin.totalAssets(), totalValue);
 
@@ -582,23 +582,23 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         assertEq(groveBasin.shares(user1), user1Shares);
         assertEq(groveBasin.shares(user2), user2Shares);
 
-        assertEq(usdc.balanceOf(user1),  0);
-        assertEq(usdc.balanceOf(pocket), usdcAmount);
+        assertEq(secondaryToken.balanceOf(user1),  0);
+        assertEq(secondaryToken.balanceOf(pocket), secondaryTokenAmount);
 
         // NOTE: Users shares have more value than the balance of USDC now
         vm.prank(user1);
-        uint256 amount = groveBasin.withdraw(address(usdc), user1, type(uint256).max);
+        uint256 amount = groveBasin.withdraw(address(secondaryToken), user1, type(uint256).max);
 
-        assertEq(amount, usdcAmount);  // Withdraws all USDC since shares are worth more
+        assertEq(amount, secondaryTokenAmount);  // Withdraws all USDC since shares are worth more
 
-        assertEq(usdc.balanceOf(user1),  usdcAmount);
-        assertEq(usdc.balanceOf(pocket), 0);
+        assertEq(secondaryToken.balanceOf(user1),  secondaryTokenAmount);
+        assertEq(secondaryToken.balanceOf(pocket), 0);
 
         assertEq(creditToken.balanceOf(user1),        0);
         assertEq(creditToken.balanceOf(user2),        0);
         assertEq(creditToken.balanceOf(address(groveBasin)), creditTokenAmount);
 
-        uint256 expectedUser1SharesBurned = usdcAmount * 1e12 * totalShares / totalValue;
+        uint256 expectedUser1SharesBurned = secondaryTokenAmount * 1e12 * totalShares / totalValue;
 
         assertApproxEqAbs(groveBasin.totalShares(), totalShares - expectedUser1SharesBurned, 2);
         assertApproxEqAbs(groveBasin.shares(user1), user1Shares - expectedUser1SharesBurned, 2);
@@ -634,7 +634,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         assertEq(groveBasin.shares(user2), 0);
 
         uint256 user1ResultingValue
-            = usdc.balanceOf(user1) * 1e12 + creditToken.balanceOf(user1) * conversionRate / 1e27;
+            = secondaryToken.balanceOf(user1) * 1e12 + creditToken.balanceOf(user1) * conversionRate / 1e27;
 
         uint256 user2ResultingValue = creditToken.balanceOf(user2) * conversionRate / 1e27;  // Use 1.5 conversion rate
 
@@ -645,7 +645,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
 
         // Value gains are the same for both users, accurate to 0.02%
         assertApproxEqRel(
-            (user1ResultingValue - (usdcAmount * 1e12))    * 1e18 / (usdcAmount * 1e12),
+            (user1ResultingValue - (secondaryTokenAmount * 1e12))    * 1e18 / (secondaryTokenAmount * 1e12),
             (user2ResultingValue - (creditTokenAmount * 125/100)) * 1e18 / (creditTokenAmount * 125/100),
             0.0021e18
         );
@@ -659,7 +659,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         uint256 totalSharesValue = groveBasin.convertToAssetValue(groveBasin.totalShares());
         uint256 totalAssetsValue =
             creditToken.balanceOf(address(groveBasin)) * creditTokenRateProvider.getConversionRate() / 1e27
-            + usdc.balanceOf(pocket) * 1e12;
+            + secondaryToken.balanceOf(pocket) * 1e12;
 
         assertApproxEqAbs(totalSharesValue, totalAssetsValue, 1);
     }
@@ -667,7 +667,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
     function _getExpectedWithdrawnAmount(MockERC20 asset, address user, uint256 amount)
         internal view returns (uint256 withdrawAmount)
     {
-        address custodian = address(asset) == address(usdc) ? pocket : address(groveBasin);
+        address custodian = address(asset) == address(secondaryToken) ? pocket : address(groveBasin);
 
         uint256 balance    = asset.balanceOf(custodian);
         uint256 userAssets = groveBasin.convertToAssets(address(asset), groveBasin.shares(user));

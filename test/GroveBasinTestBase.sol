@@ -18,7 +18,7 @@ contract GroveBasinTestBase is Test {
 
     GroveBasin public groveBasin;
 
-    MockERC20 public usdc;
+    MockERC20 public secondaryToken;
     MockERC20 public collateralToken;
     MockERC20 public creditToken;
 
@@ -35,10 +35,10 @@ contract GroveBasinTestBase is Test {
     // 1,000,000,000,000 of each token
     uint256 public constant COLLATERAL_TOKEN_MAX = 1e30;
     uint256 public constant CREDIT_TOKEN_MAX     = 1e30;
-    uint256 public constant USDC_TOKEN_MAX       = 1e18;
+    uint256 public constant SECONDARY_TOKEN_MAX  = 1e18;
 
     function setUp() public virtual {
-        usdc            = new MockERC20("usdc",            "usdc",            6);
+        secondaryToken  = new MockERC20("secondaryToken",  "secondaryToken",  6);
         collateralToken = new MockERC20("collateralToken", "collateralToken", 18);
         creditToken     = new MockERC20("creditToken",     "creditToken",     18);
 
@@ -49,22 +49,22 @@ contract GroveBasinTestBase is Test {
 
         creditTokenRateProvider = IRateProviderLike(address(mockCreditTokenRateProvider));
 
-        groveBasin = new GroveBasin(owner, address(usdc), address(collateralToken), address(creditToken), address(creditTokenRateProvider));
+        groveBasin = new GroveBasin(owner, address(secondaryToken), address(collateralToken), address(creditToken), address(creditTokenRateProvider));
 
         vm.prank(owner);
         groveBasin.setPocket(pocket);
 
         vm.prank(pocket);
-        usdc.approve(address(groveBasin), type(uint256).max);
+        secondaryToken.approve(address(groveBasin), type(uint256).max);
 
+        vm.label(address(secondaryToken),  "secondaryToken");
         vm.label(address(collateralToken), "collateralToken");
-        vm.label(address(usdc),            "USDC");
         vm.label(address(creditToken),     "creditToken");
     }
 
     function _getGroveBasinValue() internal view returns (uint256) {
         return (creditToken.balanceOf(address(groveBasin)) * creditTokenRateProvider.getConversionRate() / 1e27)
-            + usdc.balanceOf(groveBasin.pocket()) * 1e12
+            + secondaryToken.balanceOf(groveBasin.pocket()) * 1e12
             + collateralToken.balanceOf(address(groveBasin));
     }
 

@@ -15,11 +15,11 @@ contract GroveBasin is IGroveBasin, Ownable {
 
     using SafeERC20 for IERC20;
 
-    uint256 internal immutable _usdcPrecision;
+    uint256 internal immutable _secondaryTokenPrecision;
     uint256 internal immutable _collateralTokenPrecision;
     uint256 internal immutable _creditTokenPrecision;
 
-    IERC20 public override immutable usdc;
+    IERC20 public override immutable secondaryToken;
     IERC20 public override immutable collateralToken;
     IERC20 public override immutable creditToken;
 
@@ -33,23 +33,23 @@ contract GroveBasin is IGroveBasin, Ownable {
 
     constructor(
         address owner_,
-        address usdc_,
+        address secondaryToken_,
         address collateralToken_,
         address creditToken_,
         address creditTokenRateProvider_
     )
         Ownable(owner_)
     {
-        require(usdc_                    != address(0), "GroveBasin/invalid-usdc");
+        require(secondaryToken_          != address(0), "GroveBasin/invalid-secondaryToken");
         require(collateralToken_         != address(0), "GroveBasin/invalid-collateralToken");
         require(creditToken_             != address(0), "GroveBasin/invalid-creditToken");
         require(creditTokenRateProvider_ != address(0), "GroveBasin/invalid-creditTokenRateProvider");
 
-        require(usdc_ != collateralToken_,         "GroveBasin/usdc-collateralToken-same");
-        require(usdc_ != creditToken_,             "GroveBasin/usdc-creditToken-same");
-        require(collateralToken_ != creditToken_,  "GroveBasin/collateralToken-creditToken-same");
+        require(secondaryToken_ != collateralToken_, "GroveBasin/secondaryToken-collateralToken-same");
+        require(secondaryToken_ != creditToken_,     "GroveBasin/secondaryToken-creditToken-same");
+        require(collateralToken_ != creditToken_,    "GroveBasin/collateralToken-creditToken-same");
 
-        usdc            = IERC20(usdc_);
+        secondaryToken  = IERC20(secondaryToken_);
         collateralToken = IERC20(collateralToken_);
         creditToken     = IERC20(creditToken_);
 
@@ -61,12 +61,12 @@ contract GroveBasin is IGroveBasin, Ownable {
             "GroveBasin/rate-provider-returns-zero"
         );
 
-        _usdcPrecision            = 10 ** IERC20(usdc_).decimals();
+        _secondaryTokenPrecision  = 10 ** IERC20(secondaryToken_).decimals();
         _collateralTokenPrecision = 10 ** IERC20(collateralToken_).decimals();
         _creditTokenPrecision     = 10 ** IERC20(creditToken_).decimals();
 
         // Necessary to ensure rounding works as expected
-        require(_usdcPrecision            <= 1e18, "GroveBasin/usdc-precision-too-high");
+        require(_secondaryTokenPrecision  <= 1e18, "GroveBasin/secondaryToken-precision-too-high");
         require(_collateralTokenPrecision <= 1e18, "GroveBasin/collateralToken-precision-too-high");
     }
 
@@ -81,12 +81,12 @@ contract GroveBasin is IGroveBasin, Ownable {
 
         require(newPocket != pocket_, "GroveBasin/same-pocket");
 
-        uint256 amountToTransfer = usdc.balanceOf(pocket_);
+        uint256 amountToTransfer = secondaryToken.balanceOf(pocket_);
 
         if (pocket_ == address(this)) {
-            usdc.safeTransfer(newPocket, amountToTransfer);
+            secondaryToken.safeTransfer(newPocket, amountToTransfer);
         } else {
-            usdc.safeTransferFrom(pocket_, newPocket, amountToTransfer);
+            secondaryToken.safeTransferFrom(pocket_, newPocket, amountToTransfer);
         }
 
         pocket = newPocket;
@@ -246,7 +246,7 @@ contract GroveBasin is IGroveBasin, Ownable {
 
         uint256 assetValue = convertToAssetValue(numShares);
 
-        if      (asset == address(usdc))            return assetValue * _usdcPrecision / 1e18;
+        if      (asset == address(secondaryToken))   return assetValue * _secondaryTokenPrecision / 1e18;
         else if (asset == address(collateralToken)) return assetValue * _collateralTokenPrecision / 1e18;
 
         // NOTE: Multiplying by 1e27 and dividing by 1e18 cancels to 1e9 in numerator
@@ -283,7 +283,7 @@ contract GroveBasin is IGroveBasin, Ownable {
     /**********************************************************************************************/
 
     function totalAssets() public view override returns (uint256) {
-        return _getUsdcValue(usdc.balanceOf(pocket))
+        return _getSecondaryTokenValue(secondaryToken.balanceOf(pocket))
             +  _getCollateralTokenValue(collateralToken.balanceOf(address(this)))
             +  _getCreditTokenValue(creditToken.balanceOf(address(this)), false);  // Round down
     }
@@ -293,14 +293,14 @@ contract GroveBasin is IGroveBasin, Ownable {
     /**********************************************************************************************/
 
     function _getAssetValue(address asset, uint256 amount, bool roundUp) internal view returns (uint256) {
-        if      (asset == address(usdc))            return _getUsdcValue(amount);
+        if      (asset == address(secondaryToken))  return _getSecondaryTokenValue(amount);
         else if (asset == address(collateralToken)) return _getCollateralTokenValue(amount);
         else if (asset == address(creditToken))     return _getCreditTokenValue(amount, roundUp);
         else revert("GroveBasin/invalid-asset-for-value");
     }
 
-    function _getUsdcValue(uint256 amount) internal view returns (uint256) {
-        return amount * 1e18 / _usdcPrecision;
+    function _getSecondaryTokenValue(uint256 amount) internal view returns (uint256) {
+        return amount * 1e18 / _secondaryTokenPrecision;
     }
 
     function _getCollateralTokenValue(uint256 amount) internal view returns (uint256) {
@@ -327,18 +327,18 @@ contract GroveBasin is IGroveBasin, Ownable {
     function _getSwapQuote(address asset, address quoteAsset, uint256 amount, bool roundUp)
         internal view returns (uint256 quoteAmount)
     {
-        if (asset == address(usdc)) {
-            if      (quoteAsset == address(collateralToken)) return _convertOneToOne(amount, _usdcPrecision, _collateralTokenPrecision, roundUp);
-            else if (quoteAsset == address(creditToken))     return _convertToCreditToken(amount, _usdcPrecision, roundUp);
+        if (asset == address(secondaryToken)) {
+            if      (quoteAsset == address(collateralToken)) return _convertOneToOne(amount, _secondaryTokenPrecision, _collateralTokenPrecision, roundUp);
+            else if (quoteAsset == address(creditToken))     return _convertToCreditToken(amount, _secondaryTokenPrecision, roundUp);
         }
 
         else if (asset == address(collateralToken)) {
-            if      (quoteAsset == address(usdc))        return _convertOneToOne(amount, _collateralTokenPrecision, _usdcPrecision, roundUp);
-            else if (quoteAsset == address(creditToken)) return _convertToCreditToken(amount, _collateralTokenPrecision, roundUp);
+            if      (quoteAsset == address(secondaryToken)) return _convertOneToOne(amount, _collateralTokenPrecision, _secondaryTokenPrecision, roundUp);
+            else if (quoteAsset == address(creditToken))    return _convertToCreditToken(amount, _collateralTokenPrecision, roundUp);
         }
 
         else if (asset == address(creditToken)) {
-            if      (quoteAsset == address(usdc))            return _convertFromCreditToken(amount, _usdcPrecision, roundUp);
+            if      (quoteAsset == address(secondaryToken))  return _convertFromCreditToken(amount, _secondaryTokenPrecision, roundUp);
             else if (quoteAsset == address(collateralToken)) return _convertFromCreditToken(amount, _collateralTokenPrecision, roundUp);
         }
 
@@ -397,11 +397,11 @@ contract GroveBasin is IGroveBasin, Ownable {
     }
 
     function _isValidAsset(address asset) internal view returns (bool) {
-        return asset == address(usdc) || asset == address(collateralToken) || asset == address(creditToken);
+        return asset == address(secondaryToken) || asset == address(collateralToken) || asset == address(creditToken);
     }
 
     function _getAssetCustodian(address asset) internal view returns (address custodian) {
-        custodian = asset == address(usdc) ? pocket : address(this);
+        custodian = asset == address(secondaryToken) ? pocket : address(this);
     }
 
     function _pullAsset(address asset, uint256 amount) internal {
@@ -409,8 +409,8 @@ contract GroveBasin is IGroveBasin, Ownable {
     }
 
     function _pushAsset(address asset, address receiver, uint256 amount) internal {
-        if (asset == address(usdc) && pocket != address(this)) {
-            usdc.safeTransferFrom(pocket, receiver, amount);
+        if (asset == address(secondaryToken) && pocket != address(this)) {
+            secondaryToken.safeTransferFrom(pocket, receiver, amount);
         } else {
             IERC20(asset).safeTransfer(receiver, amount);
         }

@@ -17,11 +17,11 @@ contract TransferHandler is HandlerBase {
 
     constructor(
         GroveBasin groveBasin_,
-        MockERC20  usdc,
+        MockERC20  secondaryToken,
         MockERC20  collateralToken,
         MockERC20  creditToken
     ) HandlerBase(groveBasin_) {
-        assets[0] = usdc;
+        assets[0] = secondaryToken;
         assets[1] = collateralToken;
         assets[2] = creditToken;
     }

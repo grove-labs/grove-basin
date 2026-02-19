@@ -7,10 +7,10 @@ import { HandlerBase, GroveBasin } from "test/invariant/handlers/HandlerBase.sol
 
 contract OwnerHandler is HandlerBase {
 
-    MockERC20 public usdc;
+    MockERC20 public secondaryToken;
 
-    constructor(GroveBasin groveBasin_, MockERC20 usdc_) HandlerBase(groveBasin_) {
-        usdc = usdc_;
+    constructor(GroveBasin groveBasin_, MockERC20 secondaryToken_) HandlerBase(groveBasin_) {
+        secondaryToken = secondaryToken_;
     }
 
     function setPocket(string memory salt) public {
@@ -23,10 +23,10 @@ contract OwnerHandler is HandlerBase {
 
         // Assumption is made that the pocket will always infinite approve the GroveBasin
         vm.prank(newPocket);
-        usdc.approve(address(groveBasin), type(uint256).max);
+        secondaryToken.approve(address(groveBasin), type(uint256).max);
 
-        uint256 oldPocketBalance   = usdc.balanceOf(groveBasin.pocket());
-        uint256 newPocketBalance   = usdc.balanceOf(newPocket);
+        uint256 oldPocketBalance   = secondaryToken.balanceOf(groveBasin.pocket());
+        uint256 newPocketBalance   = secondaryToken.balanceOf(newPocket);
         uint256 totalAssets        = groveBasin.totalAssets();
         uint256 startingConversion = groveBasin.convertToAssetValue(1e18);
 
@@ -34,16 +34,16 @@ contract OwnerHandler is HandlerBase {
 
         groveBasin.setPocket(newPocket);
 
-        // Old pocket should be cleared of USDC
+        // Old pocket should be cleared of secondaryToken
         assertEq(
-            usdc.balanceOf(oldPocket),
+            secondaryToken.balanceOf(oldPocket),
             0,
             "OwnerHandler/old-pocket-balance"
         );
 
         // New pocket should get full pocket balance
         assertEq(
-            usdc.balanceOf(newPocket),
+            secondaryToken.balanceOf(newPocket),
             newPocketBalance + oldPocketBalance,
             "OwnerHandler/new-pocket-balance"
         );

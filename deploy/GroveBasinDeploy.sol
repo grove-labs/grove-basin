@@ -9,17 +9,17 @@ library GroveBasinDeploy {
 
     function deploy(
         address owner,
-        address usdc,
+        address secondaryToken,
         address collateralToken,
         address creditToken,
         address creditTokenRateProvider
     )
         internal returns (address groveBasin)
     {
-        groveBasin = address(new GroveBasin(owner, usdc, collateralToken, creditToken, creditTokenRateProvider));
+        groveBasin = address(new GroveBasin(owner, secondaryToken, collateralToken, creditToken, creditTokenRateProvider));
 
-        IERC20(usdc).approve(groveBasin, 1e6);
-        GroveBasin(groveBasin).deposit(usdc, address(0), 1e6);
+        IERC20(secondaryToken).approve(groveBasin, 1e6);
+        GroveBasin(groveBasin).deposit(secondaryToken, address(0), 1e6);
     }
 
 }

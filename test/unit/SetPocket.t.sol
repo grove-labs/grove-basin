@@ -35,15 +35,15 @@ contract GroveBasinSetPocketFailureTests is GroveBasinTestBase {
         groveBasin.setPocket(pocket1);
 
         vm.prank(pocket1);
-        usdc.approve(address(groveBasin), 1_000_000e6);
+        secondaryToken.approve(address(groveBasin), 1_000_000e6);
 
-        deal(address(usdc), pocket1, 1_000_000e6 + 1);
+        deal(address(secondaryToken), pocket1, 1_000_000e6 + 1);
 
         vm.prank(owner);
         vm.expectRevert("SafeERC20/transfer-from-failed");
         groveBasin.setPocket(pocket2);
 
-        deal(address(usdc), pocket1, 1_000_000e6);
+        deal(address(secondaryToken), pocket1, 1_000_000e6);
 
         vm.prank(owner);
         groveBasin.setPocket(pocket2);
@@ -66,10 +66,10 @@ contract GroveBasinSetPocketSuccessTests is GroveBasinTestBase {
         vm.prank(owner);
         groveBasin.setPocket(address(groveBasin));
 
-        deal(address(usdc), address(groveBasin), 1_000_000e6);
+        deal(address(secondaryToken), address(groveBasin), 1_000_000e6);
 
-        assertEq(usdc.balanceOf(address(groveBasin)), 1_000_000e6);
-        assertEq(usdc.balanceOf(pocket1),      0);
+        assertEq(secondaryToken.balanceOf(address(groveBasin)), 1_000_000e6);
+        assertEq(secondaryToken.balanceOf(pocket1),      0);
 
         assertEq(groveBasin.totalAssets(), 1_000_000e18);
 
@@ -80,8 +80,8 @@ contract GroveBasinSetPocketSuccessTests is GroveBasinTestBase {
         emit PocketSet(address(groveBasin), pocket1, 1_000_000e6);
         groveBasin.setPocket(pocket1);
 
-        assertEq(usdc.balanceOf(address(groveBasin)), 0);
-        assertEq(usdc.balanceOf(pocket1),      1_000_000e6);
+        assertEq(secondaryToken.balanceOf(address(groveBasin)), 0);
+        assertEq(secondaryToken.balanceOf(pocket1),      1_000_000e6);
 
         assertEq(groveBasin.totalAssets(), 1_000_000e18);
 
@@ -93,14 +93,14 @@ contract GroveBasinSetPocketSuccessTests is GroveBasinTestBase {
         groveBasin.setPocket(pocket1);
 
         vm.prank(pocket1);
-        usdc.approve(address(groveBasin), 1_000_000e6);
+        secondaryToken.approve(address(groveBasin), 1_000_000e6);
 
-        deal(address(usdc), address(pocket1), 1_000_000e6);
+        deal(address(secondaryToken), address(pocket1), 1_000_000e6);
 
-        assertEq(usdc.allowance(pocket1, address(groveBasin)), 1_000_000e6);
+        assertEq(secondaryToken.allowance(pocket1, address(groveBasin)), 1_000_000e6);
 
-        assertEq(usdc.balanceOf(pocket1), 1_000_000e6);
-        assertEq(usdc.balanceOf(pocket2), 0);
+        assertEq(secondaryToken.balanceOf(pocket1), 1_000_000e6);
+        assertEq(secondaryToken.balanceOf(pocket2), 0);
 
         assertEq(groveBasin.totalAssets(), 1_000_000e18);
 
@@ -111,10 +111,10 @@ contract GroveBasinSetPocketSuccessTests is GroveBasinTestBase {
         emit PocketSet(pocket1, pocket2, 1_000_000e6);
         groveBasin.setPocket(pocket2);
 
-        assertEq(usdc.allowance(pocket1, address(groveBasin)), 0);
+        assertEq(secondaryToken.allowance(pocket1, address(groveBasin)), 0);
 
-        assertEq(usdc.balanceOf(pocket1), 0);
-        assertEq(usdc.balanceOf(pocket2), 1_000_000e6);
+        assertEq(secondaryToken.balanceOf(pocket1), 0);
+        assertEq(secondaryToken.balanceOf(pocket2), 1_000_000e6);
 
         assertEq(groveBasin.totalAssets(), 1_000_000e18);
 
@@ -127,7 +127,7 @@ contract GroveBasinSetPocketSuccessTests is GroveBasinTestBase {
         vm.prank(owner);
         groveBasin.setPocket(address(groveBasin));
 
-        _deposit(address(usdc),  owner, 1_000_000e6);
+        _deposit(address(secondaryToken),  owner, 1_000_000e6);
         _deposit(address(collateralToken),  owner, 1_000_000e18);
         _deposit(address(creditToken), owner, 800_000e18);
 

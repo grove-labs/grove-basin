@@ -12,26 +12,26 @@ import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 contract GroveBasinDeployTests is GroveBasinTestBase {
 
     function test_deploy() public {
-        deal(address(usdc), address(this), 1e6);
+        deal(address(secondaryToken), address(this), 1e6);
 
         GroveBasin newGroveBasin = GroveBasin(GroveBasinDeploy.deploy(
             address(owner),
-            address(usdc),
+            address(secondaryToken),
             address(collateralToken),
             address(creditToken),
             address(creditTokenRateProvider)
         ));
 
         assertEq(address(newGroveBasin.owner()),                   address(owner));
-        assertEq(address(newGroveBasin.usdc()),                    address(usdc));
+        assertEq(address(newGroveBasin.secondaryToken()),                    address(secondaryToken));
         assertEq(address(newGroveBasin.collateralToken()),         address(collateralToken));
         assertEq(address(newGroveBasin.creditToken()),             address(creditToken));
         assertEq(address(newGroveBasin.creditTokenRateProvider()), address(creditTokenRateProvider));
 
-        assertEq(usdc.allowance(address(this), address(newGroveBasin)), 0);
+        assertEq(secondaryToken.allowance(address(this), address(newGroveBasin)), 0);
 
-        assertEq(usdc.balanceOf(address(this)),   0);
-        assertEq(usdc.balanceOf(address(newGroveBasin)), 1e6);
+        assertEq(secondaryToken.balanceOf(address(this)),   0);
+        assertEq(secondaryToken.balanceOf(address(newGroveBasin)), 1e6);
 
         assertEq(newGroveBasin.totalAssets(),         1e18);
         assertEq(newGroveBasin.totalShares(),         1e18);
