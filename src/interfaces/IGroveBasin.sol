@@ -110,7 +110,7 @@ interface IGroveBasin {
      *          rate between the credit token and the other two assets in the GroveBasin.
      *  @return The address of the rate provider.
      */
-    function rateProvider() external view returns (address);
+    function creditTokenRateProvider() external view returns (address);
 
     /**
      *  @dev    Returns the total number of shares in the GroveBasin. Shares represent ownership of the

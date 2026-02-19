@@ -238,7 +238,7 @@ contract PSMSwapExactInUsdsAssetInTests is PSMSwapExactInSuccessTestsBase {
 
         amountIn       = _bound(amountIn,       1,       USDS_TOKEN_MAX);
         conversionRate = _bound(conversionRate, 0.01e27, 100e27);  // 1% to 10,000% conversion rate
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 amountOut = amountIn * 1e27 / conversionRate;
 
@@ -296,7 +296,7 @@ contract PSMSwapExactInUsdcAssetInTests is PSMSwapExactInSuccessTestsBase {
         amountIn       = _bound(amountIn,       1,       USDC_TOKEN_MAX);
         conversionRate = _bound(conversionRate, 0.01e27, 100e27);  // 1% to 10,000% conversion rate
 
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 amountOut = amountIn * 1e27 / conversionRate * 1e12;
 
@@ -338,7 +338,7 @@ contract PSMSwapExactInCreditTokenAssetInTests is PSMSwapExactInSuccessTestsBase
         amountIn       = _bound(amountIn,       1,       CREDIT_TOKEN_MAX);
         conversionRate = _bound(conversionRate, 0.01e27, 100e27);  // 1% to 10,000% conversion rate
 
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 amountOut = amountIn * conversionRate / 1e27;
 
@@ -360,7 +360,7 @@ contract PSMSwapExactInCreditTokenAssetInTests is PSMSwapExactInSuccessTestsBase
         amountIn       = _bound(amountIn,       1,       CREDIT_TOKEN_MAX);
         conversionRate = _bound(conversionRate, 0.01e27, 100e27);  // 1% to 10,000% conversion rate
 
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 amountOut = amountIn * conversionRate / 1e27 / 1e12;
 
@@ -396,7 +396,7 @@ contract PSMSwapExactInFuzzTests is GroveBasinTestBase {
         uint256 depositSeed
     ) public {
         // 1% to 200% conversion rate
-        mockRateProvider.__setConversionRate(_bound(conversionRate, 0.01e27, 2e27));
+        mockCreditTokenRateProvider.__setConversionRate(_bound(conversionRate, 0.01e27, 2e27));
 
         _deposit(address(usds), lp0, _bound(_hash(depositSeed, "lp0-usds"), 1, USDS_TOKEN_MAX));
 

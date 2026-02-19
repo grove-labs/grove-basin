@@ -439,7 +439,7 @@ contract PSMWithdrawTests is GroveBasinTestBase {
 
         assertApproxEqAbs(
             (usdc.balanceOf(receiver1) + usdc.balanceOf(receiver2)) * 1e12
-                + (creditToken.balanceOf(receiver2) * rateProvider.getConversionRate() / 1e27)
+                + (creditToken.balanceOf(receiver2) * creditTokenRateProvider.getConversionRate() / 1e27)
                 + groveBasin.totalAssets(),
             vars.totalValue,
             1
@@ -476,7 +476,7 @@ contract PSMWithdrawTests is GroveBasinTestBase {
 
         assertEq(groveBasin.convertToShares(1e18), 1e18);
 
-        mockRateProvider.__setConversionRate(1.5e27);
+        mockCreditTokenRateProvider.__setConversionRate(1.5e27);
 
         // Total shares / (100 USDC + 150 creditToken value)
         uint256 expectedConversionRate = 225 * 1e18 / 250;
@@ -569,7 +569,7 @@ contract PSMWithdrawTests is GroveBasinTestBase {
         _deposit(address(usdc), user1, usdcAmount);
         _deposit(address(creditToken), user2, creditTokenAmount);
 
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 user1Shares = usdcAmount * 1e12;
         uint256 user2Shares = creditTokenAmount * 125/100;
@@ -658,7 +658,7 @@ contract PSMWithdrawTests is GroveBasinTestBase {
     function _checkPsmInvariant() internal view {
         uint256 totalSharesValue = groveBasin.convertToAssetValue(groveBasin.totalShares());
         uint256 totalAssetsValue =
-            creditToken.balanceOf(address(groveBasin)) * rateProvider.getConversionRate() / 1e27
+            creditToken.balanceOf(address(groveBasin)) * creditTokenRateProvider.getConversionRate() / 1e27
             + usdc.balanceOf(pocket) * 1e12;
 
         assertApproxEqAbs(totalSharesValue, totalAssetsValue, 1);

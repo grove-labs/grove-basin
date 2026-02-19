@@ -77,7 +77,7 @@ contract PSMPreviewDeposit_SuccessTests is GroveBasinTestBase {
         _deposit(address(creditToken), depositor, 0.8e18);
         _assertOneToOne();
 
-        mockRateProvider.__setConversionRate(2e27);
+        mockCreditTokenRateProvider.__setConversionRate(2e27);
 
         // $300 dollars of value deposited, 300 shares minted.
         // creditToken portion becomes worth $160, full pool worth $360, each share worth $1.20
@@ -111,7 +111,7 @@ contract PSMPreviewDeposit_SuccessTests is GroveBasinTestBase {
         _deposit(address(creditToken), depositor, amount3);
         _assertOneToOne();
 
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 totalSharesMinted = amount1 + amount2 * 1e12 + amount3 * 1.25e27 / 1e27;
         uint256 totalValue        = amount1 + amount2 * 1e12 + amount3 * conversionRate / 1e27;

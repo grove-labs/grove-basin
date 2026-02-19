@@ -12,11 +12,11 @@ library GroveBasinDeploy {
         address usdc,
         address usds,
         address creditToken,
-        address rateProvider
+        address creditTokenRateProvider
     )
         internal returns (address groveBasin)
     {
-        groveBasin = address(new GroveBasin(owner, usdc, usds, creditToken, rateProvider));
+        groveBasin = address(new GroveBasin(owner, usdc, usds, creditToken, creditTokenRateProvider));
 
         IERC20(usdc).approve(groveBasin, 1e6);
         GroveBasin(groveBasin).deposit(usdc, address(0), 1e6);

@@ -100,7 +100,7 @@ contract PSMPreviewSwapExactIn_UsdsAssetInTests is GroveBasinTestBase {
         amountIn       = _bound(amountIn,       1,         USDS_TOKEN_MAX);
         conversionRate = _bound(conversionRate, 0.0001e27, 1000e27);  // 0.01% to 100,000% conversion rate
 
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 amountOut = amountIn * 1e27 / conversionRate;
 
@@ -143,7 +143,7 @@ contract PSMPreviewSwapExactOut_UsdsAssetInTests is GroveBasinTestBase {
         amountOut      = _bound(amountOut,      1,         USDC_TOKEN_MAX);
         conversionRate = _bound(conversionRate, 0.0001e27, 1000e27);  // 0.01% to 100,000% conversion rate
 
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 expectedAmountIn = amountOut * conversionRate / 1e27;
 
@@ -189,7 +189,7 @@ contract PSMPreviewSwapExactIn_USDCAssetInTests is GroveBasinTestBase {
         amountIn       = _bound(amountIn,       1,         USDC_TOKEN_MAX);
         conversionRate = _bound(conversionRate, 0.0001e27, 1000e27);  // 0.01% to 100,000% conversion rate
 
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 amountOut = amountIn * 1e27 / conversionRate * 1e12;
 
@@ -235,7 +235,7 @@ contract PSMPreviewSwapExactOut_USDCAssetInTests is GroveBasinTestBase {
         amountOut      = _bound(amountOut,     1,         CREDIT_TOKEN_MAX);
         conversionRate = _bound(conversionRate, 0.0001e27, 1000e27);  // 0.01% to 100,000% conversion rate
 
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         // Using raw calculation to demo rounding
         uint256 expectedAmountIn = amountOut * conversionRate / 1e27 / 1e12;
@@ -289,7 +289,7 @@ contract PSMPreviewSwapExactIn_CreditTokenAssetInTests is GroveBasinTestBase {
         amountIn       = _bound(amountIn,       1,         CREDIT_TOKEN_MAX);
         conversionRate = _bound(conversionRate, 0.0001e27, 1000e27);  // 0.01% to 100,000% conversion rate
 
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 amountOut = amountIn * conversionRate / 1e27;
 
@@ -311,7 +311,7 @@ contract PSMPreviewSwapExactIn_CreditTokenAssetInTests is GroveBasinTestBase {
         amountIn       = _bound(amountIn,       1,         CREDIT_TOKEN_MAX);
         conversionRate = _bound(conversionRate, 0.0001e27, 1000e27);  // 0.01% to 100,000% conversion rate
 
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 amountOut = amountIn * conversionRate / 1e27 / 1e12;
 
@@ -337,7 +337,7 @@ contract PSMPreviewSwapExactOut_CreditTokenAssetInTests is GroveBasinTestBase {
         amountOut      = _bound(amountOut,      1,         USDS_TOKEN_MAX);
         conversionRate = _bound(conversionRate, 0.0001e27, 1000e27);  // 0.01% to 100,000% conversion rate
 
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 expectedAmountIn = amountOut * 1e27 / conversionRate;
 
@@ -362,7 +362,7 @@ contract PSMPreviewSwapExactOut_CreditTokenAssetInTests is GroveBasinTestBase {
         amountOut      = bound(amountOut,      1,         USDC_TOKEN_MAX);
         conversionRate = bound(conversionRate, 0.0001e27, 1000e27);  // 0.01% to 100,000% conversion rate
 
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 expectedAmountIn = amountOut * 1e27 / conversionRate * 1e12;
 

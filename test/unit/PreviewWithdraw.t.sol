@@ -29,7 +29,7 @@ contract PSMPreviewWithdraw_ZeroAssetsTests is GroveBasinTestBase {
         assertEq(shares3, 0);
         assertEq(assets3, 0);
 
-        mockRateProvider.__setConversionRate(2e27);
+        mockCreditTokenRateProvider.__setConversionRate(2e27);
 
         ( shares1, assets1 ) = groveBasin.previewWithdraw(address(usds),  1e18);
         ( shares2, assets2 ) = groveBasin.previewWithdraw(address(usdc),  1e6);
@@ -156,7 +156,7 @@ contract PSMPreviewWithdraw_SuccessFuzzTests is GroveBasinTestBase {
         assertEq(assets3, params.previewAmount3);
 
         params.conversionRate = _bound(params.conversionRate, 0.001e27, 1000e27);
-        mockRateProvider.__setConversionRate(params.conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(params.conversionRate);
 
         // creditToken value accrual changes the value of shares in the GroveBasin
         totalValue = params.amount1 + params.amount2 * 1e12 + params.amount3 * params.conversionRate / 1e27;

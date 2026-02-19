@@ -190,7 +190,7 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
     function _getLpTokenValue(address lp) internal view returns (uint256) {
         uint256 usdsValue  = usds.balanceOf(lp);
         uint256 usdcValue  = usdc.balanceOf(lp) * 1e12;
-        uint256 creditTokenValue = creditToken.balanceOf(lp) * rateProvider.getConversionRate() / 1e27;
+        uint256 creditTokenValue = creditToken.balanceOf(lp) * creditTokenRateProvider.getConversionRate() / 1e27;
 
         return usdsValue + usdcValue + creditTokenValue;
     }
@@ -199,12 +199,12 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
         uint256 depositValue =
             lpHandler.lpDeposits(lp, address(usds)) +
             lpHandler.lpDeposits(lp, address(usdc)) * 1e12 +
-            lpHandler.lpDeposits(lp, address(creditToken)) * rateProvider.getConversionRate() / 1e27;
+            lpHandler.lpDeposits(lp, address(creditToken)) * creditTokenRateProvider.getConversionRate() / 1e27;
 
         uint256 withdrawValue =
             lpHandler.lpWithdrawals(lp, address(usds)) +
             lpHandler.lpWithdrawals(lp, address(usdc)) * 1e12 +
-            lpHandler.lpWithdrawals(lp, address(creditToken)) * rateProvider.getConversionRate() / 1e27;
+            lpHandler.lpWithdrawals(lp, address(creditToken)) * creditTokenRateProvider.getConversionRate() / 1e27;
 
         return withdrawValue > depositValue ? 0 : depositValue - withdrawValue;
     }
@@ -450,7 +450,7 @@ contract PSMInvariants_RateSetting_NoTransfer is GroveBasinInvariantTestBase {
         super.setUp();
 
         lpHandler         = new LpHandler(groveBasin, usdc, usds, creditToken, 3);
-        rateSetterHandler = new RateSetterHandler(groveBasin, address(rateProvider), 1.25e27);
+        rateSetterHandler = new RateSetterHandler(groveBasin, address(creditTokenRateProvider), 1.25e27);
         swapperHandler    = new SwapperHandler(groveBasin, usdc, usds, creditToken, 3);
 
         targetContract(address(lpHandler));
@@ -496,7 +496,7 @@ contract PSMInvariants_RateSetting_WithTransfers is GroveBasinInvariantTestBase 
         super.setUp();
 
         lpHandler         = new LpHandler(groveBasin, usdc, usds, creditToken, 3);
-        rateSetterHandler = new RateSetterHandler(groveBasin, address(rateProvider), 1.25e27);
+        rateSetterHandler = new RateSetterHandler(groveBasin, address(creditTokenRateProvider), 1.25e27);
         swapperHandler    = new SwapperHandler(groveBasin, usdc, usds, creditToken, 3);
         transferHandler   = new TransferHandler(groveBasin, usdc, usds, creditToken);
 
@@ -571,7 +571,7 @@ contract PSMInvariants_TimeBasedRateSetting_NoTransfer is GroveBasinInvariantTes
         // oracle.
         ssrOracle.grantRole(ssrOracle.DATA_PROVIDER_ROLE(), address(timeBasedRateHandler));
 
-        rateProvider = IRateProviderLike(address(ssrOracle));
+        creditTokenRateProvider = IRateProviderLike(address(ssrOracle));
 
         // Manually set initial values for the oracle through the handler to start
         timeBasedRateHandler.setRateData(1e27);
@@ -654,7 +654,7 @@ contract PSMInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinInvariant
         // oracle.
         ssrOracle.grantRole(ssrOracle.DATA_PROVIDER_ROLE(), address(timeBasedRateHandler));
 
-        rateProvider = IRateProviderLike(address(ssrOracle));
+        creditTokenRateProvider = IRateProviderLike(address(ssrOracle));
 
         // Manually set initial values for the oracle through the handler to start
         timeBasedRateHandler.setRateData(1e27);

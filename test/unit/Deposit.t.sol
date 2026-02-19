@@ -310,7 +310,7 @@ contract PSMDepositTests is GroveBasinTestBase {
 
         assertEq(groveBasin.convertToAssetValue(groveBasin.shares(receiver1)), 225e18);
 
-        mockRateProvider.__setConversionRate(1.5e27);
+        mockCreditTokenRateProvider.__setConversionRate(1.5e27);
 
         // Total shares / (100 USDC + 150 creditToken value)
         uint256 expectedConversionRate = 225 * 1e18 / 250;
@@ -406,7 +406,7 @@ contract PSMDepositTests is GroveBasinTestBase {
         assertEq(groveBasin.shares(user1),     0);
         assertEq(groveBasin.shares(receiver1), receiver1Shares);
 
-        mockRateProvider.__setConversionRate(newRate);
+        mockCreditTokenRateProvider.__setConversionRate(newRate);
 
         vm.startPrank(user2);
 

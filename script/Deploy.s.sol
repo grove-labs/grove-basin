@@ -22,7 +22,7 @@ contract DeployEthereum is Script {
             usdc         : Ethereum.USDC,
             usds         : Ethereum.USDS,
             creditToken  : Ethereum.SUSDS,
-            rateProvider : address(0) // TODO: set up rate provider
+            creditTokenRateProvider : address(0) // TODO: set up rate provider
         });
 
         vm.stopBroadcast();

@@ -18,7 +18,7 @@ contract PSMHarnessTests is GroveBasinTestBase {
             address(usdc),
             address(usds),
             address(creditToken),
-            address(rateProvider)
+            address(creditTokenRateProvider)
         );
 
         vm.prank(owner);
@@ -88,7 +88,7 @@ contract PSMHarnessTests is GroveBasinTestBase {
         assertEq(psmHarness.getCreditTokenValue(3e18, true), 3.75e18);
         assertEq(psmHarness.getCreditTokenValue(4e18, true), 5e18);
 
-        mockRateProvider.__setConversionRate(1.6e27);
+        mockCreditTokenRateProvider.__setConversionRate(1.6e27);
 
         assertEq(psmHarness.getCreditTokenValue(1, false), 1);
         assertEq(psmHarness.getCreditTokenValue(2, false), 3);
@@ -112,7 +112,7 @@ contract PSMHarnessTests is GroveBasinTestBase {
         assertEq(psmHarness.getCreditTokenValue(3e18, true), 4.8e18);
         assertEq(psmHarness.getCreditTokenValue(4e18, true), 6.4e18);
 
-        mockRateProvider.__setConversionRate(0.8e27);
+        mockCreditTokenRateProvider.__setConversionRate(0.8e27);
 
         assertEq(psmHarness.getCreditTokenValue(1, false), 0);
         assertEq(psmHarness.getCreditTokenValue(2, false), 1);
@@ -141,7 +141,7 @@ contract PSMHarnessTests is GroveBasinTestBase {
         conversionRate = _bound(conversionRate, 0, 1000e27);
         amount         = _bound(amount,         0, CREDIT_TOKEN_MAX);
 
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         assertEq(psmHarness.getCreditTokenValue(amount, false), amount * conversionRate / 1e27);
     }
@@ -260,11 +260,11 @@ contract GetPsmTotalValueTests is GroveBasinTestBase {
 
         assertEq(groveBasin.totalAssets(), 3.25e18);
 
-        mockRateProvider.__setConversionRate(1.5e27);
+        mockCreditTokenRateProvider.__setConversionRate(1.5e27);
 
         assertEq(groveBasin.totalAssets(), 3.5e18);
 
-        mockRateProvider.__setConversionRate(0.8e27);
+        mockCreditTokenRateProvider.__setConversionRate(0.8e27);
 
         assertEq(groveBasin.totalAssets(), 2.8e18);
     }
@@ -278,7 +278,7 @@ contract GetPsmTotalValueTests is GroveBasinTestBase {
 
         assertEq(groveBasin.totalAssets(), 3.25e18);
 
-        mockRateProvider.__setConversionRate(1.5e27);
+        mockCreditTokenRateProvider.__setConversionRate(1.5e27);
 
         assertEq(groveBasin.totalAssets(), 3.5e18);
 
@@ -304,7 +304,7 @@ contract GetPsmTotalValueTests is GroveBasinTestBase {
         usdc.mint(address(pocket), usdcAmount);
         creditToken.mint(address(groveBasin), creditTokenAmount);
 
-        mockRateProvider.__setConversionRate(conversionRate);
+        mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         assertEq(
             groveBasin.totalAssets(),

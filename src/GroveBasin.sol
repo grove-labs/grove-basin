@@ -23,7 +23,7 @@ contract GroveBasin is IGroveBasin, Ownable {
     IERC20 public override immutable usds;
     IERC20 public override immutable creditToken;
 
-    address public override immutable rateProvider;
+    address public override immutable creditTokenRateProvider;
 
     address public override pocket;
 
@@ -36,14 +36,14 @@ contract GroveBasin is IGroveBasin, Ownable {
         address usdc_,
         address usds_,
         address creditToken_,
-        address rateProvider_
+        address creditTokenRateProvider_
     )
         Ownable(owner_)
     {
-        require(usdc_         != address(0), "GroveBasin/invalid-usdc");
-        require(usds_         != address(0), "GroveBasin/invalid-usds");
-        require(creditToken_  != address(0), "GroveBasin/invalid-creditToken");
-        require(rateProvider_ != address(0), "GroveBasin/invalid-rateProvider");
+        require(usdc_                    != address(0), "GroveBasin/invalid-usdc");
+        require(usds_                    != address(0), "GroveBasin/invalid-usds");
+        require(creditToken_             != address(0), "GroveBasin/invalid-creditToken");
+        require(creditTokenRateProvider_ != address(0), "GroveBasin/invalid-creditTokenRateProvider");
 
         require(usdc_ != usds_,         "GroveBasin/usdc-usds-same");
         require(usdc_ != creditToken_,  "GroveBasin/usdc-creditToken-same");
@@ -53,11 +53,11 @@ contract GroveBasin is IGroveBasin, Ownable {
         usds        = IERC20(usds_);
         creditToken = IERC20(creditToken_);
 
-        rateProvider = rateProvider_;
-        pocket       = address(this);
+        creditTokenRateProvider = creditTokenRateProvider_;
+        pocket                  = address(this);
 
         require(
-            IRateProviderLike(rateProvider_).getConversionRate() != 0,
+            IRateProviderLike(creditTokenRateProvider_).getConversionRate() != 0,
             "GroveBasin/rate-provider-returns-zero"
         );
 
@@ -253,7 +253,7 @@ contract GroveBasin is IGroveBasin, Ownable {
         return assetValue
             * 1e9
             * _creditTokenPrecision
-            / IRateProviderLike(rateProvider).getConversionRate();
+            / IRateProviderLike(creditTokenRateProvider).getConversionRate();
     }
 
     function convertToAssetValue(uint256 numShares) public view override returns (uint256) {
@@ -310,12 +310,12 @@ contract GroveBasin is IGroveBasin, Ownable {
     function _getCreditTokenValue(uint256 amount, bool roundUp) internal view returns (uint256) {
         // NOTE: Multiplying by 1e18 and dividing by 1e27 cancels to 1e9 in denominator
         if (!roundUp) return amount
-            * IRateProviderLike(rateProvider).getConversionRate()
+            * IRateProviderLike(creditTokenRateProvider).getConversionRate()
             / 1e9
             / _creditTokenPrecision;
 
         return Math.ceilDiv(
-            Math.ceilDiv(amount * IRateProviderLike(rateProvider).getConversionRate(), 1e9),
+            Math.ceilDiv(amount * IRateProviderLike(creditTokenRateProvider).getConversionRate(), 1e9),
             _creditTokenPrecision
         );
     }
@@ -348,7 +348,7 @@ contract GroveBasin is IGroveBasin, Ownable {
     function _convertToCreditToken(uint256 amount, uint256 assetPrecision, bool roundUp)
         internal view returns (uint256)
     {
-        uint256 rate = IRateProviderLike(rateProvider).getConversionRate();
+        uint256 rate = IRateProviderLike(creditTokenRateProvider).getConversionRate();
 
         if (!roundUp) return amount * 1e27 / rate * _creditTokenPrecision / assetPrecision;
 
@@ -361,7 +361,7 @@ contract GroveBasin is IGroveBasin, Ownable {
     function _convertFromCreditToken(uint256 amount, uint256 assetPrecision, bool roundUp)
         internal view returns (uint256)
     {
-        uint256 rate = IRateProviderLike(rateProvider).getConversionRate();
+        uint256 rate = IRateProviderLike(creditTokenRateProvider).getConversionRate();
 
         if (!roundUp) return amount * rate / 1e27 * assetPrecision / _creditTokenPrecision;
 
