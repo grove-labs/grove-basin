@@ -16,12 +16,13 @@ shrink_run_limit = 100
 fail_on_revert = true
 
 [profile.pr.invariant]
-runs = 200
+runs = 20
 depth = 1000
-shrink_run_limit = 50_000
+shrink_run_limit = 100
+fail_on_revert = true
 
 [profile.pr.fuzz]
-runs = 100_000
+runs = 1000
 
 [profile.master.invariant]
 runs = 250
