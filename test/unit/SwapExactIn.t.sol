@@ -7,7 +7,7 @@ import { GroveBasin } from "src/GroveBasin.sol";
 
 import { MockERC20, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
-contract PSMSwapExactInFailureTests is GroveBasinTestBase {
+contract GroveBasinSwapExactInFailureTests is GroveBasinTestBase {
 
     address public swapper  = makeAddr("swapper");
     address public receiver = makeAddr("receiver");
@@ -102,7 +102,7 @@ contract PSMSwapExactInFailureTests is GroveBasinTestBase {
         groveBasin.swapExactIn(address(usdc), address(creditToken), 100e6, 80e18, receiver, 0);
     }
 
-    function test_swapExactIn_insufficientPsmBalanceBoundary() public {
+    function test_swapExactIn_insufficientGroveBasinBalanceBoundary() public {
         // NOTE: Using 2 instead of 1 here because 1/1.25 rounds to 0, 2/1.25 rounds to 1
         //       this is because the conversion rate is divided out before the precision conversion
         //       is done.
@@ -124,7 +124,7 @@ contract PSMSwapExactInFailureTests is GroveBasinTestBase {
 
 }
 
-contract PSMSwapExactInSuccessTestsBase is GroveBasinTestBase {
+contract GroveBasinSwapExactInSuccessTestsBase is GroveBasinTestBase {
 
     address public swapper  = makeAddr("swapper");
     address public receiver = makeAddr("receiver");
@@ -148,8 +148,8 @@ contract PSMSwapExactInSuccessTestsBase is GroveBasinTestBase {
         address receiver_
     ) internal {
         // 100 trillion of each token corresponds to original mint amount
-        uint256 psmAssetInBalance  = 100_000_000_000_000 * 10 ** assetIn.decimals();
-        uint256 psmAssetOutBalance = 100_000_000_000_000 * 10 ** assetOut.decimals();
+        uint256 groveBasinAssetInBalance  = 100_000_000_000_000 * 10 ** assetIn.decimals();
+        uint256 groveBasinAssetOutBalance = 100_000_000_000_000 * 10 ** assetOut.decimals();
 
         address assetInCustodian  = address(assetIn)  == address(usdc) ? pocket : address(groveBasin);
         address assetOutCustodian = address(assetOut) == address(usdc) ? pocket : address(groveBasin);
@@ -163,10 +163,10 @@ contract PSMSwapExactInSuccessTestsBase is GroveBasinTestBase {
         assertEq(assetIn.allowance(swapper_, address(groveBasin)), amountIn);
 
         assertEq(assetIn.balanceOf(swapper_),         amountIn);
-        assertEq(assetIn.balanceOf(assetInCustodian), psmAssetInBalance);
+        assertEq(assetIn.balanceOf(assetInCustodian), groveBasinAssetInBalance);
 
         assertEq(assetOut.balanceOf(receiver_),         0);
-        assertEq(assetOut.balanceOf(assetOutCustodian), psmAssetOutBalance);
+        assertEq(assetOut.balanceOf(assetOutCustodian), groveBasinAssetOutBalance);
 
         uint256 returnedAmountOut = groveBasin.swapExactIn(
             address(assetIn),
@@ -182,15 +182,15 @@ contract PSMSwapExactInSuccessTestsBase is GroveBasinTestBase {
         assertEq(assetIn.allowance(swapper_, address(groveBasin)), 0);
 
         assertEq(assetIn.balanceOf(swapper_),         0);
-        assertEq(assetIn.balanceOf(assetInCustodian), psmAssetInBalance + amountIn);
+        assertEq(assetIn.balanceOf(assetInCustodian), groveBasinAssetInBalance + amountIn);
 
         assertEq(assetOut.balanceOf(receiver_),         amountOut);
-        assertEq(assetOut.balanceOf(assetOutCustodian), psmAssetOutBalance - amountOut);
+        assertEq(assetOut.balanceOf(assetOutCustodian), groveBasinAssetOutBalance - amountOut);
     }
 
 }
 
-contract PSMSwapExactInUsdsAssetInTests is PSMSwapExactInSuccessTestsBase {
+contract GroveBasinSwapExactInUsdsAssetInTests is GroveBasinSwapExactInSuccessTestsBase {
 
     function test_swapExactIn_usdsToUsdc_sameReceiver() public assertAtomicGroveBasinValueDoesNotChange {
         _swapExactInTest(usds, usdc, 100e18, 100e6, swapper, swapper);
@@ -247,7 +247,7 @@ contract PSMSwapExactInUsdsAssetInTests is PSMSwapExactInSuccessTestsBase {
 
 }
 
-contract PSMSwapExactInUsdcAssetInTests is PSMSwapExactInSuccessTestsBase {
+contract GroveBasinSwapExactInUsdcAssetInTests is GroveBasinSwapExactInSuccessTestsBase {
 
     function test_swapExactIn_usdcToUsds_sameReceiver() public assertAtomicGroveBasinValueDoesNotChange {
         _swapExactInTest(usdc, usds, 100e6, 100e18, swapper, swapper);
@@ -305,7 +305,7 @@ contract PSMSwapExactInUsdcAssetInTests is PSMSwapExactInSuccessTestsBase {
 
 }
 
-contract PSMSwapExactInCreditTokenAssetInTests is PSMSwapExactInSuccessTestsBase {
+contract GroveBasinSwapExactInSUsdsAssetInTests is GroveBasinSwapExactInSuccessTestsBase {
 
     function test_swapExactIn_creditTokenToUsds_sameReceiver() public assertAtomicGroveBasinValueDoesNotChange {
         _swapExactInTest(creditToken, usds, 100e18, 125e18, swapper, swapper);
@@ -369,7 +369,7 @@ contract PSMSwapExactInCreditTokenAssetInTests is PSMSwapExactInSuccessTestsBase
 
 }
 
-contract PSMSwapExactInFuzzTests is GroveBasinTestBase {
+contract GroveBasinSwapExactInFuzzTests is GroveBasinTestBase {
 
     address lp0 = makeAddr("lp0");
     address lp1 = makeAddr("lp1");
@@ -381,11 +381,11 @@ contract PSMSwapExactInFuzzTests is GroveBasinTestBase {
         uint256 lp0StartingValue;
         uint256 lp1StartingValue;
         uint256 lp2StartingValue;
-        uint256 psmStartingValue;
+        uint256 groveBasinStartingValue;
         uint256 lp0CachedValue;
         uint256 lp1CachedValue;
         uint256 lp2CachedValue;
-        uint256 psmCachedValue;
+        uint256 groveBasinCachedValue;
     }
 
     /// forge-config: default.fuzz.runs = 10
@@ -412,7 +412,7 @@ contract PSMSwapExactInFuzzTests is GroveBasinTestBase {
         vars.lp0StartingValue = groveBasin.convertToAssetValue(groveBasin.shares(lp0));
         vars.lp1StartingValue = groveBasin.convertToAssetValue(groveBasin.shares(lp1));
         vars.lp2StartingValue = groveBasin.convertToAssetValue(groveBasin.shares(lp2));
-        vars.psmStartingValue = groveBasin.totalAssets();
+        vars.groveBasinStartingValue = groveBasin.totalAssets();
 
         vm.startPrank(swapper);
 
@@ -438,7 +438,7 @@ contract PSMSwapExactInFuzzTests is GroveBasinTestBase {
             vars.lp0CachedValue = groveBasin.convertToAssetValue(groveBasin.shares(lp0));
             vars.lp1CachedValue = groveBasin.convertToAssetValue(groveBasin.shares(lp1));
             vars.lp2CachedValue = groveBasin.convertToAssetValue(groveBasin.shares(lp2));
-            vars.psmCachedValue = groveBasin.totalAssets();
+            vars.groveBasinCachedValue = groveBasin.totalAssets();
 
             assetIn.mint(swapper, amountIn);
             assetIn.approve(address(groveBasin), amountIn);
@@ -448,26 +448,26 @@ contract PSMSwapExactInFuzzTests is GroveBasinTestBase {
             assertGe(groveBasin.convertToAssetValue(groveBasin.shares(lp0)), vars.lp0CachedValue);
             assertGe(groveBasin.convertToAssetValue(groveBasin.shares(lp1)), vars.lp1CachedValue);
             assertGe(groveBasin.convertToAssetValue(groveBasin.shares(lp2)), vars.lp2CachedValue);
-            assertGe(groveBasin.totalAssets(),                        vars.psmCachedValue);
+            assertGe(groveBasin.totalAssets(),                        vars.groveBasinCachedValue);
 
             // Up to 2e12 rounding on each swap
             assertApproxEqAbs(groveBasin.convertToAssetValue(groveBasin.shares(lp0)), vars.lp0CachedValue, 2e12);
             assertApproxEqAbs(groveBasin.convertToAssetValue(groveBasin.shares(lp1)), vars.lp1CachedValue, 2e12);
             assertApproxEqAbs(groveBasin.convertToAssetValue(groveBasin.shares(lp2)), vars.lp2CachedValue, 2e12);
-            assertApproxEqAbs(groveBasin.totalAssets(),                        vars.psmCachedValue, 2e12);
+            assertApproxEqAbs(groveBasin.totalAssets(),                        vars.groveBasinCachedValue, 2e12);
         }
 
         // Rounding is always in favour of the LPs
         assertGe(groveBasin.convertToAssetValue(groveBasin.shares(lp0)), vars.lp0StartingValue);
         assertGe(groveBasin.convertToAssetValue(groveBasin.shares(lp1)), vars.lp1StartingValue);
         assertGe(groveBasin.convertToAssetValue(groveBasin.shares(lp2)), vars.lp2StartingValue);
-        assertGe(groveBasin.totalAssets(),                        vars.psmStartingValue);
+        assertGe(groveBasin.totalAssets(),                        vars.groveBasinStartingValue);
 
         // Up to 2e12 rounding on each swap, for 1000 swaps
         assertApproxEqAbs(groveBasin.convertToAssetValue(groveBasin.shares(lp0)), vars.lp0StartingValue, 2000e12);
         assertApproxEqAbs(groveBasin.convertToAssetValue(groveBasin.shares(lp1)), vars.lp1StartingValue, 2000e12);
         assertApproxEqAbs(groveBasin.convertToAssetValue(groveBasin.shares(lp2)), vars.lp2StartingValue, 2000e12);
-        assertApproxEqAbs(groveBasin.totalAssets(),                        vars.psmStartingValue, 2000e12);
+        assertApproxEqAbs(groveBasin.totalAssets(),                        vars.groveBasinStartingValue, 2000e12);
     }
 
     function _hash(uint256 number_, string memory salt) internal pure returns (uint256 hash_) {

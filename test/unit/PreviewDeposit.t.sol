@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 
 import { MockRateProvider, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
-contract PSMPreviewDeposit_FailureTests is GroveBasinTestBase {
+contract GroveBasinPreviewDeposit_FailureTests is GroveBasinTestBase {
 
     function test_previewDeposit_invalidAsset() public {
         vm.expectRevert("GroveBasin/invalid-asset-for-value");
@@ -14,7 +14,7 @@ contract PSMPreviewDeposit_FailureTests is GroveBasinTestBase {
 
 }
 
-contract PSMPreviewDeposit_SuccessTests is GroveBasinTestBase {
+contract GroveBasinPreviewDeposit_SuccessTests is GroveBasinTestBase {
 
     address depositor = makeAddr("depositor");
 

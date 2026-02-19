@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 
 import { MockERC20, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
-contract PSMEventTests is GroveBasinTestBase {
+contract GroveBasinEventTests is GroveBasinTestBase {
 
     event Swap(
         address indexed assetIn,

@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
-contract PSMSetPocketFailureTests is GroveBasinTestBase {
+contract GroveBasinSetPocketFailureTests is GroveBasinTestBase {
 
     function test_setPocket_invalidOwner() public {
         vm.expectRevert(
@@ -51,7 +51,7 @@ contract PSMSetPocketFailureTests is GroveBasinTestBase {
 
 }
 
-contract PSMSetPocketSuccessTests is GroveBasinTestBase {
+contract GroveBasinSetPocketSuccessTests is GroveBasinTestBase {
 
     address pocket1 = makeAddr("pocket1");
     address pocket2 = makeAddr("pocket2");
@@ -62,7 +62,7 @@ contract PSMSetPocketSuccessTests is GroveBasinTestBase {
         uint256 amountTransferred
     );
 
-    function test_setPocket_pocketIsPsm() public {
+    function test_setPocket_pocketIsGroveBasin() public {
         vm.prank(owner);
         groveBasin.setPocket(address(groveBasin));
 
@@ -88,7 +88,7 @@ contract PSMSetPocketSuccessTests is GroveBasinTestBase {
         assertEq(groveBasin.pocket(), pocket1);
     }
 
-    function test_setPocket_pocketIsNotPsm() public {
+    function test_setPocket_pocketIsNotGroveBasin() public {
         vm.prank(owner);
         groveBasin.setPocket(pocket1);
 

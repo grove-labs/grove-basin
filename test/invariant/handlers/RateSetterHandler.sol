@@ -13,9 +13,9 @@ contract RateSetterHandler is HandlerBase {
 
     uint256 public setRateCount;
 
-    constructor(GroveBasin psm_, address creditTokenRateProvider_, uint256 initialRate) HandlerBase(psm_) {
+    constructor(GroveBasin groveBasin_, address creditTokenRateProvider_, uint256 initialRate) HandlerBase(groveBasin_) {
         creditTokenRateProvider = MockRateProvider(creditTokenRateProvider_);
-        rate         = initialRate;
+        rate                    = initialRate;
     }
 
     function setRate(uint256 rateIncrease) external {

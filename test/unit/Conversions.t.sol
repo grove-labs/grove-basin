@@ -7,7 +7,7 @@ import { GroveBasin } from "src/GroveBasin.sol";
 
 import { MockRateProvider, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
-contract PSMConversionTestBase is GroveBasinTestBase {
+contract GroveBasinConversionTestBase is GroveBasinTestBase {
 
     struct FuzzVars {
         uint256 usdsAmount;
@@ -44,7 +44,7 @@ contract PSMConversionTestBase is GroveBasinTestBase {
     }
 }
 
-contract PSMConvertToAssetsTests is GroveBasinTestBase {
+contract GroveBasinConvertToAssetsTests is GroveBasinTestBase {
 
     function test_convertToAssets_invalidAsset() public {
         vm.expectRevert("GroveBasin/invalid-asset");
@@ -101,7 +101,7 @@ contract PSMConvertToAssetsTests is GroveBasinTestBase {
 
 }
 
-contract PSMConvertToAssetValueTests is PSMConversionTestBase {
+contract GroveBasinConvertToAssetValueTests is GroveBasinConversionTestBase {
 
     function testFuzz_convertToAssetValue_noValue(uint256 amount) public view {
         assertEq(groveBasin.convertToAssetValue(amount), amount);
@@ -199,7 +199,7 @@ contract PSMConvertToAssetValueTests is PSMConversionTestBase {
 
 }
 
-contract PSMConvertToSharesTests is PSMConversionTestBase {
+contract GroveBasinConvertToSharesTests is GroveBasinConversionTestBase {
 
     function test_convertToShares_noValue() public view {
         _assertOneToOneConversion();
@@ -335,7 +335,7 @@ contract PSMConvertToSharesTests is PSMConversionTestBase {
 
 }
 
-contract PSMConvertToSharesFailureTests is GroveBasinTestBase {
+contract GroveBasinConvertToSharesFailureTests is GroveBasinTestBase {
 
     function test_convertToShares_invalidAsset() public {
         vm.expectRevert("GroveBasin/invalid-asset");
@@ -344,7 +344,7 @@ contract PSMConvertToSharesFailureTests is GroveBasinTestBase {
 
 }
 
-contract PSMConvertToSharesWithUsdsTests is PSMConversionTestBase {
+contract GroveBasinConvertToSharesWithUsdsTests is GroveBasinConversionTestBase {
 
     function test_convertToShares_noValue() public view {
         _assertOneToOneConversionUsds();
@@ -484,7 +484,7 @@ contract PSMConvertToSharesWithUsdsTests is PSMConversionTestBase {
 
 }
 
-contract PSMConvertToSharesWithUsdcTests is PSMConversionTestBase {
+contract GroveBasinConvertToSharesWithUsdcTests is GroveBasinConversionTestBase {
 
     function test_convertToShares_noValue() public view {
         _assertOneToOneConversionUsdc();
@@ -663,7 +663,7 @@ contract PSMConvertToSharesWithUsdcTests is PSMConversionTestBase {
 
 }
 
-contract PSMConvertToSharesWithCreditTokenTests is PSMConversionTestBase {
+contract GroveBasinConvertToSharesWithSUsdsTests is GroveBasinConversionTestBase {
 
     function test_convertToShares_noValue() public view {
         _assertOneToOneConversion();

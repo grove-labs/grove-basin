@@ -29,12 +29,12 @@ contract SwapperHandler is HandlerBase {
     uint256 public zeroBalanceCount;
 
     constructor(
-        GroveBasin      psm_,
+        GroveBasin      groveBasin_,
         MockERC20 usdc,
         MockERC20 usds,
         MockERC20 creditToken,
         uint256   swapperCount
-    ) HandlerBase(psm_) {
+    ) HandlerBase(groveBasin_) {
         assets[0] = usdc;
         assets[1] = usds;
         assets[2] = creditToken;

@@ -9,7 +9,7 @@ import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
 import { MockRateProvider, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
-contract PSMWithdrawTests is GroveBasinTestBase {
+contract GroveBasinWithdrawTests is GroveBasinTestBase {
 
     address user1     = makeAddr("user1");
     address user2     = makeAddr("user2");
@@ -39,7 +39,7 @@ contract PSMWithdrawTests is GroveBasinTestBase {
         groveBasin.withdraw(address(usdc), receiver1, 100e18 + 1);
     }
 
-    function test_withdraw_onlyUsdsInPsm() public {
+    function test_withdraw_onlyUsdsInGroveBasin() public {
         _deposit(address(usds), user1, 100e18);
 
         assertEq(usds.balanceOf(user1),        0);
@@ -66,7 +66,7 @@ contract PSMWithdrawTests is GroveBasinTestBase {
         assertEq(groveBasin.convertToShares(1e18), 1e18);
     }
 
-    function test_withdraw_onlyUsdcInPsm() public {
+    function test_withdraw_onlyUsdcInGroveBasin() public {
         _deposit(address(usdc), user1, 100e6);
 
         assertEq(usdc.balanceOf(user1),     0);
@@ -93,7 +93,7 @@ contract PSMWithdrawTests is GroveBasinTestBase {
         assertEq(groveBasin.convertToShares(1e18), 1e18);
     }
 
-    function test_withdraw_onlyUsdcInPsm_pocketIsPsm() public {
+    function test_withdraw_onlyUsdcInGroveBasin_pocketIsGroveBasin() public {
         vm.prank(owner);
         groveBasin.setPocket(address(groveBasin));
 
@@ -123,7 +123,7 @@ contract PSMWithdrawTests is GroveBasinTestBase {
         assertEq(groveBasin.convertToShares(1e18), 1e18);
     }
 
-    function test_withdraw_onlyCreditTokenInPsm() public {
+    function test_withdraw_onlySUsdsInGroveBasin() public {
         _deposit(address(creditToken), user1, 80e18);
 
         assertEq(creditToken.balanceOf(user1),        0);
@@ -370,7 +370,7 @@ contract PSMWithdrawTests is GroveBasinTestBase {
 
         assertEq(amount, vars.expectedWithdrawnAmount1);
 
-        _checkPsmInvariant();
+        _checkGroveBasinInvariant();
 
         assertEq(
             usdc.balanceOf(receiver1) * 1e12 + groveBasin.totalAssets(),
@@ -397,7 +397,7 @@ contract PSMWithdrawTests is GroveBasinTestBase {
 
         assertEq(amount, vars.expectedWithdrawnAmount2);
 
-        _checkPsmInvariant();
+        _checkGroveBasinInvariant();
 
         assertEq(
             (usdc.balanceOf(receiver1) + usdc.balanceOf(receiver2)) * 1e12 + groveBasin.totalAssets(),
@@ -435,7 +435,7 @@ contract PSMWithdrawTests is GroveBasinTestBase {
 
         assertApproxEqAbs(amount, vars.expectedWithdrawnAmount3, 1);
 
-        _checkPsmInvariant();
+        _checkGroveBasinInvariant();
 
         assertApproxEqAbs(
             (usdc.balanceOf(receiver1) + usdc.balanceOf(receiver2)) * 1e12
@@ -655,7 +655,7 @@ contract PSMWithdrawTests is GroveBasinTestBase {
     /*** Helper functions                                                                       ***/
     /**********************************************************************************************/
 
-    function _checkPsmInvariant() internal view {
+    function _checkGroveBasinInvariant() internal view {
         uint256 totalSharesValue = groveBasin.convertToAssetValue(groveBasin.totalShares());
         uint256 totalAssetsValue =
             creditToken.balanceOf(address(groveBasin)) * creditTokenRateProvider.getConversionRate() / 1e27

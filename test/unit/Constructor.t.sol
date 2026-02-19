@@ -11,7 +11,7 @@ import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 
-contract PSMConstructorTests is GroveBasinTestBase {
+contract GroveBasinConstructorTests is GroveBasinTestBase {
 
     function test_constructor_invalidOwner() public {
         vm.expectRevert(abi.encodeWithSignature("OwnableInvalidOwner(address)", address(0)));

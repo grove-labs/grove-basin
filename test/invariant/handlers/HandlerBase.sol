@@ -13,8 +13,8 @@ contract HandlerBase is CommonBase, StdCheatsSafe, StdUtils {
 
     GroveBasin public groveBasin;
 
-    constructor(GroveBasin psm_) {
-        groveBasin = psm_;
+    constructor(GroveBasin groveBasin_) {
+        groveBasin = groveBasin_;
     }
 
     function _hash(uint256 number_, string memory salt) internal pure returns (uint256 hash_) {
