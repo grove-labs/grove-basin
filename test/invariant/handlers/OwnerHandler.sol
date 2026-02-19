@@ -9,7 +9,7 @@ contract OwnerHandler is HandlerBase {
 
     MockERC20 public usdc;
 
-    constructor(GroveBasin psm_, MockERC20 usdc_) HandlerBase(psm_) {
+    constructor(GroveBasin groveBasin_, MockERC20 usdc_) HandlerBase(groveBasin_) {
         usdc = usdc_;
     }
 

@@ -19,7 +19,7 @@ contract TimeBasedRateHandler is HandlerBase, StdCheats {
     uint256 public setRateDataCount;
     uint256 public warpCount;
 
-    constructor(GroveBasin psm_, SSRAuthOracle ssrOracle_) HandlerBase(psm_) {
+    constructor(GroveBasin groveBasin_, SSRAuthOracle ssrOracle_) HandlerBase(groveBasin_) {
         ssrOracle = ssrOracle_;
     }
 

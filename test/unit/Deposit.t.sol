@@ -7,7 +7,7 @@ import { GroveBasin } from "src/GroveBasin.sol";
 
 import { MockRateProvider, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
-contract PSMDepositTests is GroveBasinTestBase {
+contract GroveBasinDepositTests is GroveBasinTestBase {
 
     address user1     = makeAddr("user1");
     address user2     = makeAddr("user2");
@@ -119,7 +119,7 @@ contract PSMDepositTests is GroveBasinTestBase {
         assertEq(groveBasin.convertToShares(1e18), 1e18);
     }
 
-    function test_deposit_firstDepositUsdc_pocketIsPsm() public {
+    function test_deposit_firstDepositUsdc_pocketIsGroveBasin() public {
         vm.prank(owner);
         groveBasin.setPocket(address(groveBasin));
 

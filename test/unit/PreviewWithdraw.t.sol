@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 
 import { MockRateProvider, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
-contract PSMPreviewWithdraw_FailureTests is GroveBasinTestBase {
+contract GroveBasinPreviewWithdraw_FailureTests is GroveBasinTestBase {
 
     function test_previewWithdraw_invalidAsset() public {
         vm.expectRevert("GroveBasin/invalid-asset");
@@ -14,7 +14,7 @@ contract PSMPreviewWithdraw_FailureTests is GroveBasinTestBase {
 
 }
 
-contract PSMPreviewWithdraw_ZeroAssetsTests is GroveBasinTestBase {
+contract GroveBasinPreviewWithdraw_ZeroAssetsTests is GroveBasinTestBase {
 
     // Always returns zero because there is no balance of assets in the GroveBasin in this case
     function test_previewWithdraw_zeroTotalAssets() public {
@@ -45,7 +45,7 @@ contract PSMPreviewWithdraw_ZeroAssetsTests is GroveBasinTestBase {
 
 }
 
-contract PSMPreviewWithdraw_SuccessTests is GroveBasinTestBase {
+contract GroveBasinPreviewWithdraw_SuccessTests is GroveBasinTestBase {
 
     function setUp() public override {
         super.setUp();
@@ -74,37 +74,37 @@ contract PSMPreviewWithdraw_SuccessTests is GroveBasinTestBase {
         assertEq(assets, 100e18);
     }
 
-    function test_previewWithdraw_usdc_amountLtUnderlyingBalanceAndLtPsmBalance() public view {
+    function test_previewWithdraw_usdc_amountLtUnderlyingBalanceAndLtGroveBasinBalance() public view {
         ( uint256 shares, uint256 assets ) = groveBasin.previewWithdraw(address(usdc), 10e6 - 1);
         assertEq(shares, 10e18 - 1e12);
         assertEq(assets, 10e6 - 1);
     }
 
-    function test_previewWithdraw_usdc_amountLtUnderlyingBalanceAndEqPsmBalance() public view {
+    function test_previewWithdraw_usdc_amountLtUnderlyingBalanceAndEqGroveBasinBalance() public view {
         ( uint256 shares, uint256 assets ) = groveBasin.previewWithdraw(address(usdc), 10e6);
         assertEq(shares, 10e18);
         assertEq(assets, 10e6);
     }
 
-    function test_previewWithdraw_usdc_amountLtUnderlyingBalanceAndGtPsmBalance() public view {
+    function test_previewWithdraw_usdc_amountLtUnderlyingBalanceAndGtGroveBasinBalance() public view {
         ( uint256 shares, uint256 assets ) = groveBasin.previewWithdraw(address(usdc), 10e6 + 1);
         assertEq(shares, 10e18);
         assertEq(assets, 10e6);
     }
 
-    function test_previewWithdraw_creditToken_amountLtUnderlyingBalanceAndLtPsmBalance() public view {
+    function test_previewWithdraw_creditToken_amountLtUnderlyingBalanceAndLtGroveBasinBalance() public view {
         ( uint256 shares, uint256 assets ) = groveBasin.previewWithdraw(address(creditToken), 1e18 - 1);
         assertEq(shares, 1.25e18 - 1);
         assertEq(assets, 1e18 - 1);
     }
 
-    function test_previewWithdraw_creditToken_amountLtUnderlyingBalanceAndEqPsmBalance() public view {
+    function test_previewWithdraw_creditToken_amountLtUnderlyingBalanceAndEqGroveBasinBalance() public view {
         ( uint256 shares, uint256 assets ) = groveBasin.previewWithdraw(address(creditToken), 1e18);
         assertEq(shares, 1.25e18);
         assertEq(assets, 1e18);
     }
 
-    function test_previewWithdraw_creditToken_amountLtUnderlyingBalanceAndGtPsmBalance() public view {
+    function test_previewWithdraw_creditToken_amountLtUnderlyingBalanceAndGtGroveBasinBalance() public view {
         ( uint256 shares, uint256 assets ) = groveBasin.previewWithdraw(address(creditToken), 1e18 + 1);
         assertEq(shares, 1.25e18);
         assertEq(assets, 1e18);
@@ -112,7 +112,7 @@ contract PSMPreviewWithdraw_SuccessTests is GroveBasinTestBase {
 
 }
 
-contract PSMPreviewWithdraw_SuccessFuzzTests is GroveBasinTestBase {
+contract GroveBasinPreviewWithdraw_SuccessFuzzTests is GroveBasinTestBase {
 
     struct TestParams {
         uint256 amount1;

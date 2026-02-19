@@ -18,12 +18,12 @@ contract LpHandler is HandlerBase {
     mapping(address user => mapping(address asset => uint256 withdrawals)) public lpWithdrawals;
 
     constructor(
-        GroveBasin      psm_,
+        GroveBasin      groveBasin_,
         MockERC20 usdc,
         MockERC20 usds,
         MockERC20 creditToken,
         uint256   lpCount
-    ) HandlerBase(psm_) {
+    ) HandlerBase(groveBasin_) {
         assets[0] = usdc;
         assets[1] = usds;
         assets[2] = creditToken;

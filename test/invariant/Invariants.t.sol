@@ -235,7 +235,7 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
         uint256 lp1WithdrawsValue = _getLpTokenValue(lp1);
         uint256 lp2WithdrawsValue = _getLpTokenValue(lp2);
 
-        uint256 psmTotalValue = groveBasin.totalAssets();
+        uint256 groveBasinTotalValue = groveBasin.totalAssets();
 
         uint256 startingSeedValue = groveBasin.convertToAssetValue(1e18);
 
@@ -284,7 +284,7 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
 
         // Assert that all funds were withdrawn equals the original value of the GroveBasin minus the
         // 1e18 share seed deposit, rounding for each LP.
-        assertApproxEqAbs(totalWithdrawals, psmTotalValue - seedValue, 3);
+        assertApproxEqAbs(totalWithdrawals, groveBasinTotalValue - seedValue, 3);
 
         // Get the starting sum of all LPs' deposits and withdrawals.
         uint256 sumStartingValue =
@@ -356,7 +356,7 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
 
 }
 
-contract PSMInvariants_ConstantRate_NoTransfer is GroveBasinInvariantTestBase {
+contract GroveBasinInvariants_ConstantRate_NoTransfer is GroveBasinInvariantTestBase {
 
     function setUp() public override {
         super.setUp();
@@ -401,7 +401,7 @@ contract PSMInvariants_ConstantRate_NoTransfer is GroveBasinInvariantTestBase {
 
 }
 
-contract PSMInvariants_ConstantRate_WithTransfers is GroveBasinInvariantTestBase {
+contract GroveBasinInvariants_ConstantRate_WithTransfers is GroveBasinInvariantTestBase {
 
     function setUp() public override {
         super.setUp();
@@ -444,7 +444,7 @@ contract PSMInvariants_ConstantRate_WithTransfers is GroveBasinInvariantTestBase
 
 }
 
-contract PSMInvariants_RateSetting_NoTransfer is GroveBasinInvariantTestBase {
+contract GroveBasinInvariants_RateSetting_NoTransfer is GroveBasinInvariantTestBase {
 
     function setUp() public override {
         super.setUp();
@@ -490,7 +490,7 @@ contract PSMInvariants_RateSetting_NoTransfer is GroveBasinInvariantTestBase {
 
 }
 
-contract PSMInvariants_RateSetting_WithTransfers is GroveBasinInvariantTestBase {
+contract GroveBasinInvariants_RateSetting_WithTransfers is GroveBasinInvariantTestBase {
 
     function setUp() public override {
         super.setUp();
@@ -538,7 +538,7 @@ contract PSMInvariants_RateSetting_WithTransfers is GroveBasinInvariantTestBase 
 
 }
 
-contract PSMInvariants_TimeBasedRateSetting_NoTransfer is GroveBasinInvariantTestBase {
+contract GroveBasinInvariants_TimeBasedRateSetting_NoTransfer is GroveBasinInvariantTestBase {
 
     function setUp() public override {
         super.setUp();
@@ -619,7 +619,7 @@ contract PSMInvariants_TimeBasedRateSetting_NoTransfer is GroveBasinInvariantTes
 
 }
 
-contract PSMInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinInvariantTestBase {
+contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinInvariantTestBase {
 
     function setUp() public virtual override {
         super.setUp();
@@ -707,7 +707,7 @@ contract PSMInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinInvariant
 //       called is too high to be considered reflective of reality (setting pocket as often as deposits for example).
 //       This inherited test suite is the most complex and realistic, so setting the pocket in this
 //       one is sufficient to ensure the expected behavior and accounting.
-// contract PSMInvariants_TimeBasedRateSetting_WithTransfers_WithPocketSetting is PSMInvariants_TimeBasedRateSetting_WithTransfers {
+// contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers_WithPocketSetting is GroveBasinInvariants_TimeBasedRateSetting_WithTransfers {
 
 //     OwnerHandler ownerHandler;
 

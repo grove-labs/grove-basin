@@ -9,12 +9,12 @@ import { GroveBasin } from "src/GroveBasin.sol";
 
 import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
-contract PSMDeployTests is GroveBasinTestBase {
+contract GroveBasinDeployTests is GroveBasinTestBase {
 
     function test_deploy() public {
         deal(address(usdc), address(this), 1e6);
 
-        GroveBasin newPsm = GroveBasin(GroveBasinDeploy.deploy(
+        GroveBasin newGroveBasin = GroveBasin(GroveBasinDeploy.deploy(
             address(owner),
             address(usdc),
             address(usds),
@@ -22,21 +22,21 @@ contract PSMDeployTests is GroveBasinTestBase {
             address(creditTokenRateProvider)
         ));
 
-        assertEq(address(newPsm.owner()),        address(owner));
-        assertEq(address(newPsm.usdc()),         address(usdc));
-        assertEq(address(newPsm.usds()),         address(usds));
-        assertEq(address(newPsm.creditToken()),        address(creditToken));
-        assertEq(address(newPsm.creditTokenRateProvider()), address(creditTokenRateProvider));
+        assertEq(address(newGroveBasin.owner()),                   address(owner));
+        assertEq(address(newGroveBasin.usdc()),                    address(usdc));
+        assertEq(address(newGroveBasin.usds()),                    address(usds));
+        assertEq(address(newGroveBasin.creditToken()),             address(creditToken));
+        assertEq(address(newGroveBasin.creditTokenRateProvider()), address(creditTokenRateProvider));
 
-        assertEq(usdc.allowance(address(this), address(newPsm)), 0);
+        assertEq(usdc.allowance(address(this), address(newGroveBasin)), 0);
 
         assertEq(usdc.balanceOf(address(this)),   0);
-        assertEq(usdc.balanceOf(address(newPsm)), 1e6);
+        assertEq(usdc.balanceOf(address(newGroveBasin)), 1e6);
 
-        assertEq(newPsm.totalAssets(),         1e18);
-        assertEq(newPsm.totalShares(),         1e18);
-        assertEq(newPsm.shares(address(this)), 0);
-        assertEq(newPsm.shares(address(0)),    1e18);
+        assertEq(newGroveBasin.totalAssets(),         1e18);
+        assertEq(newGroveBasin.totalShares(),         1e18);
+        assertEq(newGroveBasin.shares(address(this)), 0);
+        assertEq(newGroveBasin.shares(address(0)),    1e18);
     }
 
 }

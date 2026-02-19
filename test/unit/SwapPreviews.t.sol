@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 
 import { MockRateProvider, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
-contract PSMPreviewSwapExactIn_FailureTests is GroveBasinTestBase {
+contract GroveBasinPreviewSwapExactIn_FailureTests is GroveBasinTestBase {
 
     function test_previewSwapExactIn_invalidAssetIn() public {
         vm.expectRevert("GroveBasin/invalid-asset");
@@ -34,7 +34,7 @@ contract PSMPreviewSwapExactIn_FailureTests is GroveBasinTestBase {
 
 }
 
-contract PSMPreviewSwapExactOut_FailureTests is GroveBasinTestBase {
+contract GroveBasinPreviewSwapExactOut_FailureTests is GroveBasinTestBase {
 
     function test_previewSwapExactIn_invalidAssetIn() public {
         vm.expectRevert("GroveBasin/invalid-asset");
@@ -63,7 +63,7 @@ contract PSMPreviewSwapExactOut_FailureTests is GroveBasinTestBase {
 
 }
 
-contract PSMPreviewSwapExactIn_UsdsAssetInTests is GroveBasinTestBase {
+contract GroveBasinPreviewSwapExactIn_UsdsAssetInTests is GroveBasinTestBase {
 
     function test_previewSwapExactIn_usdsToUsdc() public view {
         // Demo rounding down
@@ -109,7 +109,7 @@ contract PSMPreviewSwapExactIn_UsdsAssetInTests is GroveBasinTestBase {
 
 }
 
-contract PSMPreviewSwapExactOut_UsdsAssetInTests is GroveBasinTestBase {
+contract GroveBasinPreviewSwapExactOut_UsdsAssetInTests is GroveBasinTestBase {
 
     function test_previewSwapExactOut_usdsToUsdc() public view {
         // Demo rounding up
@@ -155,7 +155,7 @@ contract PSMPreviewSwapExactOut_UsdsAssetInTests is GroveBasinTestBase {
 
 }
 
-contract PSMPreviewSwapExactIn_USDCAssetInTests is GroveBasinTestBase {
+contract GroveBasinPreviewSwapExactIn_USDCAssetInTests is GroveBasinTestBase {
 
     function test_previewSwapExactIn_usdcToUsds() public view {
         // Demo rounding down
@@ -198,7 +198,7 @@ contract PSMPreviewSwapExactIn_USDCAssetInTests is GroveBasinTestBase {
 
 }
 
-contract PSMPreviewSwapExactOut_USDCAssetInTests is GroveBasinTestBase {
+contract GroveBasinPreviewSwapExactOut_USDCAssetInTests is GroveBasinTestBase {
 
     function test_previewSwapExactOut_usdcToUsds() public view {
         // Demo rounding up
@@ -272,7 +272,7 @@ contract PSMPreviewSwapExactOut_USDCAssetInTests is GroveBasinTestBase {
 
 }
 
-contract PSMPreviewSwapExactIn_CreditTokenAssetInTests is GroveBasinTestBase {
+contract GroveBasinPreviewSwapExactIn_SUsdsAssetInTests is GroveBasinTestBase {
 
     function test_previewSwapExactIn_creditTokenToUsds() public view {
         // Demo rounding down
@@ -320,7 +320,7 @@ contract PSMPreviewSwapExactIn_CreditTokenAssetInTests is GroveBasinTestBase {
 
 }
 
-contract PSMPreviewSwapExactOut_CreditTokenAssetInTests is GroveBasinTestBase {
+contract GroveBasinPreviewSwapExactOut_SUsdsAssetInTests is GroveBasinTestBase {
 
     function test_previewSwapExactOut_creditTokenToUsds() public view {
         // Demo rounding up
