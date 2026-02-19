@@ -123,7 +123,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         assertEq(groveBasin.convertToShares(1e18), 1e18);
     }
 
-    function test_withdraw_onlySUsdsInGroveBasin() public {
+    function test_withdraw_onlyCreditTokenInGroveBasin() public {
         _deposit(address(creditToken), user1, 80e18);
 
         assertEq(creditToken.balanceOf(user1),        0);

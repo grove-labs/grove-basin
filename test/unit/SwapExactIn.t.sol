@@ -305,7 +305,7 @@ contract GroveBasinSwapExactInUsdcAssetInTests is GroveBasinSwapExactInSuccessTe
 
 }
 
-contract GroveBasinSwapExactInSUsdsAssetInTests is GroveBasinSwapExactInSuccessTestsBase {
+contract GroveBasinSwapExactInCreditTokenAssetInTests is GroveBasinSwapExactInSuccessTestsBase {
 
     function test_swapExactIn_creditTokenToUsds_sameReceiver() public assertAtomicGroveBasinValueDoesNotChange {
         _swapExactInTest(creditToken, usds, 100e18, 125e18, swapper, swapper);

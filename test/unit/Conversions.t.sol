@@ -663,7 +663,7 @@ contract GroveBasinConvertToSharesWithUsdcTests is GroveBasinConversionTestBase 
 
 }
 
-contract GroveBasinConvertToSharesWithSUsdsTests is GroveBasinConversionTestBase {
+contract GroveBasinConvertToSharesWithCreditTokenTests is GroveBasinConversionTestBase {
 
     function test_convertToShares_noValue() public view {
         _assertOneToOneConversion();

@@ -272,7 +272,7 @@ contract GroveBasinPreviewSwapExactOut_USDCAssetInTests is GroveBasinTestBase {
 
 }
 
-contract GroveBasinPreviewSwapExactIn_SUsdsAssetInTests is GroveBasinTestBase {
+contract GroveBasinPreviewSwapExactIn_CreditTokenAssetInTests is GroveBasinTestBase {
 
     function test_previewSwapExactIn_creditTokenToUsds() public view {
         // Demo rounding down
@@ -320,7 +320,7 @@ contract GroveBasinPreviewSwapExactIn_SUsdsAssetInTests is GroveBasinTestBase {
 
 }
 
-contract GroveBasinPreviewSwapExactOut_SUsdsAssetInTests is GroveBasinTestBase {
+contract GroveBasinPreviewSwapExactOut_CreditTokenAssetInTests is GroveBasinTestBase {
 
     function test_previewSwapExactOut_creditTokenToUsds() public view {
         // Demo rounding up
