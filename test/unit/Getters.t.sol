@@ -16,7 +16,7 @@ contract GroveBasinHarnessTests is GroveBasinTestBase {
         groveBasinHarness = new GroveBasinHarness(
             address(owner),
             address(usdc),
-            address(usds),
+            address(collateralToken),
             address(creditToken),
             address(creditTokenRateProvider)
         );
@@ -25,24 +25,24 @@ contract GroveBasinHarnessTests is GroveBasinTestBase {
         groveBasinHarness.setPocket(pocket);
     }
 
-    function test_getUsdsValue() public view {
-        assertEq(groveBasinHarness.getUsdsValue(1), 1);
-        assertEq(groveBasinHarness.getUsdsValue(2), 2);
-        assertEq(groveBasinHarness.getUsdsValue(3), 3);
+    function test_getCollateralTokenValue() public view {
+        assertEq(groveBasinHarness.getCollateralTokenValue(1), 1);
+        assertEq(groveBasinHarness.getCollateralTokenValue(2), 2);
+        assertEq(groveBasinHarness.getCollateralTokenValue(3), 3);
 
-        assertEq(groveBasinHarness.getUsdsValue(100e18), 100e18);
-        assertEq(groveBasinHarness.getUsdsValue(200e18), 200e18);
-        assertEq(groveBasinHarness.getUsdsValue(300e18), 300e18);
+        assertEq(groveBasinHarness.getCollateralTokenValue(100e18), 100e18);
+        assertEq(groveBasinHarness.getCollateralTokenValue(200e18), 200e18);
+        assertEq(groveBasinHarness.getCollateralTokenValue(300e18), 300e18);
 
-        assertEq(groveBasinHarness.getUsdsValue(100_000_000_000e18), 100_000_000_000e18);
-        assertEq(groveBasinHarness.getUsdsValue(200_000_000_000e18), 200_000_000_000e18);
-        assertEq(groveBasinHarness.getUsdsValue(300_000_000_000e18), 300_000_000_000e18);
+        assertEq(groveBasinHarness.getCollateralTokenValue(100_000_000_000e18), 100_000_000_000e18);
+        assertEq(groveBasinHarness.getCollateralTokenValue(200_000_000_000e18), 200_000_000_000e18);
+        assertEq(groveBasinHarness.getCollateralTokenValue(300_000_000_000e18), 300_000_000_000e18);
     }
 
-    function testFuzz_getUsdsValue(uint256 amount) public view {
+    function testFuzz_getCollateralTokenValue(uint256 amount) public view {
         amount = _bound(amount, 0, 1e45);
 
-        assertEq(groveBasinHarness.getUsdsValue(amount), amount);
+        assertEq(groveBasinHarness.getCollateralTokenValue(amount), amount);
     }
 
     function test_getUsdcValue() public view {
@@ -163,21 +163,21 @@ contract GroveBasinHarnessTests is GroveBasinTestBase {
         assertEq(groveBasinHarness.getAssetValue(address(usdc), 2e6, true), groveBasinHarness.getUsdcValue(2e6));
         assertEq(groveBasinHarness.getAssetValue(address(usdc), 3e6, true), groveBasinHarness.getUsdcValue(3e6));
 
-        assertEq(groveBasinHarness.getAssetValue(address(usds), 1, false), groveBasinHarness.getUsdsValue(1));
-        assertEq(groveBasinHarness.getAssetValue(address(usds), 2, false), groveBasinHarness.getUsdsValue(2));
-        assertEq(groveBasinHarness.getAssetValue(address(usds), 3, false), groveBasinHarness.getUsdsValue(3));
+        assertEq(groveBasinHarness.getAssetValue(address(collateralToken), 1, false), groveBasinHarness.getCollateralTokenValue(1));
+        assertEq(groveBasinHarness.getAssetValue(address(collateralToken), 2, false), groveBasinHarness.getCollateralTokenValue(2));
+        assertEq(groveBasinHarness.getAssetValue(address(collateralToken), 3, false), groveBasinHarness.getCollateralTokenValue(3));
 
-        assertEq(groveBasinHarness.getAssetValue(address(usds), 1, true), groveBasinHarness.getUsdsValue(1));
-        assertEq(groveBasinHarness.getAssetValue(address(usds), 2, true), groveBasinHarness.getUsdsValue(2));
-        assertEq(groveBasinHarness.getAssetValue(address(usds), 3, true), groveBasinHarness.getUsdsValue(3));
+        assertEq(groveBasinHarness.getAssetValue(address(collateralToken), 1, true), groveBasinHarness.getCollateralTokenValue(1));
+        assertEq(groveBasinHarness.getAssetValue(address(collateralToken), 2, true), groveBasinHarness.getCollateralTokenValue(2));
+        assertEq(groveBasinHarness.getAssetValue(address(collateralToken), 3, true), groveBasinHarness.getCollateralTokenValue(3));
 
-        assertEq(groveBasinHarness.getAssetValue(address(usds), 1e18, false), groveBasinHarness.getUsdsValue(1e18));
-        assertEq(groveBasinHarness.getAssetValue(address(usds), 2e18, false), groveBasinHarness.getUsdsValue(2e18));
-        assertEq(groveBasinHarness.getAssetValue(address(usds), 3e18, false), groveBasinHarness.getUsdsValue(3e18));
+        assertEq(groveBasinHarness.getAssetValue(address(collateralToken), 1e18, false), groveBasinHarness.getCollateralTokenValue(1e18));
+        assertEq(groveBasinHarness.getAssetValue(address(collateralToken), 2e18, false), groveBasinHarness.getCollateralTokenValue(2e18));
+        assertEq(groveBasinHarness.getAssetValue(address(collateralToken), 3e18, false), groveBasinHarness.getCollateralTokenValue(3e18));
 
-        assertEq(groveBasinHarness.getAssetValue(address(usds), 1e18, true), groveBasinHarness.getUsdsValue(1e18));
-        assertEq(groveBasinHarness.getAssetValue(address(usds), 2e18, true), groveBasinHarness.getUsdsValue(2e18));
-        assertEq(groveBasinHarness.getAssetValue(address(usds), 3e18, true), groveBasinHarness.getUsdsValue(3e18));
+        assertEq(groveBasinHarness.getAssetValue(address(collateralToken), 1e18, true), groveBasinHarness.getCollateralTokenValue(1e18));
+        assertEq(groveBasinHarness.getAssetValue(address(collateralToken), 2e18, true), groveBasinHarness.getCollateralTokenValue(2e18));
+        assertEq(groveBasinHarness.getAssetValue(address(collateralToken), 3e18, true), groveBasinHarness.getCollateralTokenValue(3e18));
 
         assertEq(groveBasinHarness.getAssetValue(address(creditToken), 1, false), groveBasinHarness.getCreditTokenValue(1, false));
         assertEq(groveBasinHarness.getAssetValue(address(creditToken), 2, false), groveBasinHarness.getCreditTokenValue(2, false));
@@ -199,11 +199,11 @@ contract GroveBasinHarnessTests is GroveBasinTestBase {
     function testFuzz_getAssetValue(uint256 amount) public view {
         amount = _bound(amount, 0, CREDIT_TOKEN_MAX);
 
-        // `usdc` and `usds` return the same values whether `roundUp` is true or false
+        // `usdc` and `collateralToken` return the same values whether `roundUp` is true or false
         assertEq(groveBasinHarness.getAssetValue(address(usdc),  amount, true),  groveBasinHarness.getUsdcValue(amount));
         assertEq(groveBasinHarness.getAssetValue(address(usdc),  amount, true),  groveBasinHarness.getUsdcValue(amount));
-        assertEq(groveBasinHarness.getAssetValue(address(usds),  amount, false), groveBasinHarness.getUsdsValue(amount));
-        assertEq(groveBasinHarness.getAssetValue(address(usds),  amount, false), groveBasinHarness.getUsdsValue(amount));
+        assertEq(groveBasinHarness.getAssetValue(address(collateralToken),  amount, false), groveBasinHarness.getCollateralTokenValue(amount));
+        assertEq(groveBasinHarness.getAssetValue(address(collateralToken),  amount, false), groveBasinHarness.getCollateralTokenValue(amount));
 
         // `creditToken` returns different values depending on the value of `roundUp`, but always same as underlying function
         assertEq(groveBasinHarness.getAssetValue(address(creditToken), amount, false), groveBasinHarness.getCreditTokenValue(amount, false));
@@ -217,7 +217,7 @@ contract GroveBasinHarnessTests is GroveBasinTestBase {
 
     function test_getAssetCustodian() public view {
         assertEq(groveBasinHarness.getAssetCustodian(address(usdc)),  address(pocket));
-        assertEq(groveBasinHarness.getAssetCustodian(address(usds)),  address(groveBasinHarness));
+        assertEq(groveBasinHarness.getAssetCustodian(address(collateralToken)),  address(groveBasinHarness));
         assertEq(groveBasinHarness.getAssetCustodian(address(creditToken)), address(groveBasinHarness));
     }
 
@@ -226,7 +226,7 @@ contract GroveBasinHarnessTests is GroveBasinTestBase {
 contract GetGroveBasinTotalValueTests is GroveBasinTestBase {
 
     function test_totalAssets_balanceChanges() public {
-        usds.mint(address(groveBasin), 1e18);
+        collateralToken.mint(address(groveBasin), 1e18);
 
         assertEq(groveBasin.totalAssets(), 1e18);
 
@@ -238,7 +238,7 @@ contract GetGroveBasinTotalValueTests is GroveBasinTestBase {
 
         assertEq(groveBasin.totalAssets(), 3.25e18);
 
-        usds.burn(address(groveBasin), 1e18);
+        collateralToken.burn(address(groveBasin), 1e18);
 
         assertEq(groveBasin.totalAssets(), 2.25e18);
 
@@ -254,7 +254,7 @@ contract GetGroveBasinTotalValueTests is GroveBasinTestBase {
     function test_totalAssets_conversionRateChanges() public {
         assertEq(groveBasin.totalAssets(), 0);
 
-        usds.mint(address(groveBasin), 1e18);
+        collateralToken.mint(address(groveBasin), 1e18);
         usdc.mint(address(pocket), 1e6);
         creditToken.mint(address(groveBasin), 1e18);
 
@@ -272,7 +272,7 @@ contract GetGroveBasinTotalValueTests is GroveBasinTestBase {
     function test_totalAssets_bothChange() public {
         assertEq(groveBasin.totalAssets(), 0);
 
-        usds.mint(address(groveBasin), 1e18);
+        collateralToken.mint(address(groveBasin), 1e18);
         usdc.mint(address(pocket), 1e6);
         creditToken.mint(address(groveBasin), 1e18);
 
@@ -288,19 +288,19 @@ contract GetGroveBasinTotalValueTests is GroveBasinTestBase {
     }
 
     function testFuzz_totalAssets(
-        uint256 usdsAmount,
+        uint256 collateralTokenAmount,
         uint256 usdcAmount,
         uint256 creditTokenAmount,
         uint256 conversionRate
     )
         public
     {
-        usdsAmount     = _bound(usdsAmount,     0,         USDS_TOKEN_MAX);
+        collateralTokenAmount     = _bound(collateralTokenAmount,     0,         COLLATERAL_TOKEN_MAX);
         usdcAmount     = _bound(usdcAmount,     0,         USDC_TOKEN_MAX);
         creditTokenAmount    = _bound(creditTokenAmount,    0,         CREDIT_TOKEN_MAX);
         conversionRate = _bound(conversionRate, 0.0001e27, 1000e27);
 
-        usds.mint(address(groveBasin), usdsAmount);
+        collateralToken.mint(address(groveBasin), collateralTokenAmount);
         usdc.mint(address(pocket), usdcAmount);
         creditToken.mint(address(groveBasin), creditTokenAmount);
 
@@ -308,7 +308,7 @@ contract GetGroveBasinTotalValueTests is GroveBasinTestBase {
 
         assertEq(
             groveBasin.totalAssets(),
-            usdsAmount + (usdcAmount * 1e12) + (creditTokenAmount * conversionRate / 1e27)
+            collateralTokenAmount + (usdcAmount * 1e12) + (creditTokenAmount * conversionRate / 1e27)
         );
     }
 

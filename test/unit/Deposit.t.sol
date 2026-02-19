@@ -26,45 +26,45 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
     }
 
     function test_deposit_insufficientApproveBoundary() public {
-        usds.mint(user1, 100e18);
+        collateralToken.mint(user1, 100e18);
 
         vm.startPrank(user1);
 
-        usds.approve(address(groveBasin), 100e18 - 1);
+        collateralToken.approve(address(groveBasin), 100e18 - 1);
 
         vm.expectRevert("SafeERC20/transfer-from-failed");
-        groveBasin.deposit(address(usds), user1, 100e18);
+        groveBasin.deposit(address(collateralToken), user1, 100e18);
 
-        usds.approve(address(groveBasin), 100e18);
+        collateralToken.approve(address(groveBasin), 100e18);
 
-        groveBasin.deposit(address(usds), user1, 100e18);
+        groveBasin.deposit(address(collateralToken), user1, 100e18);
     }
 
     function test_deposit_insufficientBalanceBoundary() public {
-        usds.mint(user1, 100e18 - 1);
+        collateralToken.mint(user1, 100e18 - 1);
 
         vm.startPrank(user1);
 
-        usds.approve(address(groveBasin), 100e18);
+        collateralToken.approve(address(groveBasin), 100e18);
 
         vm.expectRevert("SafeERC20/transfer-from-failed");
-        groveBasin.deposit(address(usds), user1, 100e18);
+        groveBasin.deposit(address(collateralToken), user1, 100e18);
 
-        usds.mint(user1, 1);
+        collateralToken.mint(user1, 1);
 
-        groveBasin.deposit(address(usds), user1, 100e18);
+        groveBasin.deposit(address(collateralToken), user1, 100e18);
     }
 
-    function test_deposit_firstDepositUsds() public {
-        usds.mint(user1, 100e18);
+    function test_deposit_firstDepositCollateralToken() public {
+        collateralToken.mint(user1, 100e18);
 
         vm.startPrank(user1);
 
-        usds.approve(address(groveBasin), 100e18);
+        collateralToken.approve(address(groveBasin), 100e18);
 
-        assertEq(usds.allowance(user1, address(groveBasin)), 100e18);
-        assertEq(usds.balanceOf(user1),               100e18);
-        assertEq(usds.balanceOf(address(groveBasin)),        0);
+        assertEq(collateralToken.allowance(user1, address(groveBasin)), 100e18);
+        assertEq(collateralToken.balanceOf(user1),               100e18);
+        assertEq(collateralToken.balanceOf(address(groveBasin)),        0);
 
         assertEq(groveBasin.totalShares(),     0);
         assertEq(groveBasin.shares(user1),     0);
@@ -72,13 +72,13 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
 
         assertEq(groveBasin.convertToShares(1e18), 1e18);
 
-        uint256 newShares = groveBasin.deposit(address(usds), receiver1, 100e18);
+        uint256 newShares = groveBasin.deposit(address(collateralToken), receiver1, 100e18);
 
         assertEq(newShares, 100e18);
 
-        assertEq(usds.allowance(user1, address(groveBasin)), 0);
-        assertEq(usds.balanceOf(user1),               0);
-        assertEq(usds.balanceOf(address(groveBasin)),        100e18);
+        assertEq(collateralToken.allowance(user1, address(groveBasin)), 0);
+        assertEq(collateralToken.balanceOf(user1),               0);
+        assertEq(collateralToken.balanceOf(address(groveBasin)),        100e18);
 
         assertEq(groveBasin.totalShares(),     100e18);
         assertEq(groveBasin.shares(user1),     0);

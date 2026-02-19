@@ -18,7 +18,7 @@ contract GroveBasinPreviewWithdraw_ZeroAssetsTests is GroveBasinTestBase {
 
     // Always returns zero because there is no balance of assets in the GroveBasin in this case
     function test_previewWithdraw_zeroTotalAssets() public {
-        ( uint256 shares1, uint256 assets1 ) = groveBasin.previewWithdraw(address(usds),  1e18);
+        ( uint256 shares1, uint256 assets1 ) = groveBasin.previewWithdraw(address(collateralToken),  1e18);
         ( uint256 shares2, uint256 assets2 ) = groveBasin.previewWithdraw(address(usdc),  1e6);
         ( uint256 shares3, uint256 assets3 ) = groveBasin.previewWithdraw(address(creditToken), 1e18);
 
@@ -31,7 +31,7 @@ contract GroveBasinPreviewWithdraw_ZeroAssetsTests is GroveBasinTestBase {
 
         mockCreditTokenRateProvider.__setConversionRate(2e27);
 
-        ( shares1, assets1 ) = groveBasin.previewWithdraw(address(usds),  1e18);
+        ( shares1, assets1 ) = groveBasin.previewWithdraw(address(collateralToken),  1e18);
         ( shares2, assets2 ) = groveBasin.previewWithdraw(address(usdc),  1e6);
         ( shares3, assets3 ) = groveBasin.previewWithdraw(address(creditToken), 1e18);
 
@@ -51,25 +51,25 @@ contract GroveBasinPreviewWithdraw_SuccessTests is GroveBasinTestBase {
         super.setUp();
         // Setup so that address(this) has the most shares, higher underlying balance than GroveBasin
         // balance of creditToken and USDC
-        _deposit(address(usds),  address(this),          100e18);
+        _deposit(address(collateralToken),  address(this),          100e18);
         _deposit(address(usdc),  makeAddr("usdc-user"),  10e6);
         _deposit(address(creditToken), makeAddr("creditToken-user"), 1e18);
     }
 
-    function test_previewWithdraw_usds_amountLtUnderlyingBalance() public view {
-        ( uint256 shares, uint256 assets ) = groveBasin.previewWithdraw(address(usds), 100e18 - 1);
+    function test_previewWithdraw_collateralToken_amountLtUnderlyingBalance() public view {
+        ( uint256 shares, uint256 assets ) = groveBasin.previewWithdraw(address(collateralToken), 100e18 - 1);
         assertEq(shares, 100e18 - 1);
         assertEq(assets, 100e18 - 1);
     }
 
-    function test_previewWithdraw_usds_amountEqUnderlyingBalance() public view {
-        ( uint256 shares, uint256 assets ) = groveBasin.previewWithdraw(address(usds), 100e18);
+    function test_previewWithdraw_collateralToken_amountEqUnderlyingBalance() public view {
+        ( uint256 shares, uint256 assets ) = groveBasin.previewWithdraw(address(collateralToken), 100e18);
         assertEq(shares, 100e18);
         assertEq(assets, 100e18);
     }
 
-    function test_previewWithdraw_usds_amountGtUnderlyingBalance() public view {
-        ( uint256 shares, uint256 assets ) = groveBasin.previewWithdraw(address(usds), 100e18 + 1);
+    function test_previewWithdraw_collateralToken_amountGtUnderlyingBalance() public view {
+        ( uint256 shares, uint256 assets ) = groveBasin.previewWithdraw(address(collateralToken), 100e18 + 1);
         assertEq(shares, 100e18);
         assertEq(assets, 100e18);
     }
@@ -125,7 +125,7 @@ contract GroveBasinPreviewWithdraw_SuccessFuzzTests is GroveBasinTestBase {
     }
 
     function testFuzz_previewWithdraw(TestParams memory params) public {
-        params.amount1 = _bound(params.amount1, 1, USDS_TOKEN_MAX);
+        params.amount1 = _bound(params.amount1, 1, COLLATERAL_TOKEN_MAX);
         params.amount2 = _bound(params.amount2, 1, USDC_TOKEN_MAX);
         params.amount3 = _bound(params.amount3, 1, CREDIT_TOKEN_MAX);
 
@@ -135,11 +135,11 @@ contract GroveBasinPreviewWithdraw_SuccessFuzzTests is GroveBasinTestBase {
         params.previewAmount2 = _bound(params.previewAmount2, 0, params.amount2);
         params.previewAmount3 = _bound(params.previewAmount3, 0, params.amount3);
 
-        _deposit(address(usds),  address(this), params.amount1);
+        _deposit(address(collateralToken),  address(this), params.amount1);
         _deposit(address(usdc),  address(this), params.amount2);
         _deposit(address(creditToken), address(this), params.amount3);
 
-        ( uint256 shares1, uint256 assets1 ) = groveBasin.previewWithdraw(address(usds),  params.previewAmount1);
+        ( uint256 shares1, uint256 assets1 ) = groveBasin.previewWithdraw(address(collateralToken),  params.previewAmount1);
         ( uint256 shares2, uint256 assets2 ) = groveBasin.previewWithdraw(address(usdc),  params.previewAmount2);
         ( uint256 shares3, uint256 assets3 ) = groveBasin.previewWithdraw(address(creditToken), params.previewAmount3);
 
@@ -161,7 +161,7 @@ contract GroveBasinPreviewWithdraw_SuccessFuzzTests is GroveBasinTestBase {
         // creditToken value accrual changes the value of shares in the GroveBasin
         totalValue = params.amount1 + params.amount2 * 1e12 + params.amount3 * params.conversionRate / 1e27;
 
-        ( shares1, assets1 ) = groveBasin.previewWithdraw(address(usds),  params.previewAmount1);
+        ( shares1, assets1 ) = groveBasin.previewWithdraw(address(collateralToken),  params.previewAmount1);
         ( shares2, assets2 ) = groveBasin.previewWithdraw(address(usdc),  params.previewAmount2);
         ( shares3, assets3 ) = groveBasin.previewWithdraw(address(creditToken), params.previewAmount3);
 

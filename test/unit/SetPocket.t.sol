@@ -128,7 +128,7 @@ contract GroveBasinSetPocketSuccessTests is GroveBasinTestBase {
         groveBasin.setPocket(address(groveBasin));
 
         _deposit(address(usdc),  owner, 1_000_000e6);
-        _deposit(address(usds),  owner, 1_000_000e18);
+        _deposit(address(collateralToken),  owner, 1_000_000e18);
         _deposit(address(creditToken), owner, 800_000e18);
 
         assertEq(groveBasin.totalAssets(), 3_000_000e18);

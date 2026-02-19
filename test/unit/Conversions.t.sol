@@ -10,7 +10,7 @@ import { MockRateProvider, GroveBasinTestBase } from "test/GroveBasinTestBase.so
 contract GroveBasinConversionTestBase is GroveBasinTestBase {
 
     struct FuzzVars {
-        uint256 usdsAmount;
+        uint256 collateralTokenAmount;
         uint256 usdcAmount;
         uint256 creditTokenAmount;
         uint256 expectedShares;
@@ -20,22 +20,22 @@ contract GroveBasinConversionTestBase is GroveBasinTestBase {
     // initial shares from all deposits (always equal to total value at beginning).
     function _setUpConversionFuzzTest(
         uint256 initialConversionRate,
-        uint256 usdsAmount,
+        uint256 collateralTokenAmount,
         uint256 usdcAmount,
         uint256 creditTokenAmount
     )
         internal returns (FuzzVars memory vars)
     {
-        vars.usdsAmount  = _bound(usdsAmount,  1, USDS_TOKEN_MAX);
+        vars.collateralTokenAmount  = _bound(collateralTokenAmount,  1, COLLATERAL_TOKEN_MAX);
         vars.usdcAmount  = _bound(usdcAmount,  1, USDC_TOKEN_MAX);
         vars.creditTokenAmount = _bound(creditTokenAmount, 1, CREDIT_TOKEN_MAX);
 
-        _deposit(address(usds),  address(this), vars.usdsAmount);
+        _deposit(address(collateralToken),  address(this), vars.collateralTokenAmount);
         _deposit(address(usdc),  address(this), vars.usdcAmount);
         _deposit(address(creditToken), address(this), vars.creditTokenAmount);
 
         vars.expectedShares =
-            vars.usdsAmount +
+            vars.collateralTokenAmount +
             vars.usdcAmount * 1e12 +
             vars.creditTokenAmount * initialConversionRate / 1e27;
 
@@ -52,13 +52,13 @@ contract GroveBasinConvertToAssetsTests is GroveBasinTestBase {
     }
 
     function test_convertToAssets() public view {
-        assertEq(groveBasin.convertToAssets(address(usds), 1), 1);
-        assertEq(groveBasin.convertToAssets(address(usds), 2), 2);
-        assertEq(groveBasin.convertToAssets(address(usds), 3), 3);
+        assertEq(groveBasin.convertToAssets(address(collateralToken), 1), 1);
+        assertEq(groveBasin.convertToAssets(address(collateralToken), 2), 2);
+        assertEq(groveBasin.convertToAssets(address(collateralToken), 3), 3);
 
-        assertEq(groveBasin.convertToAssets(address(usds), 1e18), 1e18);
-        assertEq(groveBasin.convertToAssets(address(usds), 2e18), 2e18);
-        assertEq(groveBasin.convertToAssets(address(usds), 3e18), 3e18);
+        assertEq(groveBasin.convertToAssets(address(collateralToken), 1e18), 1e18);
+        assertEq(groveBasin.convertToAssets(address(collateralToken), 2e18), 2e18);
+        assertEq(groveBasin.convertToAssets(address(collateralToken), 3e18), 3e18);
 
         assertEq(groveBasin.convertToAssets(address(usdc), 1), 0);
         assertEq(groveBasin.convertToAssets(address(usdc), 2), 0);
@@ -78,12 +78,12 @@ contract GroveBasinConvertToAssetsTests is GroveBasinTestBase {
     }
 
     function testFuzz_convertToAssets_usdc(uint256 amount) public view {
-        amount = _bound(amount, 0, USDS_TOKEN_MAX);
+        amount = _bound(amount, 0, COLLATERAL_TOKEN_MAX);
 
-        assertEq(groveBasin.convertToAssets(address(usds), amount), amount);
+        assertEq(groveBasin.convertToAssets(address(collateralToken), amount), amount);
     }
 
-    function testFuzz_convertToAssets_usds(uint256 amount) public view {
+    function testFuzz_convertToAssets_collateralToken(uint256 amount) public view {
         amount = _bound(amount, 0, USDC_TOKEN_MAX);
 
         assertEq(groveBasin.convertToAssets(address(usdc), amount), amount / 1e12);
@@ -108,7 +108,7 @@ contract GroveBasinConvertToAssetValueTests is GroveBasinConversionTestBase {
     }
 
     function test_convertToAssetValue() public {
-        _deposit(address(usds),  address(this), 100e18);
+        _deposit(address(collateralToken),  address(this), 100e18);
         _deposit(address(usdc),  address(this), 100e6);
         _deposit(address(creditToken), address(this), 80e18);
 
@@ -122,7 +122,7 @@ contract GroveBasinConvertToAssetValueTests is GroveBasinConversionTestBase {
     }
 
     function testFuzz_convertToAssetValue_conversionRateIncrease(
-        uint256 usdsAmount,
+        uint256 collateralTokenAmount,
         uint256 usdcAmount,
         uint256 creditTokenAmount,
         uint256 conversionRate
@@ -133,7 +133,7 @@ contract GroveBasinConvertToAssetValueTests is GroveBasinConversionTestBase {
 
         FuzzVars memory vars = _setUpConversionFuzzTest(
             1e27,
-            usdsAmount,
+            collateralTokenAmount,
             usdcAmount,
             creditTokenAmount
         );
@@ -149,7 +149,7 @@ contract GroveBasinConvertToAssetValueTests is GroveBasinConversionTestBase {
         mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 newValue
-            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
+            = vars.collateralTokenAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
 
         assertEq(groveBasin.convertToAssetValue(vars.expectedShares), newValue);
 
@@ -158,7 +158,7 @@ contract GroveBasinConvertToAssetValueTests is GroveBasinConversionTestBase {
     }
 
     function testFuzz_convertToAssetValue_conversionRateDecrease(
-        uint256 usdsAmount,
+        uint256 collateralTokenAmount,
         uint256 usdcAmount,
         uint256 creditTokenAmount,
         uint256 conversionRate
@@ -169,7 +169,7 @@ contract GroveBasinConvertToAssetValueTests is GroveBasinConversionTestBase {
 
         FuzzVars memory vars = _setUpConversionFuzzTest(
             2e27,
-            usdsAmount,
+            collateralTokenAmount,
             usdcAmount,
             creditTokenAmount
         );
@@ -185,7 +185,7 @@ contract GroveBasinConvertToAssetValueTests is GroveBasinConversionTestBase {
         mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 newValue
-            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
+            = vars.collateralTokenAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
 
         assertEq(groveBasin.convertToAssetValue(vars.expectedShares), newValue);
 
@@ -246,7 +246,7 @@ contract GroveBasinConvertToSharesTests is GroveBasinConversionTestBase {
     }
 
     function testFuzz_convertToShares_conversionRateIncrease(
-        uint256 usdsAmount,
+        uint256 collateralTokenAmount,
         uint256 usdcAmount,
         uint256 creditTokenAmount,
         uint256 conversionRate
@@ -257,7 +257,7 @@ contract GroveBasinConvertToSharesTests is GroveBasinConversionTestBase {
 
         FuzzVars memory vars = _setUpConversionFuzzTest(
             1e27,
-            usdsAmount,
+            collateralTokenAmount,
             usdcAmount,
             creditTokenAmount
         );
@@ -273,7 +273,7 @@ contract GroveBasinConvertToSharesTests is GroveBasinConversionTestBase {
         mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 newValue
-            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
+            = vars.collateralTokenAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
 
         assertEq(groveBasin.convertToShares(newValue), vars.expectedShares);
 
@@ -282,7 +282,7 @@ contract GroveBasinConvertToSharesTests is GroveBasinConversionTestBase {
     }
 
     function testFuzz_convertToAssetValue_conversionRateDecrease(
-        uint256 usdsAmount,
+        uint256 collateralTokenAmount,
         uint256 usdcAmount,
         uint256 creditTokenAmount,
         uint256 conversionRate
@@ -293,7 +293,7 @@ contract GroveBasinConvertToSharesTests is GroveBasinConversionTestBase {
 
         FuzzVars memory vars = _setUpConversionFuzzTest(
             2e27,
-            usdsAmount,
+            collateralTokenAmount,
             usdcAmount,
             creditTokenAmount
         );
@@ -309,7 +309,7 @@ contract GroveBasinConvertToSharesTests is GroveBasinConversionTestBase {
         mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 newValue
-            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
+            = vars.collateralTokenAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
 
         assertEq(groveBasin.convertToShares(newValue), vars.expectedShares);
 
@@ -344,58 +344,58 @@ contract GroveBasinConvertToSharesFailureTests is GroveBasinTestBase {
 
 }
 
-contract GroveBasinConvertToSharesWithUsdsTests is GroveBasinConversionTestBase {
+contract GroveBasinConvertToSharesWithCollateralTokenTests is GroveBasinConversionTestBase {
 
     function test_convertToShares_noValue() public view {
-        _assertOneToOneConversionUsds();
+        _assertOneToOneConversionCollateralToken();
     }
 
     function testFuzz_convertToShares_noValue(uint256 amount) public view {
-        amount = _bound(amount, 0, USDS_TOKEN_MAX);
-        assertEq(groveBasin.convertToShares(address(usds), amount), amount);
+        amount = _bound(amount, 0, COLLATERAL_TOKEN_MAX);
+        assertEq(groveBasin.convertToShares(address(collateralToken), amount), amount);
     }
 
-    function test_convertToShares_depositAndWithdrawUsdsAndCreditToken_noChange() public {
-        _assertOneToOneConversionUsds();
+    function test_convertToShares_depositAndWithdrawCollateralTokenAndCreditToken_noChange() public {
+        _assertOneToOneConversionCollateralToken();
 
-        _deposit(address(usds), address(this), 100e18);
-        _assertOneToOneConversionUsds();
+        _deposit(address(collateralToken), address(this), 100e18);
+        _assertOneToOneConversionCollateralToken();
 
         _deposit(address(creditToken), address(this), 80e18);
-        _assertOneToOneConversionUsds();
+        _assertOneToOneConversionCollateralToken();
 
-        _withdraw(address(usds), address(this), 100e18);
-        _assertOneToOneConversionUsds();
+        _withdraw(address(collateralToken), address(this), 100e18);
+        _assertOneToOneConversionCollateralToken();
 
         _withdraw(address(creditToken), address(this), 80e18);
-        _assertOneToOneConversionUsds();
+        _assertOneToOneConversionCollateralToken();
     }
 
     function test_convertToShares_conversionRateIncrease() public {
         // 200 shares minted at 1:1 ratio, $200 of value in pool
-        _deposit(address(usds),  address(this), 100e18);
+        _deposit(address(collateralToken),  address(this), 100e18);
         _deposit(address(creditToken), address(this), 80e18);
 
-        _assertOneToOneConversionUsds();
+        _assertOneToOneConversionCollateralToken();
 
         // 80 creditToken now worth $120, 200 shares in pool with $220 of value
         // Each share should be worth $1.10.
         mockCreditTokenRateProvider.__setConversionRate(1.5e27);
 
-        assertEq(groveBasin.convertToShares(address(usds), 10), 9);
-        assertEq(groveBasin.convertToShares(address(usds), 11), 10);
-        assertEq(groveBasin.convertToShares(address(usds), 12), 10);
+        assertEq(groveBasin.convertToShares(address(collateralToken), 10), 9);
+        assertEq(groveBasin.convertToShares(address(collateralToken), 11), 10);
+        assertEq(groveBasin.convertToShares(address(collateralToken), 12), 10);
 
-        assertEq(groveBasin.convertToShares(address(usds), 10e18), 9.090909090909090909e18);
-        assertEq(groveBasin.convertToShares(address(usds), 11e18), 10e18);
-        assertEq(groveBasin.convertToShares(address(usds), 12e18), 10.909090909090909090e18);
+        assertEq(groveBasin.convertToShares(address(collateralToken), 10e18), 9.090909090909090909e18);
+        assertEq(groveBasin.convertToShares(address(collateralToken), 11e18), 10e18);
+        assertEq(groveBasin.convertToShares(address(collateralToken), 12e18), 10.909090909090909090e18);
     }
 
-    // NOTE: These tests will be the exact same as convertToShares(amount) tests because USDS is an
+    // NOTE: These tests will be the exact same as convertToShares(amount) tests because collateral token is an
     //       18 decimal precision asset pegged to the dollar, which is whats used for "value".
 
     function testFuzz_convertToShares_conversionRateIncrease(
-        uint256 usdsAmount,
+        uint256 collateralTokenAmount,
         uint256 usdcAmount,
         uint256 creditTokenAmount,
         uint256 conversionRate
@@ -406,7 +406,7 @@ contract GroveBasinConvertToSharesWithUsdsTests is GroveBasinConversionTestBase 
 
         FuzzVars memory vars = _setUpConversionFuzzTest(
             1e27,
-            usdsAmount,
+            collateralTokenAmount,
             usdcAmount,
             creditTokenAmount
         );
@@ -417,21 +417,21 @@ contract GroveBasinConvertToSharesWithUsdsTests is GroveBasinConversionTestBase 
         conversionRate = _bound(conversionRate, 1e27, 1000e27);
 
         // 1:1 between shares and dollar value
-        assertEq(groveBasin.convertToShares(address(usds), initialValue), vars.expectedShares);
+        assertEq(groveBasin.convertToShares(address(collateralToken), initialValue), vars.expectedShares);
 
         mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 newValue
-            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
+            = vars.collateralTokenAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
 
-        assertEq(groveBasin.convertToShares(address(usds), newValue), vars.expectedShares);
+        assertEq(groveBasin.convertToShares(address(collateralToken), newValue), vars.expectedShares);
 
         // Value change is only from creditToken exchange rate increasing
         assertEq(newValue - initialValue, vars.creditTokenAmount * (conversionRate - 1e27) / 1e27);
     }
 
     function testFuzz_convertToAssetValue_conversionRateDecrease(
-        uint256 usdsAmount,
+        uint256 collateralTokenAmount,
         uint256 usdcAmount,
         uint256 creditTokenAmount,
         uint256 conversionRate
@@ -442,7 +442,7 @@ contract GroveBasinConvertToSharesWithUsdsTests is GroveBasinConversionTestBase 
 
         FuzzVars memory vars = _setUpConversionFuzzTest(
             2e27,
-            usdsAmount,
+            collateralTokenAmount,
             usdcAmount,
             creditTokenAmount
         );
@@ -453,14 +453,14 @@ contract GroveBasinConvertToSharesWithUsdsTests is GroveBasinConversionTestBase 
         conversionRate = _bound(conversionRate, 0.001e27, 2e27);
 
         // 1:1 between shares and dollar value
-        assertEq(groveBasin.convertToShares(address(usds), initialValue), vars.expectedShares);
+        assertEq(groveBasin.convertToShares(address(collateralToken), initialValue), vars.expectedShares);
 
         mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 newValue
-            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
+            = vars.collateralTokenAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
 
-        assertEq(groveBasin.convertToShares(address(usds), newValue), vars.expectedShares);
+        assertEq(groveBasin.convertToShares(address(collateralToken), newValue), vars.expectedShares);
 
         // Value change is only from creditToken exchange rate decreasing
         assertApproxEqAbs(
@@ -470,16 +470,16 @@ contract GroveBasinConvertToSharesWithUsdsTests is GroveBasinConversionTestBase 
         );
     }
 
-    function _assertOneToOneConversionUsds() internal view {
-        assertEq(groveBasin.convertToShares(address(usds), 1), 1);
-        assertEq(groveBasin.convertToShares(address(usds), 2), 2);
-        assertEq(groveBasin.convertToShares(address(usds), 3), 3);
-        assertEq(groveBasin.convertToShares(address(usds), 4), 4);
+    function _assertOneToOneConversionCollateralToken() internal view {
+        assertEq(groveBasin.convertToShares(address(collateralToken), 1), 1);
+        assertEq(groveBasin.convertToShares(address(collateralToken), 2), 2);
+        assertEq(groveBasin.convertToShares(address(collateralToken), 3), 3);
+        assertEq(groveBasin.convertToShares(address(collateralToken), 4), 4);
 
-        assertEq(groveBasin.convertToShares(address(usds), 1e18), 1e18);
-        assertEq(groveBasin.convertToShares(address(usds), 2e18), 2e18);
-        assertEq(groveBasin.convertToShares(address(usds), 3e18), 3e18);
-        assertEq(groveBasin.convertToShares(address(usds), 4e18), 4e18);
+        assertEq(groveBasin.convertToShares(address(collateralToken), 1e18), 1e18);
+        assertEq(groveBasin.convertToShares(address(collateralToken), 2e18), 2e18);
+        assertEq(groveBasin.convertToShares(address(collateralToken), 3e18), 3e18);
+        assertEq(groveBasin.convertToShares(address(collateralToken), 4e18), 4e18);
     }
 
 }
@@ -532,7 +532,7 @@ contract GroveBasinConvertToSharesWithUsdcTests is GroveBasinConversionTestBase 
     }
 
     function testFuzz_convertToShares_conversionRateIncrease(
-        uint256 usdsAmount,
+        uint256 collateralTokenAmount,
         uint256 usdcAmount,
         uint256 creditTokenAmount,
         uint256 conversionRate
@@ -543,7 +543,7 @@ contract GroveBasinConvertToSharesWithUsdcTests is GroveBasinConversionTestBase 
 
         FuzzVars memory vars = _setUpConversionFuzzTest(
             1e27,
-            usdsAmount,
+            collateralTokenAmount,
             usdcAmount,
             creditTokenAmount
         );
@@ -563,7 +563,7 @@ contract GroveBasinConvertToSharesWithUsdcTests is GroveBasinConversionTestBase 
         mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 newValue
-            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
+            = vars.collateralTokenAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
 
         // Larger rounding error because of 1e6 precision
         assertApproxEqAbs(
@@ -589,7 +589,7 @@ contract GroveBasinConvertToSharesWithUsdcTests is GroveBasinConversionTestBase 
     }
 
     function testFuzz_convertToAssetValue_conversionRateDecrease(
-        uint256 usdsAmount,
+        uint256 collateralTokenAmount,
         uint256 usdcAmount,
         uint256 creditTokenAmount,
         uint256 conversionRate
@@ -600,7 +600,7 @@ contract GroveBasinConvertToSharesWithUsdcTests is GroveBasinConversionTestBase 
 
         FuzzVars memory vars = _setUpConversionFuzzTest(
             2e27,
-            usdsAmount,
+            collateralTokenAmount,
             usdcAmount,
             creditTokenAmount
         );
@@ -620,7 +620,7 @@ contract GroveBasinConvertToSharesWithUsdcTests is GroveBasinConversionTestBase 
         mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 newValue
-            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
+            = vars.collateralTokenAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
 
         // Rounding scales with difference between expectedShares and newValue
         assertApproxEqAbs(
@@ -718,7 +718,7 @@ contract GroveBasinConvertToSharesWithCreditTokenTests is GroveBasinConversionTe
     }
 
     function testFuzz_convertToShares_conversionRateIncrease(
-        uint256 usdsAmount,
+        uint256 collateralTokenAmount,
         uint256 usdcAmount,
         uint256 creditTokenAmount,
         uint256 conversionRate
@@ -730,7 +730,7 @@ contract GroveBasinConvertToSharesWithCreditTokenTests is GroveBasinConversionTe
 
         FuzzVars memory vars = _setUpConversionFuzzTest(
             1.1e27,
-            usdsAmount,
+            collateralTokenAmount,
             usdcAmount,
             creditTokenAmount
         );
@@ -751,7 +751,7 @@ contract GroveBasinConvertToSharesWithCreditTokenTests is GroveBasinConversionTe
         mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 newValue
-            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
+            = vars.collateralTokenAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
 
         uint256 newCreditTokenValue = newValue * 1e27 / conversionRate;
 
@@ -783,7 +783,7 @@ contract GroveBasinConvertToSharesWithCreditTokenTests is GroveBasinConversionTe
     }
 
     function testFuzz_convertToAssetValue_conversionRateDecrease(
-        uint256 usdsAmount,
+        uint256 collateralTokenAmount,
         uint256 usdcAmount,
         uint256 creditTokenAmount,
         uint256 conversionRate
@@ -794,7 +794,7 @@ contract GroveBasinConvertToSharesWithCreditTokenTests is GroveBasinConversionTe
 
         FuzzVars memory vars = _setUpConversionFuzzTest(
             2e27,
-            usdsAmount,
+            collateralTokenAmount,
             usdcAmount,
             creditTokenAmount
         );
@@ -815,7 +815,7 @@ contract GroveBasinConvertToSharesWithCreditTokenTests is GroveBasinConversionTe
         mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         uint256 newValue
-            = vars.usdsAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
+            = vars.collateralTokenAmount + vars.usdcAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
 
         uint256 newCreditTokenValue = newValue * 1e27 / conversionRate;
 

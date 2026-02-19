@@ -40,7 +40,7 @@ The deployment library (`deploy/GroveBasinDeploy.sol`) in this repo contains log
 ### State Variables and Immutables
 
 - **`usdc`**: IERC20 interface of USDC.
-- **`usds`**: IERC20 interface of USDS.
+- **`collateralToken`**: IERC20 interface of the collateral token. The collateral token is the underlying asset that can be redeemed for the tokenized credit asset.
 - **`creditToken`**: IERC20 interface of the tokenized credit asset. Supports both rebasing and yield-accruing tokens.
 - **`pocket`**: Address that holds custody of USDC. The `pocket` can deploy USDC to yield-bearing strategies. Defaulted to the address of Grove Basin itself.
 - **`creditTokenRateProvider`**: Contract that returns a conversion rate between and creditToken and USD in 1e27 precision.

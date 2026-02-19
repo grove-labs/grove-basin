@@ -17,14 +17,14 @@ contract GroveBasinDeployTests is GroveBasinTestBase {
         GroveBasin newGroveBasin = GroveBasin(GroveBasinDeploy.deploy(
             address(owner),
             address(usdc),
-            address(usds),
+            address(collateralToken),
             address(creditToken),
             address(creditTokenRateProvider)
         ));
 
         assertEq(address(newGroveBasin.owner()),                   address(owner));
         assertEq(address(newGroveBasin.usdc()),                    address(usdc));
-        assertEq(address(newGroveBasin.usds()),                    address(usds));
+        assertEq(address(newGroveBasin.collateralToken()),         address(collateralToken));
         assertEq(address(newGroveBasin.creditToken()),             address(creditToken));
         assertEq(address(newGroveBasin.creditTokenRateProvider()), address(creditTokenRateProvider));
 

@@ -20,12 +20,12 @@ contract LpHandler is HandlerBase {
     constructor(
         GroveBasin      groveBasin_,
         MockERC20 usdc,
-        MockERC20 usds,
+        MockERC20 collateralToken,
         MockERC20 creditToken,
         uint256   lpCount
     ) HandlerBase(groveBasin_) {
         assets[0] = usdc;
-        assets[1] = usds;
+        assets[1] = collateralToken;
         assets[2] = creditToken;
 
         for (uint256 i = 0; i < lpCount; i++) {

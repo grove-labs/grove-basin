@@ -20,11 +20,11 @@ contract InflationAttackTests is GroveBasinTestBase {
         _runInflationAttack_noInitialDepositTest();
     }
 
-    function test_inflationAttack_noInitialDeposit_usds() public {
+    function test_inflationAttack_noInitialDeposit_collateralToken() public {
         // Step 1: Front runner deposits 1 creditToken to get 1 share
 
-        // Have to use USDS because 1 USDC mints 1e12 shares
-        _deposit(address(usds), frontRunner, 1);
+        // Have to use collateralToken because 1 USDC mints 1e12 shares
+        _deposit(address(collateralToken), frontRunner, 1);
 
         _runInflationAttack_noInitialDepositTest();
     }
@@ -40,13 +40,13 @@ contract InflationAttackTests is GroveBasinTestBase {
         _runInflationAttack_useInitialDepositTest();
     }
 
-    function test_inflationAttack_useInitialDeposit_usds() public {
-        _deposit(address(usds), address(deployer), 1e18);  // 1e18 shares
+    function test_inflationAttack_useInitialDeposit_collateralToken() public {
+        _deposit(address(collateralToken), address(deployer), 1e18);  // 1e18 shares
 
-        // Step 1: Front runner deposits usds to get 1 share
+        // Step 1: Front runner deposits collateralToken to get 1 share
 
         // User tries to do the same attack, depositing one creditToken for 1 share
-        _deposit(address(usds), frontRunner, 1);
+        _deposit(address(collateralToken), frontRunner, 1);
 
         _runInflationAttack_useInitialDepositTest();
     }

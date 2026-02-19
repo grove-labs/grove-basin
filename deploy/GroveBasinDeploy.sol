@@ -10,13 +10,13 @@ library GroveBasinDeploy {
     function deploy(
         address owner,
         address usdc,
-        address usds,
+        address collateralToken,
         address creditToken,
         address creditTokenRateProvider
     )
         internal returns (address groveBasin)
     {
-        groveBasin = address(new GroveBasin(owner, usdc, usds, creditToken, creditTokenRateProvider));
+        groveBasin = address(new GroveBasin(owner, usdc, collateralToken, creditToken, creditTokenRateProvider));
 
         IERC20(usdc).approve(groveBasin, 1e6);
         GroveBasin(groveBasin).deposit(usdc, address(0), 1e6);
