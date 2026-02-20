@@ -32,6 +32,16 @@ contract GroveBasinPreviewSwapExactIn_FailureTests is GroveBasinTestBase {
         groveBasin.previewSwapExactIn(address(creditToken), address(creditToken), 1);
     }
 
+    function test_previewSwapExactIn_collateralTokenToSecondaryToken() public {
+        vm.expectRevert("GroveBasin/invalid-swap");
+        groveBasin.previewSwapExactIn(address(collateralToken), address(secondaryToken), 1);
+    }
+
+    function test_previewSwapExactIn_secondaryTokenToCollateralToken() public {
+        vm.expectRevert("GroveBasin/invalid-swap");
+        groveBasin.previewSwapExactIn(address(secondaryToken), address(collateralToken), 1);
+    }
+
 }
 
 contract GroveBasinPreviewSwapExactOut_FailureTests is GroveBasinTestBase {
@@ -61,28 +71,23 @@ contract GroveBasinPreviewSwapExactOut_FailureTests is GroveBasinTestBase {
         groveBasin.previewSwapExactOut(address(creditToken), address(creditToken), 1);
     }
 
+    function test_previewSwapExactOut_collateralTokenToSecondaryToken() public {
+        vm.expectRevert("GroveBasin/invalid-swap");
+        groveBasin.previewSwapExactOut(address(collateralToken), address(secondaryToken), 1);
+    }
+
+    function test_previewSwapExactOut_secondaryTokenToCollateralToken() public {
+        vm.expectRevert("GroveBasin/invalid-swap");
+        groveBasin.previewSwapExactOut(address(secondaryToken), address(collateralToken), 1);
+    }
+
 }
 
 contract GroveBasinPreviewSwapExactIn_CollateralTokenAssetInTests is GroveBasinTestBase {
 
-    function test_previewSwapExactIn_collateralTokenToSecondaryToken() public view {
-        // Demo rounding down
-        assertEq(groveBasin.previewSwapExactIn(address(collateralToken), address(secondaryToken), 1e18 - 1), 1e6 - 1);
-        assertEq(groveBasin.previewSwapExactIn(address(collateralToken), address(secondaryToken), 1e18),     1e6);
-        assertEq(groveBasin.previewSwapExactIn(address(collateralToken), address(secondaryToken), 1e18 + 1), 1e6);
-
-        assertEq(groveBasin.previewSwapExactIn(address(collateralToken), address(secondaryToken), 1e12 - 1), 0);
-        assertEq(groveBasin.previewSwapExactIn(address(collateralToken), address(secondaryToken), 1e12),     1);
-
-        assertEq(groveBasin.previewSwapExactIn(address(collateralToken), address(secondaryToken), 1e18), 1e6);
-        assertEq(groveBasin.previewSwapExactIn(address(collateralToken), address(secondaryToken), 2e18), 2e6);
-        assertEq(groveBasin.previewSwapExactIn(address(collateralToken), address(secondaryToken), 3e18), 3e6);
-    }
-
-    function testFuzz_previewSwapExactIn_collateralTokenToSecondaryToken(uint256 amountIn) public view {
-        amountIn = _bound(amountIn, 0, COLLATERAL_TOKEN_MAX);
-
-        assertEq(groveBasin.previewSwapExactIn(address(collateralToken), address(secondaryToken), amountIn), amountIn / 1e12);
+    function test_previewSwapExactIn_collateralTokenToSecondaryToken_reverts() public {
+        vm.expectRevert("GroveBasin/invalid-swap");
+        groveBasin.previewSwapExactIn(address(collateralToken), address(secondaryToken), 1e18);
     }
 
     function test_previewSwapExactIn_collateralTokenToCreditToken() public view {
@@ -111,21 +116,9 @@ contract GroveBasinPreviewSwapExactIn_CollateralTokenAssetInTests is GroveBasinT
 
 contract GroveBasinPreviewSwapExactOut_CollateralTokenAssetInTests is GroveBasinTestBase {
 
-    function test_previewSwapExactOut_collateralTokenToSecondaryToken() public view {
-        // Demo rounding up
-        assertEq(groveBasin.previewSwapExactOut(address(collateralToken), address(secondaryToken), 1e6 - 1), 0.999999e18);
-        assertEq(groveBasin.previewSwapExactOut(address(collateralToken), address(secondaryToken), 1e6),     1e18);
-        assertEq(groveBasin.previewSwapExactOut(address(collateralToken), address(secondaryToken), 1e6 + 1), 1.000001e18);
-
-        assertEq(groveBasin.previewSwapExactOut(address(collateralToken), address(secondaryToken), 1e6), 1e18);
-        assertEq(groveBasin.previewSwapExactOut(address(collateralToken), address(secondaryToken), 2e6), 2e18);
-        assertEq(groveBasin.previewSwapExactOut(address(collateralToken), address(secondaryToken), 3e6), 3e18);
-    }
-
-    function testFuzz_previewSwapExactOut_collateralTokenToSecondaryToken(uint256 amountOut) public view {
-        amountOut = _bound(amountOut, 0, SECONDARY_TOKEN_MAX);
-
-        assertEq(groveBasin.previewSwapExactOut(address(collateralToken), address(secondaryToken), amountOut), amountOut * 1e12);
+    function test_previewSwapExactOut_collateralTokenToSecondaryToken_reverts() public {
+        vm.expectRevert("GroveBasin/invalid-swap");
+        groveBasin.previewSwapExactOut(address(collateralToken), address(secondaryToken), 1e6);
     }
 
     function test_previewSwapExactOut_collateralTokenToCreditToken() public view {
@@ -157,21 +150,9 @@ contract GroveBasinPreviewSwapExactOut_CollateralTokenAssetInTests is GroveBasin
 
 contract GroveBasinPreviewSwapExactIn_SecondaryTokenInTests is GroveBasinTestBase {
 
-    function test_previewSwapExactIn_secondaryTokenToCollateralToken() public view {
-        // Demo rounding down
-        assertEq(groveBasin.previewSwapExactIn(address(secondaryToken), address(collateralToken), 1e6 - 1), 0.999999e18);
-        assertEq(groveBasin.previewSwapExactIn(address(secondaryToken), address(collateralToken), 1e6),     1e18);
-        assertEq(groveBasin.previewSwapExactIn(address(secondaryToken), address(collateralToken), 1e6 + 1), 1.000001e18);
-
-        assertEq(groveBasin.previewSwapExactIn(address(secondaryToken), address(collateralToken), 1e6), 1e18);
-        assertEq(groveBasin.previewSwapExactIn(address(secondaryToken), address(collateralToken), 2e6), 2e18);
-        assertEq(groveBasin.previewSwapExactIn(address(secondaryToken), address(collateralToken), 3e6), 3e18);
-    }
-
-    function testFuzz_previewSwapExactIn_secondaryTokenToCollateralToken(uint256 amountIn) public view {
-        amountIn = _bound(amountIn, 0, SECONDARY_TOKEN_MAX);
-
-        assertEq(groveBasin.previewSwapExactIn(address(secondaryToken), address(collateralToken), amountIn), amountIn * 1e12);
+    function test_previewSwapExactIn_secondaryTokenToCollateralToken_reverts() public {
+        vm.expectRevert("GroveBasin/invalid-swap");
+        groveBasin.previewSwapExactIn(address(secondaryToken), address(collateralToken), 1e6);
     }
 
     function test_previewSwapExactIn_secondaryTokenToCreditToken() public view {
@@ -200,24 +181,9 @@ contract GroveBasinPreviewSwapExactIn_SecondaryTokenInTests is GroveBasinTestBas
 
 contract GroveBasinPreviewSwapExactOut_SecondaryTokenInTests is GroveBasinTestBase {
 
-    function test_previewSwapExactOut_secondaryTokenToCollateralToken() public view {
-        // Demo rounding up
-        assertEq(groveBasin.previewSwapExactOut(address(secondaryToken), address(collateralToken), 1e18 - 1), 1e6);
-        assertEq(groveBasin.previewSwapExactOut(address(secondaryToken), address(collateralToken), 1e18),     1e6);
-        assertEq(groveBasin.previewSwapExactOut(address(secondaryToken), address(collateralToken), 1e18 + 1), 1e6 + 1);
-
-        assertEq(groveBasin.previewSwapExactOut(address(secondaryToken), address(collateralToken), 1e18), 1e6);
-        assertEq(groveBasin.previewSwapExactOut(address(secondaryToken), address(collateralToken), 2e18), 2e6);
-        assertEq(groveBasin.previewSwapExactOut(address(secondaryToken), address(collateralToken), 3e18), 3e6);
-    }
-
-    function testFuzz_previewSwapExactOut_secondaryTokenToCollateralToken(uint256 amountOut) public view {
-        amountOut = _bound(amountOut, 0, COLLATERAL_TOKEN_MAX);
-
-        uint256 amountIn = groveBasin.previewSwapExactOut(address(secondaryToken), address(collateralToken), amountOut);
-
-        // Allow for rounding error of 1 unit upwards
-        assertLe(amountIn - amountOut / 1e12, 1);
+    function test_previewSwapExactOut_secondaryTokenToCollateralToken_reverts() public {
+        vm.expectRevert("GroveBasin/invalid-swap");
+        groveBasin.previewSwapExactOut(address(secondaryToken), address(collateralToken), 1e18);
     }
 
     function test_previewSwapExactOut_secondaryTokenToCreditToken() public view {
@@ -251,18 +217,6 @@ contract GroveBasinPreviewSwapExactOut_SecondaryTokenInTests is GroveBasinTestBa
         uint256 expectedAmountIn2 = groveBasin.previewSwapExactOut(address(secondaryToken), address(creditToken), 0.8e18 + 1);
         uint256 expectedAmountIn3 = groveBasin.previewSwapExactOut(address(secondaryToken), address(creditToken), 0.8e18 + 0.8e12);
         uint256 expectedAmountIn4 = groveBasin.previewSwapExactOut(address(secondaryToken), address(creditToken), 0.8e18 + 0.8e12 + 1);
-
-        assertEq(expectedAmountIn1, 1e6);
-        assertEq(expectedAmountIn2, 1e6 + 1);
-        assertEq(expectedAmountIn3, 1e6 + 1);
-        assertEq(expectedAmountIn4, 1e6 + 2);
-    }
-
-    function test_demoRoundingUp_secondaryTokenToCollateralToken() public view {
-        uint256 expectedAmountIn1 = groveBasin.previewSwapExactOut(address(secondaryToken), address(collateralToken), 1e18);
-        uint256 expectedAmountIn2 = groveBasin.previewSwapExactOut(address(secondaryToken), address(collateralToken), 1e18 + 1);
-        uint256 expectedAmountIn3 = groveBasin.previewSwapExactOut(address(secondaryToken), address(collateralToken), 1e18 + 1e12);
-        uint256 expectedAmountIn4 = groveBasin.previewSwapExactOut(address(secondaryToken), address(collateralToken), 1e18 + 1e12 + 1);
 
         assertEq(expectedAmountIn1, 1e6);
         assertEq(expectedAmountIn2, 1e6 + 1);

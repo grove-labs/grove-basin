@@ -88,14 +88,12 @@ contract GroveBasinEventTests is GroveBasinTestBase {
 
         vm.startPrank(sender);
 
-        _swapEventTest(address(collateralToken), address(secondaryToken),  100e18, 100e6, 1);
-        _swapEventTest(address(collateralToken), address(creditToken), 100e18, 80e18, 2);
+        _swapEventTest(address(collateralToken), address(creditToken), 100e18, 80e18, 1);
 
-        _swapEventTest(address(secondaryToken), address(collateralToken),  100e6, 100e18, 3);
-        _swapEventTest(address(secondaryToken), address(creditToken), 100e6, 80e18,  4);
+        _swapEventTest(address(secondaryToken), address(creditToken), 100e6, 80e18,  2);
 
-        _swapEventTest(address(creditToken), address(collateralToken), 100e18, 125e18, 5);
-        _swapEventTest(address(creditToken), address(secondaryToken), 100e18, 125e6,  6);
+        _swapEventTest(address(creditToken), address(collateralToken), 100e18, 125e18, 3);
+        _swapEventTest(address(creditToken), address(secondaryToken), 100e18, 125e6,  4);
     }
 
     function _swapEventTest(
