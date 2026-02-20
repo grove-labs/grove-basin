@@ -188,7 +188,7 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
     }
 
     function _getLpTokenValue(address lp) internal view returns (uint256) {
-        uint256 collateralTokenValue = collateralToken.balanceOf(lp);
+        uint256 collateralTokenValue = collateralToken.balanceOf(lp) * collateralTokenRateProvider.getConversionRate() / 1e27;
         uint256 secondaryTokenValue            = secondaryToken.balanceOf(lp) * 1e12;
         uint256 creditTokenValue     = creditToken.balanceOf(lp) * creditTokenRateProvider.getConversionRate() / 1e27;
 
@@ -197,12 +197,12 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
 
     function _getLpDepositsValue(address lp) internal view returns (uint256) {
         uint256 depositValue =
-            lpHandler.lpDeposits(lp, address(collateralToken)) +
+            lpHandler.lpDeposits(lp, address(collateralToken)) * collateralTokenRateProvider.getConversionRate() / 1e27 +
             lpHandler.lpDeposits(lp, address(secondaryToken)) * 1e12 +
             lpHandler.lpDeposits(lp, address(creditToken)) * creditTokenRateProvider.getConversionRate() / 1e27;
 
         uint256 withdrawValue =
-            lpHandler.lpWithdrawals(lp, address(collateralToken)) +
+            lpHandler.lpWithdrawals(lp, address(collateralToken)) * collateralTokenRateProvider.getConversionRate() / 1e27 +
             lpHandler.lpWithdrawals(lp, address(secondaryToken)) * 1e12 +
             lpHandler.lpWithdrawals(lp, address(creditToken)) * creditTokenRateProvider.getConversionRate() / 1e27;
 
