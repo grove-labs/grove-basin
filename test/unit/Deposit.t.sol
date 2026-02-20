@@ -16,7 +16,7 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
 
     function test_deposit_zeroAmount() public {
         vm.expectRevert("GroveBasin/invalid-amount");
-        groveBasin.deposit(address(secondaryToken), user1, 0);
+        groveBasin.deposit(address(swapToken), user1, 0);
     }
 
     function test_deposit_invalidAsset() public {
@@ -87,16 +87,16 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
         assertEq(groveBasin.convertToShares(1e18), 1e18);
     }
 
-    function test_deposit_firstDepositSecondaryToken() public {
-        secondaryToken.mint(user1, 100e6);
+    function test_deposit_firstDepositSwapToken() public {
+        swapToken.mint(user1, 100e6);
 
         vm.startPrank(user1);
 
-        secondaryToken.approve(address(groveBasin), 100e6);
+        swapToken.approve(address(groveBasin), 100e6);
 
-        assertEq(secondaryToken.allowance(user1, address(groveBasin)), 100e6);
-        assertEq(secondaryToken.balanceOf(user1),               100e6);
-        assertEq(secondaryToken.balanceOf(pocket),              0);
+        assertEq(swapToken.allowance(user1, address(groveBasin)), 100e6);
+        assertEq(swapToken.balanceOf(user1),               100e6);
+        assertEq(swapToken.balanceOf(pocket),              0);
 
         assertEq(groveBasin.totalShares(),     0);
         assertEq(groveBasin.shares(user1),     0);
@@ -104,13 +104,13 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
 
         assertEq(groveBasin.convertToShares(1e18), 1e18);
 
-        uint256 newShares = groveBasin.deposit(address(secondaryToken), receiver1, 100e6);
+        uint256 newShares = groveBasin.deposit(address(swapToken), receiver1, 100e6);
 
         assertEq(newShares, 100e18);
 
-        assertEq(secondaryToken.allowance(user1, address(groveBasin)), 0);
-        assertEq(secondaryToken.balanceOf(user1),               0);
-        assertEq(secondaryToken.balanceOf(pocket),              100e6);
+        assertEq(swapToken.allowance(user1, address(groveBasin)), 0);
+        assertEq(swapToken.balanceOf(user1),               0);
+        assertEq(swapToken.balanceOf(pocket),              100e6);
 
         assertEq(groveBasin.totalShares(),     100e18);
         assertEq(groveBasin.shares(user1),     0);
@@ -119,19 +119,19 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
         assertEq(groveBasin.convertToShares(1e18), 1e18);
     }
 
-    function test_deposit_firstDepositSecondaryToken_pocketIsGroveBasin() public {
+    function test_deposit_firstDepositSwapToken_pocketIsGroveBasin() public {
         vm.prank(owner);
         groveBasin.setPocket(address(groveBasin));
 
-        secondaryToken.mint(user1, 100e6);
+        swapToken.mint(user1, 100e6);
 
         vm.startPrank(user1);
 
-        secondaryToken.approve(address(groveBasin), 100e6);
+        swapToken.approve(address(groveBasin), 100e6);
 
-        assertEq(secondaryToken.allowance(user1, address(groveBasin)), 100e6);
-        assertEq(secondaryToken.balanceOf(user1),               100e6);
-        assertEq(secondaryToken.balanceOf(address(groveBasin)),        0);
+        assertEq(swapToken.allowance(user1, address(groveBasin)), 100e6);
+        assertEq(swapToken.balanceOf(user1),               100e6);
+        assertEq(swapToken.balanceOf(address(groveBasin)),        0);
 
         assertEq(groveBasin.totalShares(),     0);
         assertEq(groveBasin.shares(user1),     0);
@@ -139,13 +139,13 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
 
         assertEq(groveBasin.convertToShares(1e18), 1e18);
 
-        uint256 newShares = groveBasin.deposit(address(secondaryToken), receiver1, 100e6);
+        uint256 newShares = groveBasin.deposit(address(swapToken), receiver1, 100e6);
 
         assertEq(newShares, 100e18);
 
-        assertEq(secondaryToken.allowance(user1, address(groveBasin)), 0);
-        assertEq(secondaryToken.balanceOf(user1),               0);
-        assertEq(secondaryToken.balanceOf(address(groveBasin)),       100e6);
+        assertEq(swapToken.allowance(user1, address(groveBasin)), 0);
+        assertEq(swapToken.balanceOf(user1),               0);
+        assertEq(swapToken.balanceOf(address(groveBasin)),       100e6);
 
         assertEq(groveBasin.totalShares(),     100e18);
         assertEq(groveBasin.shares(user1),     0);
@@ -186,21 +186,21 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
         assertEq(groveBasin.convertToShares(1e18), 1e18);
     }
 
-    function test_deposit_secondaryTokenThenCreditToken() public {
-        secondaryToken.mint(user1, 100e6);
+    function test_deposit_swapTokenThenCreditToken() public {
+        swapToken.mint(user1, 100e6);
 
         vm.startPrank(user1);
 
-        secondaryToken.approve(address(groveBasin), 100e6);
+        swapToken.approve(address(groveBasin), 100e6);
 
-        uint256 newShares = groveBasin.deposit(address(secondaryToken), receiver1, 100e6);
+        uint256 newShares = groveBasin.deposit(address(swapToken), receiver1, 100e6);
 
         assertEq(newShares, 100e18);
 
         creditToken.mint(user1, 100e18);
         creditToken.approve(address(groveBasin), 100e18);
 
-        assertEq(secondaryToken.balanceOf(pocket), 100e6);
+        assertEq(swapToken.balanceOf(pocket), 100e6);
 
         assertEq(creditToken.allowance(user1, address(groveBasin)), 100e18);
         assertEq(creditToken.balanceOf(user1),               100e18);
@@ -216,7 +216,7 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
 
         assertEq(newShares, 125e18);
 
-        assertEq(secondaryToken.balanceOf(pocket), 100e6);
+        assertEq(swapToken.balanceOf(pocket), 100e6);
 
         assertEq(creditToken.allowance(user1, address(groveBasin)), 0);
         assertEq(creditToken.balanceOf(user1),               0);
@@ -229,33 +229,33 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
         assertEq(groveBasin.convertToShares(1e18), 1e18);
     }
 
-    function testFuzz_deposit_secondaryTokenThenCreditToken(uint256 secondaryTokenAmount, uint256 creditTokenAmount) public {
+    function testFuzz_deposit_swapTokenThenCreditToken(uint256 swapTokenAmount, uint256 creditTokenAmount) public {
         // Zero amounts revert
-        secondaryTokenAmount = _bound(secondaryTokenAmount, 1, SECONDARY_TOKEN_MAX);
+        swapTokenAmount = _bound(swapTokenAmount, 1, SWAP_TOKEN_MAX);
         creditTokenAmount = _bound(creditTokenAmount, 1, CREDIT_TOKEN_MAX);
 
-        secondaryToken.mint(user1, secondaryTokenAmount);
+        swapToken.mint(user1, swapTokenAmount);
 
         vm.startPrank(user1);
 
-        secondaryToken.approve(address(groveBasin), secondaryTokenAmount);
+        swapToken.approve(address(groveBasin), swapTokenAmount);
 
-        uint256 newShares = groveBasin.deposit(address(secondaryToken), receiver1, secondaryTokenAmount);
+        uint256 newShares = groveBasin.deposit(address(swapToken), receiver1, swapTokenAmount);
 
-        assertEq(newShares, secondaryTokenAmount * 1e12);
+        assertEq(newShares, swapTokenAmount * 1e12);
 
         creditToken.mint(user1, creditTokenAmount);
         creditToken.approve(address(groveBasin), creditTokenAmount);
 
-        assertEq(secondaryToken.balanceOf(pocket), secondaryTokenAmount);
+        assertEq(swapToken.balanceOf(pocket), swapTokenAmount);
 
         assertEq(creditToken.allowance(user1, address(groveBasin)), creditTokenAmount);
         assertEq(creditToken.balanceOf(user1),               creditTokenAmount);
         assertEq(creditToken.balanceOf(address(groveBasin)),        0);
 
-        assertEq(groveBasin.totalShares(),     secondaryTokenAmount * 1e12);
+        assertEq(groveBasin.totalShares(),     swapTokenAmount * 1e12);
         assertEq(groveBasin.shares(user1),     0);
-        assertEq(groveBasin.shares(receiver1), secondaryTokenAmount * 1e12);
+        assertEq(groveBasin.shares(receiver1), swapTokenAmount * 1e12);
 
         assertEq(groveBasin.convertToShares(1e18), 1e18);
 
@@ -263,27 +263,27 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
 
         assertEq(newShares, creditTokenAmount * 125/100);
 
-        assertEq(secondaryToken.balanceOf(pocket), secondaryTokenAmount);
+        assertEq(swapToken.balanceOf(pocket), swapTokenAmount);
 
         assertEq(creditToken.allowance(user1, address(groveBasin)), 0);
         assertEq(creditToken.balanceOf(user1),               0);
         assertEq(creditToken.balanceOf(address(groveBasin)),        creditTokenAmount);
 
-        assertEq(groveBasin.totalShares(),     secondaryTokenAmount * 1e12 + creditTokenAmount * 125/100);
+        assertEq(groveBasin.totalShares(),     swapTokenAmount * 1e12 + creditTokenAmount * 125/100);
         assertEq(groveBasin.shares(user1),     0);
-        assertEq(groveBasin.shares(receiver1), secondaryTokenAmount * 1e12 + creditTokenAmount * 125/100);
+        assertEq(groveBasin.shares(receiver1), swapTokenAmount * 1e12 + creditTokenAmount * 125/100);
 
         assertEq(groveBasin.convertToShares(1e18), 1e18);
     }
 
     function test_deposit_multiUser_changeConversionRate() public {
-        secondaryToken.mint(user1, 100e6);
+        swapToken.mint(user1, 100e6);
 
         vm.startPrank(user1);
 
-        secondaryToken.approve(address(groveBasin), 100e6);
+        swapToken.approve(address(groveBasin), 100e6);
 
-        uint256 newShares = groveBasin.deposit(address(secondaryToken), receiver1, 100e6);
+        uint256 newShares = groveBasin.deposit(address(swapToken), receiver1, 100e6);
 
         assertEq(newShares, 100e18);
 
@@ -296,7 +296,7 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
 
         vm.stopPrank();
 
-        assertEq(secondaryToken.balanceOf(pocket), 100e6);
+        assertEq(swapToken.balanceOf(pocket), 100e6);
 
         assertEq(creditToken.allowance(user1, address(groveBasin)), 0);
         assertEq(creditToken.balanceOf(user1),               0);
@@ -360,7 +360,7 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
     }
 
     function testFuzz_deposit_multiUser_changeConversionRate(
-        uint256 secondaryTokenAmount,
+        uint256 swapTokenAmount,
         uint256 creditTokenAmount1,
         uint256 creditTokenAmount2,
         uint256 newRate
@@ -368,22 +368,22 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
         public
     {
         // Zero amounts revert
-        secondaryTokenAmount   = _bound(secondaryTokenAmount,   1,       SECONDARY_TOKEN_MAX);
+        swapTokenAmount   = _bound(swapTokenAmount,   1,       SWAP_TOKEN_MAX);
         creditTokenAmount1 = _bound(creditTokenAmount1, 1,       CREDIT_TOKEN_MAX);
         creditTokenAmount2 = _bound(creditTokenAmount2, 1,       CREDIT_TOKEN_MAX);
         newRate      = _bound(newRate,      1.25e27, 1000e27);
 
-        uint256 user1DepositValue = secondaryTokenAmount * 1e12 + creditTokenAmount1 * 125/100;
+        uint256 user1DepositValue = swapTokenAmount * 1e12 + creditTokenAmount1 * 125/100;
 
-        secondaryToken.mint(user1, secondaryTokenAmount);
+        swapToken.mint(user1, swapTokenAmount);
 
         vm.startPrank(user1);
 
-        secondaryToken.approve(address(groveBasin), secondaryTokenAmount);
+        swapToken.approve(address(groveBasin), swapTokenAmount);
 
-        uint256 newShares = groveBasin.deposit(address(secondaryToken), receiver1, secondaryTokenAmount);
+        uint256 newShares = groveBasin.deposit(address(swapToken), receiver1, swapTokenAmount);
 
-        assertEq(newShares, secondaryTokenAmount * 1e12);
+        assertEq(newShares, swapTokenAmount * 1e12);
 
         creditToken.mint(user1, creditTokenAmount1);
         creditToken.approve(address(groveBasin), creditTokenAmount1);
@@ -394,7 +394,7 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
 
         vm.stopPrank();
 
-        assertEq(secondaryToken.balanceOf(pocket), secondaryTokenAmount);
+        assertEq(swapToken.balanceOf(pocket), swapTokenAmount);
 
         assertEq(creditToken.balanceOf(user1),        0);
         assertEq(creditToken.balanceOf(address(groveBasin)), creditTokenAmount1);

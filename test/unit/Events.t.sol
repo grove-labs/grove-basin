@@ -46,12 +46,12 @@ contract GroveBasinEventTests is GroveBasinTestBase {
         emit Deposit(address(collateralToken), sender, receiver, 100e18, 100e18);
         groveBasin.deposit(address(collateralToken), receiver, 100e18);
 
-        secondaryToken.mint(sender, 100e6);
-        secondaryToken.approve(address(groveBasin), 100e6);
+        swapToken.mint(sender, 100e6);
+        swapToken.approve(address(groveBasin), 100e6);
 
         vm.expectEmit(address(groveBasin));
-        emit Deposit(address(secondaryToken), sender, receiver, 100e6, 100e18);
-        groveBasin.deposit(address(secondaryToken), receiver, 100e6);
+        emit Deposit(address(swapToken), sender, receiver, 100e6, 100e18);
+        groveBasin.deposit(address(swapToken), receiver, 100e6);
 
         creditToken.mint(sender, 100e18);
         creditToken.approve(address(groveBasin), 100e18);
@@ -63,7 +63,7 @@ contract GroveBasinEventTests is GroveBasinTestBase {
 
     function test_withdraw_events() public {
         _deposit(address(collateralToken),  sender, 100e18);
-        _deposit(address(secondaryToken), sender, 100e6);
+        _deposit(address(swapToken), sender, 100e6);
         _deposit(address(creditToken), sender, 100e18);
 
         vm.startPrank(sender);
@@ -73,8 +73,8 @@ contract GroveBasinEventTests is GroveBasinTestBase {
         groveBasin.withdraw(address(collateralToken), receiver, 100e18);
 
         vm.expectEmit(address(groveBasin));
-        emit Withdraw(address(secondaryToken), sender, receiver, 100e6, 100e18);
-        groveBasin.withdraw(address(secondaryToken), receiver, 100e6);
+        emit Withdraw(address(swapToken), sender, receiver, 100e6, 100e18);
+        groveBasin.withdraw(address(swapToken), receiver, 100e6);
 
         vm.expectEmit(address(groveBasin));
         emit Withdraw(address(creditToken), sender, receiver, 100e18, 125e18);
@@ -83,17 +83,17 @@ contract GroveBasinEventTests is GroveBasinTestBase {
 
     function test_swap_events() public {
         collateralToken.mint(address(groveBasin),  1000e18);
-        secondaryToken.mint(pocket, 1000e6);
+        swapToken.mint(pocket, 1000e6);
         creditToken.mint(address(groveBasin), 1000e18);
 
         vm.startPrank(sender);
 
         _swapEventTest(address(collateralToken), address(creditToken), 100e18, 80e18, 1);
 
-        _swapEventTest(address(secondaryToken), address(creditToken), 100e6, 80e18,  2);
+        _swapEventTest(address(swapToken), address(creditToken), 100e6, 80e18,  2);
 
         _swapEventTest(address(creditToken), address(collateralToken), 100e18, 125e18, 3);
-        _swapEventTest(address(creditToken), address(secondaryToken), 100e18, 125e6,  4);
+        _swapEventTest(address(creditToken), address(swapToken), 100e18, 125e6,  4);
     }
 
     function _swapEventTest(

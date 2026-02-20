@@ -15,15 +15,15 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     using SafeERC20 for IERC20;
 
-    uint256 internal immutable _secondaryTokenPrecision;
+    uint256 internal immutable _swapTokenPrecision;
     uint256 internal immutable _collateralTokenPrecision;
     uint256 internal immutable _creditTokenPrecision;
 
-    IERC20 public override immutable secondaryToken;
+    IERC20 public override immutable swapToken;
     IERC20 public override immutable collateralToken;
     IERC20 public override immutable creditToken;
 
-    address public override immutable secondaryTokenRateProvider;
+    address public override immutable swapTokenRateProvider;
     address public override immutable collateralTokenRateProvider;
     address public override immutable creditTokenRateProvider;
 
@@ -35,37 +35,37 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     constructor(
         address owner_,
-        address secondaryToken_,
+        address swapToken_,
         address collateralToken_,
         address creditToken_,
-        address secondaryTokenRateProvider_,
+        address swapTokenRateProvider_,
         address collateralTokenRateProvider_,
         address creditTokenRateProvider_
     ) {
         require(owner_                   != address(0), "GroveBasin/invalid-owner");
-        require(secondaryToken_              != address(0), "GroveBasin/invalid-secondaryToken");
+        require(swapToken_              != address(0), "GroveBasin/invalid-swapToken");
         require(collateralToken_             != address(0), "GroveBasin/invalid-collateralToken");
         require(creditToken_                 != address(0), "GroveBasin/invalid-creditToken");
-        require(secondaryTokenRateProvider_  != address(0), "GroveBasin/invalid-secondaryTokenRateProvider");
+        require(swapTokenRateProvider_  != address(0), "GroveBasin/invalid-swapTokenRateProvider");
         require(collateralTokenRateProvider_ != address(0), "GroveBasin/invalid-collateralTokenRateProvider");
         require(creditTokenRateProvider_     != address(0), "GroveBasin/invalid-creditTokenRateProvider");
 
-        require(secondaryToken_ != collateralToken_, "GroveBasin/secondaryToken-collateralToken-same");
-        require(secondaryToken_ != creditToken_,     "GroveBasin/secondaryToken-creditToken-same");
+        require(swapToken_ != collateralToken_, "GroveBasin/swapToken-collateralToken-same");
+        require(swapToken_ != creditToken_,     "GroveBasin/swapToken-creditToken-same");
         require(collateralToken_ != creditToken_,    "GroveBasin/collateralToken-creditToken-same");
 
-        secondaryToken  = IERC20(secondaryToken_);
+        swapToken  = IERC20(swapToken_);
         collateralToken = IERC20(collateralToken_);
         creditToken     = IERC20(creditToken_);
 
-        secondaryTokenRateProvider  = secondaryTokenRateProvider_;
+        swapTokenRateProvider  = swapTokenRateProvider_;
         collateralTokenRateProvider = collateralTokenRateProvider_;
         creditTokenRateProvider     = creditTokenRateProvider_;
         pocket                      = address(this);
 
         require(
-            IRateProviderLike(secondaryTokenRateProvider_).getConversionRate() != 0,
-            "GroveBasin/secondary-rate-provider-returns-zero"
+            IRateProviderLike(swapTokenRateProvider_).getConversionRate() != 0,
+            "GroveBasin/swap-rate-provider-returns-zero"
         );
 
         require(
@@ -78,14 +78,14 @@ contract GroveBasin is IGroveBasin, AccessControl {
             "GroveBasin/credit-rate-provider-returns-zero"
         );
 
-        _secondaryTokenPrecision  = 10 ** IERC20(secondaryToken_).decimals();
+        _swapTokenPrecision  = 10 ** IERC20(swapToken_).decimals();
         _collateralTokenPrecision = 10 ** IERC20(collateralToken_).decimals();
         _creditTokenPrecision     = 10 ** IERC20(creditToken_).decimals();
 
         _grantRole(DEFAULT_ADMIN_ROLE, owner_);
 
         // Necessary to ensure rounding works as expected
-        require(_secondaryTokenPrecision  <= 1e18, "GroveBasin/secondaryToken-precision-too-high");
+        require(_swapTokenPrecision  <= 1e18, "GroveBasin/swapToken-precision-too-high");
         require(_collateralTokenPrecision <= 1e18, "GroveBasin/collateralToken-precision-too-high");
     }
 
@@ -100,12 +100,12 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         require(newPocket != pocket_, "GroveBasin/same-pocket");
 
-        uint256 amountToTransfer = secondaryToken.balanceOf(pocket_);
+        uint256 amountToTransfer = swapToken.balanceOf(pocket_);
 
         if (pocket_ == address(this)) {
-            secondaryToken.safeTransfer(newPocket, amountToTransfer);
+            swapToken.safeTransfer(newPocket, amountToTransfer);
         } else {
-            secondaryToken.safeTransferFrom(pocket_, newPocket, amountToTransfer);
+            swapToken.safeTransferFrom(pocket_, newPocket, amountToTransfer);
         }
 
         pocket = newPocket;
@@ -265,11 +265,11 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         uint256 assetValue = convertToAssetValue(numShares);
 
-        if (asset == address(secondaryToken)) {
+        if (asset == address(swapToken)) {
             return assetValue
                 * 1e9
-                * _secondaryTokenPrecision
-                / IRateProviderLike(secondaryTokenRateProvider).getConversionRate();
+                * _swapTokenPrecision
+                / IRateProviderLike(swapTokenRateProvider).getConversionRate();
         }
         else if (asset == address(collateralToken)) {
             // assetValue is in 1e18, rate is 1e27, precision is native decimals
@@ -314,7 +314,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /**********************************************************************************************/
 
     function totalAssets() public view override returns (uint256) {
-        return _getSecondaryTokenValue(secondaryToken.balanceOf(pocket))
+        return _getSwapTokenValue(swapToken.balanceOf(pocket))
             +  _getCollateralTokenValue(collateralToken.balanceOf(address(this)))
             +  _getCreditTokenValue(creditToken.balanceOf(address(this)), false);  // Round down
     }
@@ -324,17 +324,17 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /**********************************************************************************************/
 
     function _getAssetValue(address asset, uint256 amount, bool roundUp) internal view returns (uint256) {
-        if      (asset == address(secondaryToken))  return _getSecondaryTokenValue(amount);
+        if      (asset == address(swapToken))  return _getSwapTokenValue(amount);
         else if (asset == address(collateralToken)) return _getCollateralTokenValue(amount);
         else if (asset == address(creditToken))     return _getCreditTokenValue(amount, roundUp);
         else revert("GroveBasin/invalid-asset-for-value");
     }
 
-    function _getSecondaryTokenValue(uint256 amount) internal view returns (uint256) {
+    function _getSwapTokenValue(uint256 amount) internal view returns (uint256) {
         return amount
-            * IRateProviderLike(secondaryTokenRateProvider).getConversionRate()
+            * IRateProviderLike(swapTokenRateProvider).getConversionRate()
             / 1e9
-            / _secondaryTokenPrecision;
+            / _swapTokenPrecision;
     }
 
     function _getCollateralTokenValue(uint256 amount) internal view returns (uint256) {
@@ -366,48 +366,48 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function _getSwapQuote(address asset, address quoteAsset, uint256 amount, bool roundUp)
         internal view returns (uint256 quoteAmount)
     {
-        if (asset == address(secondaryToken)) {
+        if (asset == address(swapToken)) {
             if      (quoteAsset == address(collateralToken)) revert("GroveBasin/invalid-swap");
-            else if (quoteAsset == address(creditToken))     return _convertSecondaryToCreditToken(amount, roundUp);
+            else if (quoteAsset == address(creditToken))     return _convertSwapToCreditToken(amount, roundUp);
         }
 
         else if (asset == address(collateralToken)) {
-            if      (quoteAsset == address(secondaryToken)) revert("GroveBasin/invalid-swap");
+            if      (quoteAsset == address(swapToken)) revert("GroveBasin/invalid-swap");
             else if (quoteAsset == address(creditToken))    return _convertCollateralToCreditToken(amount, roundUp);
         }
 
         else if (asset == address(creditToken)) {
-            if      (quoteAsset == address(secondaryToken))  return _convertCreditTokenToSecondary(amount, roundUp);
+            if      (quoteAsset == address(swapToken))  return _convertCreditTokenToSwap(amount, roundUp);
             else if (quoteAsset == address(collateralToken)) return _convertCreditTokenToCollateral(amount, roundUp);
         }
 
         revert("GroveBasin/invalid-asset");
     }
 
-    function _convertSecondaryToCreditToken(uint256 amount, bool roundUp)
+    function _convertSwapToCreditToken(uint256 amount, bool roundUp)
         internal view returns (uint256)
     {
-        uint256 secondaryRate = IRateProviderLike(secondaryTokenRateProvider).getConversionRate();
+        uint256 swapRate = IRateProviderLike(swapTokenRateProvider).getConversionRate();
         uint256 creditRate    = IRateProviderLike(creditTokenRateProvider).getConversionRate();
 
-        if (!roundUp) return amount * secondaryRate / creditRate * _creditTokenPrecision / _secondaryTokenPrecision;
+        if (!roundUp) return amount * swapRate / creditRate * _creditTokenPrecision / _swapTokenPrecision;
 
         return Math.ceilDiv(
-            Math.ceilDiv(amount * secondaryRate, creditRate) * _creditTokenPrecision,
-            _secondaryTokenPrecision
+            Math.ceilDiv(amount * swapRate, creditRate) * _creditTokenPrecision,
+            _swapTokenPrecision
         );
     }
 
-    function _convertCreditTokenToSecondary(uint256 amount, bool roundUp)
+    function _convertCreditTokenToSwap(uint256 amount, bool roundUp)
         internal view returns (uint256)
     {
-        uint256 secondaryRate = IRateProviderLike(secondaryTokenRateProvider).getConversionRate();
+        uint256 swapRate = IRateProviderLike(swapTokenRateProvider).getConversionRate();
         uint256 creditRate    = IRateProviderLike(creditTokenRateProvider).getConversionRate();
 
-        if (!roundUp) return amount * creditRate / secondaryRate * _secondaryTokenPrecision / _creditTokenPrecision;
+        if (!roundUp) return amount * creditRate / swapRate * _swapTokenPrecision / _creditTokenPrecision;
 
         return Math.ceilDiv(
-            Math.ceilDiv(amount * creditRate, secondaryRate) * _secondaryTokenPrecision,
+            Math.ceilDiv(amount * creditRate, swapRate) * _swapTokenPrecision,
             _creditTokenPrecision
         );
     }
@@ -461,11 +461,11 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     function _isValidAsset(address asset) internal view returns (bool) {
-        return asset == address(secondaryToken) || asset == address(collateralToken) || asset == address(creditToken);
+        return asset == address(swapToken) || asset == address(collateralToken) || asset == address(creditToken);
     }
 
     function _getAssetCustodian(address asset) internal view returns (address custodian) {
-        custodian = asset == address(secondaryToken) ? pocket : address(this);
+        custodian = asset == address(swapToken) ? pocket : address(this);
     }
 
     function _pullAsset(address asset, uint256 amount) internal {
@@ -473,8 +473,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     function _pushAsset(address asset, address receiver, uint256 amount) internal {
-        if (asset == address(secondaryToken) && pocket != address(this)) {
-            secondaryToken.safeTransferFrom(pocket, receiver, amount);
+        if (asset == address(swapToken) && pocket != address(this)) {
+            swapToken.safeTransferFrom(pocket, receiver, amount);
         } else {
             IERC20(asset).safeTransfer(receiver, amount);
         }

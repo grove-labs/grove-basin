@@ -20,7 +20,7 @@ contract SwapTokenRateProviderTests is GroveBasinTestBase {
         // Deposit 100 credit token ($125 worth at 18 decimals, since credit token rate is 1.25e27)
         _deposit(address(creditToken), address(this), 100e18);
 
-        // Total should be $225 (100 from swapToken + 125 from credit)
+        // Total should be $225 (100 from swap token + 125 from credit)
         assertEq(groveBasin.totalAssets(), 225e18);
 
         // Swapping USDT to credit: 10 USDT ($10) should get 8 credit tokens ($10 / $1.25)
@@ -68,9 +68,9 @@ contract SwapTokenRateProviderTests is GroveBasinTestBase {
 
         // Swapping: 10 credit token ($12.50) should get more USDT since USDT is worth less
         // $12.50 / $0.99 = ~12.626... USDT
-        uint256 secondaryOut = groveBasin.previewSwapExactIn(address(creditToken), address(swapToken), 10e18);
-        assertGt(secondaryOut, 12e6);
-        assertApproxEqRel(secondaryOut, 12.626262e6, 1e14);
+        uint256 swapOut = groveBasin.previewSwapExactIn(address(creditToken), address(swapToken), 10e18);
+        assertGt(swapOut, 12e6);
+        assertApproxEqRel(swapOut, 12.626262e6, 1e14);
 
         // 10 USDT ($9.90) should get less credit token ($9.90 / $1.25 = 7.92)
         uint256 creditOut = groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), 10e6);
@@ -130,8 +130,8 @@ contract SwapTokenRateProviderTests is GroveBasinTestBase {
         // Swap 100 credit token -> USDT
         // Value in: 100 * 1.25 = $125
         // USDT out: $125 / $0.995 = ~125.628 USDT
-        uint256 secondaryOut = groveBasin.previewSwapExactIn(address(creditToken), address(swapToken), 100e18);
-        assertApproxEqRel(secondaryOut, 125.628140e6, 1e14);
+        uint256 swapOut = groveBasin.previewSwapExactIn(address(creditToken), address(swapToken), 100e18);
+        assertApproxEqRel(swapOut, 125.628140e6, 1e14);
     }
 
     function testFuzz_swapTokenRateProvider(uint256 rate, uint256 amount) public {
@@ -156,8 +156,8 @@ contract SwapTokenRateProviderTests is GroveBasinTestBase {
         assertEq(groveBasin.swapTokenRateProvider(), address(mockSwapTokenRateProvider));
     }
 
-    function testFuzz_swapSecondaryForCredit(uint256 swapRate, uint256 swapAmount) public {
-        // Bound swapToken rate between $0.90 and $1.10 (realistic stablecoin range)
+    function testFuzz_swapSwapTokenForCredit(uint256 swapRate, uint256 swapAmount) public {
+        // Bound swap rate between $0.90 and $1.10 (realistic stablecoin range)
         swapRate = bound(swapRate, 0.90e27, 1.10e27);
         // Bound swap amount to reasonable range
         swapAmount = bound(swapAmount, 1e6, 10_000e6);
@@ -169,7 +169,7 @@ contract SwapTokenRateProviderTests is GroveBasinTestBase {
         _deposit(address(creditToken), address(this), 100_000e18);
 
         // Calculate expected credit out
-        // swapAmount * swapRate / creditRate * creditPrecision / secondaryPrecision
+        // swapAmount * swapRate / creditRate * creditPrecision / swapPrecision
         uint256 expectedCreditOut = swapAmount * swapRate / 1.25e27 * 1e18 / 1e6;
 
         uint256 creditOut = groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), swapAmount);
@@ -178,8 +178,8 @@ contract SwapTokenRateProviderTests is GroveBasinTestBase {
         assertApproxEqAbs(creditOut, expectedCreditOut, 2);
     }
 
-    function testFuzz_swapCreditForSecondary(uint256 swapRate, uint256 swapAmount) public {
-        // Bound swapToken rate between $0.90 and $1.10 (realistic stablecoin range)
+    function testFuzz_swapCreditForSwapToken(uint256 swapRate, uint256 swapAmount) public {
+        // Bound swap rate between $0.90 and $1.10 (realistic stablecoin range)
         swapRate = bound(swapRate, 0.90e27, 1.10e27);
         // Bound swap amount to reasonable range
         swapAmount = bound(swapAmount, 1e18, 10_000e18);
@@ -190,18 +190,18 @@ contract SwapTokenRateProviderTests is GroveBasinTestBase {
         _deposit(address(swapToken), address(this), 100_000e6);
         _deposit(address(creditToken), address(this), 100_000e18);
 
-        // Calculate expected swapToken out
+        // Calculate expected swap out
         // swapAmount * creditRate (1.25e27) / swapRate * 1e6 / 1e18
-        uint256 expectedSecondaryOut = swapAmount * 1.25e27 / swapRate * 1e6 / 1e18;
+        uint256 expectedSwapOut = swapAmount * 1.25e27 / swapRate * 1e6 / 1e18;
 
-        uint256 secondaryOut = groveBasin.previewSwapExactIn(address(creditToken), address(swapToken), swapAmount);
+        uint256 swapOut = groveBasin.previewSwapExactIn(address(creditToken), address(swapToken), swapAmount);
 
         // Allow small rounding differences
-        assertApproxEqAbs(secondaryOut, expectedSecondaryOut, 2);
+        assertApproxEqAbs(swapOut, expectedSwapOut, 2);
     }
 
-    function testFuzz_roundTripSwapSecondaryCredit(uint256 swapRate, uint256 swapAmount) public {
-        // Bound swapToken rate between $0.90 and $1.10 (realistic stablecoin range)
+    function testFuzz_roundTripSwapSwapTokenCredit(uint256 swapRate, uint256 swapAmount) public {
+        // Bound swap rate between $0.90 and $1.10 (realistic stablecoin range)
         swapRate = bound(swapRate, 0.90e27, 1.10e27);
         // Bound swap amount to reasonable range
         swapAmount = bound(swapAmount, 1e6, 1_000e6);
@@ -212,18 +212,18 @@ contract SwapTokenRateProviderTests is GroveBasinTestBase {
         _deposit(address(swapToken), address(this), 100_000e6);
         _deposit(address(creditToken), address(this), 100_000e18);
 
-        // Swap swapToken -> credit
+        // Swap swap token -> credit
         uint256 creditOut = groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), swapAmount);
 
-        // Swap credit back -> secondary
-        uint256 secondaryBack = groveBasin.previewSwapExactIn(address(creditToken), address(swapToken), creditOut);
+        // Swap credit back -> swap token
+        uint256 swapBack = groveBasin.previewSwapExactIn(address(creditToken), address(swapToken), creditOut);
 
         // Should get approximately the same amount back (accounting for rounding)
-        assertApproxEqAbs(secondaryBack, swapAmount, 2);
+        assertApproxEqAbs(swapBack, swapAmount, 2);
     }
 
-    function testFuzz_swapSecondaryForCredit_largeAmounts(uint256 swapRate, uint256 swapAmount) public {
-        // Bound swapToken rate between $0.90 and $1.10 (realistic stablecoin range)
+    function testFuzz_swapSwapTokenForCredit_largeAmounts(uint256 swapRate, uint256 swapAmount) public {
+        // Bound swap rate between $0.90 and $1.10 (realistic stablecoin range)
         swapRate = bound(swapRate, 0.90e27, 1.10e27);
         // Bound swap amount to very large range (100M - 1B tokens)
         swapAmount = bound(swapAmount, 100_000_000e6, 1_000_000_000e6);
@@ -235,7 +235,7 @@ contract SwapTokenRateProviderTests is GroveBasinTestBase {
         _deposit(address(creditToken), address(this), 2_000_000_000e18);
 
         // Calculate expected credit out
-        // swapAmount * swapRate / creditRate * creditPrecision / secondaryPrecision
+        // swapAmount * swapRate / creditRate * creditPrecision / swapPrecision
         uint256 expectedCreditOut = swapAmount * swapRate / 1.25e27 * 1e18 / 1e6;
 
         uint256 creditOut = groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), swapAmount);
@@ -244,8 +244,8 @@ contract SwapTokenRateProviderTests is GroveBasinTestBase {
         assertApproxEqRel(creditOut, expectedCreditOut, 1e10);
     }
 
-    function testFuzz_swapCreditForSecondary_largeAmounts(uint256 swapRate, uint256 swapAmount) public {
-        // Bound swapToken rate between $0.90 and $1.10 (realistic stablecoin range)
+    function testFuzz_swapCreditForSwapToken_largeAmounts(uint256 swapRate, uint256 swapAmount) public {
+        // Bound swap rate between $0.90 and $1.10 (realistic stablecoin range)
         swapRate = bound(swapRate, 0.90e27, 1.10e27);
         // Bound swap amount to very large range (100M - 1B tokens)
         swapAmount = bound(swapAmount, 100_000_000e18, 1_000_000_000e18);
@@ -256,18 +256,18 @@ contract SwapTokenRateProviderTests is GroveBasinTestBase {
         _deposit(address(swapToken), address(this), 2_000_000_000e6);
         _deposit(address(creditToken), address(this), 2_000_000_000e18);
 
-        // Calculate expected swapToken out
+        // Calculate expected swap out
         // swapAmount * creditRate (1.25e27) / swapRate * 1e6 / 1e18
-        uint256 expectedSecondaryOut = swapAmount * 1.25e27 / swapRate * 1e6 / 1e18;
+        uint256 expectedSwapOut = swapAmount * 1.25e27 / swapRate * 1e6 / 1e18;
 
-        uint256 secondaryOut = groveBasin.previewSwapExactIn(address(creditToken), address(swapToken), swapAmount);
+        uint256 swapOut = groveBasin.previewSwapExactIn(address(creditToken), address(swapToken), swapAmount);
 
         // Using relative comparison (within 0.000001%)
-        assertApproxEqRel(secondaryOut, expectedSecondaryOut, 1e10);
+        assertApproxEqRel(swapOut, expectedSwapOut, 1e10);
     }
 
-    function testFuzz_roundTripSwapSecondaryCredit_largeAmounts(uint256 swapRate, uint256 swapAmount) public {
-        // Bound swapToken rate between $0.90 and $1.10 (realistic stablecoin range)
+    function testFuzz_roundTripSwapSwapTokenCredit_largeAmounts(uint256 swapRate, uint256 swapAmount) public {
+        // Bound swap rate between $0.90 and $1.10 (realistic stablecoin range)
         swapRate = bound(swapRate, 0.90e27, 1.10e27);
         // Bound swap amount to very large range (100M - 1B tokens)
         swapAmount = bound(swapAmount, 100_000_000e6, 1_000_000_000e6);
@@ -278,15 +278,15 @@ contract SwapTokenRateProviderTests is GroveBasinTestBase {
         _deposit(address(swapToken), address(this), 2_000_000_000e6);
         _deposit(address(creditToken), address(this), 2_000_000_000e18);
 
-        // Swap swapToken -> credit
+        // Swap swap token -> credit
         uint256 creditOut = groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), swapAmount);
 
-        // Swap credit back -> secondary
-        uint256 secondaryBack = groveBasin.previewSwapExactIn(address(creditToken), address(swapToken), creditOut);
+        // Swap credit back -> swap token
+        uint256 swapBack = groveBasin.previewSwapExactIn(address(creditToken), address(swapToken), creditOut);
 
         // Should get approximately the same amount back (accounting for rounding)
         // Using relative comparison for large amounts (within 0.000001%)
-        assertApproxEqRel(secondaryBack, swapAmount, 1e10);
+        assertApproxEqRel(swapBack, swapAmount, 1e10);
     }
 
 }

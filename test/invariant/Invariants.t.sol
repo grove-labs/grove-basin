@@ -95,11 +95,11 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
     }
 
     function _checkInvariant_E() public view {
-        uint256 expectedSecondaryTokenInflows            = 0;
+        uint256 expectedSwapTokenInflows            = 0;
         uint256 expectedCollateralTokenInflows = 1e18;  // Seed amount
         uint256 expectedCreditTokenInflows     = 0;
 
-        uint256 expectedSecondaryTokenOutflows            = 0;
+        uint256 expectedSwapTokenOutflows            = 0;
         uint256 expectedCollateralTokenOutflows = 0;
         uint256 expectedCreditTokenOutflows     = 0;
 
@@ -107,30 +107,30 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
             address lp      = lpHandler.lps(i);
             address swapper = swapperHandler.swappers(i);
 
-            expectedSecondaryTokenInflows            += lpHandler.lpDeposits(lp, address(secondaryToken));
+            expectedSwapTokenInflows            += lpHandler.lpDeposits(lp, address(swapToken));
             expectedCollateralTokenInflows += lpHandler.lpDeposits(lp, address(collateralToken));
             expectedCreditTokenInflows     += lpHandler.lpDeposits(lp, address(creditToken));
 
-            expectedSecondaryTokenInflows            += swapperHandler.swapsIn(swapper, address(secondaryToken));
+            expectedSwapTokenInflows            += swapperHandler.swapsIn(swapper, address(swapToken));
             expectedCollateralTokenInflows += swapperHandler.swapsIn(swapper, address(collateralToken));
             expectedCreditTokenInflows     += swapperHandler.swapsIn(swapper, address(creditToken));
 
-            expectedSecondaryTokenOutflows            += lpHandler.lpWithdrawals(lp, address(secondaryToken));
+            expectedSwapTokenOutflows            += lpHandler.lpWithdrawals(lp, address(swapToken));
             expectedCollateralTokenOutflows += lpHandler.lpWithdrawals(lp, address(collateralToken));
             expectedCreditTokenOutflows     += lpHandler.lpWithdrawals(lp, address(creditToken));
 
-            expectedSecondaryTokenOutflows            += swapperHandler.swapsOut(swapper, address(secondaryToken));
+            expectedSwapTokenOutflows            += swapperHandler.swapsOut(swapper, address(swapToken));
             expectedCollateralTokenOutflows += swapperHandler.swapsOut(swapper, address(collateralToken));
             expectedCreditTokenOutflows     += swapperHandler.swapsOut(swapper, address(creditToken));
         }
 
         if (address(transferHandler) != address(0)) {
-            expectedSecondaryTokenInflows            += transferHandler.transfersIn(address(secondaryToken));
+            expectedSwapTokenInflows            += transferHandler.transfersIn(address(swapToken));
             expectedCollateralTokenInflows += transferHandler.transfersIn(address(collateralToken));
             expectedCreditTokenInflows     += transferHandler.transfersIn(address(creditToken));
         }
 
-        assertEq(secondaryToken.balanceOf(groveBasin.pocket()),            expectedSecondaryTokenInflows            - expectedSecondaryTokenOutflows);
+        assertEq(swapToken.balanceOf(groveBasin.pocket()),            expectedSwapTokenInflows            - expectedSwapTokenOutflows);
         assertEq(collateralToken.balanceOf(address(groveBasin)), expectedCollateralTokenInflows - expectedCollateralTokenOutflows);
         assertEq(creditToken.balanceOf(address(groveBasin)),     expectedCreditTokenInflows     - expectedCreditTokenOutflows);
     }
@@ -189,21 +189,21 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
 
     function _getLpTokenValue(address lp) internal view returns (uint256) {
         uint256 collateralTokenValue = collateralToken.balanceOf(lp) * collateralTokenRateProvider.getConversionRate() / 1e27; // 1e9 + 1e18
-        uint256 secondaryTokenValue  = secondaryToken.balanceOf(lp) * secondaryTokenRateProvider.getConversionRate() / 1e15; // 1e9 + 1e6
+        uint256 swapTokenValue  = swapToken.balanceOf(lp) * swapTokenRateProvider.getConversionRate() / 1e15; // 1e9 + 1e6
         uint256 creditTokenValue     = creditToken.balanceOf(lp) * creditTokenRateProvider.getConversionRate() / 1e27; // 1e9 + 1e18
 
-        return collateralTokenValue + secondaryTokenValue + creditTokenValue;
+        return collateralTokenValue + swapTokenValue + creditTokenValue;
     }
 
     function _getLpDepositsValue(address lp) internal view returns (uint256) {
         uint256 depositValue =
             lpHandler.lpDeposits(lp, address(collateralToken)) * collateralTokenRateProvider.getConversionRate() / 1e27 + // 1e9 + 1e18
-            lpHandler.lpDeposits(lp, address(secondaryToken)) * secondaryTokenRateProvider.getConversionRate() / 1e15 + // 1e9 + 1e6
+            lpHandler.lpDeposits(lp, address(swapToken)) * swapTokenRateProvider.getConversionRate() / 1e15 + // 1e9 + 1e6
             lpHandler.lpDeposits(lp, address(creditToken)) * creditTokenRateProvider.getConversionRate() / 1e27; // 1e9 + 1e18
 
         uint256 withdrawValue =
             lpHandler.lpWithdrawals(lp, address(collateralToken)) * collateralTokenRateProvider.getConversionRate() / 1e27 + // 1e9 + 1e18
-            lpHandler.lpWithdrawals(lp, address(secondaryToken)) * secondaryTokenRateProvider.getConversionRate() / 1e15 + // 1e9 + 1e6
+            lpHandler.lpWithdrawals(lp, address(swapToken)) * swapTokenRateProvider.getConversionRate() / 1e15 + // 1e9 + 1e6
             lpHandler.lpWithdrawals(lp, address(creditToken)) * creditTokenRateProvider.getConversionRate() / 1e27; // 1e9 + 1e18
 
         return withdrawValue > depositValue ? 0 : depositValue - withdrawValue;
@@ -241,15 +241,15 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
 
         // Liquidity is unknown so withdraw all assets for all users to empty GroveBasin.
         _withdraw(address(collateralToken), lp0, type(uint256).max);
-        _withdraw(address(secondaryToken),            lp0, type(uint256).max);
+        _withdraw(address(swapToken),            lp0, type(uint256).max);
         _withdraw(address(creditToken),     lp0, type(uint256).max);
 
         _withdraw(address(collateralToken), lp1, type(uint256).max);
-        _withdraw(address(secondaryToken),            lp1, type(uint256).max);
+        _withdraw(address(swapToken),            lp1, type(uint256).max);
         _withdraw(address(creditToken),     lp1, type(uint256).max);
 
         _withdraw(address(collateralToken), lp2, type(uint256).max);
-        _withdraw(address(secondaryToken),            lp2, type(uint256).max);
+        _withdraw(address(swapToken),            lp2, type(uint256).max);
         _withdraw(address(creditToken),     lp2, type(uint256).max);
 
         // All funds are completely withdrawn.
@@ -265,7 +265,7 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
 
         // Tokens held by LPs are equal to the sum of their previous balance
         // plus the amount of value originally represented in the GroveBasin's shares.
-        // There can be rounding here because of share burning up to 2e12 when withdrawing SecondaryToken.
+        // There can be rounding here because of share burning up to 2e12 when withdrawing SwapToken.
         // It should be noted that LP2 here has a rounding error of 4e12 since both LP0 and LP1
         // could have rounding errors that accumulate to LP2.
         assertApproxEqAbs(_getLpTokenValue(lp0), lp0DepositsValue + lp0WithdrawsValue, 2e12);
@@ -299,7 +299,7 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
         // NOTE: Below logic is not realistic, shown to demonstrate precision.
 
         _withdraw(address(collateralToken), BURN_ADDRESS, type(uint256).max);
-        _withdraw(address(secondaryToken),            BURN_ADDRESS, type(uint256).max);
+        _withdraw(address(swapToken),            BURN_ADDRESS, type(uint256).max);
         _withdraw(address(creditToken),     BURN_ADDRESS, type(uint256).max);
 
         // When all funds are completely withdrawn, the sum of all funds withdrawn is equal to the
@@ -361,8 +361,8 @@ contract GroveBasinInvariants_ConstantRate_NoTransfer is GroveBasinInvariantTest
     function setUp() public override {
         super.setUp();
 
-        lpHandler      = new LpHandler(groveBasin, secondaryToken, collateralToken, creditToken, 3);
-        swapperHandler = new SwapperHandler(groveBasin, secondaryToken, collateralToken, creditToken, 3);
+        lpHandler      = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
+        swapperHandler = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
 
         targetContract(address(lpHandler));
         targetContract(address(swapperHandler));
@@ -406,9 +406,9 @@ contract GroveBasinInvariants_ConstantRate_WithTransfers is GroveBasinInvariantT
     function setUp() public override {
         super.setUp();
 
-        lpHandler       = new LpHandler(groveBasin, secondaryToken, collateralToken, creditToken, 3);
-        swapperHandler  = new SwapperHandler(groveBasin, secondaryToken, collateralToken, creditToken, 3);
-        transferHandler = new TransferHandler(groveBasin, secondaryToken, collateralToken, creditToken);
+        lpHandler       = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
+        swapperHandler  = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
+        transferHandler = new TransferHandler(groveBasin, swapToken, collateralToken, creditToken);
 
         targetContract(address(lpHandler));
         targetContract(address(swapperHandler));
@@ -449,9 +449,9 @@ contract GroveBasinInvariants_RateSetting_NoTransfer is GroveBasinInvariantTestB
     function setUp() public override {
         super.setUp();
 
-        lpHandler         = new LpHandler(groveBasin, secondaryToken, collateralToken, creditToken, 3);
+        lpHandler         = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
         rateSetterHandler = new RateSetterHandler(groveBasin, address(creditTokenRateProvider), 1.25e27);
-        swapperHandler    = new SwapperHandler(groveBasin, secondaryToken, collateralToken, creditToken, 3);
+        swapperHandler    = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
 
         targetContract(address(lpHandler));
         targetContract(address(rateSetterHandler));
@@ -495,10 +495,10 @@ contract GroveBasinInvariants_RateSetting_WithTransfers is GroveBasinInvariantTe
     function setUp() public override {
         super.setUp();
 
-        lpHandler         = new LpHandler(groveBasin, secondaryToken, collateralToken, creditToken, 3);
+        lpHandler         = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
         rateSetterHandler = new RateSetterHandler(groveBasin, address(creditTokenRateProvider), 1.25e27);
-        swapperHandler    = new SwapperHandler(groveBasin, secondaryToken, collateralToken, creditToken, 3);
-        transferHandler   = new TransferHandler(groveBasin, secondaryToken, collateralToken, creditToken);
+        swapperHandler    = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
+        transferHandler   = new TransferHandler(groveBasin, swapToken, collateralToken, creditToken);
 
         targetContract(address(lpHandler));
         targetContract(address(rateSetterHandler));
@@ -556,15 +556,15 @@ contract GroveBasinInvariants_TimeBasedRateSetting_NoTransfer is GroveBasinInvar
         ssrOracle.revokeRole(ssrOracle.DATA_PROVIDER_ROLE(), address(this));
 
         // Redeploy GroveBasin with new rate provider
-        groveBasin = new GroveBasin(owner, address(secondaryToken), address(collateralToken), address(creditToken), address(secondaryTokenRateProvider), address(collateralTokenRateProvider), address(ssrOracle));
+        groveBasin = new GroveBasin(owner, address(swapToken), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(ssrOracle));
 
         // NOTE: Don't need to set GroveBasin as pocket for this suite as its default on deploy
 
         // Seed the new GroveBasin with 1e18 shares (1e18 of value)
         _deposit(address(collateralToken), BURN_ADDRESS, 1e18);
 
-        lpHandler            = new LpHandler(groveBasin, secondaryToken, collateralToken, creditToken, 3);
-        swapperHandler       = new SwapperHandler(groveBasin, secondaryToken, collateralToken, creditToken, 3);
+        lpHandler            = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
+        swapperHandler       = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
         timeBasedRateHandler = new TimeBasedRateHandler(groveBasin, ssrOracle);
 
         // Handler acts in the same way as a receiver on L2, so add as a data provider to the
@@ -637,7 +637,7 @@ contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinIn
         ssrOracle.revokeRole(ssrOracle.DATA_PROVIDER_ROLE(), address(this));
 
         // Redeploy GroveBasin with new rate provider
-        groveBasin = new GroveBasin(owner, address(secondaryToken), address(collateralToken), address(creditToken), address(secondaryTokenRateProvider), address(collateralTokenRateProvider), address(ssrOracle));
+        groveBasin = new GroveBasin(owner, address(swapToken), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(ssrOracle));
 
         // NOTE: This base test suite tests the case of the GroveBasin being the pocket for the whole time,
         //       where the other suites are testing with an external `pocket`.
@@ -645,10 +645,10 @@ contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinIn
         // Seed the new GroveBasin with 1e18 shares (1e18 of value)
         _deposit(address(collateralToken), BURN_ADDRESS, 1e18);
 
-        lpHandler            = new LpHandler(groveBasin, secondaryToken, collateralToken, creditToken, 3);
-        swapperHandler       = new SwapperHandler(groveBasin, secondaryToken, collateralToken, creditToken, 3);
+        lpHandler            = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
+        swapperHandler       = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
         timeBasedRateHandler = new TimeBasedRateHandler(groveBasin, ssrOracle);
-        transferHandler      = new TransferHandler(groveBasin, secondaryToken, collateralToken, creditToken);
+        transferHandler      = new TransferHandler(groveBasin, swapToken, collateralToken, creditToken);
 
         // Handler acts in the same way as a receiver on L2, so add as a data provider to the
         // oracle.
@@ -717,7 +717,7 @@ contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinIn
 //         // NOTE: The GroveBasin is the pocket to start, so the test suite will start with it as the pocket
 //         //       and transfer it to other addresses.
 
-//         ownerHandler = new OwnerHandler(groveBasin, secondaryToken);
+//         ownerHandler = new OwnerHandler(groveBasin, swapToken);
 //         targetContract(address(ownerHandler));
 
 //         vm.prank(owner);

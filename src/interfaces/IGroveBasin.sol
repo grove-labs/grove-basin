@@ -11,10 +11,10 @@ interface IGroveBasin {
 
     /**
      *  @dev   Emitted when a new pocket is set in the GroveBasin, transferring the balance of the
-     *         secondary token of the old pocket to the new pocket.
+     *         swap token of the old pocket to the new pocket.
      *  @param oldPocket         Address of the old `pocket`.
      *  @param newPocket         Address of the new `pocket`.
-     *  @param amountTransferred Amount of secondary token transferred from the old pocket to the new pocket.
+     *  @param amountTransferred Amount of swap token transferred from the old pocket to the new pocket.
      */
     event PocketSet(
         address indexed oldPocket,
@@ -79,10 +79,10 @@ interface IGroveBasin {
     /**********************************************************************************************/
 
     /**
-     *  @dev    Returns the IERC20 interface representing the secondary token.
-     *  @return The IERC20 interface of the secondary token.
+     *  @dev    Returns the IERC20 interface representing the swap token.
+     *  @return The IERC20 interface of the swap token.
      */
-    function secondaryToken() external view returns (IERC20);
+    function swapToken() external view returns (IERC20);
 
     /**
      *  @dev    Returns the IERC20 interface representing the collateral token.
@@ -99,18 +99,18 @@ interface IGroveBasin {
     function creditToken() external view returns (IERC20);
 
     /**
-     *  @dev    Returns the address of the pocket, an address that holds custody of the secondary
+     *  @dev    Returns the address of the pocket, an address that holds custody of the swap
      *          token in the GroveBasin and can deploy it to yield-bearing strategies. Settable by the owner.
      *  @return The address of the pocket.
      */
     function pocket() external view returns (address);
 
     /**
-     *  @dev    Returns the address of the secondary token rate provider, a contract that provides
-     *          the price of the secondary token in USD terms.
-     *  @return The address of the secondary token rate provider.
+     *  @dev    Returns the address of the swap token rate provider, a contract that provides
+     *          the price of the swap token in USD terms.
+     *  @return The address of the swap token rate provider.
      */
-    function secondaryTokenRateProvider() external view returns (address);
+    function swapTokenRateProvider() external view returns (address);
 
     /**
      *  @dev    Returns the address of the collateral token rate provider, a contract that provides
@@ -145,9 +145,9 @@ interface IGroveBasin {
     /**********************************************************************************************/
 
     /**
-     *  @dev    Sets the address of the pocket, an address that holds custody of the secondary token
+     *  @dev    Sets the address of the pocket, an address that holds custody of the swap token
      *          in the GroveBasin and can deploy it to yield-bearing strategies. This function will
-     *          transfer the balance of the secondary token in the GroveBasin to the new pocket.
+     *          transfer the balance of the swap token in the GroveBasin to the new pocket.
      *          Callable only by the owner.
      *  @param  newPocket Address of the new pocket.
      */
@@ -305,16 +305,16 @@ interface IGroveBasin {
      *  @dev    View function that converts an amount of a given shares to the equivalent
      *          amount of assetValue.
      *  @param  numShares  Number of shares to convert to assetValue.
-     *  @return assetValue Value of assets in secondary token denominated in 18 decimals.
+     *  @return assetValue Value of assets in swap token denominated in 18 decimals.
      */
     function convertToAssetValue(uint256 numShares) external view returns (uint256);
 
     /**
      *  @dev    View function that converts an amount of assetValue (18 decimal value denominated in
-     *          secondary token and collateral token) to shares in the GroveBasin based on the current
+     *          swap token and collateral token) to shares in the GroveBasin based on the current
      *          exchange rate. Note that this rounds down on calculation so is intended to be used
      *          for quoting the current exchange rate.
-     *  @param  assetValue 18 decimal value denominated in secondary token (e.g., 1e6 secondary token = 1e18)
+     *  @param  assetValue 18 decimal value denominated in swap token (e.g., 1e6 swap token = 1e18)
      *  @return shares     Number of shares that the assetValue is equivalent to.
      */
     function convertToShares(uint256 assetValue) external view returns (uint256);
@@ -335,7 +335,7 @@ interface IGroveBasin {
 
     /**
      *  @dev View function that returns the total value of the balance of all assets in the GroveBasin
-     *       converted to secondary token/collateral token terms denominated in 18 decimal precision.
+     *       converted to swap token/collateral token terms denominated in 18 decimal precision.
      */
     function totalAssets() external view returns (uint256);
 

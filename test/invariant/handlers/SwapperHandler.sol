@@ -13,7 +13,7 @@ contract SwapperHandler is HandlerBase {
 
     address[] public swappers;
 
-    IRateProviderLike public secondaryTokenRateProvider;
+    IRateProviderLike public swapTokenRateProvider;
     IRateProviderLike public creditTokenRateProvider;
 
     mapping(address user => mapping(address asset => uint256 deposits)) public swapsIn;
@@ -31,16 +31,16 @@ contract SwapperHandler is HandlerBase {
 
     constructor(
         GroveBasin      groveBasin_,
-        MockERC20 secondaryToken,
+        MockERC20 swapToken,
         MockERC20 collateralToken,
         MockERC20 creditToken,
         uint256   swapperCount
     ) HandlerBase(groveBasin_) {
-        assets[0] = secondaryToken;
+        assets[0] = swapToken;
         assets[1] = collateralToken;
         assets[2] = creditToken;
 
-        secondaryTokenRateProvider = IRateProviderLike(groveBasin.secondaryTokenRateProvider());
+        swapTokenRateProvider = IRateProviderLike(groveBasin.swapTokenRateProvider());
         creditTokenRateProvider    = IRateProviderLike(groveBasin.creditTokenRateProvider());
 
         for (uint256 i = 0; i < swapperCount; i++) {
@@ -82,7 +82,7 @@ contract SwapperHandler is HandlerBase {
             assetOut = _getAsset(assetOutSeed + 2);
         }
 
-        // Skip stable-to-stable swaps (collateralToken <-> secondaryToken)
+        // Skip stable-to-stable swaps (collateralToken <-> swapToken)
         if (assetIn != assets[2] && assetOut != assets[2]) {
             assetOut = assets[2];
         }
@@ -240,7 +240,7 @@ contract SwapperHandler is HandlerBase {
             assetOut = _getAsset(assetOutSeed + 2);
         }
 
-        // Skip stable-to-stable swaps (collateralToken <-> secondaryToken)
+        // Skip stable-to-stable swaps (collateralToken <-> swapToken)
         if (assetIn != assets[2] && assetOut != assets[2]) {
             assetOut = assets[2];
         }
@@ -371,7 +371,7 @@ contract SwapperHandler is HandlerBase {
     }
 
     function _getAssetValue(address asset, uint256 amount) internal view returns (uint256) {
-        if      (asset == address(assets[0])) return amount * secondaryTokenRateProvider.getConversionRate() / 1e15;
+        if      (asset == address(assets[0])) return amount * swapTokenRateProvider.getConversionRate() / 1e15;
         else if (asset == address(assets[1])) return amount;
         else if (asset == address(assets[2])) return amount * creditTokenRateProvider.getConversionRate() / 1e27;
         else revert("SwapperHandler/asset-not-found");

@@ -12,31 +12,31 @@ import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 contract GroveBasinDeployTests is GroveBasinTestBase {
 
     function test_deploy() public {
-        deal(address(secondaryToken), address(this), 1e6);
+        deal(address(swapToken), address(this), 1e6);
 
         GroveBasin newGroveBasin = GroveBasin(GroveBasinDeploy.deploy(
             address(owner),
-            address(secondaryToken),
+            address(swapToken),
             address(collateralToken),
             address(creditToken),
-            address(secondaryTokenRateProvider),
+            address(swapTokenRateProvider),
             address(collateralTokenRateProvider),
             address(creditTokenRateProvider)
         ));
 
         assertTrue(newGroveBasin.hasRole(newGroveBasin.DEFAULT_ADMIN_ROLE(), owner));
         
-        assertEq(address(newGroveBasin.secondaryToken()),              address(secondaryToken));
+        assertEq(address(newGroveBasin.swapToken()),              address(swapToken));
         assertEq(address(newGroveBasin.collateralToken()),             address(collateralToken));
         assertEq(address(newGroveBasin.creditToken()),                 address(creditToken));
-        assertEq(address(newGroveBasin.secondaryTokenRateProvider()),  address(secondaryTokenRateProvider));
+        assertEq(address(newGroveBasin.swapTokenRateProvider()),  address(swapTokenRateProvider));
         assertEq(address(newGroveBasin.collateralTokenRateProvider()), address(collateralTokenRateProvider));
         assertEq(address(newGroveBasin.creditTokenRateProvider()),     address(creditTokenRateProvider));
 
-        assertEq(secondaryToken.allowance(address(this), address(newGroveBasin)), 0);
+        assertEq(swapToken.allowance(address(this), address(newGroveBasin)), 0);
 
-        assertEq(secondaryToken.balanceOf(address(this)),   0);
-        assertEq(secondaryToken.balanceOf(address(newGroveBasin)), 1e6);
+        assertEq(swapToken.balanceOf(address(this)),   0);
+        assertEq(swapToken.balanceOf(address(newGroveBasin)), 1e6);
 
         assertEq(newGroveBasin.totalAssets(),         1e18);
         assertEq(newGroveBasin.totalShares(),         1e18);

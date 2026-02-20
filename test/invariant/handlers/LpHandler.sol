@@ -19,12 +19,12 @@ contract LpHandler is HandlerBase {
 
     constructor(
         GroveBasin      groveBasin_,
-        MockERC20 secondaryToken,
+        MockERC20 swapToken,
         MockERC20 collateralToken,
         MockERC20 creditToken,
         uint256   lpCount
     ) HandlerBase(groveBasin_) {
-        assets[0] = secondaryToken;
+        assets[0] = swapToken;
         assets[1] = collateralToken;
         assets[2] = creditToken;
 
@@ -110,7 +110,7 @@ contract LpHandler is HandlerBase {
 
         // 5. Perform action-specific assertions
 
-        // Larger tolerance for rounding errors because of burning more shares on secondaryToken withdraw
+        // Larger tolerance for rounding errors because of burning more shares on swapToken withdraw
         assertApproxEqAbs(
             groveBasin.convertToAssetValue(1e18),
             startingConversion,
