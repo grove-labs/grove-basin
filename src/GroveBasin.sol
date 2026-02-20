@@ -5,13 +5,13 @@ import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
 
 import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
 
-import { Ownable } from "openzeppelin-contracts/contracts/access/Ownable.sol";
-import { Math }    from "openzeppelin-contracts/contracts/utils/math/Math.sol";
+import { AccessControl } from "openzeppelin-contracts/contracts/access/AccessControl.sol";
+import { Math }          from "openzeppelin-contracts/contracts/utils/math/Math.sol";
 
 import { IGroveBasin }             from "src/interfaces/IGroveBasin.sol";
 import { IRateProviderLike } from "src/interfaces/IRateProviderLike.sol";
 
-contract GroveBasin is IGroveBasin, Ownable {
+contract GroveBasin is IGroveBasin, AccessControl {
 
     using SafeERC20 for IERC20;
 
@@ -39,9 +39,8 @@ contract GroveBasin is IGroveBasin, Ownable {
         address creditToken_,
         address collateralTokenRateProvider_,
         address creditTokenRateProvider_
-    )
-        Ownable(owner_)
-    {
+    ) {
+        require(owner_                   != address(0), "GroveBasin/invalid-owner");
         require(secondaryToken_              != address(0), "GroveBasin/invalid-secondaryToken");
         require(collateralToken_             != address(0), "GroveBasin/invalid-collateralToken");
         require(creditToken_                 != address(0), "GroveBasin/invalid-creditToken");
@@ -74,6 +73,8 @@ contract GroveBasin is IGroveBasin, Ownable {
         _collateralTokenPrecision = 10 ** IERC20(collateralToken_).decimals();
         _creditTokenPrecision     = 10 ** IERC20(creditToken_).decimals();
 
+        _grantRole(DEFAULT_ADMIN_ROLE, owner_);
+
         // Necessary to ensure rounding works as expected
         require(_secondaryTokenPrecision  <= 1e18, "GroveBasin/secondaryToken-precision-too-high");
         require(_collateralTokenPrecision <= 1e18, "GroveBasin/collateralToken-precision-too-high");
@@ -83,7 +84,7 @@ contract GroveBasin is IGroveBasin, Ownable {
     /*** Owner functions                                                                        ***/
     /**********************************************************************************************/
 
-    function setPocket(address newPocket) external override onlyOwner {
+    function setPocket(address newPocket) external override onlyRole(DEFAULT_ADMIN_ROLE) {
         require(newPocket != address(0), "GroveBasin/invalid-pocket");
 
         address pocket_ = pocket;

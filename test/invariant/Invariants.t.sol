@@ -721,7 +721,7 @@ contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinIn
 //         targetContract(address(ownerHandler));
 
 //         vm.prank(owner);
-//         groveBasin.transferOwnership(address(ownerHandler));
+//         groveBasin.grantRole(groveBasin.DEFAULT_ADMIN_ROLE(), address(ownerHandler));
 //     }
 
 // }
