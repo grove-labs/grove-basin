@@ -13,6 +13,7 @@ contract SwapperHandler is HandlerBase {
 
     address[] public swappers;
 
+    IRateProviderLike public secondaryTokenRateProvider;
     IRateProviderLike public creditTokenRateProvider;
 
     mapping(address user => mapping(address asset => uint256 deposits)) public swapsIn;
@@ -39,7 +40,8 @@ contract SwapperHandler is HandlerBase {
         assets[1] = collateralToken;
         assets[2] = creditToken;
 
-        creditTokenRateProvider = IRateProviderLike(groveBasin.creditTokenRateProvider());
+        secondaryTokenRateProvider = IRateProviderLike(groveBasin.secondaryTokenRateProvider());
+        creditTokenRateProvider    = IRateProviderLike(groveBasin.creditTokenRateProvider());
 
         for (uint256 i = 0; i < swapperCount; i++) {
             swappers.push(makeAddr(string(abi.encodePacked("swapper-", vm.toString(i)))));
@@ -369,7 +371,7 @@ contract SwapperHandler is HandlerBase {
     }
 
     function _getAssetValue(address asset, uint256 amount) internal view returns (uint256) {
-        if      (asset == address(assets[0])) return amount * 1e12;
+        if      (asset == address(assets[0])) return amount * secondaryTokenRateProvider.getConversionRate() / 1e15;
         else if (asset == address(assets[1])) return amount;
         else if (asset == address(assets[2])) return amount * creditTokenRateProvider.getConversionRate() / 1e27;
         else revert("SwapperHandler/asset-not-found");

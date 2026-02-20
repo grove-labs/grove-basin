@@ -106,6 +106,13 @@ interface IGroveBasin {
     function pocket() external view returns (address);
 
     /**
+     *  @dev    Returns the address of the secondary token rate provider, a contract that provides
+     *          the price of the secondary token in USD terms.
+     *  @return The address of the secondary token rate provider.
+     */
+    function secondaryTokenRateProvider() external view returns (address);
+
+    /**
      *  @dev    Returns the address of the collateral token rate provider, a contract that provides
      *          the price of the collateral token in USD terms.
      *  @return The address of the collateral token rate provider.

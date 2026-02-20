@@ -10,10 +10,11 @@ contract GroveBasinHarness is GroveBasin {
         address secondaryToken_,
         address collateralToken_,
         address creditToken_,
+        address secondaryTokenRateProvider_,
         address collateralTokenRateProvider_,
         address creditTokenRateProvider_
     )
-        GroveBasin(owner_, secondaryToken_, collateralToken_, creditToken_, collateralTokenRateProvider_, creditTokenRateProvider_) {}
+        GroveBasin(owner_, secondaryToken_, collateralToken_, creditToken_, secondaryTokenRateProvider_, collateralTokenRateProvider_, creditTokenRateProvider_) {}
 
     function getAssetValue(address asset, uint256 amount, bool roundUp)
         external view returns (uint256)
