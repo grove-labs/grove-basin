@@ -188,23 +188,23 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
     }
 
     function _getLpTokenValue(address lp) internal view returns (uint256) {
-        uint256 collateralTokenValue = collateralToken.balanceOf(lp) * collateralTokenRateProvider.getConversionRate() / 1e27;
-        uint256 secondaryTokenValue  = secondaryToken.balanceOf(lp) * secondaryTokenRateProvider.getConversionRate() / 1e9 / 1e6;
-        uint256 creditTokenValue     = creditToken.balanceOf(lp) * creditTokenRateProvider.getConversionRate() / 1e27;
+        uint256 collateralTokenValue = collateralToken.balanceOf(lp) * collateralTokenRateProvider.getConversionRate() / 1e27; // 1e9 + 1e18
+        uint256 secondaryTokenValue  = secondaryToken.balanceOf(lp) * secondaryTokenRateProvider.getConversionRate() / 1e15; // 1e9 + 1e6
+        uint256 creditTokenValue     = creditToken.balanceOf(lp) * creditTokenRateProvider.getConversionRate() / 1e27; // 1e9 + 1e18
 
         return collateralTokenValue + secondaryTokenValue + creditTokenValue;
     }
 
     function _getLpDepositsValue(address lp) internal view returns (uint256) {
         uint256 depositValue =
-            lpHandler.lpDeposits(lp, address(collateralToken)) * collateralTokenRateProvider.getConversionRate() / 1e27 +
-            lpHandler.lpDeposits(lp, address(secondaryToken)) * secondaryTokenRateProvider.getConversionRate() / 1e27 +
-            lpHandler.lpDeposits(lp, address(creditToken)) * creditTokenRateProvider.getConversionRate() / 1e27;
+            lpHandler.lpDeposits(lp, address(collateralToken)) * collateralTokenRateProvider.getConversionRate() / 1e27 + // 1e9 + 1e18
+            lpHandler.lpDeposits(lp, address(secondaryToken)) * secondaryTokenRateProvider.getConversionRate() / 1e15 + // 1e9 + 1e6
+            lpHandler.lpDeposits(lp, address(creditToken)) * creditTokenRateProvider.getConversionRate() / 1e27; // 1e9 + 1e18
 
         uint256 withdrawValue =
-            lpHandler.lpWithdrawals(lp, address(collateralToken)) * collateralTokenRateProvider.getConversionRate() / 1e27 +
-            lpHandler.lpWithdrawals(lp, address(secondaryToken)) * secondaryTokenRateProvider.getConversionRate() / 1e27 +
-            lpHandler.lpWithdrawals(lp, address(creditToken)) * creditTokenRateProvider.getConversionRate() / 1e27;
+            lpHandler.lpWithdrawals(lp, address(collateralToken)) * collateralTokenRateProvider.getConversionRate() / 1e27 + // 1e9 + 1e18
+            lpHandler.lpWithdrawals(lp, address(secondaryToken)) * secondaryTokenRateProvider.getConversionRate() / 1e15 + // 1e9 + 1e6
+            lpHandler.lpWithdrawals(lp, address(creditToken)) * creditTokenRateProvider.getConversionRate() / 1e27; // 1e9 + 1e18
 
         return withdrawValue > depositValue ? 0 : depositValue - withdrawValue;
     }
