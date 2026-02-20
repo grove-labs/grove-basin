@@ -22,6 +22,7 @@ contract DeployEthereum is Script {
             secondaryToken              : Ethereum.USDC,
             collateralToken             : Ethereum.USDS,
             creditToken                 : Ethereum.SUSDS,
+            secondaryTokenRateProvider  : address(0), // TODO: set up rate provider
             collateralTokenRateProvider : address(0), // TODO: set up rate provider
             creditTokenRateProvider     : address(0)  // TODO: set up rate provider
         });

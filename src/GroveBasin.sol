@@ -23,6 +23,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     IERC20 public override immutable collateralToken;
     IERC20 public override immutable creditToken;
 
+    address public override immutable secondaryTokenRateProvider;
     address public override immutable collateralTokenRateProvider;
     address public override immutable creditTokenRateProvider;
 
@@ -37,6 +38,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         address secondaryToken_,
         address collateralToken_,
         address creditToken_,
+        address secondaryTokenRateProvider_,
         address collateralTokenRateProvider_,
         address creditTokenRateProvider_
     ) {
@@ -44,6 +46,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         require(secondaryToken_              != address(0), "GroveBasin/invalid-secondaryToken");
         require(collateralToken_             != address(0), "GroveBasin/invalid-collateralToken");
         require(creditToken_                 != address(0), "GroveBasin/invalid-creditToken");
+        require(secondaryTokenRateProvider_  != address(0), "GroveBasin/invalid-secondaryTokenRateProvider");
         require(collateralTokenRateProvider_ != address(0), "GroveBasin/invalid-collateralTokenRateProvider");
         require(creditTokenRateProvider_     != address(0), "GroveBasin/invalid-creditTokenRateProvider");
 
@@ -55,9 +58,15 @@ contract GroveBasin is IGroveBasin, AccessControl {
         collateralToken = IERC20(collateralToken_);
         creditToken     = IERC20(creditToken_);
 
+        secondaryTokenRateProvider  = secondaryTokenRateProvider_;
         collateralTokenRateProvider = collateralTokenRateProvider_;
         creditTokenRateProvider     = creditTokenRateProvider_;
         pocket                      = address(this);
+
+        require(
+            IRateProviderLike(secondaryTokenRateProvider_).getConversionRate() != 0,
+            "GroveBasin/secondary-rate-provider-returns-zero"
+        );
 
         require(
             IRateProviderLike(collateralTokenRateProvider_).getConversionRate() != 0,
@@ -256,7 +265,12 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         uint256 assetValue = convertToAssetValue(numShares);
 
-        if (asset == address(secondaryToken)) return assetValue * _secondaryTokenPrecision / 1e18;
+        if (asset == address(secondaryToken)) {
+            return assetValue
+                * 1e9
+                * _secondaryTokenPrecision
+                / IRateProviderLike(secondaryTokenRateProvider).getConversionRate();
+        }
         else if (asset == address(collateralToken)) {
             // assetValue is in 1e18, rate is 1e27, precision is native decimals
             // amount = assetValue * 1e27 / rate * precision / 1e18 = assetValue * 1e9 * precision / rate
@@ -317,7 +331,10 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     function _getSecondaryTokenValue(uint256 amount) internal view returns (uint256) {
-        return amount * 1e18 / _secondaryTokenPrecision;
+        return amount
+            * IRateProviderLike(secondaryTokenRateProvider).getConversionRate()
+            / 1e9
+            / _secondaryTokenPrecision;
     }
 
     function _getCollateralTokenValue(uint256 amount) internal view returns (uint256) {
@@ -351,7 +368,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     {
         if (asset == address(secondaryToken)) {
             if      (quoteAsset == address(collateralToken)) revert("GroveBasin/invalid-swap");
-            else if (quoteAsset == address(creditToken))     return _convertToCreditToken(amount, _secondaryTokenPrecision, roundUp);
+            else if (quoteAsset == address(creditToken))     return _convertSecondaryToCreditToken(amount, roundUp);
         }
 
         else if (asset == address(collateralToken)) {
@@ -360,35 +377,37 @@ contract GroveBasin is IGroveBasin, AccessControl {
         }
 
         else if (asset == address(creditToken)) {
-            if      (quoteAsset == address(secondaryToken))  return _convertFromCreditToken(amount, _secondaryTokenPrecision, roundUp);
+            if      (quoteAsset == address(secondaryToken))  return _convertCreditTokenToSecondary(amount, roundUp);
             else if (quoteAsset == address(collateralToken)) return _convertCreditTokenToCollateral(amount, roundUp);
         }
 
         revert("GroveBasin/invalid-asset");
     }
 
-    function _convertToCreditToken(uint256 amount, uint256 assetPrecision, bool roundUp)
+    function _convertSecondaryToCreditToken(uint256 amount, bool roundUp)
         internal view returns (uint256)
     {
-        uint256 rate = IRateProviderLike(creditTokenRateProvider).getConversionRate();
+        uint256 secondaryRate = IRateProviderLike(secondaryTokenRateProvider).getConversionRate();
+        uint256 creditRate    = IRateProviderLike(creditTokenRateProvider).getConversionRate();
 
-        if (!roundUp) return amount * 1e27 / rate * _creditTokenPrecision / assetPrecision;
+        if (!roundUp) return amount * secondaryRate / creditRate * _creditTokenPrecision / _secondaryTokenPrecision;
 
         return Math.ceilDiv(
-            Math.ceilDiv(amount * 1e27, rate) * _creditTokenPrecision,
-            assetPrecision
+            Math.ceilDiv(amount * secondaryRate, creditRate) * _creditTokenPrecision,
+            _secondaryTokenPrecision
         );
     }
 
-    function _convertFromCreditToken(uint256 amount, uint256 assetPrecision, bool roundUp)
+    function _convertCreditTokenToSecondary(uint256 amount, bool roundUp)
         internal view returns (uint256)
     {
-        uint256 rate = IRateProviderLike(creditTokenRateProvider).getConversionRate();
+        uint256 secondaryRate = IRateProviderLike(secondaryTokenRateProvider).getConversionRate();
+        uint256 creditRate    = IRateProviderLike(creditTokenRateProvider).getConversionRate();
 
-        if (!roundUp) return amount * rate / 1e27 * assetPrecision / _creditTokenPrecision;
+        if (!roundUp) return amount * creditRate / secondaryRate * _secondaryTokenPrecision / _creditTokenPrecision;
 
         return Math.ceilDiv(
-            Math.ceilDiv(amount * rate, 1e27) * assetPrecision,
+            Math.ceilDiv(amount * creditRate, secondaryRate) * _secondaryTokenPrecision,
             _creditTokenPrecision
         );
     }

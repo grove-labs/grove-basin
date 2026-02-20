@@ -12,12 +12,13 @@ library GroveBasinDeploy {
         address secondaryToken,
         address collateralToken,
         address creditToken,
+        address secondaryTokenRateProvider,
         address collateralTokenRateProvider,
         address creditTokenRateProvider
     )
         internal returns (address groveBasin)
     {
-        groveBasin = address(new GroveBasin(owner, secondaryToken, collateralToken, creditToken, collateralTokenRateProvider, creditTokenRateProvider));
+        groveBasin = address(new GroveBasin(owner, secondaryToken, collateralToken, creditToken, secondaryTokenRateProvider, collateralTokenRateProvider, creditTokenRateProvider));
 
         IERC20(secondaryToken).approve(groveBasin, 1e6);
         GroveBasin(groveBasin).deposit(secondaryToken, address(0), 1e6);

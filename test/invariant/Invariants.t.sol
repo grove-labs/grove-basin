@@ -189,7 +189,7 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
 
     function _getLpTokenValue(address lp) internal view returns (uint256) {
         uint256 collateralTokenValue = collateralToken.balanceOf(lp) * collateralTokenRateProvider.getConversionRate() / 1e27;
-        uint256 secondaryTokenValue            = secondaryToken.balanceOf(lp) * 1e12;
+        uint256 secondaryTokenValue  = secondaryToken.balanceOf(lp) * secondaryTokenRateProvider.getConversionRate() / 1e9 / 1e6;
         uint256 creditTokenValue     = creditToken.balanceOf(lp) * creditTokenRateProvider.getConversionRate() / 1e27;
 
         return collateralTokenValue + secondaryTokenValue + creditTokenValue;
@@ -198,12 +198,12 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
     function _getLpDepositsValue(address lp) internal view returns (uint256) {
         uint256 depositValue =
             lpHandler.lpDeposits(lp, address(collateralToken)) * collateralTokenRateProvider.getConversionRate() / 1e27 +
-            lpHandler.lpDeposits(lp, address(secondaryToken)) * 1e12 +
+            lpHandler.lpDeposits(lp, address(secondaryToken)) * secondaryTokenRateProvider.getConversionRate() / 1e27 +
             lpHandler.lpDeposits(lp, address(creditToken)) * creditTokenRateProvider.getConversionRate() / 1e27;
 
         uint256 withdrawValue =
             lpHandler.lpWithdrawals(lp, address(collateralToken)) * collateralTokenRateProvider.getConversionRate() / 1e27 +
-            lpHandler.lpWithdrawals(lp, address(secondaryToken)) * 1e12 +
+            lpHandler.lpWithdrawals(lp, address(secondaryToken)) * secondaryTokenRateProvider.getConversionRate() / 1e27 +
             lpHandler.lpWithdrawals(lp, address(creditToken)) * creditTokenRateProvider.getConversionRate() / 1e27;
 
         return withdrawValue > depositValue ? 0 : depositValue - withdrawValue;
@@ -556,7 +556,7 @@ contract GroveBasinInvariants_TimeBasedRateSetting_NoTransfer is GroveBasinInvar
         ssrOracle.revokeRole(ssrOracle.DATA_PROVIDER_ROLE(), address(this));
 
         // Redeploy GroveBasin with new rate provider
-        groveBasin = new GroveBasin(owner, address(secondaryToken), address(collateralToken), address(creditToken), address(collateralTokenRateProvider), address(ssrOracle));
+        groveBasin = new GroveBasin(owner, address(secondaryToken), address(collateralToken), address(creditToken), address(secondaryTokenRateProvider), address(collateralTokenRateProvider), address(ssrOracle));
 
         // NOTE: Don't need to set GroveBasin as pocket for this suite as its default on deploy
 
@@ -637,7 +637,7 @@ contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinIn
         ssrOracle.revokeRole(ssrOracle.DATA_PROVIDER_ROLE(), address(this));
 
         // Redeploy GroveBasin with new rate provider
-        groveBasin = new GroveBasin(owner, address(secondaryToken), address(collateralToken), address(creditToken), address(collateralTokenRateProvider), address(ssrOracle));
+        groveBasin = new GroveBasin(owner, address(secondaryToken), address(collateralToken), address(creditToken), address(secondaryTokenRateProvider), address(collateralTokenRateProvider), address(ssrOracle));
 
         // NOTE: This base test suite tests the case of the GroveBasin being the pocket for the whole time,
         //       where the other suites are testing with an external `pocket`.
