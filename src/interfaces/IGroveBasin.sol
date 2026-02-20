@@ -106,9 +106,16 @@ interface IGroveBasin {
     function pocket() external view returns (address);
 
     /**
-     *  @dev    Returns the address of the rate provider, a contract that provides the conversion
-     *          rate between the credit token and the other two assets in the GroveBasin.
-     *  @return The address of the rate provider.
+     *  @dev    Returns the address of the collateral token rate provider, a contract that provides
+     *          the price of the collateral token in USD terms.
+     *  @return The address of the collateral token rate provider.
+     */
+    function collateralTokenRateProvider() external view returns (address);
+
+    /**
+     *  @dev    Returns the address of the credit token rate provider, a contract that provides the
+     *          conversion rate between the credit token and USD.
+     *  @return The address of the credit token rate provider.
      */
     function creditTokenRateProvider() external view returns (address);
 
