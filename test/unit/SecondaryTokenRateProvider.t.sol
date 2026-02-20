@@ -143,13 +143,13 @@ contract SecondaryTokenRateProviderTests is GroveBasinTestBase {
 
         _deposit(address(secondaryToken), address(this), amount);
 
-        // Total assets should equal amount * rate / 1e9 / 1e6
-        assertEq(groveBasin.totalAssets(), amount * rate / 1e9 / 1e6);
+        // Total assets should equal amount * rate / 1e15
+        assertEq(groveBasin.totalAssets(), amount * rate / 1e15);
 
         // Convert to shares and back should be approximately equal
         uint256 shares = groveBasin.shares(address(this));
         uint256 assetValue = groveBasin.convertToAssetValue(shares);
-        assertApproxEqAbs(assetValue, amount * rate / 1e9 / 1e6, 1);
+        assertApproxEqAbs(assetValue, amount * rate / 1e15, 1);
     }
 
     function test_secondaryTokenRateProviderGetter() public view {

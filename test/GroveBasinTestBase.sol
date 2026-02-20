@@ -78,7 +78,7 @@ contract GroveBasinTestBase is Test {
 
     function _getGroveBasinValue() internal view returns (uint256) {
         return (creditToken.balanceOf(address(groveBasin)) * creditTokenRateProvider.getConversionRate() / 1e27)
-            + (secondaryToken.balanceOf(groveBasin.pocket()) * secondaryTokenRateProvider.getConversionRate() / 1e9 / 1e6)
+            + (secondaryToken.balanceOf(groveBasin.pocket()) * secondaryTokenRateProvider.getConversionRate() / 1e15)
             + (collateralToken.balanceOf(address(groveBasin)) * collateralTokenRateProvider.getConversionRate() / 1e27);
     }
 
