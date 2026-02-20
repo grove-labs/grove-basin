@@ -18,15 +18,15 @@ contract GroveBasinTestBase is Test {
 
     GroveBasin public groveBasin;
 
-    MockERC20 public secondaryToken;
+    MockERC20 public swapToken;
     MockERC20 public collateralToken;
     MockERC20 public creditToken;
 
-    IRateProviderLike public secondaryTokenRateProvider;     // Can be overridden using same interface
+    IRateProviderLike public swapTokenRateProvider;     // Can be overridden using same interface
     IRateProviderLike public collateralTokenRateProvider;  // Can be overridden using same interface
     IRateProviderLike public creditTokenRateProvider;      // Can be overridden by ssrOracle using same interface
 
-    MockRateProvider public mockSecondaryTokenRateProvider;   // Interface used for mocking
+    MockRateProvider public mockSwapTokenRateProvider;   // Interface used for mocking
     MockRateProvider public mockCollateralTokenRateProvider;  // Interface used for mocking
     MockRateProvider public mockCreditTokenRateProvider;      // Interface used for mocking
 
@@ -39,19 +39,19 @@ contract GroveBasinTestBase is Test {
     // 1,000,000,000,000 of each token
     uint256 public constant COLLATERAL_TOKEN_MAX = 1e30;
     uint256 public constant CREDIT_TOKEN_MAX     = 1e30;
-    uint256 public constant SECONDARY_TOKEN_MAX  = 1e18;
+    uint256 public constant SWAP_TOKEN_MAX  = 1e18;
 
     function setUp() public virtual {
-        secondaryToken  = new MockERC20("secondaryToken",  "secondaryToken",  6);
+        swapToken  = new MockERC20("swapToken",  "swapToken",  6);
         collateralToken = new MockERC20("collateralToken", "collateralToken", 18);
         creditToken     = new MockERC20("creditToken",     "creditToken",     18);
 
-        mockSecondaryTokenRateProvider  = new MockRateProvider();
+        mockSwapTokenRateProvider  = new MockRateProvider();
         mockCollateralTokenRateProvider = new MockRateProvider();
         mockCreditTokenRateProvider     = new MockRateProvider();
 
-        // Secondary token (USDC) is priced at $1 by default
-        mockSecondaryTokenRateProvider.__setConversionRate(1e27);
+        // Swap token (USDC) is priced at $1 by default
+        mockSwapTokenRateProvider.__setConversionRate(1e27);
 
         // Collateral token is priced at $1 by default
         mockCollateralTokenRateProvider.__setConversionRate(1e27);
@@ -59,26 +59,26 @@ contract GroveBasinTestBase is Test {
         // NOTE: Using 1.25 for easy two way conversions
         mockCreditTokenRateProvider.__setConversionRate(1.25e27);
 
-        secondaryTokenRateProvider  = IRateProviderLike(address(mockSecondaryTokenRateProvider));
+        swapTokenRateProvider  = IRateProviderLike(address(mockSwapTokenRateProvider));
         collateralTokenRateProvider = IRateProviderLike(address(mockCollateralTokenRateProvider));
         creditTokenRateProvider     = IRateProviderLike(address(mockCreditTokenRateProvider));
 
-        groveBasin = new GroveBasin(owner, address(secondaryToken), address(collateralToken), address(creditToken), address(secondaryTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider));
+        groveBasin = new GroveBasin(owner, address(swapToken), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider));
 
         vm.prank(owner);
         groveBasin.setPocket(pocket);
 
         vm.prank(pocket);
-        secondaryToken.approve(address(groveBasin), type(uint256).max);
+        swapToken.approve(address(groveBasin), type(uint256).max);
 
-        vm.label(address(secondaryToken),  "secondaryToken");
+        vm.label(address(swapToken),  "swapToken");
         vm.label(address(collateralToken), "collateralToken");
         vm.label(address(creditToken),     "creditToken");
     }
 
     function _getGroveBasinValue() internal view returns (uint256) {
         return (creditToken.balanceOf(address(groveBasin)) * creditTokenRateProvider.getConversionRate() / 1e27)
-            + (secondaryToken.balanceOf(groveBasin.pocket()) * secondaryTokenRateProvider.getConversionRate() / 1e15)
+            + (swapToken.balanceOf(groveBasin.pocket()) * swapTokenRateProvider.getConversionRate() / 1e15)
             + (collateralToken.balanceOf(address(groveBasin)) * collateralTokenRateProvider.getConversionRate() / 1e27);
     }
 

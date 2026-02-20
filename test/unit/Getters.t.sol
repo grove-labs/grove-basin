@@ -15,10 +15,10 @@ contract GroveBasinHarnessTests is GroveBasinTestBase {
         super.setUp();
         groveBasinHarness = new GroveBasinHarness(
             address(owner),
-            address(secondaryToken),
+            address(swapToken),
             address(collateralToken),
             address(creditToken),
-            address(secondaryTokenRateProvider),
+            address(swapTokenRateProvider),
             address(collateralTokenRateProvider),
             address(creditTokenRateProvider)
         );
@@ -47,24 +47,24 @@ contract GroveBasinHarnessTests is GroveBasinTestBase {
         assertEq(groveBasinHarness.getCollateralTokenValue(amount), amount);
     }
 
-    function test_getSecondaryTokenValue() public view {
-        assertEq(groveBasinHarness.getSecondaryTokenValue(1), 1e12);
-        assertEq(groveBasinHarness.getSecondaryTokenValue(2), 2e12);
-        assertEq(groveBasinHarness.getSecondaryTokenValue(3), 3e12);
+    function test_getSwapTokenValue() public view {
+        assertEq(groveBasinHarness.getSwapTokenValue(1), 1e12);
+        assertEq(groveBasinHarness.getSwapTokenValue(2), 2e12);
+        assertEq(groveBasinHarness.getSwapTokenValue(3), 3e12);
 
-        assertEq(groveBasinHarness.getSecondaryTokenValue(100e6), 100e18);
-        assertEq(groveBasinHarness.getSecondaryTokenValue(200e6), 200e18);
-        assertEq(groveBasinHarness.getSecondaryTokenValue(300e6), 300e18);
+        assertEq(groveBasinHarness.getSwapTokenValue(100e6), 100e18);
+        assertEq(groveBasinHarness.getSwapTokenValue(200e6), 200e18);
+        assertEq(groveBasinHarness.getSwapTokenValue(300e6), 300e18);
 
-        assertEq(groveBasinHarness.getSecondaryTokenValue(100_000_000_000e6), 100_000_000_000e18);
-        assertEq(groveBasinHarness.getSecondaryTokenValue(200_000_000_000e6), 200_000_000_000e18);
-        assertEq(groveBasinHarness.getSecondaryTokenValue(300_000_000_000e6), 300_000_000_000e18);
+        assertEq(groveBasinHarness.getSwapTokenValue(100_000_000_000e6), 100_000_000_000e18);
+        assertEq(groveBasinHarness.getSwapTokenValue(200_000_000_000e6), 200_000_000_000e18);
+        assertEq(groveBasinHarness.getSwapTokenValue(300_000_000_000e6), 300_000_000_000e18);
     }
 
-    function testFuzz_getSecondaryTokenValue(uint256 amount) public view {
+    function testFuzz_getSwapTokenValue(uint256 amount) public view {
         amount = _bound(amount, 0, 1e45);
 
-        assertEq(groveBasinHarness.getSecondaryTokenValue(amount), amount * 1e12);
+        assertEq(groveBasinHarness.getSwapTokenValue(amount), amount * 1e12);
     }
 
     function test_getCreditTokenValue() public {
@@ -149,21 +149,21 @@ contract GroveBasinHarnessTests is GroveBasinTestBase {
     }
 
     function test_getAssetValue() public view {
-        assertEq(groveBasinHarness.getAssetValue(address(secondaryToken), 1, false), groveBasinHarness.getSecondaryTokenValue(1));
-        assertEq(groveBasinHarness.getAssetValue(address(secondaryToken), 2, false), groveBasinHarness.getSecondaryTokenValue(2));
-        assertEq(groveBasinHarness.getAssetValue(address(secondaryToken), 3, false), groveBasinHarness.getSecondaryTokenValue(3));
+        assertEq(groveBasinHarness.getAssetValue(address(swapToken), 1, false), groveBasinHarness.getSwapTokenValue(1));
+        assertEq(groveBasinHarness.getAssetValue(address(swapToken), 2, false), groveBasinHarness.getSwapTokenValue(2));
+        assertEq(groveBasinHarness.getAssetValue(address(swapToken), 3, false), groveBasinHarness.getSwapTokenValue(3));
 
-        assertEq(groveBasinHarness.getAssetValue(address(secondaryToken), 1, true), groveBasinHarness.getSecondaryTokenValue(1));
-        assertEq(groveBasinHarness.getAssetValue(address(secondaryToken), 2, true), groveBasinHarness.getSecondaryTokenValue(2));
-        assertEq(groveBasinHarness.getAssetValue(address(secondaryToken), 3, true), groveBasinHarness.getSecondaryTokenValue(3));
+        assertEq(groveBasinHarness.getAssetValue(address(swapToken), 1, true), groveBasinHarness.getSwapTokenValue(1));
+        assertEq(groveBasinHarness.getAssetValue(address(swapToken), 2, true), groveBasinHarness.getSwapTokenValue(2));
+        assertEq(groveBasinHarness.getAssetValue(address(swapToken), 3, true), groveBasinHarness.getSwapTokenValue(3));
 
-        assertEq(groveBasinHarness.getAssetValue(address(secondaryToken), 1e6, false), groveBasinHarness.getSecondaryTokenValue(1e6));
-        assertEq(groveBasinHarness.getAssetValue(address(secondaryToken), 2e6, false), groveBasinHarness.getSecondaryTokenValue(2e6));
-        assertEq(groveBasinHarness.getAssetValue(address(secondaryToken), 3e6, false), groveBasinHarness.getSecondaryTokenValue(3e6));
+        assertEq(groveBasinHarness.getAssetValue(address(swapToken), 1e6, false), groveBasinHarness.getSwapTokenValue(1e6));
+        assertEq(groveBasinHarness.getAssetValue(address(swapToken), 2e6, false), groveBasinHarness.getSwapTokenValue(2e6));
+        assertEq(groveBasinHarness.getAssetValue(address(swapToken), 3e6, false), groveBasinHarness.getSwapTokenValue(3e6));
 
-        assertEq(groveBasinHarness.getAssetValue(address(secondaryToken), 1e6, true), groveBasinHarness.getSecondaryTokenValue(1e6));
-        assertEq(groveBasinHarness.getAssetValue(address(secondaryToken), 2e6, true), groveBasinHarness.getSecondaryTokenValue(2e6));
-        assertEq(groveBasinHarness.getAssetValue(address(secondaryToken), 3e6, true), groveBasinHarness.getSecondaryTokenValue(3e6));
+        assertEq(groveBasinHarness.getAssetValue(address(swapToken), 1e6, true), groveBasinHarness.getSwapTokenValue(1e6));
+        assertEq(groveBasinHarness.getAssetValue(address(swapToken), 2e6, true), groveBasinHarness.getSwapTokenValue(2e6));
+        assertEq(groveBasinHarness.getAssetValue(address(swapToken), 3e6, true), groveBasinHarness.getSwapTokenValue(3e6));
 
         assertEq(groveBasinHarness.getAssetValue(address(collateralToken), 1, false), groveBasinHarness.getCollateralTokenValue(1));
         assertEq(groveBasinHarness.getAssetValue(address(collateralToken), 2, false), groveBasinHarness.getCollateralTokenValue(2));
@@ -201,9 +201,9 @@ contract GroveBasinHarnessTests is GroveBasinTestBase {
     function testFuzz_getAssetValue(uint256 amount) public view {
         amount = _bound(amount, 0, CREDIT_TOKEN_MAX);
 
-        // `secondaryToken` and `collateralToken` return the same values whether `roundUp` is true or false
-        assertEq(groveBasinHarness.getAssetValue(address(secondaryToken),  amount, true),  groveBasinHarness.getSecondaryTokenValue(amount));
-        assertEq(groveBasinHarness.getAssetValue(address(secondaryToken),  amount, true),  groveBasinHarness.getSecondaryTokenValue(amount));
+        // `swapToken` and `collateralToken` return the same values whether `roundUp` is true or false
+        assertEq(groveBasinHarness.getAssetValue(address(swapToken),  amount, true),  groveBasinHarness.getSwapTokenValue(amount));
+        assertEq(groveBasinHarness.getAssetValue(address(swapToken),  amount, true),  groveBasinHarness.getSwapTokenValue(amount));
         assertEq(groveBasinHarness.getAssetValue(address(collateralToken),  amount, false), groveBasinHarness.getCollateralTokenValue(amount));
         assertEq(groveBasinHarness.getAssetValue(address(collateralToken),  amount, false), groveBasinHarness.getCollateralTokenValue(amount));
 
@@ -218,7 +218,7 @@ contract GroveBasinHarnessTests is GroveBasinTestBase {
     }
 
     function test_getAssetCustodian() public view {
-        assertEq(groveBasinHarness.getAssetCustodian(address(secondaryToken)),  address(pocket));
+        assertEq(groveBasinHarness.getAssetCustodian(address(swapToken)),  address(pocket));
         assertEq(groveBasinHarness.getAssetCustodian(address(collateralToken)),  address(groveBasinHarness));
         assertEq(groveBasinHarness.getAssetCustodian(address(creditToken)), address(groveBasinHarness));
     }
@@ -232,7 +232,7 @@ contract GetGroveBasinTotalValueTests is GroveBasinTestBase {
 
         assertEq(groveBasin.totalAssets(), 1e18);
 
-        secondaryToken.mint(address(pocket), 1e6);
+        swapToken.mint(address(pocket), 1e6);
 
         assertEq(groveBasin.totalAssets(), 2e18);
 
@@ -244,7 +244,7 @@ contract GetGroveBasinTotalValueTests is GroveBasinTestBase {
 
         assertEq(groveBasin.totalAssets(), 2.25e18);
 
-        secondaryToken.burn(address(pocket), 1e6);
+        swapToken.burn(address(pocket), 1e6);
 
         assertEq(groveBasin.totalAssets(), 1.25e18);
 
@@ -257,7 +257,7 @@ contract GetGroveBasinTotalValueTests is GroveBasinTestBase {
         assertEq(groveBasin.totalAssets(), 0);
 
         collateralToken.mint(address(groveBasin), 1e18);
-        secondaryToken.mint(address(pocket), 1e6);
+        swapToken.mint(address(pocket), 1e6);
         creditToken.mint(address(groveBasin), 1e18);
 
         assertEq(groveBasin.totalAssets(), 3.25e18);
@@ -275,7 +275,7 @@ contract GetGroveBasinTotalValueTests is GroveBasinTestBase {
         assertEq(groveBasin.totalAssets(), 0);
 
         collateralToken.mint(address(groveBasin), 1e18);
-        secondaryToken.mint(address(pocket), 1e6);
+        swapToken.mint(address(pocket), 1e6);
         creditToken.mint(address(groveBasin), 1e18);
 
         assertEq(groveBasin.totalAssets(), 3.25e18);
@@ -291,26 +291,26 @@ contract GetGroveBasinTotalValueTests is GroveBasinTestBase {
 
     function testFuzz_totalAssets(
         uint256 collateralTokenAmount,
-        uint256 secondaryTokenAmount,
+        uint256 swapTokenAmount,
         uint256 creditTokenAmount,
         uint256 conversionRate
     )
         public
     {
         collateralTokenAmount     = _bound(collateralTokenAmount,     0,         COLLATERAL_TOKEN_MAX);
-        secondaryTokenAmount     = _bound(secondaryTokenAmount,     0,         SECONDARY_TOKEN_MAX);
+        swapTokenAmount     = _bound(swapTokenAmount,     0,         SWAP_TOKEN_MAX);
         creditTokenAmount    = _bound(creditTokenAmount,    0,         CREDIT_TOKEN_MAX);
         conversionRate = _bound(conversionRate, 0.0001e27, 1000e27);
 
         collateralToken.mint(address(groveBasin), collateralTokenAmount);
-        secondaryToken.mint(address(pocket), secondaryTokenAmount);
+        swapToken.mint(address(pocket), swapTokenAmount);
         creditToken.mint(address(groveBasin), creditTokenAmount);
 
         mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
         assertEq(
             groveBasin.totalAssets(),
-            collateralTokenAmount + (secondaryTokenAmount * 1e12) + (creditTokenAmount * conversionRate / 1e27)
+            collateralTokenAmount + (swapTokenAmount * 1e12) + (creditTokenAmount * conversionRate / 1e27)
         );
     }
 

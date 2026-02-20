@@ -41,8 +41,8 @@ The deployment library (`deploy/GroveBasinDeploy.sol`) in this repo contains log
 
 - **`collateralToken`**: IERC20 interface of the collateral token. The collateral token is the underlying asset that can be redeemed for the tokenized credit asset.
 - **`creditToken`**: IERC20 interface of the tokenized credit asset. Supports both rebasing and yield-accruing tokens.
-- **`secondaryToken`**: IERC20 interface of the secondary token. The secondary token is another stablecoin that can be swapped with the credit token.
-- **`pocket`**: Address that holds custody of the secondary token. The `pocket` can deploy the secondary token to yield-bearing strategies. Defaulted to the address of Grove Basin itself.
+- **`swapToken`**: IERC20 interface of the swap token. The swap token is another stablecoin that can be swapped with the credit token.
+- **`pocket`**: Address that holds custody of the swap token. The `pocket` can deploy the swap token to yield-bearing strategies. Defaulted to the address of Grove Basin itself.
 - **`creditTokenRateProvider`**: Contract that returns a conversion rate between and creditToken and USD in 1e27 precision.
 - **`totalShares`**: Total shares in Grove Basin. Shares represent the ownership of the underlying assets in Grove Basin.
 - **`shares`**: Mapping of user addresses to their shares.
@@ -51,7 +51,7 @@ The deployment library (`deploy/GroveBasinDeploy.sol`) in this repo contains log
 
 #### Admin Functions
 
-- **`setPocket`**: Sets the `pocket` address. Only the `owner` can call this function. This is a very important and sensitive action because it transfers the entire balance of the secondary token to the new `pocket` address. OZ Ownable is used for this function, and `owner` will always be set to the governance proxy.
+- **`setPocket`**: Sets the `pocket` address. Only the `owner` can call this function. This is a very important and sensitive action because it transfers the entire balance of the swap token to the new `pocket` address. OZ Ownable is used for this function, and `owner` will always be set to the governance proxy.
 
 #### Swap Functions
 

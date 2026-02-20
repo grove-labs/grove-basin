@@ -7,14 +7,14 @@ contract GroveBasinHarness is GroveBasin {
 
     constructor(
         address owner_,
-        address secondaryToken_,
+        address swapToken_,
         address collateralToken_,
         address creditToken_,
-        address secondaryTokenRateProvider_,
+        address swapTokenRateProvider_,
         address collateralTokenRateProvider_,
         address creditTokenRateProvider_
     )
-        GroveBasin(owner_, secondaryToken_, collateralToken_, creditToken_, secondaryTokenRateProvider_, collateralTokenRateProvider_, creditTokenRateProvider_) {}
+        GroveBasin(owner_, swapToken_, collateralToken_, creditToken_, swapTokenRateProvider_, collateralTokenRateProvider_, creditTokenRateProvider_) {}
 
     function getAssetValue(address asset, uint256 amount, bool roundUp)
         external view returns (uint256)
@@ -22,8 +22,8 @@ contract GroveBasinHarness is GroveBasin {
         return _getAssetValue(asset, amount, roundUp);
     }
 
-    function getSecondaryTokenValue(uint256 amount) external view returns (uint256) {
-        return _getSecondaryTokenValue(amount);
+    function getSwapTokenValue(uint256 amount) external view returns (uint256) {
+        return _getSwapTokenValue(amount);
     }
 
     function getCollateralTokenValue(uint256 amount) external view returns (uint256) {
