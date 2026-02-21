@@ -253,7 +253,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function previewSwapExactIn(address assetIn, address assetOut, uint256 amountIn)
         public view override returns (uint256 amountOut)
     {
-        _checkMaxSwapSize(assetIn, amountIn);
+        require(_getAssetValue(assetIn, amountIn, false) <= maxSwapSize, "GroveBasin/swap-size-exceeded");
+
         // Round down to get amountOut
         amountOut = _getSwapQuote(assetIn, assetOut, amountIn, false);
     }
@@ -263,7 +264,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
     {
         // Round up to get amountIn
         amountIn = _getSwapQuote(assetOut, assetIn, amountOut, true);
-        _checkMaxSwapSize(assetIn, amountIn);
+
+        require(_getAssetValue(assetIn, amountIn, false) <= maxSwapSize, "GroveBasin/swap-size-exceeded");
     }
 
     /**********************************************************************************************/
@@ -470,10 +472,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
             return Math.ceilDiv(assetValue * totalShares, totalValue);
         }
         return assetValue;
-    }
-
-    function _checkMaxSwapSize(address assetIn, uint256 amountIn) internal view {
-        require(_getAssetValue(assetIn, amountIn, false) <= maxSwapSize, "GroveBasin/swap-size-exceeded");
     }
 
     function _isValidAsset(address asset) internal view returns (bool) {
