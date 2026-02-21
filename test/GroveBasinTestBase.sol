@@ -66,6 +66,9 @@ contract GroveBasinTestBase is Test {
         groveBasin = new GroveBasin(owner, address(swapToken), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider));
 
         vm.prank(owner);
+        groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
+
+        vm.prank(owner);
         groveBasin.setPocket(pocket);
 
         vm.prank(pocket);

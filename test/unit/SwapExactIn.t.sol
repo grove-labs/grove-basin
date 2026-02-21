@@ -31,7 +31,7 @@ contract GroveBasinSwapExactInFailureTests is GroveBasinTestBase {
     }
 
     function test_swapExactIn_invalid_assetIn() public {
-        vm.expectRevert("GroveBasin/invalid-asset");
+        vm.expectRevert("GroveBasin/invalid-asset-for-value");
         groveBasin.swapExactIn(makeAddr("other-token"), address(creditToken), 100e6, 80e18, receiver, 0);
     }
 
