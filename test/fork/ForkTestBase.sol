@@ -1,0 +1,101 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+pragma solidity ^0.8.34;
+
+import "forge-std/Test.sol";
+
+import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
+
+import { GroveBasin }        from "src/GroveBasin.sol";
+import { IRateProviderLike } from "src/interfaces/IRateProviderLike.sol";
+
+import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
+
+abstract contract ForkTestBase is Test {
+
+    address public owner  = makeAddr("owner");
+    address public pocket = makeAddr("pocket");
+
+    GroveBasin public groveBasin;
+
+    IERC20 public swapToken;
+    IERC20 public collateralToken;
+    IERC20 public creditToken;
+
+    MockRateProvider public swapTokenRateProvider;
+    MockRateProvider public collateralTokenRateProvider;
+    MockRateProvider public creditTokenRateProvider;
+
+    function setUp() public virtual {
+        vm.createSelectFork(getChain("mainnet").rpcUrl);
+
+        _initTokens();
+        _initRateProviders();
+
+        groveBasin = new GroveBasin(
+            owner,
+            address(swapToken),
+            address(collateralToken),
+            address(creditToken),
+            address(swapTokenRateProvider),
+            address(collateralTokenRateProvider),
+            address(creditTokenRateProvider)
+        );
+
+        vm.prank(owner);
+        groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
+
+        vm.prank(owner);
+        groveBasin.setPocket(pocket);
+
+        vm.prank(pocket);
+        swapToken.approve(address(groveBasin), type(uint256).max);
+
+        _postDeploy();
+
+        vm.label(address(swapToken),       "swapToken");
+        vm.label(address(collateralToken),  "collateralToken");
+        vm.label(address(creditToken),      "creditToken");
+        vm.label(address(groveBasin),       "groveBasin");
+    }
+
+    /**********************************************************************************************/
+    /*** Abstract hooks for subclasses                                                          ***/
+    /**********************************************************************************************/
+
+    function _initTokens() internal virtual;
+
+    function _initRateProviders() internal virtual;
+
+    // Called after GroveBasin is deployed and configured. Use for allowlisting, etc.
+    function _postDeploy() internal virtual {}
+
+    /**********************************************************************************************/
+    /*** Helpers                                                                                ***/
+    /**********************************************************************************************/
+
+    function _dealToken(address token, address to, uint256 amount) internal virtual {
+        deal(token, to, amount);
+    }
+
+    function _deposit(address asset, address user, uint256 amount) internal {
+        _deposit(asset, user, user, amount);
+    }
+
+    function _deposit(address asset, address user, address receiver, uint256 amount) internal {
+        _dealToken(asset, user, amount);
+        vm.startPrank(user);
+        IERC20(asset).approve(address(groveBasin), amount);
+        groveBasin.deposit(asset, receiver, amount);
+        vm.stopPrank();
+    }
+
+    function _withdraw(address asset, address user, uint256 amount) internal {
+        _withdraw(asset, user, user, amount);
+    }
+
+    function _withdraw(address asset, address user, address receiver, uint256 amount) internal {
+        vm.prank(user);
+        groveBasin.withdraw(asset, receiver, amount);
+    }
+
+}
