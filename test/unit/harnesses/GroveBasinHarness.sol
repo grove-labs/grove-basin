@@ -38,8 +38,8 @@ contract GroveBasinHarness is GroveBasin {
         return _getAssetCustodian(asset);
     }
 
-    function tryGetConversionRate(address rateProvider) external view returns (uint256) {
-        return _tryGetConversionRate(rateProvider);
+    function getConversionRate(address rateProvider) external view returns (uint256) {
+        return _getConversionRate(rateProvider);
     }
 
 }

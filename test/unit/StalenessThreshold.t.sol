@@ -53,9 +53,9 @@ contract GroveBasinSetStalenessThresholdFailureTests is GroveBasinTestBase {
         groveBasin.setStalenessThreshold(1);
 
         vm.prank(owner);
-        groveBasin.setStalenessThreshold(5 minutes);
+        groveBasin.setStalenessThreshold(10 minutes);
 
-        assertEq(groveBasin.stalenessThreshold(), 5 minutes);
+        assertEq(groveBasin.stalenessThreshold(), 10 minutes);
     }
 
 }
@@ -65,11 +65,11 @@ contract GroveBasinSetStalenessThresholdSuccessTests is GroveBasinTestBase {
     event StalenessThresholdSet(uint256 oldThreshold, uint256 newThreshold);
 
     function test_setStalenessThreshold() public {
-        assertEq(groveBasin.stalenessThreshold(), 0);
+        assertEq(groveBasin.stalenessThreshold(), 5 minutes);
 
         vm.prank(owner);
         vm.expectEmit(address(groveBasin));
-        emit StalenessThresholdSet(0, 1 hours);
+        emit StalenessThresholdSet(5 minutes, 1 hours);
         groveBasin.setStalenessThreshold(1 hours);
 
         assertEq(groveBasin.stalenessThreshold(), 1 hours);
@@ -127,10 +127,10 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
     }
 
     /**********************************************************************************************/
-    /*** Before threshold is set (default 0), staleness is not enforced                         ***/
+    /*** Default threshold (MIN_STALENESS_THRESHOLD) enforces staleness                         ***/
     /**********************************************************************************************/
 
-    function test_defaultThreshold_staleRateAllowed() public {
+    function test_defaultThreshold_staleRateReverts() public {
         GroveBasin freshBasin = new GroveBasin(
             owner,
             address(swapToken),
@@ -141,13 +141,14 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
             address(creditTokenRateProvider)
         );
 
-        assertEq(freshBasin.stalenessThreshold(), 0);
+        assertEq(freshBasin.stalenessThreshold(), 5 minutes);
 
         collateralToken.mint(address(freshBasin), 1e18);
 
         mockSwapTokenRateProvider.__setLastUpdated(1);
 
-        assertGt(freshBasin.totalAssets(), 0);
+        vm.expectRevert("GroveBasin/stale-rate");
+        freshBasin.totalAssets();
     }
 
     /**********************************************************************************************/
@@ -298,10 +299,10 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
     }
 
     /**********************************************************************************************/
-    /*** _tryGetConversionRate harness tests                                                    ***/
+    /*** _getConversionRate harness tests                                                    ***/
     /**********************************************************************************************/
 
-    function test_tryGetConversionRate_fresh() public {
+    function test_getConversionRate_fresh() public {
         GroveBasinHarness harness = new GroveBasinHarness(
             owner,
             address(swapToken),
@@ -315,11 +316,11 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
         vm.prank(owner);
         harness.setStalenessThreshold(1 hours);
 
-        uint256 rate = harness.tryGetConversionRate(address(swapTokenRateProvider));
+        uint256 rate = harness.getConversionRate(address(swapTokenRateProvider));
         assertEq(rate, 1e27);
     }
 
-    function test_tryGetConversionRate_stale() public {
+    function test_getConversionRate_stale() public {
         GroveBasinHarness harness = new GroveBasinHarness(
             owner,
             address(swapToken),
@@ -336,10 +337,10 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
         mockSwapTokenRateProvider.__setLastUpdated(block.timestamp - 2 hours);
 
         vm.expectRevert("GroveBasin/stale-rate");
-        harness.tryGetConversionRate(address(swapTokenRateProvider));
+        harness.getConversionRate(address(swapTokenRateProvider));
     }
 
-    function test_tryGetConversionRate_noThreshold() public {
+    function test_getConversionRate_defaultThresholdEnforced() public {
         GroveBasinHarness harness = new GroveBasinHarness(
             owner,
             address(swapToken),
@@ -352,8 +353,8 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
 
         mockSwapTokenRateProvider.__setLastUpdated(1);
 
-        uint256 rate = harness.tryGetConversionRate(address(swapTokenRateProvider));
-        assertEq(rate, 1e27);
+        vm.expectRevert("GroveBasin/stale-rate");
+        harness.getConversionRate(address(swapTokenRateProvider));
     }
 
     /**********************************************************************************************/

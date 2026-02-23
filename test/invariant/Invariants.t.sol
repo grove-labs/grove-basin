@@ -561,6 +561,10 @@ contract GroveBasinInvariants_TimeBasedRateSetting_NoTransfer is GroveBasinInvar
         // Redeploy GroveBasin with new rate provider
         groveBasin = new GroveBasin(owner, address(swapToken), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(ssrRateProvider));
 
+        // Set a large staleness threshold so warps don't cause stale-rate reverts
+        vm.prank(owner);
+        groveBasin.setStalenessThreshold(type(uint128).max);
+
         // NOTE: Don't need to set GroveBasin as pocket for this suite as its default on deploy
 
         // Seed the new GroveBasin with 1e18 shares (1e18 of value)
@@ -643,6 +647,10 @@ contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinIn
 
         // Redeploy GroveBasin with new rate provider
         groveBasin = new GroveBasin(owner, address(swapToken), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(ssrRateProvider));
+
+        // Set a large staleness threshold so warps don't cause stale-rate reverts
+        vm.prank(owner);
+        groveBasin.setStalenessThreshold(type(uint128).max);
 
         // NOTE: This base test suite tests the case of the GroveBasin being the pocket for the whole time,
         //       where the other suites are testing with an external `pocket`.
