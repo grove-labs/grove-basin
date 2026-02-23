@@ -157,42 +157,43 @@ contract BUIDLForkTest_Deposit is BUIDLForkTestBase {
 
     address public depositor = makeAddr("depositor");
 
+    // All rate providers are 1e27 (1:1), so 1000 BUIDL (6 decimals) = $1000 = 1000e18 shares
     function test_deposit_creditToken() public {
-        uint256 amount = 1000e6;  // BUIDL has 6 decimals
+        uint256 amount = 1000e6;
         _deposit(Ethereum.BUIDL, depositor, amount);
 
-        assertGt(groveBasin.shares(depositor), 0);
+        assertEq(groveBasin.shares(depositor), 1000e18);
         assertEq(IERC20(Ethereum.BUIDL).balanceOf(address(groveBasin)), amount);
     }
 
+    // 1000 USDC (6 decimals) at 1:1 = $1000 = 1000e18 shares
     function test_deposit_collateralToken() public {
         uint256 amount = 1000e6;
         _deposit(Ethereum.USDC, depositor, amount);
 
-        assertGt(groveBasin.shares(depositor), 0);
+        assertEq(groveBasin.shares(depositor), 1000e18);
         assertEq(IERC20(Ethereum.USDC).balanceOf(address(groveBasin)), amount);
     }
 
+    // 1000 USDS (18 decimals) at 1:1 = $1000 = 1000e18 shares
     function test_deposit_swapToken() public {
         uint256 amount = 1000e18;
         _deposit(Ethereum.USDS, depositor, amount);
 
-        assertGt(groveBasin.shares(depositor), 0);
+        assertEq(groveBasin.shares(depositor), 1000e18);
         assertEq(IERC20(Ethereum.USDS).balanceOf(pocket), amount);
     }
 
+    // Each $1000 deposit adds exactly 1000e18 shares at 1:1 rates in an equal-value pool
     function test_deposit_allTokens() public {
         _deposit(Ethereum.USDS, depositor, 1000e18);
-        uint256 sharesAfterFirst = groveBasin.shares(depositor);
+        assertEq(groveBasin.shares(depositor), 1000e18);
 
         _deposit(Ethereum.USDC, depositor, 1000e6);
-        uint256 sharesAfterSecond = groveBasin.shares(depositor);
+        assertEq(groveBasin.shares(depositor), 2000e18);
 
         _deposit(Ethereum.BUIDL, depositor, 1000e6);
-        uint256 sharesAfterThird = groveBasin.shares(depositor);
-
-        assertGt(sharesAfterSecond, sharesAfterFirst);
-        assertGt(sharesAfterThird, sharesAfterSecond);
+        assertEq(groveBasin.shares(depositor), 3000e18);
     }
 
 }
@@ -210,11 +211,11 @@ contract BUIDLForkTest_Withdraw is BUIDLForkTestBase {
         uint256 depositAmount = 1000e6;
         _deposit(Ethereum.BUIDL, depositor, depositAmount);
 
-        uint256 sharesBefore = groveBasin.shares(depositor);
+        assertEq(groveBasin.shares(depositor), 1000e18);
 
         _withdraw(Ethereum.BUIDL, depositor, receiver, depositAmount);
 
-        assertLt(groveBasin.shares(depositor), sharesBefore);
+        assertEq(groveBasin.shares(depositor), 0);
         assertEq(IERC20(Ethereum.BUIDL).balanceOf(receiver), depositAmount);
     }
 
@@ -222,11 +223,11 @@ contract BUIDLForkTest_Withdraw is BUIDLForkTestBase {
         uint256 depositAmount = 1000e6;
         _deposit(Ethereum.USDC, depositor, depositAmount);
 
-        uint256 sharesBefore = groveBasin.shares(depositor);
+        assertEq(groveBasin.shares(depositor), 1000e18);
 
         _withdraw(Ethereum.USDC, depositor, receiver, depositAmount);
 
-        assertLt(groveBasin.shares(depositor), sharesBefore);
+        assertEq(groveBasin.shares(depositor), 0);
         assertEq(IERC20(Ethereum.USDC).balanceOf(receiver), depositAmount);
     }
 
@@ -234,11 +235,11 @@ contract BUIDLForkTest_Withdraw is BUIDLForkTestBase {
         uint256 depositAmount = 1000e18;
         _deposit(Ethereum.USDS, depositor, depositAmount);
 
-        uint256 sharesBefore = groveBasin.shares(depositor);
+        assertEq(groveBasin.shares(depositor), 1000e18);
 
         _withdraw(Ethereum.USDS, depositor, receiver, depositAmount);
 
-        assertLt(groveBasin.shares(depositor), sharesBefore);
+        assertEq(groveBasin.shares(depositor), 0);
         assertEq(IERC20(Ethereum.USDS).balanceOf(receiver), depositAmount);
     }
 
@@ -261,6 +262,7 @@ contract BUIDLForkTest_SwapExactIn is BUIDLForkTestBase {
         _deposit(Ethereum.BUIDL, makeAddr("lp3"), 100_000e6);
     }
 
+    // 1000 USDS (18 dec) -> BUIDL (6 dec) at 1:1 rates = 1000e6 BUIDL
     function test_swapExactIn_swapTokenToCreditToken() public {
         uint256 amountIn = 1000e18;
         _dealToken(Ethereum.USDS, swapper, amountIn);
@@ -268,17 +270,15 @@ contract BUIDLForkTest_SwapExactIn is BUIDLForkTestBase {
         vm.startPrank(swapper);
         IERC20(Ethereum.USDS).approve(address(groveBasin), amountIn);
 
-        uint256 expectedOut = groveBasin.previewSwapExactIn(Ethereum.USDS, Ethereum.BUIDL, amountIn);
-        assertGt(expectedOut, 0);
-
         uint256 amountOut = groveBasin.swapExactIn(Ethereum.USDS, Ethereum.BUIDL, amountIn, 0, receiver, 0);
         vm.stopPrank();
 
-        assertEq(amountOut, expectedOut);
-        assertEq(IERC20(Ethereum.BUIDL).balanceOf(receiver), amountOut);
+        assertEq(amountOut, 1000e6);
+        assertEq(IERC20(Ethereum.BUIDL).balanceOf(receiver), 1000e6);
         assertEq(IERC20(Ethereum.USDS).balanceOf(swapper), 0);
     }
 
+    // 1000 BUIDL (6 dec) -> USDS (18 dec) at 1:1 rates = 1000e18 USDS
     function test_swapExactIn_creditTokenToSwapToken() public {
         uint256 amountIn = 1000e6;
         _dealToken(Ethereum.BUIDL, swapper, amountIn);
@@ -286,16 +286,14 @@ contract BUIDLForkTest_SwapExactIn is BUIDLForkTestBase {
         vm.startPrank(swapper);
         IERC20(Ethereum.BUIDL).approve(address(groveBasin), amountIn);
 
-        uint256 expectedOut = groveBasin.previewSwapExactIn(Ethereum.BUIDL, Ethereum.USDS, amountIn);
-        assertGt(expectedOut, 0);
-
         uint256 amountOut = groveBasin.swapExactIn(Ethereum.BUIDL, Ethereum.USDS, amountIn, 0, receiver, 0);
         vm.stopPrank();
 
-        assertEq(amountOut, expectedOut);
-        assertEq(IERC20(Ethereum.USDS).balanceOf(receiver), amountOut);
+        assertEq(amountOut, 1000e18);
+        assertEq(IERC20(Ethereum.USDS).balanceOf(receiver), 1000e18);
     }
 
+    // 1000 USDC (6 dec) -> BUIDL (6 dec) at 1:1 rates = 1000e6 BUIDL
     function test_swapExactIn_collateralTokenToCreditToken() public {
         uint256 amountIn = 1000e6;
         _dealToken(Ethereum.USDC, swapper, amountIn);
@@ -303,16 +301,14 @@ contract BUIDLForkTest_SwapExactIn is BUIDLForkTestBase {
         vm.startPrank(swapper);
         IERC20(Ethereum.USDC).approve(address(groveBasin), amountIn);
 
-        uint256 expectedOut = groveBasin.previewSwapExactIn(Ethereum.USDC, Ethereum.BUIDL, amountIn);
-        assertGt(expectedOut, 0);
-
         uint256 amountOut = groveBasin.swapExactIn(Ethereum.USDC, Ethereum.BUIDL, amountIn, 0, receiver, 0);
         vm.stopPrank();
 
-        assertEq(amountOut, expectedOut);
-        assertEq(IERC20(Ethereum.BUIDL).balanceOf(receiver), amountOut);
+        assertEq(amountOut, 1000e6);
+        assertEq(IERC20(Ethereum.BUIDL).balanceOf(receiver), 1000e6);
     }
 
+    // 1000 BUIDL (6 dec) -> USDC (6 dec) at 1:1 rates = 1000e6 USDC
     function test_swapExactIn_creditTokenToCollateralToken() public {
         uint256 amountIn = 1000e6;
         _dealToken(Ethereum.BUIDL, swapper, amountIn);
@@ -320,14 +316,11 @@ contract BUIDLForkTest_SwapExactIn is BUIDLForkTestBase {
         vm.startPrank(swapper);
         IERC20(Ethereum.BUIDL).approve(address(groveBasin), amountIn);
 
-        uint256 expectedOut = groveBasin.previewSwapExactIn(Ethereum.BUIDL, Ethereum.USDC, amountIn);
-        assertGt(expectedOut, 0);
-
         uint256 amountOut = groveBasin.swapExactIn(Ethereum.BUIDL, Ethereum.USDC, amountIn, 0, receiver, 0);
         vm.stopPrank();
 
-        assertEq(amountOut, expectedOut);
-        assertEq(IERC20(Ethereum.USDC).balanceOf(receiver), amountOut);
+        assertEq(amountOut, 1000e6);
+        assertEq(IERC20(Ethereum.USDC).balanceOf(receiver), 1000e6);
     }
 
     function test_swapExactIn_invalidSwap_swapTokenToCollateralToken() public {
@@ -359,72 +352,64 @@ contract BUIDLForkTest_SwapExactOut is BUIDLForkTestBase {
         _deposit(Ethereum.BUIDL, makeAddr("lp3"), 100_000e6);
     }
 
+    // Want 1000 BUIDL (6 dec) out, need 1000 USDS (18 dec) in at 1:1
     function test_swapExactOut_swapTokenToCreditToken() public {
         uint256 amountOut = 1000e6;
-        uint256 expectedIn = groveBasin.previewSwapExactOut(Ethereum.USDS, Ethereum.BUIDL, amountOut);
-        assertGt(expectedIn, 0);
-
-        _dealToken(Ethereum.USDS, swapper, expectedIn);
+        _dealToken(Ethereum.USDS, swapper, 1000e18);
 
         vm.startPrank(swapper);
-        IERC20(Ethereum.USDS).approve(address(groveBasin), expectedIn);
+        IERC20(Ethereum.USDS).approve(address(groveBasin), 1000e18);
 
-        uint256 amountIn = groveBasin.swapExactOut(Ethereum.USDS, Ethereum.BUIDL, amountOut, expectedIn, receiver, 0);
+        uint256 amountIn = groveBasin.swapExactOut(Ethereum.USDS, Ethereum.BUIDL, amountOut, 1000e18, receiver, 0);
         vm.stopPrank();
 
-        assertEq(amountIn, expectedIn);
-        assertEq(IERC20(Ethereum.BUIDL).balanceOf(receiver), amountOut);
+        assertEq(amountIn, 1000e18);
+        assertEq(IERC20(Ethereum.BUIDL).balanceOf(receiver), 1000e6);
     }
 
+    // Want 1000 USDS (18 dec) out, need 1000 BUIDL (6 dec) in at 1:1
     function test_swapExactOut_creditTokenToSwapToken() public {
         uint256 amountOut = 1000e18;
-        uint256 expectedIn = groveBasin.previewSwapExactOut(Ethereum.BUIDL, Ethereum.USDS, amountOut);
-        assertGt(expectedIn, 0);
-
-        _dealToken(Ethereum.BUIDL, swapper, expectedIn);
+        _dealToken(Ethereum.BUIDL, swapper, 1000e6);
 
         vm.startPrank(swapper);
-        IERC20(Ethereum.BUIDL).approve(address(groveBasin), expectedIn);
+        IERC20(Ethereum.BUIDL).approve(address(groveBasin), 1000e6);
 
-        uint256 amountIn = groveBasin.swapExactOut(Ethereum.BUIDL, Ethereum.USDS, amountOut, expectedIn, receiver, 0);
+        uint256 amountIn = groveBasin.swapExactOut(Ethereum.BUIDL, Ethereum.USDS, amountOut, 1000e6, receiver, 0);
         vm.stopPrank();
 
-        assertEq(amountIn, expectedIn);
-        assertEq(IERC20(Ethereum.USDS).balanceOf(receiver), amountOut);
+        assertEq(amountIn, 1000e6);
+        assertEq(IERC20(Ethereum.USDS).balanceOf(receiver), 1000e18);
     }
 
+    // Want 1000 BUIDL (6 dec) out, need 1000 USDC (6 dec) in at 1:1
     function test_swapExactOut_collateralTokenToCreditToken() public {
         uint256 amountOut = 1000e6;
-        uint256 expectedIn = groveBasin.previewSwapExactOut(Ethereum.USDC, Ethereum.BUIDL, amountOut);
-        assertGt(expectedIn, 0);
-
-        _dealToken(Ethereum.USDC, swapper, expectedIn);
+        _dealToken(Ethereum.USDC, swapper, 1000e6);
 
         vm.startPrank(swapper);
-        IERC20(Ethereum.USDC).approve(address(groveBasin), expectedIn);
+        IERC20(Ethereum.USDC).approve(address(groveBasin), 1000e6);
 
-        uint256 amountIn = groveBasin.swapExactOut(Ethereum.USDC, Ethereum.BUIDL, amountOut, expectedIn, receiver, 0);
+        uint256 amountIn = groveBasin.swapExactOut(Ethereum.USDC, Ethereum.BUIDL, amountOut, 1000e6, receiver, 0);
         vm.stopPrank();
 
-        assertEq(amountIn, expectedIn);
-        assertEq(IERC20(Ethereum.BUIDL).balanceOf(receiver), amountOut);
+        assertEq(amountIn, 1000e6);
+        assertEq(IERC20(Ethereum.BUIDL).balanceOf(receiver), 1000e6);
     }
 
+    // Want 1000 USDC (6 dec) out, need 1000 BUIDL (6 dec) in at 1:1
     function test_swapExactOut_creditTokenToCollateralToken() public {
         uint256 amountOut = 1000e6;
-        uint256 expectedIn = groveBasin.previewSwapExactOut(Ethereum.BUIDL, Ethereum.USDC, amountOut);
-        assertGt(expectedIn, 0);
-
-        _dealToken(Ethereum.BUIDL, swapper, expectedIn);
+        _dealToken(Ethereum.BUIDL, swapper, 1000e6);
 
         vm.startPrank(swapper);
-        IERC20(Ethereum.BUIDL).approve(address(groveBasin), expectedIn);
+        IERC20(Ethereum.BUIDL).approve(address(groveBasin), 1000e6);
 
-        uint256 amountIn = groveBasin.swapExactOut(Ethereum.BUIDL, Ethereum.USDC, amountOut, expectedIn, receiver, 0);
+        uint256 amountIn = groveBasin.swapExactOut(Ethereum.BUIDL, Ethereum.USDC, amountOut, 1000e6, receiver, 0);
         vm.stopPrank();
 
-        assertEq(amountIn, expectedIn);
-        assertEq(IERC20(Ethereum.USDC).balanceOf(receiver), amountOut);
+        assertEq(amountIn, 1000e6);
+        assertEq(IERC20(Ethereum.USDC).balanceOf(receiver), 1000e6);
     }
 
 }
@@ -438,28 +423,33 @@ contract BUIDLForkTest_YieldDistribution is BUIDLForkTestBase {
     address public depositor  = makeAddr("depositor");
     address public depositor2 = makeAddr("depositor2");
 
+    // 10_000 BUIDL deposited -> totalAssets = 10_000e18
+    // 10 BUIDL yield         -> totalAssets = 10_010e18 (exactly +10e18)
     function test_yieldDistribution_increasesTotalAssets() public {
         _deposit(Ethereum.BUIDL, depositor, 10_000e6);
 
-        uint256 totalAssetsBefore = groveBasin.totalAssets();
+        assertEq(groveBasin.totalAssets(), 10_000e18);
 
         _simulateYieldDistribution(address(groveBasin), 10e6);
 
-        assertGt(groveBasin.totalAssets(), totalAssetsBefore);
+        assertEq(groveBasin.totalAssets(), 10_010e18);
     }
 
+    // Share count stays at 10_000e18; value per share rises from 1e18 to 1.001e18
     function test_yieldDistribution_increasesShareValue() public {
         _deposit(Ethereum.BUIDL, depositor, 10_000e6);
 
-        uint256 sharesBefore        = groveBasin.shares(depositor);
-        uint256 valuePerShareBefore = groveBasin.convertToAssetValue(1e18);
+        assertEq(groveBasin.shares(depositor), 10_000e18);
+        assertEq(groveBasin.convertToAssetValue(1e18), 1e18);
 
         _simulateYieldDistribution(address(groveBasin), 10e6);
 
-        assertEq(groveBasin.shares(depositor), sharesBefore);
-        assertGt(groveBasin.convertToAssetValue(1e18), valuePerShareBefore);
+        assertEq(groveBasin.shares(depositor), 10_000e18);
+        // 1e18 * 10_010e18 / 10_000e18 = 1_001_000_000_000_000_000
+        assertEq(groveBasin.convertToAssetValue(1e18), 1.001e18);
     }
 
+    // Sole depositor can withdraw entire balance including yield
     function test_yieldDistribution_depositorCanWithdrawMore() public {
         uint256 depositAmount = 10_000e6;
         _deposit(Ethereum.BUIDL, depositor, depositAmount);
@@ -468,32 +458,42 @@ contract BUIDLForkTest_YieldDistribution is BUIDLForkTestBase {
         _simulateYieldDistribution(address(groveBasin), yieldAmount);
 
         address receiver = makeAddr("receiver");
-
         _withdraw(Ethereum.BUIDL, depositor, receiver, depositAmount + yieldAmount);
 
         assertEq(IERC20(Ethereum.BUIDL).balanceOf(receiver), depositAmount + yieldAmount);
+        assertEq(groveBasin.shares(depositor), 0);
+        assertEq(groveBasin.totalShares(), 0);
     }
 
+    // Two equal depositors: each gets 10_000e18 shares, totalAssets rises by exactly 20e18
     function test_yieldDistribution_multipleDepositors_fairSharing() public {
         _deposit(Ethereum.BUIDL, depositor,  10_000e6);
         _deposit(Ethereum.BUIDL, depositor2, 10_000e6);
 
-        uint256 totalAssetsBefore = groveBasin.totalAssets();
+        assertEq(groveBasin.totalAssets(), 20_000e18);
+        assertEq(groveBasin.shares(depositor), 10_000e18);
+        assertEq(groveBasin.shares(depositor2), 10_000e18);
 
         _simulateYieldDistribution(address(groveBasin), 20e6);
 
-        assertGt(groveBasin.totalAssets(), totalAssetsBefore);
+        assertEq(groveBasin.totalAssets(), 20_020e18);
         assertEq(groveBasin.shares(depositor), groveBasin.shares(depositor2));
     }
 
+    // After 100 BUIDL yield on 10_000 deposit, a second 10_000 deposit gets fewer shares:
+    // newShares = 10_000e18 * 10_000e18 / 10_100e18 = 9_900.990099009900990099e18
     function test_depositAfterYieldDistribution_fewerShares() public {
         _deposit(Ethereum.BUIDL, depositor, 10_000e6);
 
         _simulateYieldDistribution(address(groveBasin), 100e6);
 
+        assertEq(groveBasin.totalAssets(), 10_100e18);
+
         _deposit(Ethereum.BUIDL, depositor2, 10_000e6);
 
-        assertLt(groveBasin.shares(depositor2), groveBasin.shares(depositor));
+        assertEq(groveBasin.shares(depositor), 10_000e18);
+        // 10_000e18 * 10_000e18 / 10_100e18 = 9900990099009900990099
+        assertEq(groveBasin.shares(depositor2), 9_900990099009900990099);
     }
 
 }
