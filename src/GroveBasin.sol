@@ -27,11 +27,10 @@ contract GroveBasin is IGroveBasin, AccessControl {
     address public override immutable collateralTokenRateProvider;
     address public override immutable creditTokenRateProvider;
 
-    uint256 public override maxSwapSize;
-
     address public override pocket;
 
     uint256 public override totalShares;
+    uint256 public override maxSwapSize;
 
     mapping(address user => uint256 shares) public override shares;
 
