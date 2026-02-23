@@ -15,6 +15,10 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     using SafeERC20 for IERC20;
 
+    uint256 public constant override BPS = 10_000;
+
+    bytes32 public constant override LIQUIDITY_PROVIDER_ROLE = keccak256("LIQUIDITY_PROVIDER_ROLE");
+
     uint256 internal immutable _swapTokenPrecision;
     uint256 internal immutable _collateralTokenPrecision;
     uint256 internal immutable _creditTokenPrecision;
@@ -31,6 +35,11 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     uint256 public override totalShares;
     uint256 public override maxSwapSize;
+
+    uint256 public override purchaseFee;
+    uint256 public override redemptionFee;
+    uint256 public override minFee;
+    uint256 public override maxFee;
 
     mapping(address user => uint256 shares) public override shares;
 
@@ -102,6 +111,22 @@ contract GroveBasin is IGroveBasin, AccessControl {
         emit MaxSwapSizeSet(oldMaxSwapSize, newMaxSwapSize);
     }
 
+    function setFeeBounds(uint256 newMinFee, uint256 newMaxFee) external override onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(newMinFee <= newMaxFee, "GroveBasin/min-fee-gt-max-fee");
+        require(newMaxFee < BPS,        "GroveBasin/max-fee-gte-bps");
+
+        require(purchaseFee    >= newMinFee && purchaseFee    <= newMaxFee, "GroveBasin/purchase-fee-out-of-bounds");
+        require(redemptionFee  >= newMinFee && redemptionFee  <= newMaxFee, "GroveBasin/redemption-fee-out-of-bounds");
+
+        uint256 oldMinFee = minFee;
+        uint256 oldMaxFee = maxFee;
+
+        minFee = newMinFee;
+        maxFee = newMaxFee;
+
+        emit FeeBoundsSet(oldMinFee, oldMaxFee, newMinFee, newMaxFee);
+    }
+
     function setPocket(address newPocket) external override onlyRole(DEFAULT_ADMIN_ROLE) {
         require(newPocket != address(0), "GroveBasin/invalid-pocket");
 
@@ -120,6 +145,40 @@ contract GroveBasin is IGroveBasin, AccessControl {
         pocket = newPocket;
 
         emit PocketSet(pocket_, newPocket, amountToTransfer);
+    }
+
+    /**********************************************************************************************/
+    /*** Liquidity provider functions                                                           ***/
+    /**********************************************************************************************/
+
+    function setPurchaseFee(uint256 newPurchaseFee) external override onlyRole(LIQUIDITY_PROVIDER_ROLE) {
+        require(newPurchaseFee >= minFee && newPurchaseFee <= maxFee, "GroveBasin/purchase-fee-out-of-bounds");
+
+        uint256 oldPurchaseFee = purchaseFee;
+        purchaseFee = newPurchaseFee;
+
+        emit PurchaseFeeSet(oldPurchaseFee, newPurchaseFee);
+    }
+
+    function setRedemptionFee(uint256 newRedemptionFee) external override onlyRole(LIQUIDITY_PROVIDER_ROLE) {
+        require(newRedemptionFee >= minFee && newRedemptionFee <= maxFee, "GroveBasin/redemption-fee-out-of-bounds");
+
+        uint256 oldRedemptionFee = redemptionFee;
+        redemptionFee = newRedemptionFee;
+
+        emit RedemptionFeeSet(oldRedemptionFee, newRedemptionFee);
+    }
+
+    /**********************************************************************************************/
+    /*** Fee calculation functions                                                              ***/
+    /**********************************************************************************************/
+
+    function calculatePurchaseFee(uint256 amount) external view override returns (uint256) {
+        return amount * purchaseFee / BPS;
+    }
+
+    function calculateRedemptionFee(uint256 amount) external view override returns (uint256) {
+        return amount * redemptionFee / BPS;
     }
 
     /**********************************************************************************************/
@@ -256,6 +315,11 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         // Round down to get amountOut
         amountOut = _getSwapQuote(assetIn, assetOut, amountIn, false);
+
+        uint256 fee = _getApplicableFee(assetIn, assetOut);
+        if (fee != 0) {
+            amountOut = amountOut * (BPS - fee) / BPS;
+        }
     }
 
     function previewSwapExactOut(address assetIn, address assetOut, uint256 amountOut)
@@ -265,6 +329,11 @@ contract GroveBasin is IGroveBasin, AccessControl {
         amountIn = _getSwapQuote(assetOut, assetIn, amountOut, true);
 
         require(_getAssetValue(assetIn, amountIn, false) <= maxSwapSize, "GroveBasin/swap-size-exceeded");
+        
+        uint256 fee = _getApplicableFee(assetIn, assetOut);
+        if (fee != 0) {
+            amountIn = Math.ceilDiv(amountIn * BPS, BPS - fee);
+        }
     }
 
     /**********************************************************************************************/
@@ -471,6 +540,12 @@ contract GroveBasin is IGroveBasin, AccessControl {
             return Math.ceilDiv(assetValue * totalShares, totalValue);
         }
         return assetValue;
+    }
+
+    function _getApplicableFee(address assetIn, address assetOut) internal view returns (uint256) {
+        if (assetOut == address(creditToken)) return purchaseFee;
+        if (assetIn  == address(creditToken)) return redemptionFee;
+        return 0;
     }
 
     function _isValidAsset(address asset) internal view returns (bool) {

@@ -17,6 +17,29 @@ interface IGroveBasin {
     event MaxSwapSizeSet(uint256 oldMaxSwapSize, uint256 newMaxSwapSize);
 
     /**
+     *  @dev   Emitted when the fee bounds are set by governance.
+     *  @param oldMinFee Old minimum fee in BPS.
+     *  @param oldMaxFee Old maximum fee in BPS.
+     *  @param newMinFee New minimum fee in BPS.
+     *  @param newMaxFee New maximum fee in BPS.
+     */
+    event FeeBoundsSet(uint256 oldMinFee, uint256 oldMaxFee, uint256 newMinFee, uint256 newMaxFee);
+
+    /**
+     *  @dev   Emitted when the purchase fee is set.
+     *  @param oldPurchaseFee Old purchase fee in BPS.
+     *  @param newPurchaseFee New purchase fee in BPS.
+     */
+    event PurchaseFeeSet(uint256 oldPurchaseFee, uint256 newPurchaseFee);
+
+    /**
+     *  @dev   Emitted when the redemption fee is set.
+     *  @param oldRedemptionFee Old redemption fee in BPS.
+     *  @param newRedemptionFee New redemption fee in BPS.
+     */
+    event RedemptionFeeSet(uint256 oldRedemptionFee, uint256 newRedemptionFee);
+
+    /**
      *  @dev   Emitted when a new pocket is set in the GroveBasin, transferring the balance of the
      *         swap token of the old pocket to the new pocket.
      *  @param oldPocket         Address of the old `pocket`.
@@ -154,6 +177,42 @@ interface IGroveBasin {
      */
     function shares(address user) external view returns (uint256);
 
+    /**
+     *  @dev    Returns the basis points denominator (10,000 = 100%).
+     *  @return The BPS denominator.
+     */
+    function BPS() external view returns (uint256);
+
+    /**
+     *  @dev    Returns the role identifier for the liquidity provider role.
+     *  @return The bytes32 role identifier.
+     */
+    function LIQUIDITY_PROVIDER_ROLE() external view returns (bytes32);
+
+    /**
+     *  @dev    Returns the current purchase fee in BPS. Applied when buying credit tokens.
+     *  @return The purchase fee in BPS.
+     */
+    function purchaseFee() external view returns (uint256);
+
+    /**
+     *  @dev    Returns the current redemption fee in BPS. Applied when redeeming credit tokens.
+     *  @return The redemption fee in BPS.
+     */
+    function redemptionFee() external view returns (uint256);
+
+    /**
+     *  @dev    Returns the minimum allowed fee in BPS.
+     *  @return The minimum fee bound in BPS.
+     */
+    function minFee() external view returns (uint256);
+
+    /**
+     *  @dev    Returns the maximum allowed fee in BPS.
+     *  @return The maximum fee bound in BPS.
+     */
+    function maxFee() external view returns (uint256);
+
     /**********************************************************************************************/
     /*** Owner functions                                                                        ***/
     /**********************************************************************************************/
@@ -166,6 +225,14 @@ interface IGroveBasin {
     function setMaxSwapSize(uint256 newMaxSwapSize) external;
 
     /**
+     *  @dev    Sets the fee bounds for both purchase and redemption fees. Callable only by
+     *          governance (DEFAULT_ADMIN_ROLE). Current fees must be within the new bounds.
+     *  @param  newMinFee New minimum fee in BPS.
+     *  @param  newMaxFee New maximum fee in BPS.
+     */
+    function setFeeBounds(uint256 newMinFee, uint256 newMaxFee) external;
+
+    /**
      *  @dev    Sets the address of the pocket, an address that holds custody of the swap token
      *          in the GroveBasin and can deploy it to yield-bearing strategies. This function will
      *          transfer the balance of the swap token in the GroveBasin to the new pocket.
@@ -173,6 +240,42 @@ interface IGroveBasin {
      *  @param  newPocket Address of the new pocket.
      */
     function setPocket(address newPocket) external;
+
+    /**********************************************************************************************/
+    /*** Liquidity provider functions                                                           ***/
+    /**********************************************************************************************/
+
+    /**
+     *  @dev    Sets the purchase fee applied when buying credit tokens. Callable only by
+     *          LIQUIDITY_PROVIDER_ROLE. Fee must be within [minFee, maxFee].
+     *  @param  newPurchaseFee New purchase fee in BPS.
+     */
+    function setPurchaseFee(uint256 newPurchaseFee) external;
+
+    /**
+     *  @dev    Sets the redemption fee applied when redeeming credit tokens. Callable only by
+     *          LIQUIDITY_PROVIDER_ROLE. Fee must be within [minFee, maxFee].
+     *  @param  newRedemptionFee New redemption fee in BPS.
+     */
+    function setRedemptionFee(uint256 newRedemptionFee) external;
+
+    /**********************************************************************************************/
+    /*** Fee calculation functions                                                              ***/
+    /**********************************************************************************************/
+
+    /**
+     *  @dev    View function that calculates the purchase fee for a given amount.
+     *  @param  amount The gross amount to calculate the fee on.
+     *  @return fee    The fee amount that would be deducted.
+     */
+    function calculatePurchaseFee(uint256 amount) external view returns (uint256 fee);
+
+    /**
+     *  @dev    View function that calculates the redemption fee for a given amount.
+     *  @param  amount The gross amount to calculate the fee on.
+     *  @return fee    The fee amount that would be deducted.
+     */
+    function calculateRedemptionFee(uint256 amount) external view returns (uint256 fee);
 
     /**********************************************************************************************/
     /*** Swap functions                                                                         ***/
