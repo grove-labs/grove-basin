@@ -184,10 +184,10 @@ interface IGroveBasin {
     function BPS() external view returns (uint256);
 
     /**
-     *  @dev    Returns the role identifier for the liquidity provider role.
+     *  @dev    Returns the role identifier for the manager role.
      *  @return The bytes32 role identifier.
      */
-    function LIQUIDITY_PROVIDER_ROLE() external view returns (bytes32);
+    function MANAGER_ROLE() external view returns (bytes32);
 
     /**
      *  @dev    Returns the current purchase fee in BPS. Applied when buying credit tokens.
@@ -226,7 +226,8 @@ interface IGroveBasin {
 
     /**
      *  @dev    Sets the fee bounds for both purchase and redemption fees. Callable only by
-     *          governance (DEFAULT_ADMIN_ROLE). Current fees must be within the new bounds.
+     *          governance (DEFAULT_ADMIN_ROLE). If current fees are outside the new bounds,
+     *          they are clamped to the nearest bound.
      *  @param  newMinFee New minimum fee in BPS.
      *  @param  newMaxFee New maximum fee in BPS.
      */
@@ -247,14 +248,14 @@ interface IGroveBasin {
 
     /**
      *  @dev    Sets the purchase fee applied when buying credit tokens. Callable only by
-     *          LIQUIDITY_PROVIDER_ROLE. Fee must be within [minFee, maxFee].
+     *          the MANAGER_ROLE. Fee must be within [minFee, maxFee].
      *  @param  newPurchaseFee New purchase fee in BPS.
      */
     function setPurchaseFee(uint256 newPurchaseFee) external;
 
     /**
      *  @dev    Sets the redemption fee applied when redeeming credit tokens. Callable only by
-     *          LIQUIDITY_PROVIDER_ROLE. Fee must be within [minFee, maxFee].
+     *          the MANAGER_ROLE. Fee must be within [minFee, maxFee].
      *  @param  newRedemptionFee New redemption fee in BPS.
      */
     function setRedemptionFee(uint256 newRedemptionFee) external;
@@ -265,17 +266,19 @@ interface IGroveBasin {
 
     /**
      *  @dev    View function that calculates the purchase fee for a given amount.
-     *  @param  amount The gross amount to calculate the fee on.
-     *  @return fee    The fee amount that would be deducted.
+     *  @param  amount  The gross amount to calculate the fee on.
+     *  @param  roundUp Whether to round up the fee calculation.
+     *  @return fee     The fee amount that would be deducted.
      */
-    function calculatePurchaseFee(uint256 amount) external view returns (uint256 fee);
+    function calculatePurchaseFee(uint256 amount, bool roundUp) external view returns (uint256 fee);
 
     /**
      *  @dev    View function that calculates the redemption fee for a given amount.
-     *  @param  amount The gross amount to calculate the fee on.
-     *  @return fee    The fee amount that would be deducted.
+     *  @param  amount  The gross amount to calculate the fee on.
+     *  @param  roundUp Whether to round up the fee calculation.
+     *  @return fee     The fee amount that would be deducted.
      */
-    function calculateRedemptionFee(uint256 amount) external view returns (uint256 fee);
+    function calculateRedemptionFee(uint256 amount, bool roundUp) external view returns (uint256 fee);
 
     /**********************************************************************************************/
     /*** Swap functions                                                                         ***/
