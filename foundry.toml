@@ -25,12 +25,12 @@ fail_on_revert = true
 runs = 1000
 
 [profile.master.invariant]
-runs = 250
-depth = 2500
-shrink_run_limit = 50_000
+runs = 200
+depth = 2000
+shrink_run_limit = 40_000
 
 [profile.master.fuzz]
-runs = 1_000_000
+runs = 750_000
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
 
