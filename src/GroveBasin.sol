@@ -541,11 +541,14 @@ contract GroveBasin is IGroveBasin, AccessControl {
         }
         return assetValue;
     }
-
+    
+    // Assumes assetIn or assetOut is credit token
     function _getApplicableFee(address assetIn, address assetOut) internal view returns (uint256) {
-        if (assetOut == address(creditToken)) return purchaseFee;
-        if (assetIn  == address(creditToken)) return redemptionFee;
-        return 0;
+        if (assetOut == address(creditToken)) {
+            return purchaseFee;
+        }
+        
+        return redemptionFee;
     }
 
     function _isValidAsset(address asset) internal view returns (bool) {
