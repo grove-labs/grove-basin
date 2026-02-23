@@ -35,17 +35,17 @@ contract GroveBasinSetFeeBoundsFailureTests is GroveBasinTestBase {
         groveBasin.setFeeBounds(200, 100);
     }
 
-    function test_setFeeBounds_maxGteBps() public {
+    function test_setFeeBounds_maxGtBps() public {
         vm.prank(owner);
         vm.expectRevert("GroveBasin/max-fee-gte-bps");
-        groveBasin.setFeeBounds(0, 10_000);
+        groveBasin.setFeeBounds(0, 10_001);
     }
 
-    function test_setFeeBounds_maxGteBps_boundary() public {
+    function test_setFeeBounds_maxGtBps_boundary() public {
         vm.prank(owner);
-        groveBasin.setFeeBounds(0, 9_999);
+        groveBasin.setFeeBounds(0, 10_000);
 
-        assertEq(groveBasin.maxFee(), 9_999);
+        assertEq(groveBasin.maxFee(), 10_000);
     }
 
 }
