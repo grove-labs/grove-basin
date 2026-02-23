@@ -18,6 +18,7 @@ import { SwapperHandler }       from "test/invariant/handlers/SwapperHandler.sol
 import { TimeBasedRateHandler } from "test/invariant/handlers/TimeBasedRateHandler.sol";
 import { TransferHandler }      from "test/invariant/handlers/TransferHandler.sol";
 import { OwnerHandler }         from "test/invariant/handlers/OwnerHandler.sol";
+import { MockSSRRateProvider }  from "test/mocks/MockSSRRateProvider.sol";
 
 abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
 
@@ -555,8 +556,10 @@ contract GroveBasinInvariants_TimeBasedRateSetting_NoTransfer is GroveBasinInvar
         }));
         ssrOracle.revokeRole(ssrOracle.DATA_PROVIDER_ROLE(), address(this));
 
+        MockSSRRateProvider ssrRateProvider = new MockSSRRateProvider(ssrOracle);
+
         // Redeploy GroveBasin with new rate provider
-        groveBasin = new GroveBasin(owner, address(swapToken), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(ssrOracle));
+        groveBasin = new GroveBasin(owner, address(swapToken), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(ssrRateProvider));
 
         // NOTE: Don't need to set GroveBasin as pocket for this suite as its default on deploy
 
@@ -571,7 +574,7 @@ contract GroveBasinInvariants_TimeBasedRateSetting_NoTransfer is GroveBasinInvar
         // oracle.
         ssrOracle.grantRole(ssrOracle.DATA_PROVIDER_ROLE(), address(timeBasedRateHandler));
 
-        creditTokenRateProvider = IRateProviderLike(address(ssrOracle));
+        creditTokenRateProvider = IRateProviderLike(address(ssrRateProvider));
 
         // Manually set initial values for the oracle through the handler to start
         timeBasedRateHandler.setRateData(1e27);
@@ -636,8 +639,10 @@ contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinIn
         }));
         ssrOracle.revokeRole(ssrOracle.DATA_PROVIDER_ROLE(), address(this));
 
+        MockSSRRateProvider ssrRateProvider = new MockSSRRateProvider(ssrOracle);
+
         // Redeploy GroveBasin with new rate provider
-        groveBasin = new GroveBasin(owner, address(swapToken), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(ssrOracle));
+        groveBasin = new GroveBasin(owner, address(swapToken), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(ssrRateProvider));
 
         // NOTE: This base test suite tests the case of the GroveBasin being the pocket for the whole time,
         //       where the other suites are testing with an external `pocket`.
@@ -654,7 +659,7 @@ contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinIn
         // oracle.
         ssrOracle.grantRole(ssrOracle.DATA_PROVIDER_ROLE(), address(timeBasedRateHandler));
 
-        creditTokenRateProvider = IRateProviderLike(address(ssrOracle));
+        creditTokenRateProvider = IRateProviderLike(address(ssrRateProvider));
 
         // Manually set initial values for the oracle through the handler to start
         timeBasedRateHandler.setRateData(1e27);

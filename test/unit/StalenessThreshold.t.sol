@@ -1,0 +1,384 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+pragma solidity ^0.8.34;
+
+import "forge-std/Test.sol";
+
+import { GroveBasin } from "src/GroveBasin.sol";
+
+import { MockERC20, MockRateProvider, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
+
+import { GroveBasinHarness } from "test/unit/harnesses/GroveBasinHarness.sol";
+
+/**********************************************************************************************/
+/*** setStalenessThreshold tests                                                            ***/
+/**********************************************************************************************/
+
+contract GroveBasinSetStalenessThresholdFailureTests is GroveBasinTestBase {
+
+    function test_setStalenessThreshold_notAdmin() public {
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                address(this),
+                groveBasin.DEFAULT_ADMIN_ROLE()
+            )
+        );
+        groveBasin.setStalenessThreshold(1 hours);
+    }
+
+    function test_setStalenessThreshold_zero() public {
+        vm.prank(owner);
+        vm.expectRevert("GroveBasin/threshold-too-low");
+        groveBasin.setStalenessThreshold(0);
+    }
+
+    function test_setStalenessThreshold_sameThresholdNonZero() public {
+        vm.prank(owner);
+        groveBasin.setStalenessThreshold(1 hours);
+
+        vm.prank(owner);
+        vm.expectRevert("GroveBasin/same-staleness-threshold");
+        groveBasin.setStalenessThreshold(1 hours);
+    }
+
+    function test_setStalenessThreshold_tooLow() public {
+        vm.prank(owner);
+        vm.expectRevert("GroveBasin/threshold-too-low");
+        groveBasin.setStalenessThreshold(5 minutes - 1);
+    }
+
+    function test_setStalenessThreshold_minimumBoundary() public {
+        vm.prank(owner);
+        vm.expectRevert("GroveBasin/threshold-too-low");
+        groveBasin.setStalenessThreshold(1);
+
+        vm.prank(owner);
+        groveBasin.setStalenessThreshold(5 minutes);
+
+        assertEq(groveBasin.stalenessThreshold(), 5 minutes);
+    }
+
+}
+
+contract GroveBasinSetStalenessThresholdSuccessTests is GroveBasinTestBase {
+
+    event StalenessThresholdSet(uint256 oldThreshold, uint256 newThreshold);
+
+    function test_setStalenessThreshold() public {
+        assertEq(groveBasin.stalenessThreshold(), 0);
+
+        vm.prank(owner);
+        vm.expectEmit(address(groveBasin));
+        emit StalenessThresholdSet(0, 1 hours);
+        groveBasin.setStalenessThreshold(1 hours);
+
+        assertEq(groveBasin.stalenessThreshold(), 1 hours);
+    }
+
+    function test_setStalenessThreshold_update() public {
+        vm.prank(owner);
+        groveBasin.setStalenessThreshold(1 hours);
+
+        vm.prank(owner);
+        vm.expectEmit(address(groveBasin));
+        emit StalenessThresholdSet(1 hours, 2 hours);
+        groveBasin.setStalenessThreshold(2 hours);
+
+        assertEq(groveBasin.stalenessThreshold(), 2 hours);
+    }
+
+    function test_setStalenessThreshold_cannotDisable() public {
+        vm.prank(owner);
+        groveBasin.setStalenessThreshold(1 hours);
+
+        vm.prank(owner);
+        vm.expectRevert("GroveBasin/threshold-too-low");
+        groveBasin.setStalenessThreshold(0);
+    }
+
+}
+
+/**********************************************************************************************/
+/*** Staleness check tests                                                                  ***/
+/**********************************************************************************************/
+
+contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
+
+    address swapper  = makeAddr("swapper");
+    address receiver = makeAddr("receiver");
+
+    function setUp() public override {
+        super.setUp();
+
+        vm.warp(10 hours);
+
+        mockSwapTokenRateProvider.__setConversionRate(1e27);
+        mockCollateralTokenRateProvider.__setConversionRate(1e27);
+        mockCreditTokenRateProvider.__setConversionRate(1.25e27);
+
+        vm.prank(owner);
+        groveBasin.setStalenessThreshold(1 hours);
+
+        collateralToken.mint(address(groveBasin), 1_000_000e18);
+        swapToken.mint(pocket, 1_000_000e6);
+        creditToken.mint(address(groveBasin), 1_000_000e18);
+
+        _deposit(address(swapToken), swapper, 10_000e6);
+    }
+
+    /**********************************************************************************************/
+    /*** Before threshold is set (default 0), staleness is not enforced                         ***/
+    /**********************************************************************************************/
+
+    function test_defaultThreshold_staleRateAllowed() public {
+        GroveBasin freshBasin = new GroveBasin(
+            owner,
+            address(swapToken),
+            address(collateralToken),
+            address(creditToken),
+            address(swapTokenRateProvider),
+            address(collateralTokenRateProvider),
+            address(creditTokenRateProvider)
+        );
+
+        assertEq(freshBasin.stalenessThreshold(), 0);
+
+        collateralToken.mint(address(freshBasin), 1e18);
+
+        mockSwapTokenRateProvider.__setLastUpdated(1);
+
+        assertGt(freshBasin.totalAssets(), 0);
+    }
+
+    /**********************************************************************************************/
+    /*** totalAssets reverts on stale rate                                                       ***/
+    /**********************************************************************************************/
+
+    function test_totalAssets_staleSwapRate() public {
+        mockSwapTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours - 1);
+
+        vm.expectRevert("GroveBasin/stale-rate");
+        groveBasin.totalAssets();
+    }
+
+    function test_totalAssets_staleCollateralRate() public {
+        mockCollateralTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours - 1);
+
+        vm.expectRevert("GroveBasin/stale-rate");
+        groveBasin.totalAssets();
+    }
+
+    function test_totalAssets_staleCreditRate() public {
+        mockCreditTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours - 1);
+
+        vm.expectRevert("GroveBasin/stale-rate");
+        groveBasin.totalAssets();
+    }
+
+    function test_totalAssets_freshRates() public {
+        assertGt(groveBasin.totalAssets(), 0);
+    }
+
+    /**********************************************************************************************/
+    /*** Boundary: exactly at threshold is allowed, threshold + 1 reverts                       ***/
+    /**********************************************************************************************/
+
+    function test_staleness_boundary() public {
+        mockSwapTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours);
+
+        assertGt(groveBasin.totalAssets(), 0);
+
+        mockSwapTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours - 1);
+
+        vm.expectRevert("GroveBasin/stale-rate");
+        groveBasin.totalAssets();
+    }
+
+    /**********************************************************************************************/
+    /*** Swaps revert on stale rate                                                             ***/
+    /**********************************************************************************************/
+
+    function test_swapExactIn_staleRate() public {
+        mockCreditTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours - 1);
+
+        swapToken.mint(swapper, 100e6);
+        vm.startPrank(swapper);
+        swapToken.approve(address(groveBasin), 100e6);
+
+        vm.expectRevert("GroveBasin/stale-rate");
+        groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, receiver, 0);
+    }
+
+    function test_swapExactOut_staleRate() public {
+        mockCreditTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours - 1);
+
+        swapToken.mint(swapper, 200e6);
+        vm.startPrank(swapper);
+        swapToken.approve(address(groveBasin), 200e6);
+
+        vm.expectRevert("GroveBasin/stale-rate");
+        groveBasin.swapExactOut(address(swapToken), address(creditToken), 80e18, 200e6, receiver, 0);
+    }
+
+    /**********************************************************************************************/
+    /*** Deposits revert on stale rate                                                          ***/
+    /**********************************************************************************************/
+
+    function test_deposit_staleRate() public {
+        mockCreditTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours - 1);
+
+        creditToken.mint(swapper, 100e18);
+        vm.startPrank(swapper);
+        creditToken.approve(address(groveBasin), 100e18);
+
+        vm.expectRevert("GroveBasin/stale-rate");
+        groveBasin.deposit(address(creditToken), swapper, 100e18);
+    }
+
+    /**********************************************************************************************/
+    /*** Withdrawals revert on stale rate                                                       ***/
+    /**********************************************************************************************/
+
+    function test_withdraw_staleRate() public {
+        mockSwapTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours - 1);
+
+        vm.prank(swapper);
+        vm.expectRevert("GroveBasin/stale-rate");
+        groveBasin.withdraw(address(swapToken), swapper, 100e6);
+    }
+
+    /**********************************************************************************************/
+    /*** Preview functions revert on stale rate                                                 ***/
+    /**********************************************************************************************/
+
+    function test_previewSwapExactIn_staleRate() public {
+        mockSwapTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours - 1);
+
+        vm.expectRevert("GroveBasin/stale-rate");
+        groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), 100e6);
+    }
+
+    function test_previewSwapExactOut_staleRate() public {
+        mockSwapTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours - 1);
+
+        vm.expectRevert("GroveBasin/stale-rate");
+        groveBasin.previewSwapExactOut(address(swapToken), address(creditToken), 80e18);
+    }
+
+    function test_previewDeposit_staleRate() public {
+        mockCollateralTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours - 1);
+
+        vm.expectRevert("GroveBasin/stale-rate");
+        groveBasin.previewDeposit(address(collateralToken), 100e18);
+    }
+
+    function test_previewWithdraw_staleRate() public {
+        mockCreditTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours - 1);
+
+        vm.expectRevert("GroveBasin/stale-rate");
+        groveBasin.previewWithdraw(address(creditToken), 100e18);
+    }
+
+    /**********************************************************************************************/
+    /*** convertToAssets and convertToShares revert on stale rate                               ***/
+    /**********************************************************************************************/
+
+    function test_convertToAssets_staleRate() public {
+        mockSwapTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours - 1);
+
+        vm.expectRevert("GroveBasin/stale-rate");
+        groveBasin.convertToAssets(address(swapToken), 100e18);
+    }
+
+    function test_convertToShares_asset_staleRate() public {
+        mockCollateralTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours - 1);
+
+        vm.expectRevert("GroveBasin/stale-rate");
+        groveBasin.convertToShares(address(collateralToken), 100e18);
+    }
+
+    /**********************************************************************************************/
+    /*** _tryGetConversionRate harness tests                                                    ***/
+    /**********************************************************************************************/
+
+    function test_tryGetConversionRate_fresh() public {
+        GroveBasinHarness harness = new GroveBasinHarness(
+            owner,
+            address(swapToken),
+            address(collateralToken),
+            address(creditToken),
+            address(swapTokenRateProvider),
+            address(collateralTokenRateProvider),
+            address(creditTokenRateProvider)
+        );
+
+        vm.prank(owner);
+        harness.setStalenessThreshold(1 hours);
+
+        uint256 rate = harness.tryGetConversionRate(address(swapTokenRateProvider));
+        assertEq(rate, 1e27);
+    }
+
+    function test_tryGetConversionRate_stale() public {
+        GroveBasinHarness harness = new GroveBasinHarness(
+            owner,
+            address(swapToken),
+            address(collateralToken),
+            address(creditToken),
+            address(swapTokenRateProvider),
+            address(collateralTokenRateProvider),
+            address(creditTokenRateProvider)
+        );
+
+        vm.prank(owner);
+        harness.setStalenessThreshold(1 hours);
+
+        mockSwapTokenRateProvider.__setLastUpdated(block.timestamp - 2 hours);
+
+        vm.expectRevert("GroveBasin/stale-rate");
+        harness.tryGetConversionRate(address(swapTokenRateProvider));
+    }
+
+    function test_tryGetConversionRate_noThreshold() public {
+        GroveBasinHarness harness = new GroveBasinHarness(
+            owner,
+            address(swapToken),
+            address(collateralToken),
+            address(creditToken),
+            address(swapTokenRateProvider),
+            address(collateralTokenRateProvider),
+            address(creditTokenRateProvider)
+        );
+
+        mockSwapTokenRateProvider.__setLastUpdated(1);
+
+        uint256 rate = harness.tryGetConversionRate(address(swapTokenRateProvider));
+        assertEq(rate, 1e27);
+    }
+
+    /**********************************************************************************************/
+    /*** Fuzz tests                                                                             ***/
+    /**********************************************************************************************/
+
+    function testFuzz_staleness_boundary(uint256 threshold, uint256 age) public {
+        threshold = _bound(threshold, 5 minutes, 365 days);
+        age       = _bound(age, 0, block.timestamp);
+
+        if (threshold != groveBasin.stalenessThreshold()) {
+            vm.prank(owner);
+            groveBasin.setStalenessThreshold(threshold);
+        }
+
+        mockSwapTokenRateProvider.__setLastUpdated(block.timestamp - age);
+        mockCollateralTokenRateProvider.__setLastUpdated(block.timestamp);
+        mockCreditTokenRateProvider.__setLastUpdated(block.timestamp);
+
+        if (age > threshold) {
+            vm.expectRevert("GroveBasin/stale-rate");
+            groveBasin.totalAssets();
+        } else {
+            assertGt(groveBasin.totalAssets(), 0);
+        }
+    }
+
+}

@@ -33,6 +33,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     address public override pocket;
 
+    uint256 public override stalenessThreshold;
     uint256 public override totalShares;
     uint256 public override maxSwapSize;
 
@@ -42,6 +43,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
     uint256 public override maxFee;
 
     mapping(address user => uint256 shares) public override shares;
+
+    uint256 public constant MIN_STALENESS_THRESHOLD = 5 minutes;
 
     constructor(
         address owner_,
@@ -109,6 +112,16 @@ contract GroveBasin is IGroveBasin, AccessControl {
         uint256 oldMaxSwapSize = maxSwapSize;
         maxSwapSize = newMaxSwapSize;
         emit MaxSwapSizeSet(oldMaxSwapSize, newMaxSwapSize);
+    }
+    
+    function setStalenessThreshold(uint256 newThreshold)
+        external override onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        require(newThreshold >= MIN_STALENESS_THRESHOLD, "GroveBasin/threshold-too-low");
+        uint256 oldThreshold = stalenessThreshold;
+        require(newThreshold != oldThreshold, "GroveBasin/same-staleness-threshold");
+        stalenessThreshold = newThreshold;
+        emit StalenessThresholdSet(oldThreshold, newThreshold);
     }
 
     function setFeeBounds(uint256 newMinFee, uint256 newMaxFee) external override onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -356,7 +369,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
             return assetValue
                 * 1e9
                 * _swapTokenPrecision
-                / IRateProviderLike(swapTokenRateProvider).getConversionRate();
+                / _tryGetConversionRate(swapTokenRateProvider);
         }
         else if (asset == address(collateralToken)) {
             // assetValue is in 1e18, rate is 1e27, precision is native decimals
@@ -364,14 +377,14 @@ contract GroveBasin is IGroveBasin, AccessControl {
             return assetValue
                 * 1e9
                 * _collateralTokenPrecision
-                / IRateProviderLike(collateralTokenRateProvider).getConversionRate();
+                / _tryGetConversionRate(collateralTokenRateProvider);
         }
 
         // NOTE: Multiplying by 1e27 and dividing by 1e18 cancels to 1e9 in numerator
         return assetValue
             * 1e9
             * _creditTokenPrecision
-            / IRateProviderLike(creditTokenRateProvider).getConversionRate();
+            / _tryGetConversionRate(creditTokenRateProvider);
     }
 
     function convertToAssetValue(uint256 numShares) public view override returns (uint256) {
@@ -419,7 +432,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     function _getSwapTokenValue(uint256 amount) internal view returns (uint256) {
         return amount
-            * IRateProviderLike(swapTokenRateProvider).getConversionRate()
+            * _tryGetConversionRate(swapTokenRateProvider)
             / 1e9
             / _swapTokenPrecision;
     }
@@ -428,20 +441,21 @@ contract GroveBasin is IGroveBasin, AccessControl {
         // amount * rate / 1e27 gives USD value, then scale to 1e18
         // amount * rate / 1e9 / precision = amount * rate / (1e9 * precision)
         return amount
-            * IRateProviderLike(collateralTokenRateProvider).getConversionRate()
+            * _tryGetConversionRate(collateralTokenRateProvider)
             / 1e9
             / _collateralTokenPrecision;
     }
 
     function _getCreditTokenValue(uint256 amount, bool roundUp) internal view returns (uint256) {
+        uint256 rate = _tryGetConversionRate(creditTokenRateProvider);
         // NOTE: Multiplying by 1e18 and dividing by 1e27 cancels to 1e9 in denominator
         if (!roundUp) return amount
-            * IRateProviderLike(creditTokenRateProvider).getConversionRate()
+            * rate
             / 1e9
             / _creditTokenPrecision;
 
         return Math.ceilDiv(
-            Math.ceilDiv(amount * IRateProviderLike(creditTokenRateProvider).getConversionRate(), 1e9),
+            Math.ceilDiv(amount * rate, 1e9),
             _creditTokenPrecision
         );
     }
@@ -474,8 +488,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function _convertSwapToCreditToken(uint256 amount, bool roundUp)
         internal view returns (uint256)
     {
-        uint256 swapRate = IRateProviderLike(swapTokenRateProvider).getConversionRate();
-        uint256 creditRate    = IRateProviderLike(creditTokenRateProvider).getConversionRate();
+        uint256 swapRate   = _tryGetConversionRate(swapTokenRateProvider);
+        uint256 creditRate = _tryGetConversionRate(creditTokenRateProvider);
 
         if (!roundUp) return amount * swapRate / creditRate * _creditTokenPrecision / _swapTokenPrecision;
 
@@ -488,8 +502,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function _convertCreditTokenToSwap(uint256 amount, bool roundUp)
         internal view returns (uint256)
     {
-        uint256 swapRate = IRateProviderLike(swapTokenRateProvider).getConversionRate();
-        uint256 creditRate    = IRateProviderLike(creditTokenRateProvider).getConversionRate();
+        uint256 swapRate   = _tryGetConversionRate(swapTokenRateProvider);
+        uint256 creditRate = _tryGetConversionRate(creditTokenRateProvider);
 
         if (!roundUp) return amount * creditRate / swapRate * _swapTokenPrecision / _creditTokenPrecision;
 
@@ -506,8 +520,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
         // USD value = amount * collateralRate / 1e9 / collateralPrecision (in 1e18)
         // credit = USD value * 1e27 / creditRate * creditPrecision / 1e18
         //        = amount * collateralRate / creditRate * creditPrecision / collateralPrecision
-        uint256 collateralRate = IRateProviderLike(collateralTokenRateProvider).getConversionRate();
-        uint256 creditRate     = IRateProviderLike(creditTokenRateProvider).getConversionRate();
+        uint256 collateralRate = _tryGetConversionRate(collateralTokenRateProvider);
+        uint256 creditRate     = _tryGetConversionRate(creditTokenRateProvider);
 
         if (!roundUp) return amount * collateralRate / creditRate * _creditTokenPrecision / _collateralTokenPrecision;
 
@@ -524,8 +538,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
         // USD value = amount * creditRate / 1e9 / creditPrecision (in 1e18)
         // collateral = USD value * 1e27 / collateralRate * collateralPrecision / 1e18
         //            = amount * creditRate / collateralRate * collateralPrecision / creditPrecision
-        uint256 collateralRate = IRateProviderLike(collateralTokenRateProvider).getConversionRate();
-        uint256 creditRate     = IRateProviderLike(creditTokenRateProvider).getConversionRate();
+        uint256 collateralRate = _tryGetConversionRate(collateralTokenRateProvider);
+        uint256 creditRate     = _tryGetConversionRate(creditTokenRateProvider);
 
         if (!roundUp) return amount * creditRate / collateralRate * _collateralTokenPrecision / _creditTokenPrecision;
 
@@ -547,6 +561,17 @@ contract GroveBasin is IGroveBasin, AccessControl {
         return assetValue;
     }
     
+
+    function _tryGetConversionRate(address rateProvider) internal view returns (uint256 rate) {
+        uint256 lastUpdated;
+        (rate, lastUpdated) = IRateProviderLike(rateProvider).getConversionRateWithAge();
+
+        uint256 threshold = stalenessThreshold;
+        require(
+            threshold == 0 || block.timestamp - lastUpdated <= threshold,
+            "GroveBasin/stale-rate"
+        );
+    }
 
     function _isValidAsset(address asset) internal view returns (bool) {
         return asset == address(swapToken) || asset == address(collateralToken) || asset == address(creditToken);
