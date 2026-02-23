@@ -30,6 +30,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     address public override pocket;
 
     uint256 public override totalShares;
+    uint256 public override maxSwapSize;
 
     mapping(address user => uint256 shares) public override shares;
 
@@ -42,11 +43,11 @@ contract GroveBasin is IGroveBasin, AccessControl {
         address collateralTokenRateProvider_,
         address creditTokenRateProvider_
     ) {
-        require(owner_                   != address(0), "GroveBasin/invalid-owner");
-        require(swapToken_              != address(0), "GroveBasin/invalid-swapToken");
+        require(owner_                       != address(0), "GroveBasin/invalid-owner");
+        require(swapToken_                   != address(0), "GroveBasin/invalid-swapToken");
         require(collateralToken_             != address(0), "GroveBasin/invalid-collateralToken");
         require(creditToken_                 != address(0), "GroveBasin/invalid-creditToken");
-        require(swapTokenRateProvider_  != address(0), "GroveBasin/invalid-swapTokenRateProvider");
+        require(swapTokenRateProvider_       != address(0), "GroveBasin/invalid-swapTokenRateProvider");
         require(collateralTokenRateProvider_ != address(0), "GroveBasin/invalid-collateralTokenRateProvider");
         require(creditTokenRateProvider_     != address(0), "GroveBasin/invalid-creditTokenRateProvider");
 
@@ -78,9 +79,11 @@ contract GroveBasin is IGroveBasin, AccessControl {
             "GroveBasin/credit-rate-provider-returns-zero"
         );
 
-        _swapTokenPrecision  = 10 ** IERC20(swapToken_).decimals();
+        _swapTokenPrecision       = 10 ** IERC20(swapToken_).decimals();
         _collateralTokenPrecision = 10 ** IERC20(collateralToken_).decimals();
         _creditTokenPrecision     = 10 ** IERC20(creditToken_).decimals();
+
+        maxSwapSize = 50_000_000e18;
 
         _grantRole(DEFAULT_ADMIN_ROLE, owner_);
 
@@ -92,6 +95,12 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /**********************************************************************************************/
     /*** Owner functions                                                                        ***/
     /**********************************************************************************************/
+
+    function setMaxSwapSize(uint256 newMaxSwapSize) external override onlyRole(DEFAULT_ADMIN_ROLE) {
+        uint256 oldMaxSwapSize = maxSwapSize;
+        maxSwapSize = newMaxSwapSize;
+        emit MaxSwapSizeSet(oldMaxSwapSize, newMaxSwapSize);
+    }
 
     function setPocket(address newPocket) external override onlyRole(DEFAULT_ADMIN_ROLE) {
         require(newPocket != address(0), "GroveBasin/invalid-pocket");
@@ -243,6 +252,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function previewSwapExactIn(address assetIn, address assetOut, uint256 amountIn)
         public view override returns (uint256 amountOut)
     {
+        require(_getAssetValue(assetIn, amountIn, false) <= maxSwapSize, "GroveBasin/swap-size-exceeded");
+
         // Round down to get amountOut
         amountOut = _getSwapQuote(assetIn, assetOut, amountIn, false);
     }
@@ -252,6 +263,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
     {
         // Round up to get amountIn
         amountIn = _getSwapQuote(assetOut, assetIn, amountOut, true);
+
+        require(_getAssetValue(assetIn, amountIn, false) <= maxSwapSize, "GroveBasin/swap-size-exceeded");
     }
 
     /**********************************************************************************************/

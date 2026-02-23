@@ -92,11 +92,25 @@ contract SwapperHandler is HandlerBase {
 
         // By calculating the amount of assetIn we can get from the max asset out, we can
         // determine the max amount of assetIn we can swap since its the same both ways.
-        uint256 maxAmountIn = groveBasin.previewSwapExactIn(
-            address(assetOut),
-            address(assetIn),
-            assetOut.balanceOf(assetOutCustodian)
-        );
+        // Preview may revert if the full balance exceeds maxSwapSize, so cap first.
+        uint256 maxAmountIn;
+        {
+            uint256 cappedOutBalance = _capAmountToMaxSwapSize(
+                address(assetOut),
+                assetOut.balanceOf(assetOutCustodian)
+            );
+
+            if (cappedOutBalance == 0) {
+                zeroBalanceCount++;
+                return;
+            }
+
+            maxAmountIn = groveBasin.previewSwapExactIn(
+                address(assetOut),
+                address(assetIn),
+                cappedOutBalance
+            );
+        }
 
         // If there's zero balance a swap can't be performed
         if (maxAmountIn == 0) {
@@ -105,6 +119,13 @@ contract SwapperHandler is HandlerBase {
         }
 
         amountIn = _bound(amountIn, 1, maxAmountIn);
+
+        amountIn = _capAmountToMaxSwapSize(address(assetIn), amountIn);
+
+        if (amountIn == 0) {
+            zeroBalanceCount++;
+            return;
+        }
 
         // Fuzz between zero and the expected amount out from the swap
         minAmountOut = _bound(
@@ -256,6 +277,13 @@ contract SwapperHandler is HandlerBase {
 
         amountOut = _bound(amountOut, 1, assetOut.balanceOf(assetOutCustodian));
 
+        amountOut = _capAmountOutToMaxSwapSize(address(assetIn), address(assetOut), amountOut);
+
+        if (amountOut == 0) {
+            zeroBalanceCount++;
+            return;
+        }
+
         // Not testing this functionality, just want a successful swap
         uint256 maxAmountIn = type(uint256).max;
 
@@ -375,6 +403,56 @@ contract SwapperHandler is HandlerBase {
         else if (asset == address(assets[1])) return amount;
         else if (asset == address(assets[2])) return amount * creditTokenRateProvider.getConversionRate() / 1e27;
         else revert("SwapperHandler/asset-not-found");
+    }
+
+    function _capAmountOutToMaxSwapSize(
+        address assetIn,
+        address assetOut,
+        uint256 amountOut
+    )
+        internal view returns (uint256)
+    {
+        uint256 maxSwapSize_ = groveBasin.maxSwapSize();
+
+        if (maxSwapSize_ == 0) return 0;
+
+        // Use output value as proxy since preview reverts when exceeding max swap size.
+        uint256 outValue = _getAssetValue(assetOut, amountOut);
+
+        // Cap the output amount so its value fits within maxSwapSize.
+        // The input value (rounded up) will be approximately equal.
+        if (outValue > maxSwapSize_) {
+            amountOut = amountOut * maxSwapSize_ / outValue;
+            if (amountOut == 0) return 0;
+        }
+
+        // Verify the capped amount works with the preview (input rounding may push over).
+        try groveBasin.previewSwapExactOut(assetIn, assetOut, amountOut) {
+            return amountOut;
+        } catch {
+            // Reduce slightly to account for rounding
+            if (amountOut > 1) amountOut -= 1;
+            else return 0;
+        }
+
+        try groveBasin.previewSwapExactOut(assetIn, assetOut, amountOut) {
+            return amountOut;
+        } catch {
+            return 0;
+        }
+    }
+
+    function _capAmountToMaxSwapSize(address asset, uint256 amount) internal view returns (uint256) {
+        uint256 maxSwapSize_ = groveBasin.maxSwapSize();
+
+        if (maxSwapSize_ == 0) return 0;
+
+        uint256 value = _getAssetValue(asset, amount);
+
+        if (value <= maxSwapSize_) return amount;
+
+        // Scale down amount to fit within maxSwapSize
+        return amount * maxSwapSize_ / value;
     }
 
 }

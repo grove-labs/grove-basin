@@ -10,6 +10,13 @@ interface IGroveBasin {
     /**********************************************************************************************/
 
     /**
+     *  @dev   Emitted when the max swap size is set in the GroveBasin.
+     *  @param oldMaxSwapSize Old max swap size.
+     *  @param newMaxSwapSize New max swap size.
+     */
+    event MaxSwapSizeSet(uint256 oldMaxSwapSize, uint256 newMaxSwapSize);
+
+    /**
      *  @dev   Emitted when a new pocket is set in the GroveBasin, transferring the balance of the
      *         swap token of the old pocket to the new pocket.
      *  @param oldPocket         Address of the old `pocket`.
@@ -99,6 +106,13 @@ interface IGroveBasin {
     function creditToken() external view returns (IERC20);
 
     /**
+     *  @dev    Returns the maximum value of a swap in 1e18 precision. Settable by the owner.
+     *          If set to zero, there is no limit on swap size.
+     *  @return The maximum swap size in 1e18 precision.
+     */
+    function maxSwapSize() external view returns (uint256);
+
+    /**
      *  @dev    Returns the address of the pocket, an address that holds custody of the swap
      *          token in the GroveBasin and can deploy it to yield-bearing strategies. Settable by the owner.
      *  @return The address of the pocket.
@@ -143,6 +157,13 @@ interface IGroveBasin {
     /**********************************************************************************************/
     /*** Owner functions                                                                        ***/
     /**********************************************************************************************/
+
+    /**
+     *  @dev    Sets the maximum value of a swap in 1e18 precision. If set to zero, there is no
+     *          limit on swap size. Callable only by the owner.
+     *  @param  newMaxSwapSize New max swap size in 1e18 precision.
+     */
+    function setMaxSwapSize(uint256 newMaxSwapSize) external;
 
     /**
      *  @dev    Sets the address of the pocket, an address that holds custody of the swap token

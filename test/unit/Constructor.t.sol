@@ -115,6 +115,7 @@ contract GroveBasinConstructorTests is GroveBasinTestBase {
         assertEq(address(groveBasin.swapTokenRateProvider()),  address(swapTokenRateProvider));
         assertEq(address(groveBasin.collateralTokenRateProvider()), address(collateralTokenRateProvider));
         assertEq(address(groveBasin.creditTokenRateProvider()),     address(creditTokenRateProvider));
+        assertEq(groveBasin.maxSwapSize(), 50_000_000e18);
     }
 
 }
