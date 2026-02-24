@@ -26,7 +26,7 @@ abstract contract ForkTestBase is Test {
     MockRateProvider public creditTokenRateProvider;
 
     function setUp() public virtual {
-        vm.createSelectFork(getChain("mainnet").rpcUrl);
+        vm.createSelectFork(getChain("mainnet").rpcUrl, _getBlock());
 
         _initTokens();
         _initRateProviders();
@@ -98,4 +98,7 @@ abstract contract ForkTestBase is Test {
         groveBasin.withdraw(asset, receiver, amount);
     }
 
+    function _getBlock() internal virtual view returns (uint256) {
+        return 24_522_338; // Feb 23, 2026
+    }
 }
