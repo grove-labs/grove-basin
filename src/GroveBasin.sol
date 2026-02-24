@@ -335,9 +335,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         // Assumes no stable-to-stable swap
         if (assetOut == address(creditToken)) {
-            amountIn = Math.ceilDiv(amountIn * BPS, BPS - purchaseFee);
+            amountIn += _calculatePurchaseFee(amountIn, true);
         } else {
-            amountIn = Math.ceilDiv(amountIn * BPS, BPS - redemptionFee);
+            amountIn += _calculateRedemptionFee(amountIn, true);
         }
     }
 

@@ -608,9 +608,9 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
         groveBasin.setPurchaseFee(100);  // 1%
 
         // Without fee: 80 credit needs 100 USDC
-        // With 1% fee: amountIn = ceil(100e6 * 10000 / 9900) = ceil(101010101.01...) = 101010102
+        // With 1% fee: amountIn = 100e6 + ceil(100e6 * 100 / 10000) = 101_000_000
         uint256 amountIn = groveBasin.previewSwapExactOut(address(swapToken), address(creditToken), 80e18);
-        assertEq(amountIn, 101_010_102);
+        assertEq(amountIn, 101_000_000);
     }
 
     // --- Redemption fee (credit -> swap/collateral) ---
@@ -640,9 +640,9 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
         groveBasin.setRedemptionFee(100);  // 1%
 
         // Without fee: 125 USDC needs 100 credit
-        // With 1% fee: amountIn = ceil(100e18 * 10000 / 9900)
+        // With 1% fee: amountIn = 100e18 + ceil(100e18 * 100 / 10000) = 101e18
         uint256 amountIn = groveBasin.previewSwapExactOut(address(creditToken), address(swapToken), 125e6);
-        assertEq(amountIn, 101_010_101_010_101_010_102);
+        assertEq(amountIn, 101e18);
     }
 
     // --- No fee when fee is zero ---
@@ -923,9 +923,8 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
             Math.ceilDiv(amountOut * conversionRate, 1e27) * 1e6,
             1e18
         );
-        uint256 expectedAmountIn = fee == 0
-            ? rawAmountIn
-            : Math.ceilDiv(rawAmountIn * 10_000, 10_000 - fee);
+        uint256 feeAmount = fee == 0 ? 0 : Math.ceilDiv(rawAmountIn * fee, 10_000);
+        uint256 expectedAmountIn = rawAmountIn + feeAmount;
 
         uint256 amountIn = groveBasin.previewSwapExactOut(address(swapToken), address(creditToken), amountOut);
         assertEq(amountIn, expectedAmountIn);
@@ -949,9 +948,8 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
             Math.ceilDiv(amountOut * 1e27, conversionRate) * 1e18,
             1e6
         );
-        uint256 expectedAmountIn = fee == 0
-            ? rawAmountIn
-            : Math.ceilDiv(rawAmountIn * 10_000, 10_000 - fee);
+        uint256 feeAmount = fee == 0 ? 0 : Math.ceilDiv(rawAmountIn * fee, 10_000);
+        uint256 expectedAmountIn = rawAmountIn + feeAmount;
 
         uint256 amountIn = groveBasin.previewSwapExactOut(address(creditToken), address(swapToken), amountOut);
         assertEq(amountIn, expectedAmountIn);
