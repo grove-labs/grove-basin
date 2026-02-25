@@ -614,14 +614,18 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
             if (custodian == pocket_) {
                 // For swapToken: pocket is custodian, just ensure pocket has enough
-                IGroveBasinPocket(pocket_).drawLiquidity(amount, asset);
+                try IGroveBasinPocket(pocket_).drawLiquidity(amount, asset) {} catch {}
             } else {
                 // For non-swapToken: basin is custodian, only draw if basin lacks balance
                 uint256 balance = IERC20(asset).balanceOf(address(this));
                 if (balance < amount) {
                     uint256 deficit = amount - balance;
-                    IGroveBasinPocket(pocket_).drawLiquidity(deficit, asset);
-                    IERC20(asset).safeTransferFrom(pocket_, address(this), deficit);
+                    try IGroveBasinPocket(pocket_).drawLiquidity(deficit, asset) {} catch {}
+                    // Only transfer if pocket actually has the deficit after drawLiquidity
+                    uint256 pocketBalance = IERC20(asset).balanceOf(pocket_);
+                    if (pocketBalance >= deficit) {
+                        IERC20(asset).safeTransferFrom(pocket_, address(this), deficit);
+                    }
                 }
             }
         }
