@@ -17,6 +17,8 @@ Examine all in-scope code as deeply as needed. Record every credible vulnerabili
 - direct code references (file and line numbers)
 - any proof-of-concept or remediation thoughts that clarify the issue
 
+For high and critical issues, please create a test case in `test/` that illustrates the attack vector and loss of assets. 
+
 You only get one autonomous run. Do not pause for confirmation, ask questions, or mention future steps. Continue working until your audit is genuinely complete.
 
 It is possible that the repository contains many vulnerabilities and that a thorough report could be long. Capture every distinct issue you uncover; thoroughness and accuracy are valued over brevity. However, be careful to only surface real vulnerabilities.
