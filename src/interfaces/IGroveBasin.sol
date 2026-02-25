@@ -15,6 +15,27 @@ interface IGroveBasin {
      *  @param newMaxSwapSize New max swap size.
      */
     event MaxSwapSizeSet(uint256 oldMaxSwapSize, uint256 newMaxSwapSize);
+    
+    /**
+     *  @dev   Emitted when the staleness threshold is updated.
+     *  @param oldThreshold Previous staleness threshold in seconds.
+     *  @param newThreshold New staleness threshold in seconds.
+     */
+    event StalenessThresholdSet(uint256 oldThreshold, uint256 newThreshold);
+
+    /**
+     *  @dev   Emitted when the staleness threshold bounds are updated.
+     *  @param oldMinThreshold Previous minimum staleness threshold in seconds.
+     *  @param oldMaxThreshold Previous maximum staleness threshold in seconds.
+     *  @param newMinThreshold New minimum staleness threshold in seconds.
+     *  @param newMaxThreshold New maximum staleness threshold in seconds.
+     */
+    event StalenessThresholdBoundsSet(
+        uint256 oldMinThreshold,
+        uint256 oldMaxThreshold,
+        uint256 newMinThreshold,
+        uint256 newMaxThreshold
+    );
 
     /**
      *  @dev   Emitted when the fee bounds are set by governance.
@@ -136,6 +157,25 @@ interface IGroveBasin {
     function maxSwapSize() external view returns (uint256);
 
     /**
+     *  @dev    Returns the staleness threshold in seconds. If the oracle's updatedAt timestamp is
+     *          older than this threshold, operations using that oracle will revert.
+     *  @return The staleness threshold in seconds.
+     */
+    function stalenessThreshold() external view returns (uint256);
+
+    /**
+     *  @dev    Returns the minimum allowed staleness threshold in seconds.
+     *  @return The minimum staleness threshold in seconds.
+     */
+    function minStalenessThreshold() external view returns (uint256);
+
+    /**
+     *  @dev    Returns the maximum allowed staleness threshold in seconds.
+     *  @return The maximum staleness threshold in seconds.
+     */
+    function maxStalenessThreshold() external view returns (uint256);
+
+    /**
      *  @dev    Returns the address of the pocket, an address that holds custody of the swap
      *          token in the GroveBasin and can deploy it to yield-bearing strategies. Settable by the owner.
      *  @return The address of the pocket.
@@ -223,6 +263,22 @@ interface IGroveBasin {
      *  @param  newMaxSwapSize New max swap size in 1e18 precision.
      */
     function setMaxSwapSize(uint256 newMaxSwapSize) external;
+    
+    /**
+     *  @dev   Sets the staleness threshold in seconds. Must be within
+     *         [minStalenessThreshold, maxStalenessThreshold]. Callable only by DEFAULT_ADMIN_ROLE.
+     *  @param newThreshold The new staleness threshold in seconds.
+     */
+    function setStalenessThreshold(uint256 newThreshold) external;
+
+    /**
+     *  @dev   Sets the staleness threshold bounds. The min must be > 0 and <= max.
+     *         If the current staleness threshold is outside the new bounds, it is clamped.
+     *         Callable only by DEFAULT_ADMIN_ROLE.
+     *  @param newMinThreshold The new minimum staleness threshold in seconds.
+     *  @param newMaxThreshold The new maximum staleness threshold in seconds.
+     */
+    function setStalenessThresholdBounds(uint256 newMinThreshold, uint256 newMaxThreshold) external;
 
     /**
      *  @dev    Sets the fee bounds for both purchase and redemption fees. Callable only by

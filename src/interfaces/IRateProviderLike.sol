@@ -2,5 +2,7 @@
 pragma solidity ^0.8.34;
 
 interface IRateProviderLike {
-    function getConversionRate() external view returns (uint256);
+    function getConversionRate() external view returns (uint256 rate);
+    function getConversionRateWithAge() external view returns (uint256 rate, uint256 lastUpdated);
+    function getRatePrecision() external view returns (uint256);
 }
