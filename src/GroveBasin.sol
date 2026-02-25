@@ -9,6 +9,7 @@ import { AccessControl } from "openzeppelin-contracts/contracts/access/AccessCon
 import { Math }          from "openzeppelin-contracts/contracts/utils/math/Math.sol";
 
 import { IGroveBasin }             from "src/interfaces/IGroveBasin.sol";
+import { IGroveBasinPocket }       from "src/interfaces/IGroveBasinPocket.sol";
 import { IRateProviderLike } from "src/interfaces/IRateProviderLike.sol";
 
 contract GroveBasin is IGroveBasin, AccessControl {
@@ -248,6 +249,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         require(amountOut >= minAmountOut, "GroveBasin/amountOut-too-low");
 
+        _drawLiquidity(amountOut, assetOut);
         _pullAsset(assetIn, amountIn);
         _pushAsset(assetOut, receiver, amountOut);
 
@@ -271,6 +273,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         require(amountIn <= maxAmountIn, "GroveBasin/amountIn-too-high");
 
+        _drawLiquidity(amountOut, assetOut);
         _pullAsset(assetIn, amountIn);
         _pushAsset(assetOut, receiver, amountOut);
 
@@ -602,6 +605,26 @@ contract GroveBasin is IGroveBasin, AccessControl {
             block.timestamp - lastUpdated <= stalenessThreshold,
             "GroveBasin/stale-rate"
         );
+    }
+
+    function _drawLiquidity(uint256 amount, address asset) internal {
+        address pocket_ = pocket;
+        if (pocket_ != address(this) && pocket_.code.length > 0) {
+            address custodian = _getAssetCustodian(asset);
+
+            if (custodian == pocket_) {
+                // For swapToken: pocket is custodian, just ensure pocket has enough
+                IGroveBasinPocket(pocket_).drawLiquidity(amount, asset);
+            } else {
+                // For non-swapToken: basin is custodian, only draw if basin lacks balance
+                uint256 balance = IERC20(asset).balanceOf(address(this));
+                if (balance < amount) {
+                    uint256 deficit = amount - balance;
+                    IGroveBasinPocket(pocket_).drawLiquidity(deficit, asset);
+                    IERC20(asset).safeTransferFrom(pocket_, address(this), deficit);
+                }
+            }
+        }
     }
 
     function _isValidAsset(address asset) internal view returns (bool) {
