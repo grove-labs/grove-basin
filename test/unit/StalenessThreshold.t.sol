@@ -47,6 +47,12 @@ contract GroveBasinSetStalenessThresholdFailureTests is GroveBasinTestBase {
         groveBasin.setStalenessThreshold(5 minutes - 1);
     }
 
+    function test_setStalenessThreshold_tooHigh() public {
+        vm.prank(owner);
+        vm.expectRevert("GroveBasin/threshold-too-high");
+        groveBasin.setStalenessThreshold(12 hours + 1);
+    }
+
     function test_setStalenessThreshold_minimumBoundary() public {
         vm.prank(owner);
         vm.expectRevert("GroveBasin/threshold-too-low");
@@ -56,6 +62,128 @@ contract GroveBasinSetStalenessThresholdFailureTests is GroveBasinTestBase {
         groveBasin.setStalenessThreshold(10 minutes);
 
         assertEq(groveBasin.stalenessThreshold(), 10 minutes);
+    }
+
+}
+
+/**********************************************************************************************/
+/*** setStalenessThresholdBounds tests                                                      ***/
+/**********************************************************************************************/
+
+contract GroveBasinSetStalenessThresholdBoundsFailureTests is GroveBasinTestBase {
+
+    function test_setStalenessThresholdBounds_notAdmin() public {
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                address(this),
+                groveBasin.DEFAULT_ADMIN_ROLE()
+            )
+        );
+        groveBasin.setStalenessThresholdBounds(1 minutes, 24 hours);
+    }
+
+    function test_setStalenessThresholdBounds_minZero() public {
+        vm.prank(owner);
+        vm.expectRevert("GroveBasin/min-threshold-zero");
+        groveBasin.setStalenessThresholdBounds(0, 24 hours);
+    }
+
+    function test_setStalenessThresholdBounds_minGtMax() public {
+        vm.prank(owner);
+        vm.expectRevert("GroveBasin/min-gt-max-threshold");
+        groveBasin.setStalenessThresholdBounds(2 hours, 1 hours);
+    }
+
+}
+
+contract GroveBasinSetStalenessThresholdBoundsSuccessTests is GroveBasinTestBase {
+
+    event StalenessThresholdBoundsSet(
+        uint256 oldMinThreshold,
+        uint256 oldMaxThreshold,
+        uint256 newMinThreshold,
+        uint256 newMaxThreshold
+    );
+    event StalenessThresholdSet(uint256 oldThreshold, uint256 newThreshold);
+
+    function test_setStalenessThresholdBounds_defaults() public view {
+        assertEq(groveBasin.minStalenessThreshold(), 5 minutes);
+        assertEq(groveBasin.maxStalenessThreshold(), 12 hours);
+    }
+
+    function test_setStalenessThresholdBounds() public {
+        vm.prank(owner);
+        vm.expectEmit(address(groveBasin));
+        emit StalenessThresholdBoundsSet(5 minutes, 12 hours, 1 minutes, 24 hours);
+        groveBasin.setStalenessThresholdBounds(1 minutes, 24 hours);
+
+        assertEq(groveBasin.minStalenessThreshold(), 1 minutes);
+        assertEq(groveBasin.maxStalenessThreshold(), 24 hours);
+    }
+
+    function test_setStalenessThresholdBounds_clampsThresholdUp() public {
+        vm.prank(owner);
+        groveBasin.setStalenessThreshold(10 minutes);
+
+        vm.prank(owner);
+        vm.expectEmit(address(groveBasin));
+        emit StalenessThresholdBoundsSet(5 minutes, 12 hours, 30 minutes, 24 hours);
+        vm.expectEmit(address(groveBasin));
+        emit StalenessThresholdSet(10 minutes, 30 minutes);
+        groveBasin.setStalenessThresholdBounds(30 minutes, 24 hours);
+
+        assertEq(groveBasin.stalenessThreshold(), 30 minutes);
+    }
+
+    function test_setStalenessThresholdBounds_clampsThresholdDown() public {
+        vm.prank(owner);
+        groveBasin.setStalenessThreshold(6 hours);
+
+        vm.prank(owner);
+        vm.expectEmit(address(groveBasin));
+        emit StalenessThresholdBoundsSet(5 minutes, 12 hours, 1 minutes, 2 hours);
+        vm.expectEmit(address(groveBasin));
+        emit StalenessThresholdSet(6 hours, 2 hours);
+        groveBasin.setStalenessThresholdBounds(1 minutes, 2 hours);
+
+        assertEq(groveBasin.stalenessThreshold(), 2 hours);
+    }
+
+    function test_setStalenessThresholdBounds_noClampWhenWithinBounds() public {
+        vm.prank(owner);
+        groveBasin.setStalenessThreshold(1 hours);
+
+        vm.prank(owner);
+        groveBasin.setStalenessThresholdBounds(30 minutes, 2 hours);
+
+        assertEq(groveBasin.stalenessThreshold(), 1 hours);
+    }
+
+    function test_setStalenessThresholdBounds_equalMinMax() public {
+        vm.prank(owner);
+        groveBasin.setStalenessThresholdBounds(1 hours, 1 hours);
+
+        assertEq(groveBasin.minStalenessThreshold(), 1 hours);
+        assertEq(groveBasin.maxStalenessThreshold(), 1 hours);
+        assertEq(groveBasin.stalenessThreshold(), 1 hours);
+    }
+
+    function test_setStalenessThreshold_respectsNewBounds() public {
+        vm.prank(owner);
+        groveBasin.setStalenessThresholdBounds(1 minutes, 24 hours);
+
+        vm.prank(owner);
+        groveBasin.setStalenessThreshold(1 minutes);
+        assertEq(groveBasin.stalenessThreshold(), 1 minutes);
+
+        vm.prank(owner);
+        groveBasin.setStalenessThreshold(24 hours);
+        assertEq(groveBasin.stalenessThreshold(), 24 hours);
+
+        vm.prank(owner);
+        vm.expectRevert("GroveBasin/threshold-too-high");
+        groveBasin.setStalenessThreshold(24 hours + 1);
     }
 
 }
@@ -127,7 +255,7 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
     }
 
     /**********************************************************************************************/
-    /*** Default threshold (MIN_STALENESS_THRESHOLD) enforces staleness                         ***/
+    /*** Default threshold (minStalenessThreshold) enforces staleness                            ***/
     /**********************************************************************************************/
 
     function test_defaultThreshold_staleRateReverts() public {
@@ -362,7 +490,7 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
     /**********************************************************************************************/
 
     function testFuzz_staleness_boundary(uint256 threshold, uint256 age) public {
-        threshold = _bound(threshold, 5 minutes, 365 days);
+        threshold = _bound(threshold, 5 minutes, 12 hours);
         age       = _bound(age, 0, block.timestamp);
 
         if (threshold != groveBasin.stalenessThreshold()) {

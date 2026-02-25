@@ -42,9 +42,10 @@ contract GroveBasin is IGroveBasin, AccessControl {
     uint256 public override minFee;
     uint256 public override maxFee;
 
-    mapping(address user => uint256 shares) public override shares;
+    uint256 public override minStalenessThreshold;
+    uint256 public override maxStalenessThreshold;
 
-    uint256 public constant MIN_STALENESS_THRESHOLD = 5 minutes;
+    mapping(address user => uint256 shares) public override shares;
 
     constructor(
         address owner_,
@@ -95,8 +96,10 @@ contract GroveBasin is IGroveBasin, AccessControl {
         _collateralTokenPrecision = 10 ** IERC20(collateralToken_).decimals();
         _creditTokenPrecision     = 10 ** IERC20(creditToken_).decimals();
 
-        maxSwapSize        = 50_000_000e18;
-        stalenessThreshold = MIN_STALENESS_THRESHOLD;
+        maxSwapSize           = 50_000_000e18;
+        minStalenessThreshold = 5 minutes;
+        maxStalenessThreshold = 12 hours;
+        stalenessThreshold    = minStalenessThreshold;
 
         _grantRole(DEFAULT_ADMIN_ROLE, owner_);
 
@@ -118,11 +121,36 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function setStalenessThreshold(uint256 newThreshold)
         external override onlyRole(DEFAULT_ADMIN_ROLE)
     {
-        require(newThreshold >= MIN_STALENESS_THRESHOLD, "GroveBasin/threshold-too-low");
+        require(newThreshold >= minStalenessThreshold, "GroveBasin/threshold-too-low");
+        require(newThreshold <= maxStalenessThreshold, "GroveBasin/threshold-too-high");
         uint256 oldThreshold = stalenessThreshold;
         require(newThreshold != oldThreshold, "GroveBasin/same-staleness-threshold");
         stalenessThreshold = newThreshold;
         emit StalenessThresholdSet(oldThreshold, newThreshold);
+    }
+
+    function setStalenessThresholdBounds(uint256 newMinThreshold, uint256 newMaxThreshold)
+        external override onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        require(newMinThreshold != 0,              "GroveBasin/min-threshold-zero");
+        require(newMinThreshold <= newMaxThreshold, "GroveBasin/min-gt-max-threshold");
+
+        uint256 oldMinThreshold = minStalenessThreshold;
+        uint256 oldMaxThreshold = maxStalenessThreshold;
+
+        minStalenessThreshold = newMinThreshold;
+        maxStalenessThreshold = newMaxThreshold;
+
+        emit StalenessThresholdBoundsSet(oldMinThreshold, oldMaxThreshold, newMinThreshold, newMaxThreshold);
+
+        uint256 threshold = stalenessThreshold;
+        if (threshold < newMinThreshold) {
+            stalenessThreshold = newMinThreshold;
+            emit StalenessThresholdSet(threshold, newMinThreshold);
+        } else if (threshold > newMaxThreshold) {
+            stalenessThreshold = newMaxThreshold;
+            emit StalenessThresholdSet(threshold, newMaxThreshold);
+        }
     }
 
     function setFeeBounds(uint256 newMinFee, uint256 newMaxFee) external override onlyRole(DEFAULT_ADMIN_ROLE) {
