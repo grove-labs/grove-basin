@@ -224,6 +224,12 @@ interface IGroveBasin {
     function BPS() external view returns (uint256);
 
     /**
+     *  @dev    Returns the role identifier for the owner role (equivalent to DEFAULT_ADMIN_ROLE).
+     *  @return The bytes32 role identifier.
+     */
+    function OWNER_ROLE() external view returns (bytes32);
+
+    /**
      *  @dev    Returns the role identifier for the manager role.
      *  @return The bytes32 role identifier.
      */

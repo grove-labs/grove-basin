@@ -24,7 +24,8 @@ contract GroveBasinDeployTests is GroveBasinTestBase {
             address(creditTokenRateProvider)
         ));
 
-        assertTrue(newGroveBasin.hasRole(newGroveBasin.DEFAULT_ADMIN_ROLE(), owner));
+        assertTrue(newGroveBasin.hasRole(newGroveBasin.OWNER_ROLE(), owner));
+        assertEq(newGroveBasin.OWNER_ROLE(), newGroveBasin.DEFAULT_ADMIN_ROLE());
         
         assertEq(address(newGroveBasin.swapToken()),              address(swapToken));
         assertEq(address(newGroveBasin.collateralToken()),             address(collateralToken));

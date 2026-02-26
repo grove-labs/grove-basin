@@ -196,17 +196,35 @@ contract GroveBasinManagerAdminRoleTests is GroveBasinTestBase {
     /**********************************************************************************************/
 
     function test_unauthorized_setFeeBounds() public {
-        vm.expectRevert("GroveBasin/not-manager-admin");
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                address(this),
+                managerAdminRole
+            )
+        );
         groveBasin.setFeeBounds(0, 100);
     }
 
     function test_unauthorized_setMaxSwapSize() public {
-        vm.expectRevert("GroveBasin/not-manager-admin");
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                address(this),
+                managerAdminRole
+            )
+        );
         groveBasin.setMaxSwapSize(1e18);
     }
 
     function test_unauthorized_setPocket() public {
-        vm.expectRevert("GroveBasin/not-manager-admin");
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                address(this),
+                managerAdminRole
+            )
+        );
         groveBasin.setPocket(address(1));
     }
 
@@ -215,7 +233,13 @@ contract GroveBasinManagerAdminRoleTests is GroveBasinTestBase {
         groveBasin.grantRole(managerRole, manager);
 
         vm.prank(manager);
-        vm.expectRevert("GroveBasin/not-manager-admin");
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                manager,
+                managerAdminRole
+            )
+        );
         groveBasin.setFeeBounds(0, 100);
     }
 
@@ -224,7 +248,13 @@ contract GroveBasinManagerAdminRoleTests is GroveBasinTestBase {
         groveBasin.grantRole(managerRole, manager);
 
         vm.prank(manager);
-        vm.expectRevert("GroveBasin/not-manager-admin");
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                manager,
+                managerAdminRole
+            )
+        );
         groveBasin.setMaxSwapSize(1e18);
     }
 
@@ -233,12 +263,24 @@ contract GroveBasinManagerAdminRoleTests is GroveBasinTestBase {
         groveBasin.grantRole(managerRole, manager);
 
         vm.prank(manager);
-        vm.expectRevert("GroveBasin/not-manager-admin");
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                manager,
+                managerAdminRole
+            )
+        );
         groveBasin.setPocket(address(1));
     }
 
     function test_unauthorized_setStalenessThresholdBounds() public {
-        vm.expectRevert("GroveBasin/not-manager-admin");
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                address(this),
+                managerAdminRole
+            )
+        );
         groveBasin.setStalenessThresholdBounds(1 minutes, 24 hours);
     }
 
@@ -247,7 +289,13 @@ contract GroveBasinManagerAdminRoleTests is GroveBasinTestBase {
         groveBasin.grantRole(managerRole, manager);
 
         vm.prank(manager);
-        vm.expectRevert("GroveBasin/not-manager-admin");
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                manager,
+                managerAdminRole
+            )
+        );
         groveBasin.setStalenessThresholdBounds(1 minutes, 24 hours);
     }
 

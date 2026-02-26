@@ -17,6 +17,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     uint256 public constant override BPS = 10_000;
 
+    bytes32 public constant override OWNER_ROLE         = DEFAULT_ADMIN_ROLE;
     bytes32 public constant override MANAGER_ROLE       = keccak256("MANAGER_ROLE");
     bytes32 public constant override MANAGER_ADMIN_ROLE = keccak256("MANAGER_ADMIN_ROLE");
 
@@ -102,7 +103,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         maxStalenessThreshold = 12 hours;
         stalenessThreshold    = minStalenessThreshold;
 
-        _grantRole(DEFAULT_ADMIN_ROLE, owner_);
+        _grantRole(OWNER_ROLE, owner_);
         _setRoleAdmin(MANAGER_ROLE, MANAGER_ADMIN_ROLE);
 
         // Necessary to ensure rounding works as expected
@@ -114,22 +115,14 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /*** Manager admin functions                                                                ***/
     /**********************************************************************************************/
 
-    modifier onlyManagerAdmin() {
-        require(
-            hasRole(MANAGER_ADMIN_ROLE, msg.sender),
-            "GroveBasin/not-manager-admin"
-        );
-        _;
-    }
-
-    function setMaxSwapSize(uint256 newMaxSwapSize) external override onlyManagerAdmin {
+    function setMaxSwapSize(uint256 newMaxSwapSize) external override onlyRole(MANAGER_ADMIN_ROLE) {
         uint256 oldMaxSwapSize = maxSwapSize;
         maxSwapSize = newMaxSwapSize;
         emit MaxSwapSizeSet(oldMaxSwapSize, newMaxSwapSize);
     }
 
     function setStalenessThresholdBounds(uint256 newMinThreshold, uint256 newMaxThreshold)
-        external override onlyManagerAdmin
+        external override onlyRole(MANAGER_ADMIN_ROLE)
     {
         require(newMinThreshold != 0,              "GroveBasin/min-threshold-zero");
         require(newMinThreshold <= newMaxThreshold, "GroveBasin/min-gt-max-threshold");
@@ -152,7 +145,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         }
     }
 
-    function setFeeBounds(uint256 newMinFee, uint256 newMaxFee) external override onlyManagerAdmin {
+    function setFeeBounds(uint256 newMinFee, uint256 newMaxFee) external override onlyRole(MANAGER_ADMIN_ROLE) {
         require(newMinFee <= newMaxFee, "GroveBasin/min-fee-gt-max-fee");
         require(newMaxFee <= BPS,       "GroveBasin/max-fee-gte-bps");
 
@@ -179,7 +172,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         }
     }
 
-    function setPocket(address newPocket) external override onlyManagerAdmin {
+    function setPocket(address newPocket) external override onlyRole(MANAGER_ADMIN_ROLE) {
         require(newPocket != address(0), "GroveBasin/invalid-pocket");
 
         address pocket_ = pocket;

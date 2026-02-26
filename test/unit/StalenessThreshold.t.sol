@@ -82,7 +82,13 @@ contract GroveBasinSetStalenessThresholdFailureTests is GroveBasinTestBase {
 contract GroveBasinSetStalenessThresholdBoundsFailureTests is GroveBasinTestBase {
 
     function test_setStalenessThresholdBounds_notManagerAdmin() public {
-        vm.expectRevert("GroveBasin/not-manager-admin");
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                address(this),
+                groveBasin.MANAGER_ADMIN_ROLE()
+            )
+        );
         groveBasin.setStalenessThresholdBounds(1 minutes, 24 hours);
     }
 
