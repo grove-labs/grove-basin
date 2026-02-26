@@ -19,13 +19,7 @@ contract GroveBasinSetFeeBoundsFailureTests is GroveBasinTestBase {
     }
 
     function test_setFeeBounds_notAdmin() public {
-        vm.expectRevert(
-            abi.encodeWithSignature(
-                "AccessControlUnauthorizedAccount(address,bytes32)",
-                address(this),
-                groveBasin.DEFAULT_ADMIN_ROLE()
-            )
-        );
+        vm.expectRevert("GroveBasin/not-manager-admin");
         groveBasin.setFeeBounds(0, 100);
     }
 

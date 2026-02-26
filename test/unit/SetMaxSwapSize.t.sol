@@ -6,10 +6,7 @@ import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 contract GroveBasinSetMaxSwapSizeFailureTests is GroveBasinTestBase {
 
     function test_setMaxSwapSize_invalidOwner() public {
-        vm.expectRevert(
-            abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)",
-            address(this), groveBasin.DEFAULT_ADMIN_ROLE())
-        );
+        vm.expectRevert("GroveBasin/not-manager-admin");
         groveBasin.setMaxSwapSize(1e18);
     }
 

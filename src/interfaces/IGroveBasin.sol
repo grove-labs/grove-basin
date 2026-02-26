@@ -230,6 +230,13 @@ interface IGroveBasin {
     function MANAGER_ROLE() external view returns (bytes32);
 
     /**
+     *  @dev    Returns the role identifier for the manager admin role. This role can update
+     *          bounds, oracle values, set the pocket, and grant/revoke the MANAGER_ROLE.
+     *  @return The bytes32 role identifier.
+     */
+    function MANAGER_ADMIN_ROLE() external view returns (bytes32);
+
+    /**
      *  @dev    Returns the current purchase fee in BPS. Applied when buying credit tokens.
      *  @return The purchase fee in BPS.
      */

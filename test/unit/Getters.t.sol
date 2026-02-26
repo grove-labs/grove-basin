@@ -23,8 +23,10 @@ contract GroveBasinHarnessTests is GroveBasinTestBase {
             address(creditTokenRateProvider)
         );
 
-        vm.prank(owner);
+        vm.startPrank(owner);
+        groveBasinHarness.grantRole(groveBasinHarness.MANAGER_ADMIN_ROLE(), owner);
         groveBasinHarness.setPocket(pocket);
+        vm.stopPrank();
     }
 
     function test_getCollateralTokenValue() public view {

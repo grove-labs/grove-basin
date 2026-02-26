@@ -6,10 +6,7 @@ import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 contract GroveBasinSetPocketFailureTests is GroveBasinTestBase {
 
     function test_setPocket_invalidOwner() public {
-        vm.expectRevert(
-            abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)",
-            address(this), groveBasin.DEFAULT_ADMIN_ROLE())
-        );
+        vm.expectRevert("GroveBasin/not-manager-admin");
         groveBasin.setPocket(address(1));
     }
 
