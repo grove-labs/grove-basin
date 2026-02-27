@@ -563,6 +563,8 @@ contract GroveBasinInvariants_TimeBasedRateSetting_NoTransfer is GroveBasinInvar
 
         // Set a large staleness threshold so warps don't cause stale-rate reverts
         vm.startPrank(owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), owner);
         groveBasin.setStalenessThresholdBounds(1, type(uint128).max);
         groveBasin.setStalenessThreshold(type(uint128).max);
         vm.stopPrank();
@@ -652,6 +654,8 @@ contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinIn
 
         // Set a large staleness threshold so warps don't cause stale-rate reverts
         vm.startPrank(owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), owner);
         groveBasin.setStalenessThresholdBounds(1, type(uint128).max);
         groveBasin.setStalenessThreshold(type(uint128).max);
         vm.stopPrank();

@@ -41,11 +41,11 @@ abstract contract ForkTestBase is Test {
             address(creditTokenRateProvider)
         );
 
-        vm.prank(owner);
+        vm.startPrank(owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
-
-        vm.prank(owner);
         groveBasin.setPocket(pocket);
+        vm.stopPrank();
 
         vm.prank(pocket);
         swapToken.approve(address(groveBasin), type(uint256).max);

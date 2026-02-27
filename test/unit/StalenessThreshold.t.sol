@@ -15,50 +15,59 @@ import { GroveBasinHarness } from "test/unit/harnesses/GroveBasinHarness.sol";
 
 contract GroveBasinSetStalenessThresholdFailureTests is GroveBasinTestBase {
 
-    function test_setStalenessThreshold_notAdmin() public {
+    address manager = makeAddr("manager");
+
+    function setUp() public override {
+        super.setUp();
+        vm.startPrank(owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), manager);
+        vm.stopPrank();
+    }
+
+    function test_setStalenessThreshold_notManager() public {
         vm.expectRevert(
             abi.encodeWithSignature(
                 "AccessControlUnauthorizedAccount(address,bytes32)",
                 address(this),
-                groveBasin.DEFAULT_ADMIN_ROLE()
+                groveBasin.MANAGER_ROLE()
             )
         );
         groveBasin.setStalenessThreshold(1 hours);
     }
 
     function test_setStalenessThreshold_zero() public {
-        vm.prank(owner);
+        vm.prank(manager);
         vm.expectRevert("GroveBasin/threshold-too-low");
         groveBasin.setStalenessThreshold(0);
     }
 
     function test_setStalenessThreshold_sameThresholdNonZero() public {
-        vm.prank(owner);
+        vm.prank(manager);
         groveBasin.setStalenessThreshold(1 hours);
 
-        vm.prank(owner);
+        vm.prank(manager);
         vm.expectRevert("GroveBasin/same-staleness-threshold");
         groveBasin.setStalenessThreshold(1 hours);
     }
 
     function test_setStalenessThreshold_tooLow() public {
-        vm.prank(owner);
+        vm.prank(manager);
         vm.expectRevert("GroveBasin/threshold-too-low");
         groveBasin.setStalenessThreshold(5 minutes - 1);
     }
 
     function test_setStalenessThreshold_tooHigh() public {
-        vm.prank(owner);
+        vm.prank(manager);
         vm.expectRevert("GroveBasin/threshold-too-high");
         groveBasin.setStalenessThreshold(12 hours + 1);
     }
 
     function test_setStalenessThreshold_minimumBoundary() public {
-        vm.prank(owner);
+        vm.prank(manager);
         vm.expectRevert("GroveBasin/threshold-too-low");
         groveBasin.setStalenessThreshold(1);
 
-        vm.prank(owner);
+        vm.prank(manager);
         groveBasin.setStalenessThreshold(10 minutes);
 
         assertEq(groveBasin.stalenessThreshold(), 10 minutes);
@@ -72,12 +81,12 @@ contract GroveBasinSetStalenessThresholdFailureTests is GroveBasinTestBase {
 
 contract GroveBasinSetStalenessThresholdBoundsFailureTests is GroveBasinTestBase {
 
-    function test_setStalenessThresholdBounds_notAdmin() public {
+    function test_setStalenessThresholdBounds_notManagerAdmin() public {
         vm.expectRevert(
             abi.encodeWithSignature(
                 "AccessControlUnauthorizedAccount(address,bytes32)",
                 address(this),
-                groveBasin.DEFAULT_ADMIN_ROLE()
+                groveBasin.MANAGER_ADMIN_ROLE()
             )
         );
         groveBasin.setStalenessThresholdBounds(1 minutes, 24 hours);
@@ -99,6 +108,8 @@ contract GroveBasinSetStalenessThresholdBoundsFailureTests is GroveBasinTestBase
 
 contract GroveBasinSetStalenessThresholdBoundsSuccessTests is GroveBasinTestBase {
 
+    address manager = makeAddr("manager");
+
     event StalenessThresholdBoundsSet(
         uint256 oldMinThreshold,
         uint256 oldMaxThreshold,
@@ -106,6 +117,13 @@ contract GroveBasinSetStalenessThresholdBoundsSuccessTests is GroveBasinTestBase
         uint256 newMaxThreshold
     );
     event StalenessThresholdSet(uint256 oldThreshold, uint256 newThreshold);
+
+    function setUp() public override {
+        super.setUp();
+        vm.startPrank(owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), manager);
+        vm.stopPrank();
+    }
 
     function test_setStalenessThresholdBounds_defaults() public view {
         assertEq(groveBasin.minStalenessThreshold(), 5 minutes);
@@ -123,7 +141,7 @@ contract GroveBasinSetStalenessThresholdBoundsSuccessTests is GroveBasinTestBase
     }
 
     function test_setStalenessThresholdBounds_clampsThresholdUp() public {
-        vm.prank(owner);
+        vm.prank(manager);
         groveBasin.setStalenessThreshold(10 minutes);
 
         vm.prank(owner);
@@ -137,7 +155,7 @@ contract GroveBasinSetStalenessThresholdBoundsSuccessTests is GroveBasinTestBase
     }
 
     function test_setStalenessThresholdBounds_clampsThresholdDown() public {
-        vm.prank(owner);
+        vm.prank(manager);
         groveBasin.setStalenessThreshold(6 hours);
 
         vm.prank(owner);
@@ -151,7 +169,7 @@ contract GroveBasinSetStalenessThresholdBoundsSuccessTests is GroveBasinTestBase
     }
 
     function test_setStalenessThresholdBounds_noClampWhenWithinBounds() public {
-        vm.prank(owner);
+        vm.prank(manager);
         groveBasin.setStalenessThreshold(1 hours);
 
         vm.prank(owner);
@@ -173,15 +191,15 @@ contract GroveBasinSetStalenessThresholdBoundsSuccessTests is GroveBasinTestBase
         vm.prank(owner);
         groveBasin.setStalenessThresholdBounds(1 minutes, 24 hours);
 
-        vm.prank(owner);
+        vm.prank(manager);
         groveBasin.setStalenessThreshold(1 minutes);
         assertEq(groveBasin.stalenessThreshold(), 1 minutes);
 
-        vm.prank(owner);
+        vm.prank(manager);
         groveBasin.setStalenessThreshold(24 hours);
         assertEq(groveBasin.stalenessThreshold(), 24 hours);
 
-        vm.prank(owner);
+        vm.prank(manager);
         vm.expectRevert("GroveBasin/threshold-too-high");
         groveBasin.setStalenessThreshold(24 hours + 1);
     }
@@ -190,12 +208,21 @@ contract GroveBasinSetStalenessThresholdBoundsSuccessTests is GroveBasinTestBase
 
 contract GroveBasinSetStalenessThresholdSuccessTests is GroveBasinTestBase {
 
+    address manager = makeAddr("manager");
+
     event StalenessThresholdSet(uint256 oldThreshold, uint256 newThreshold);
+
+    function setUp() public override {
+        super.setUp();
+        vm.startPrank(owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), manager);
+        vm.stopPrank();
+    }
 
     function test_setStalenessThreshold() public {
         assertEq(groveBasin.stalenessThreshold(), 5 minutes);
 
-        vm.prank(owner);
+        vm.prank(manager);
         vm.expectEmit(address(groveBasin));
         emit StalenessThresholdSet(5 minutes, 1 hours);
         groveBasin.setStalenessThreshold(1 hours);
@@ -204,10 +231,10 @@ contract GroveBasinSetStalenessThresholdSuccessTests is GroveBasinTestBase {
     }
 
     function test_setStalenessThreshold_update() public {
-        vm.prank(owner);
+        vm.prank(manager);
         groveBasin.setStalenessThreshold(1 hours);
 
-        vm.prank(owner);
+        vm.prank(manager);
         vm.expectEmit(address(groveBasin));
         emit StalenessThresholdSet(1 hours, 2 hours);
         groveBasin.setStalenessThreshold(2 hours);
@@ -216,10 +243,10 @@ contract GroveBasinSetStalenessThresholdSuccessTests is GroveBasinTestBase {
     }
 
     function test_setStalenessThreshold_cannotDisable() public {
-        vm.prank(owner);
+        vm.prank(manager);
         groveBasin.setStalenessThreshold(1 hours);
 
-        vm.prank(owner);
+        vm.prank(manager);
         vm.expectRevert("GroveBasin/threshold-too-low");
         groveBasin.setStalenessThreshold(0);
     }
@@ -234,6 +261,7 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
 
     address swapper  = makeAddr("swapper");
     address receiver = makeAddr("receiver");
+    address manager  = makeAddr("manager");
 
     function setUp() public override {
         super.setUp();
@@ -244,7 +272,11 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
         mockCollateralTokenRateProvider.__setConversionRate(1e27);
         mockCreditTokenRateProvider.__setConversionRate(1.25e27);
 
-        vm.prank(owner);
+        vm.startPrank(owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), manager);
+        vm.stopPrank();
+
+        vm.prank(manager);
         groveBasin.setStalenessThreshold(1 hours);
 
         collateralToken.mint(address(groveBasin), 1_000_000e18);
@@ -441,7 +473,12 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
             address(creditTokenRateProvider)
         );
 
-        vm.prank(owner);
+        vm.startPrank(owner);
+        harness.grantRole(harness.MANAGER_ADMIN_ROLE(), owner);
+        harness.grantRole(harness.MANAGER_ROLE(), manager);
+        vm.stopPrank();
+
+        vm.prank(manager);
         harness.setStalenessThreshold(1 hours);
 
         uint256 rate = harness.getConversionRate(address(swapTokenRateProvider));
@@ -459,7 +496,12 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
             address(creditTokenRateProvider)
         );
 
-        vm.prank(owner);
+        vm.startPrank(owner);
+        harness.grantRole(harness.MANAGER_ADMIN_ROLE(), owner);
+        harness.grantRole(harness.MANAGER_ROLE(), manager);
+        vm.stopPrank();
+
+        vm.prank(manager);
         harness.setStalenessThreshold(1 hours);
 
         mockSwapTokenRateProvider.__setLastUpdated(block.timestamp - 2 hours);
@@ -494,7 +536,7 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
         age       = _bound(age, 0, block.timestamp);
 
         if (threshold != groveBasin.stalenessThreshold()) {
-            vm.prank(owner);
+            vm.prank(manager);
             groveBasin.setStalenessThreshold(threshold);
         }
 

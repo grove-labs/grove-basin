@@ -23,7 +23,7 @@ contract GroveBasinSetFeeBoundsFailureTests is GroveBasinTestBase {
             abi.encodeWithSignature(
                 "AccessControlUnauthorizedAccount(address,bytes32)",
                 address(this),
-                groveBasin.DEFAULT_ADMIN_ROLE()
+                groveBasin.MANAGER_ADMIN_ROLE()
             )
         );
         groveBasin.setFeeBounds(0, 100);

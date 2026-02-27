@@ -7,8 +7,11 @@ contract GroveBasinSetPocketFailureTests is GroveBasinTestBase {
 
     function test_setPocket_invalidOwner() public {
         vm.expectRevert(
-            abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)",
-            address(this), groveBasin.DEFAULT_ADMIN_ROLE())
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                address(this),
+                groveBasin.MANAGER_ADMIN_ROLE()
+            )
         );
         groveBasin.setPocket(address(1));
     }

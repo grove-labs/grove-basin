@@ -107,7 +107,8 @@ contract GroveBasinConstructorTests is GroveBasinTestBase {
         // Deploy new GroveBasin to get test coverage
         groveBasin = new GroveBasin(owner, address(swapToken), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider));
 
-        assertTrue(groveBasin.hasRole(groveBasin.DEFAULT_ADMIN_ROLE(), owner));
+        assertTrue(groveBasin.hasRole(groveBasin.OWNER_ROLE(), owner));
+        assertEq(groveBasin.OWNER_ROLE(), groveBasin.DEFAULT_ADMIN_ROLE());
 
         assertEq(address(groveBasin.swapToken()),              address(swapToken));
         assertEq(address(groveBasin.collateralToken()),             address(collateralToken));
