@@ -13,7 +13,7 @@ import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 abstract contract ForkTestBase is Test {
 
     address public owner  = makeAddr("owner");
-    address public pocket = makeAddr("pocket");
+    address public pocket;
 
     GroveBasin public groveBasin;
 

@@ -17,6 +17,24 @@ contract MockPSM3 {
         usdc = usdc_;
     }
 
+    function swapExactIn(
+        address assetIn,
+        address assetOut,
+        uint256 amountIn,
+        uint256,
+        address receiver,
+        uint256
+    ) external returns (uint256 amountOut) {
+        require(assetIn  == usdc, "MockPSM3/invalid-assetIn");
+        require(assetOut == usds, "MockPSM3/invalid-assetOut");
+
+        // 1:1 swap, but USDC is 6 decimals and USDS is 18 decimals
+        amountOut = amountIn * 1e12;
+
+        IERC20(usdc).safeTransferFrom(msg.sender, address(this), amountIn);
+        IERC20(usds).safeTransfer(receiver, amountOut);
+    }
+
     function swapExactOut(
         address assetIn,
         address assetOut,

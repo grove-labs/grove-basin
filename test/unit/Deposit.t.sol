@@ -120,9 +120,6 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
     }
 
     function test_deposit_firstDepositSwapToken_pocketIsGroveBasin() public {
-        vm.prank(owner);
-        groveBasin.setPocket(address(groveBasin));
-
         swapToken.mint(user1, 100e6);
 
         vm.startPrank(user1);

@@ -64,8 +64,9 @@ abstract contract GroveBasinPocketForkTestBase is Test {
         mockAUsdt      = new MockERC20("aUSDT", "aUSDT", 6);
         mockAaveV3Pool = new MockAaveV3Pool(address(mockAUsdt), Ethereum.USDT);
 
-        // Fund mock Aave pool with real USDT for withdrawals
+        // Fund mock Aave pool with real USDT for withdrawals and aUSDT for supply
         deal(Ethereum.USDT, address(mockAaveV3Pool), 10_000_000e6);
+        mockAUsdt.mint(address(mockAaveV3Pool), 10_000_000e6);
 
         pocket = new GroveBasinPocket(
             address(groveBasin),

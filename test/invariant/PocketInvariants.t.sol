@@ -73,8 +73,11 @@ contract PocketInvariantTest is Test {
         // Aave: withdraws aUsdt -> collateralToken (like USDT)
         aaveV3Pool = new MockAaveV3Pool(address(aUsdt), address(collateralToken));
 
-        // Fund mock pools with underlying tokens for conversions
-        collateralToken.mint(address(aaveV3Pool), 1_000_000_000e18);
+        // Fund mock pools with tokens for conversions (must cover max fuzz amounts)
+        collateralToken.mint(address(aaveV3Pool), type(uint128).max);
+        aUsdt.mint(address(aaveV3Pool), type(uint128).max);
+        usds.mint(address(psm3), type(uint128).max);
+        swapToken.mint(address(psm3), type(uint128).max);
 
         pocket = new GroveBasinPocket(
             address(groveBasin),

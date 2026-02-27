@@ -17,6 +17,13 @@ contract MockAaveV3Pool {
         underlying = underlying_;
     }
 
+    function supply(address asset, uint256 amount, address onBehalfOf, uint16) external {
+        require(asset == underlying, "MockAaveV3Pool/invalid-asset");
+
+        IERC20(underlying).safeTransferFrom(msg.sender, address(this), amount);
+        IERC20(aToken).safeTransfer(onBehalfOf, amount);
+    }
+
     function withdraw(address asset, uint256 amount, address to) external returns (uint256) {
         require(asset == underlying, "MockAaveV3Pool/invalid-asset");
 

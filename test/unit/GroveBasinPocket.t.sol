@@ -147,7 +147,12 @@ contract GroveBasinPocketConstructorTests is GroveBasinPocketTestBase {
         assertEq(pocket.psm3(),       address(psm3));
         assertEq(pocket.aaveV3Pool(), address(aaveV3Pool));
 
-        assertEq(usds.allowance(address(pocket), address(psm3)), type(uint256).max);
+        assertEq(usds.allowance(address(pocket), address(psm3)),       type(uint256).max);
+        assertEq(usds.allowance(address(pocket), address(groveBasin)), type(uint256).max);
+        assertEq(usdc.allowance(address(pocket), address(psm3)),       type(uint256).max);
+        assertEq(usdc.allowance(address(pocket), address(groveBasin)), type(uint256).max);
+        assertEq(usdt.allowance(address(pocket), address(aaveV3Pool)), type(uint256).max);
+        assertEq(usdt.allowance(address(pocket), address(groveBasin)), type(uint256).max);
         assertEq(aUsdt.allowance(address(pocket), address(aaveV3Pool)), type(uint256).max);
     }
 

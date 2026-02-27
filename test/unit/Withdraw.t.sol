@@ -8,6 +8,7 @@ import { GroveBasin } from "src/GroveBasin.sol";
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
 import { MockRateProvider, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
+import { MockGroveBasinPocket }                 from "test/mocks/MockGroveBasinPocket.sol";
 
 contract GroveBasinWithdrawTests is GroveBasinTestBase {
 
@@ -29,7 +30,13 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
     }
 
     function test_withdraw_pocketInsufficientApprovalBoundary() public {
-        vm.prank(pocket);
+        MockGroveBasinPocket mockPocket = new MockGroveBasinPocket(address(groveBasin), address(swapToken));
+
+        vm.prank(owner);
+        groveBasin.setPocket(address(mockPocket));
+
+        // Override the max approval with a limited one
+        vm.prank(address(mockPocket));
         swapToken.approve(address(groveBasin), 100e18);
 
         _deposit(address(swapToken), user1, 100e18 + 1);
@@ -94,9 +101,6 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
     }
 
     function test_withdraw_onlySwapTokenInGroveBasin_pocketIsGroveBasin() public {
-        vm.prank(owner);
-        groveBasin.setPocket(address(groveBasin));
-
         _deposit(address(swapToken), user1, 100e6);
 
         assertEq(swapToken.balanceOf(user1),        0);

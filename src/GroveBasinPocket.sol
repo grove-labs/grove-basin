@@ -24,6 +24,11 @@ contract GroveBasinPocket is IGroveBasinPocket {
     address public immutable psm3;
     address public immutable aaveV3Pool;
 
+    uint256 internal immutable _usdsPrecision;
+    uint256 internal immutable _usdcPrecision;
+    uint256 internal immutable _usdtPrecision;
+    uint256 internal immutable _aUsdtPrecision;
+
     modifier onlyBasin() {
         require(msg.sender == basin, "GroveBasinPocket/not-basin");
         _;
@@ -57,10 +62,41 @@ contract GroveBasinPocket is IGroveBasinPocket {
         psm3       = psm3_;
         aaveV3Pool = aaveV3Pool_;
 
+        _usdsPrecision  = 10 ** IERC20(usds_).decimals();
+        _usdcPrecision  = 10 ** IERC20(usdc_).decimals();
+        _usdtPrecision  = 10 ** IERC20(usdt_).decimals();
+        _aUsdtPrecision = 10 ** IERC20(aUsdt_).decimals();
+
         IERC20(usds_).safeApprove(psm3_, type(uint256).max);
-        IERC20(aUsdt_).safeApprove(aaveV3Pool_, type(uint256).max);
+        IERC20(usds_).safeApprove(basin_, type(uint256).max);
+        IERC20(usdc_).safeApprove(psm3_, type(uint256).max);
         IERC20(usdc_).safeApprove(basin_, type(uint256).max);
+        IERC20(usdt_).safeApprove(aaveV3Pool_, type(uint256).max);
         IERC20(usdt_).safeApprove(basin_, type(uint256).max);
+        IERC20(aUsdt_).safeApprove(aaveV3Pool_, type(uint256).max);
+    }
+
+    function depositLiquidity(uint256 amount, address asset) external override onlyBasin {
+        if (amount == 0) return;
+
+        if (asset == address(usds)) {
+            emit LiquidityDeposited(asset, amount, 0);
+        } else if (asset == address(usdc)) {
+            uint256 convertedAmount = IPSM3Like(psm3).swapExactIn(
+                address(usdc),
+                address(usds),
+                amount,
+                0,
+                address(this),
+                0
+            );
+
+            emit LiquidityDeposited(asset, amount, convertedAmount);
+        } else if (asset == address(usdt)) {
+            IAaveV3PoolLike(aaveV3Pool).supply(address(usdt), amount, address(this), 0);
+
+            emit LiquidityDeposited(asset, amount, amount);
+        }
     }
 
     function drawLiquidity(uint256 amount, address asset) external override onlyBasin {
@@ -102,6 +138,25 @@ contract GroveBasinPocket is IGroveBasinPocket {
 
             emit LiquidityDrawn(asset, amount, convertedAmount);
         }
+    }
+
+    function totalAssets() external view override returns (uint256) {
+        return usds.balanceOf(address(this))  * 1e18 / _usdsPrecision
+            + usdc.balanceOf(address(this))   * 1e18 / _usdcPrecision
+            + usdt.balanceOf(address(this))   * 1e18 / _usdtPrecision
+            + aUsdt.balanceOf(address(this))  * 1e18 / _aUsdtPrecision;
+    }
+
+    function availableBalance(address asset) external view override returns (uint256) {
+        if (asset == address(usds)) {
+            return usds.balanceOf(address(this));
+        } else if (asset == address(usdc)) {
+            return usdc.balanceOf(address(this))
+                + usds.balanceOf(address(this)) * _usdcPrecision / _usdsPrecision;
+        } else if (asset == address(usdt)) {
+            return usdt.balanceOf(address(this)) + aUsdt.balanceOf(address(this));
+        }
+        return 0;
     }
 
 }

@@ -180,6 +180,10 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         require(newPocket != pocket_, "GroveBasin/same-pocket");
 
+        if (newPocket != address(this)) {
+            require(newPocket.code.length > 0, "GroveBasin/pocket-not-contract");
+        }
+
         uint256 amountToTransfer = swapToken.balanceOf(pocket_);
 
         if (pocket_ == address(this)) {
@@ -295,6 +299,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         totalShares      += newShares;
 
         _pullAsset(asset, assetsToDeposit);
+        _depositLiquidity(assetsToDeposit, asset);
 
         emit Deposit(asset, msg.sender, receiver, assetsToDeposit, newShares);
     }
@@ -314,6 +319,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
             totalShares        -= sharesToBurn;
         }
 
+        _drawLiquidity(assetsWithdrawn, asset);
         _pushAsset(asset, receiver, assetsWithdrawn);
 
         emit Withdraw(asset, msg.sender, receiver, assetsWithdrawn, sharesToBurn);
@@ -336,7 +342,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     {
         require(_isValidAsset(asset), "GroveBasin/invalid-asset");
 
-        uint256 assetBalance = IERC20(asset).balanceOf(_getAssetCustodian(asset));
+        uint256 assetBalance = _getAvailableBalance(asset);
 
         assetsWithdrawn = assetBalance < maxAssetsToWithdraw
             ? assetBalance
@@ -449,7 +455,11 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /**********************************************************************************************/
 
     function totalAssets() public view override returns (uint256) {
-        return _getSwapTokenValue(swapToken.balanceOf(pocket))
+        uint256 pocketValue = _hasPocket()
+            ? IGroveBasinPocket(pocket).totalAssets()
+            : _getSwapTokenValue(swapToken.balanceOf(pocket));
+
+        return pocketValue
             +  _getCollateralTokenValue(collateralToken.balanceOf(address(this)))
             +  _getCreditTokenValue(creditToken.balanceOf(address(this)), false);  // Round down
     }
@@ -608,20 +618,17 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     function _drawLiquidity(uint256 amount, address asset) internal {
-        address pocket_ = pocket;
-        if (pocket_ != address(this) && pocket_.code.length > 0) {
+        if (_hasPocket()) {
+            address pocket_   = pocket;
             address custodian = _getAssetCustodian(asset);
 
             if (custodian == pocket_) {
-                // For swapToken: pocket is custodian, just ensure pocket has enough
                 try IGroveBasinPocket(pocket_).drawLiquidity(amount, asset) {} catch {}
             } else {
-                // For non-swapToken: basin is custodian, only draw if basin lacks balance
                 uint256 balance = IERC20(asset).balanceOf(address(this));
                 if (balance < amount) {
                     uint256 deficit = amount - balance;
                     try IGroveBasinPocket(pocket_).drawLiquidity(deficit, asset) {} catch {}
-                    // Only transfer if pocket actually has the deficit after drawLiquidity
                     uint256 pocketBalance = IERC20(asset).balanceOf(pocket_);
                     if (pocketBalance >= deficit) {
                         IERC20(asset).safeTransferFrom(pocket_, address(this), deficit);
@@ -629,6 +636,28 @@ contract GroveBasin is IGroveBasin, AccessControl {
                 }
             }
         }
+    }
+
+    function _depositLiquidity(uint256 amount, address asset) internal {
+        if (asset != address(creditToken) && _hasPocket()) {
+            address pocket_ = pocket;
+            if (asset != address(swapToken)) {
+                IERC20(asset).safeTransfer(pocket_, amount);
+            }
+            IGroveBasinPocket(pocket_).depositLiquidity(amount, asset);
+        }
+    }
+
+    function _getAvailableBalance(address asset) internal view returns (uint256) {
+        if (asset != address(creditToken) && _hasPocket()) {
+            return IGroveBasinPocket(pocket).availableBalance(asset);
+        }
+
+        return IERC20(asset).balanceOf(_getAssetCustodian(asset));
+    }
+
+    function _hasPocket() internal view returns (bool) {
+        return pocket != address(this);
     }
 
     function _isValidAsset(address asset) internal view returns (bool) {

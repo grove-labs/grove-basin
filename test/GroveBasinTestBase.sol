@@ -14,7 +14,7 @@ import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 contract GroveBasinTestBase is Test {
 
     address public owner  = makeAddr("owner");
-    address public pocket = makeAddr("pocket");
+    address public pocket;
 
     GroveBasin public groveBasin;
 
