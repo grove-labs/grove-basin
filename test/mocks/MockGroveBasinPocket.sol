@@ -24,10 +24,6 @@ contract MockGroveBasinPocket is IGroveBasinPocket {
 
     function depositLiquidity(uint256, address) external override {}
 
-    function totalAssets() external view override returns (uint256) {
-        return swapToken.balanceOf(address(this)) * 1e12;
-    }
-
     function availableBalance(address asset) external view override returns (uint256) {
         return IERC20(asset).balanceOf(address(this));
     }

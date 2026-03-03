@@ -15,7 +15,7 @@ import { GroveBasin }       from "src/GroveBasin.sol";
 import { GroveBasinPocket } from "src/GroveBasinPocket.sol";
 
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
-import { MockPSM3 }        from "test/mocks/MockPSM3.sol";
+import { MockPSM }        from "test/mocks/MockPSM.sol";
 import { MockAaveV3Pool }  from "test/mocks/MockAaveV3Pool.sol";
 
 abstract contract GroveBasinPocketForkTestBase is Test {
@@ -30,7 +30,7 @@ abstract contract GroveBasinPocketForkTestBase is Test {
     MockRateProvider public collateralTokenRateProvider;
     MockRateProvider public creditTokenRateProvider;
 
-    MockPSM3       public mockPsm3;
+    MockPSM       public mockPsm;
     MockERC20      public mockAUsdt;
     MockAaveV3Pool public mockAaveV3Pool;
 
@@ -57,8 +57,8 @@ abstract contract GroveBasinPocketForkTestBase is Test {
         );
 
         // Deploy mock PSM3 for USDS -> USDC swaps
-        mockPsm3 = new MockPSM3(Ethereum.USDS, Ethereum.USDC);
-        deal(Ethereum.USDC, address(mockPsm3), 10_000_000e6);
+        mockPsm = new MockPSM(Ethereum.USDS, Ethereum.USDC);
+        deal(Ethereum.USDC, address(mockPsm), 10_000_000e6);
 
         // Deploy mock aUSDT and Aave pool for USDT withdrawals
         mockAUsdt      = new MockERC20("aUSDT", "aUSDT", 6);
@@ -75,7 +75,7 @@ abstract contract GroveBasinPocketForkTestBase is Test {
             Ethereum.USDT,
             Ethereum.USDS,
             address(mockAUsdt),
-            address(mockPsm3),
+            address(mockPsm),
             address(mockAaveV3Pool)
         );
 
@@ -115,7 +115,7 @@ contract GroveBasinPocketForkTest_Deployment is GroveBasinPocketForkTestBase {
         assertEq(address(pocket.usdc()),  Ethereum.USDC);
         assertEq(address(pocket.usdt()),  Ethereum.USDT);
         assertEq(address(pocket.usds()),  Ethereum.USDS);
-        assertEq(pocket.psm3(),       address(mockPsm3));
+        assertEq(pocket.psm(),       address(mockPsm));
         assertEq(pocket.aaveV3Pool(), address(mockAaveV3Pool));
         assertEq(groveBasin.pocket(), address(pocket));
     }

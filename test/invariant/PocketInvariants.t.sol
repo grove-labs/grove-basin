@@ -10,7 +10,7 @@ import { GroveBasinPocket } from "src/GroveBasinPocket.sol";
 import { IRateProviderLike } from "src/interfaces/IRateProviderLike.sol";
 
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
-import { MockPSM3 }        from "test/mocks/MockPSM3.sol";
+import { MockPSM }        from "test/mocks/MockPSM.sol";
 import { MockAaveV3Pool }  from "test/mocks/MockAaveV3Pool.sol";
 
 import { LpHandler }      from "test/invariant/handlers/LpHandler.sol";
@@ -36,7 +36,7 @@ contract PocketInvariantTest is Test {
     MockRateProvider public collateralTokenRateProvider;
     MockRateProvider public creditTokenRateProvider;
 
-    MockPSM3       public psm3;
+    MockPSM       public psm;
     MockAaveV3Pool public aaveV3Pool;
 
     LpHandler      public lpHandler;
@@ -69,15 +69,15 @@ contract PocketInvariantTest is Test {
         );
 
         // PSM3: swaps USDS -> swapToken (like USDC)
-        psm3       = new MockPSM3(address(usds), address(swapToken));
+        psm       = new MockPSM(address(usds), address(swapToken));
         // Aave: withdraws aUsdt -> collateralToken (like USDT)
         aaveV3Pool = new MockAaveV3Pool(address(aUsdt), address(collateralToken));
 
         // Fund mock pools with tokens for conversions (must cover max fuzz amounts)
         collateralToken.mint(address(aaveV3Pool), type(uint128).max);
         aUsdt.mint(address(aaveV3Pool), type(uint128).max);
-        usds.mint(address(psm3), type(uint128).max);
-        swapToken.mint(address(psm3), type(uint128).max);
+        usds.mint(address(psm), type(uint128).max);
+        swapToken.mint(address(psm), type(uint128).max);
 
         pocket = new GroveBasinPocket(
             address(groveBasin),
@@ -86,7 +86,7 @@ contract PocketInvariantTest is Test {
             address(collateralToken),  // usdt
             address(usds),
             address(aUsdt),
-            address(psm3),
+            address(psm),
             address(aaveV3Pool)
         );
 

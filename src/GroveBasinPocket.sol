@@ -6,7 +6,7 @@ import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
 import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
 
 import { IGroveBasinPocket } from "src/interfaces/IGroveBasinPocket.sol";
-import { IPSM3Like }        from "src/interfaces/IPSM3Like.sol";
+import { IPSMLike }          from "src/interfaces/IPSMLike.sol";
 import { IAaveV3PoolLike }   from "src/interfaces/IAaveV3PoolLike.sol";
 
 contract GroveBasinPocket is IGroveBasinPocket {
@@ -21,7 +21,7 @@ contract GroveBasinPocket is IGroveBasinPocket {
     IERC20 public immutable usds;
     IERC20 public immutable aUsdt;
 
-    address public immutable psm3;
+    address public immutable psm;
     address public immutable aaveV3Pool;
 
     uint256 internal immutable _usdsPrecision;
@@ -41,7 +41,7 @@ contract GroveBasinPocket is IGroveBasinPocket {
         address usdt_,
         address usds_,
         address aUsdt_,
-        address psm3_,
+        address psm_,
         address aaveV3Pool_
     ) {
         require(basin_      != address(0), "GroveBasinPocket/invalid-basin");
@@ -50,7 +50,7 @@ contract GroveBasinPocket is IGroveBasinPocket {
         require(usdt_       != address(0), "GroveBasinPocket/invalid-usdt");
         require(usds_       != address(0), "GroveBasinPocket/invalid-usds");
         require(aUsdt_      != address(0), "GroveBasinPocket/invalid-aUsdt");
-        require(psm3_       != address(0), "GroveBasinPocket/invalid-psm3");
+        require(psm_        != address(0), "GroveBasinPocket/invalid-psm");
         require(aaveV3Pool_ != address(0), "GroveBasinPocket/invalid-aaveV3Pool");
 
         basin      = basin_;
@@ -59,7 +59,7 @@ contract GroveBasinPocket is IGroveBasinPocket {
         usdt       = IERC20(usdt_);
         usds       = IERC20(usds_);
         aUsdt      = IERC20(aUsdt_);
-        psm3       = psm3_;
+        psm        = psm_;
         aaveV3Pool = aaveV3Pool_;
 
         _usdsPrecision  = 10 ** IERC20(usds_).decimals();
@@ -67,9 +67,9 @@ contract GroveBasinPocket is IGroveBasinPocket {
         _usdtPrecision  = 10 ** IERC20(usdt_).decimals();
         _aUsdtPrecision = 10 ** IERC20(aUsdt_).decimals();
 
-        IERC20(usds_).safeApprove(psm3_, type(uint256).max);
+        IERC20(usds_).safeApprove(psm_, type(uint256).max);
         IERC20(usds_).safeApprove(basin_, type(uint256).max);
-        IERC20(usdc_).safeApprove(psm3_, type(uint256).max);
+        IERC20(usdc_).safeApprove(psm_, type(uint256).max);
         IERC20(usdc_).safeApprove(basin_, type(uint256).max);
         IERC20(usdt_).safeApprove(aaveV3Pool_, type(uint256).max);
         IERC20(usdt_).safeApprove(basin_, type(uint256).max);
@@ -82,7 +82,7 @@ contract GroveBasinPocket is IGroveBasinPocket {
         if (asset == address(usds)) {
             emit LiquidityDeposited(asset, amount, 0);
         } else if (asset == address(usdc)) {
-            uint256 convertedAmount = IPSM3Like(psm3).swapExactIn(
+            uint256 convertedAmount = IPSMLike(psm).swapExactIn(
                 address(usdc),
                 address(usds),
                 amount,
@@ -110,7 +110,7 @@ contract GroveBasinPocket is IGroveBasinPocket {
             if (balance < amount) {
                 uint256 remainder = amount - balance;
 
-                convertedAmount = IPSM3Like(psm3).swapExactOut(
+                convertedAmount = IPSMLike(psm).swapExactOut(
                     address(usds),
                     address(usdc),
                     remainder,
@@ -138,13 +138,6 @@ contract GroveBasinPocket is IGroveBasinPocket {
 
             emit LiquidityDrawn(asset, amount, convertedAmount);
         }
-    }
-
-    function totalAssets() external view override returns (uint256) {
-        return usds.balanceOf(address(this))  * 1e18 / _usdsPrecision
-            + usdc.balanceOf(address(this))   * 1e18 / _usdcPrecision
-            + usdt.balanceOf(address(this))   * 1e18 / _usdtPrecision
-            + aUsdt.balanceOf(address(this))  * 1e18 / _aUsdtPrecision;
     }
 
     function availableBalance(address asset) external view override returns (uint256) {

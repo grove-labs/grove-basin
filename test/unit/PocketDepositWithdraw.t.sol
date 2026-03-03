@@ -12,7 +12,7 @@ import { GroveBasinPocket }  from "src/GroveBasinPocket.sol";
 import { IGroveBasinPocket } from "src/interfaces/IGroveBasinPocket.sol";
 
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
-import { MockPSM3 }        from "test/mocks/MockPSM3.sol";
+import { MockPSM }        from "test/mocks/MockPSM.sol";
 import { MockAaveV3Pool }  from "test/mocks/MockAaveV3Pool.sol";
 
 contract PocketDepositWithdrawTestBase is Test {
@@ -35,7 +35,7 @@ contract PocketDepositWithdrawTestBase is Test {
     MockRateProvider public collateralTokenRateProvider;
     MockRateProvider public creditTokenRateProvider;
 
-    MockPSM3       public psm3;
+    MockPSM       public psm;
     MockAaveV3Pool public aaveV3Pool;
 
     function setUp() public virtual {
@@ -64,17 +64,17 @@ contract PocketDepositWithdrawTestBase is Test {
             address(creditTokenRateProvider)
         );
 
-        psm3       = new MockPSM3(address(usds), address(usdc));
+        psm       = new MockPSM(address(usds), address(usdc));
         aaveV3Pool = new MockAaveV3Pool(address(aUsdt), address(usdt));
 
         // Fund MockAaveV3Pool with underlying USDT for withdrawals
         usdt.mint(address(aaveV3Pool), 1_000_000_000e6);
         // Fund MockAaveV3Pool with aUSDT for supply
         aUsdt.mint(address(aaveV3Pool), 1_000_000_000e6);
-        // Fund MockPSM3 with USDS for swapExactIn (USDC→USDS)
-        usds.mint(address(psm3), 1_000_000_000e18);
-        // Fund MockPSM3 with USDC for swapExactOut (USDS→USDC)
-        usdc.mint(address(psm3), 1_000_000_000e6);
+        // Fund MockPSM with USDS for swapExactIn (USDC→USDS)
+        usds.mint(address(psm), 1_000_000_000e18);
+        // Fund MockPSM with USDC for swapExactOut (USDS→USDC)
+        usdc.mint(address(psm), 1_000_000_000e6);
 
         pocket = new GroveBasinPocket(
             address(groveBasin),
@@ -83,7 +83,7 @@ contract PocketDepositWithdrawTestBase is Test {
             address(usdt),
             address(usds),
             address(aUsdt),
-            address(psm3),
+            address(psm),
             address(aaveV3Pool)
         );
 
@@ -247,46 +247,6 @@ contract PocketDepositLiquidityUnsupportedTests is PocketDepositWithdrawTestBase
 }
 
 /**********************************************************************************************/
-/*** Pocket totalAssets tests                                                               ***/
-/**********************************************************************************************/
-
-contract PocketTotalAssetsTests is PocketDepositWithdrawTestBase {
-
-    function test_totalAssets_empty() public view {
-        assertEq(pocket.totalAssets(), 0);
-    }
-
-    function test_totalAssets_usdsOnly() public {
-        usds.mint(address(pocket), 100e18);
-        assertEq(pocket.totalAssets(), 100e18);
-    }
-
-    function test_totalAssets_usdcOnly() public {
-        usdc.mint(address(pocket), 100e6);
-        assertEq(pocket.totalAssets(), 100e18);
-    }
-
-    function test_totalAssets_usdtOnly() public {
-        usdt.mint(address(pocket), 100e6);
-        assertEq(pocket.totalAssets(), 100e18);
-    }
-
-    function test_totalAssets_aUsdtOnly() public {
-        aUsdt.mint(address(pocket), 100e6);
-        assertEq(pocket.totalAssets(), 100e18);
-    }
-
-    function test_totalAssets_mixed() public {
-        usds.mint(address(pocket), 50e18);
-        usdc.mint(address(pocket), 30e6);
-        aUsdt.mint(address(pocket), 20e6);
-
-        assertEq(pocket.totalAssets(), 100e18);
-    }
-
-}
-
-/**********************************************************************************************/
 /*** Pocket availableBalance tests                                                          ***/
 /**********************************************************************************************/
 
@@ -357,7 +317,7 @@ contract BasinDepositThroughPocketTests is PocketDepositWithdrawTestBase {
         assertEq(groveBasin.totalAssets(),  100e18);
     }
 
-    function test_deposit_usdc_convertsToUsdsInPocket() public {
+    function test_deposit_usdc_staysInBasin() public {
         usdc.mint(user1, 100e6);
 
         vm.startPrank(user1);
@@ -370,10 +330,10 @@ contract BasinDepositThroughPocketTests is PocketDepositWithdrawTestBase {
 
         assertEq(newShares, 100e18);
 
-        // USDC was converted to USDS in pocket via PSM3
-        assertEq(usdc.balanceOf(user1),           0);
-        assertEq(usdc.balanceOf(address(pocket)),  0);
-        assertEq(usds.balanceOf(address(pocket)),  100e18);
+        // USDC stays in basin, not sent to pocket
+        assertEq(usdc.balanceOf(user1),               0);
+        assertEq(usdc.balanceOf(address(groveBasin)),  100e6);
+        assertEq(usdc.balanceOf(address(pocket)),      0);
 
         assertEq(groveBasin.totalShares(), 100e18);
         assertEq(groveBasin.shares(user1), 100e18);
@@ -433,12 +393,11 @@ contract BasinWithdrawThroughPocketTests is PocketDepositWithdrawTestBase {
         assertEq(groveBasin.shares(user1), 0);
     }
 
-    function test_withdraw_usdc_convertsUsdsToUsdc() public {
-        // Deposit USDC → converted to USDS in pocket
+    function test_withdraw_usdc_fromBasin() public {
+        // Deposit USDC → stays in basin
         _deposit(address(usdc), user1, 100e6);
 
-        assertEq(usds.balanceOf(address(pocket)), 100e18);
-        assertEq(usdc.balanceOf(address(pocket)), 0);
+        assertEq(usdc.balanceOf(address(groveBasin)), 100e6);
 
         vm.prank(user1);
         uint256 amount = groveBasin.withdraw(address(usdc), user1, 100e6);
@@ -495,40 +454,36 @@ contract BasinWithdrawThroughPocketTests is PocketDepositWithdrawTestBase {
     }
 
     function test_withdraw_depositUsdsThenWithdrawUsdc() public {
-        // Deposit USDS, then try to withdraw USDC
+        // Deposit USDS (swapToken → pocket) and USDC (collateral → basin)
         _deposit(address(usds), user1, 100e18);
+        _deposit(address(usdc), user1, 100e6);
 
-        // Pocket holds USDS, user wants USDC
-        // _drawLiquidity should convert USDS→USDC via pocket's drawLiquidity
-        // But USDC is the collateralToken, so custodian = basin
-        // _drawLiquidity sees basin has 0 USDC, calls pocket.drawLiquidity to convert USDS→USDC
+        // Withdraw USDC from basin
         vm.prank(user1);
         uint256 amount = groveBasin.withdraw(address(usdc), user1, 100e6);
 
         assertEq(amount, 100e6);
         assertEq(usdc.balanceOf(user1), 100e6);
-
-        assertEq(groveBasin.totalShares(), 0);
-        assertEq(groveBasin.shares(user1), 0);
     }
 
     function test_withdraw_multiUser_depositAndWithdrawDifferentAssets() public {
         _deposit(address(usds), user1, 200e18);
         _deposit(address(usdc), user2, 100e6);
 
-        // Pocket holds: 200 USDS (from user1) + 100 USDS (from user2 USDC→USDS conversion) = 300 USDS
-        assertEq(usds.balanceOf(address(pocket)), 300e18);
-        assertEq(groveBasin.totalShares(),         300e18);
+        // Pocket holds 200 USDS (swapToken), basin holds 100 USDC (collateral)
+        assertEq(usds.balanceOf(address(pocket)),     200e18);
+        assertEq(usdc.balanceOf(address(groveBasin)), 100e6);
+        assertEq(groveBasin.totalShares(),            300e18);
 
-        // User1 withdraws USDS
+        // User1 withdraws USDS from pocket
         vm.prank(user1);
         uint256 amount1 = groveBasin.withdraw(address(usds), user1, 200e18);
 
         assertEq(amount1, 200e18);
         assertEq(usds.balanceOf(user1), 200e18);
-        assertEq(usds.balanceOf(address(pocket)), 100e18);
+        assertEq(usds.balanceOf(address(pocket)), 0);
 
-        // User2 withdraws USDC (pocket converts USDS→USDC)
+        // User2 withdraws USDC from basin
         vm.prank(user2);
         uint256 amount2 = groveBasin.withdraw(address(usdc), user2, 100e6);
 
@@ -563,7 +518,7 @@ contract BasinUsdtCollateralPocketTests is Test {
     MockRateProvider public collateralTokenRateProvider;
     MockRateProvider public creditTokenRateProvider;
 
-    MockPSM3       public psm3;
+    MockPSM       public psm;
     MockAaveV3Pool public aaveV3Pool;
 
     function setUp() public {
@@ -592,13 +547,13 @@ contract BasinUsdtCollateralPocketTests is Test {
             address(creditTokenRateProvider)
         );
 
-        psm3       = new MockPSM3(address(usds), address(usdc));
+        psm       = new MockPSM(address(usds), address(usdc));
         aaveV3Pool = new MockAaveV3Pool(address(aUsdt), address(usdt));
 
         usdt.mint(address(aaveV3Pool), 1_000_000_000e6);
         aUsdt.mint(address(aaveV3Pool), 1_000_000_000e6);
-        usds.mint(address(psm3), 1_000_000_000e18);
-        usdc.mint(address(psm3), 1_000_000_000e6);
+        usds.mint(address(psm), 1_000_000_000e18);
+        usdc.mint(address(psm), 1_000_000_000e6);
 
         pocket = new GroveBasinPocket(
             address(groveBasin),
@@ -607,7 +562,7 @@ contract BasinUsdtCollateralPocketTests is Test {
             address(usdt),
             address(usds),
             address(aUsdt),
-            address(psm3),
+            address(psm),
             address(aaveV3Pool)
         );
 
@@ -618,7 +573,7 @@ contract BasinUsdtCollateralPocketTests is Test {
         groveBasin.setPocket(address(pocket));
     }
 
-    function test_deposit_usdt_depositsToAave() public {
+    function test_deposit_usdt_staysInBasin() public {
         usdt.mint(user1, 100e6);
 
         vm.startPrank(user1);
@@ -629,17 +584,17 @@ contract BasinUsdtCollateralPocketTests is Test {
 
         assertEq(newShares, 100e18);
 
-        // USDT was deposited into Aave via pocket
-        assertEq(usdt.balanceOf(user1),            0);
-        assertEq(usdt.balanceOf(address(pocket)),   0);
-        assertEq(aUsdt.balanceOf(address(pocket)),  100e6);
+        // USDT (collateral) stays in basin, not sent to pocket
+        assertEq(usdt.balanceOf(user1),               0);
+        assertEq(usdt.balanceOf(address(groveBasin)),  100e6);
+        assertEq(aUsdt.balanceOf(address(pocket)),     0);
 
         assertEq(groveBasin.totalShares(), 100e18);
         assertEq(groveBasin.shares(user1), 100e18);
         assertEq(groveBasin.totalAssets(),  100e18);
     }
 
-    function test_withdraw_usdt_withdrawsFromAave() public {
+    function test_withdraw_usdt_fromBasin() public {
         usdt.mint(user1, 100e6);
 
         vm.startPrank(user1);
@@ -647,15 +602,14 @@ contract BasinUsdtCollateralPocketTests is Test {
         groveBasin.deposit(address(usdt), user1, 100e6);
         vm.stopPrank();
 
-        // aUSDT in pocket from deposit
-        assertEq(aUsdt.balanceOf(address(pocket)), 100e6);
+        // USDT stays in basin
+        assertEq(usdt.balanceOf(address(groveBasin)), 100e6);
 
         vm.prank(user1);
         uint256 amount = groveBasin.withdraw(address(usdt), user1, 100e6);
 
         assertEq(amount, 100e6);
         assertEq(usdt.balanceOf(user1), 100e6);
-        assertEq(aUsdt.balanceOf(address(pocket)), 0);
 
         assertEq(groveBasin.totalShares(), 0);
         assertEq(groveBasin.shares(user1), 0);

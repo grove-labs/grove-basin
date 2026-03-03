@@ -15,8 +15,6 @@ interface IGroveBasinPocket {
 
     function depositLiquidity(uint256 amount, address asset) external;
 
-    function totalAssets() external view returns (uint256);
-
     function availableBalance(address asset) external view returns (uint256);
 
 }

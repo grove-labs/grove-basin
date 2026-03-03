@@ -12,7 +12,7 @@ import { GroveBasinPocket }  from "src/GroveBasinPocket.sol";
 import { IGroveBasinPocket } from "src/interfaces/IGroveBasinPocket.sol";
 
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
-import { MockPSM3 }        from "test/mocks/MockPSM3.sol";
+import { MockPSM }        from "test/mocks/MockPSM.sol";
 import { MockAaveV3Pool }  from "test/mocks/MockAaveV3Pool.sol";
 
 contract GroveBasinPocketTestBase is Test {
@@ -33,7 +33,7 @@ contract GroveBasinPocketTestBase is Test {
     MockRateProvider public collateralTokenRateProvider;
     MockRateProvider public creditTokenRateProvider;
 
-    MockPSM3       public psm3;
+    MockPSM       public psm;
     MockAaveV3Pool public aaveV3Pool;
 
     function setUp() public virtual {
@@ -61,7 +61,7 @@ contract GroveBasinPocketTestBase is Test {
             address(creditTokenRateProvider)
         );
 
-        psm3       = new MockPSM3(address(usds), address(usdc));
+        psm       = new MockPSM(address(usds), address(usdc));
         aaveV3Pool = new MockAaveV3Pool(address(aUsdt), address(usdt));
 
         // Fund MockAaveV3Pool with underlying USDT for withdrawals
@@ -74,7 +74,7 @@ contract GroveBasinPocketTestBase is Test {
             address(usdt),
             address(usds),
             address(aUsdt),
-            address(psm3),
+            address(psm),
             address(aaveV3Pool)
         );
 
@@ -99,42 +99,42 @@ contract GroveBasinPocketConstructorTests is GroveBasinPocketTestBase {
 
     function test_constructor_invalidBasin() public {
         vm.expectRevert("GroveBasinPocket/invalid-basin");
-        new GroveBasinPocket(address(0), manager, address(usdc), address(usdt), address(usds), address(aUsdt), address(psm3), address(aaveV3Pool));
+        new GroveBasinPocket(address(0), manager, address(usdc), address(usdt), address(usds), address(aUsdt), address(psm), address(aaveV3Pool));
     }
 
     function test_constructor_invalidManager() public {
         vm.expectRevert("GroveBasinPocket/invalid-manager");
-        new GroveBasinPocket(address(groveBasin), address(0), address(usdc), address(usdt), address(usds), address(aUsdt), address(psm3), address(aaveV3Pool));
+        new GroveBasinPocket(address(groveBasin), address(0), address(usdc), address(usdt), address(usds), address(aUsdt), address(psm), address(aaveV3Pool));
     }
 
     function test_constructor_invalidUsdc() public {
         vm.expectRevert("GroveBasinPocket/invalid-usdc");
-        new GroveBasinPocket(address(groveBasin), manager, address(0), address(usdt), address(usds), address(aUsdt), address(psm3), address(aaveV3Pool));
+        new GroveBasinPocket(address(groveBasin), manager, address(0), address(usdt), address(usds), address(aUsdt), address(psm), address(aaveV3Pool));
     }
 
     function test_constructor_invalidUsdt() public {
         vm.expectRevert("GroveBasinPocket/invalid-usdt");
-        new GroveBasinPocket(address(groveBasin), manager, address(usdc), address(0), address(usds), address(aUsdt), address(psm3), address(aaveV3Pool));
+        new GroveBasinPocket(address(groveBasin), manager, address(usdc), address(0), address(usds), address(aUsdt), address(psm), address(aaveV3Pool));
     }
 
     function test_constructor_invalidUsds() public {
         vm.expectRevert("GroveBasinPocket/invalid-usds");
-        new GroveBasinPocket(address(groveBasin), manager, address(usdc), address(usdt), address(0), address(aUsdt), address(psm3), address(aaveV3Pool));
+        new GroveBasinPocket(address(groveBasin), manager, address(usdc), address(usdt), address(0), address(aUsdt), address(psm), address(aaveV3Pool));
     }
 
     function test_constructor_invalidAUsdt() public {
         vm.expectRevert("GroveBasinPocket/invalid-aUsdt");
-        new GroveBasinPocket(address(groveBasin), manager, address(usdc), address(usdt), address(usds), address(0), address(psm3), address(aaveV3Pool));
+        new GroveBasinPocket(address(groveBasin), manager, address(usdc), address(usdt), address(usds), address(0), address(psm), address(aaveV3Pool));
     }
 
     function test_constructor_invalidPsm3() public {
-        vm.expectRevert("GroveBasinPocket/invalid-psm3");
+        vm.expectRevert("GroveBasinPocket/invalid-psm");
         new GroveBasinPocket(address(groveBasin), manager, address(usdc), address(usdt), address(usds), address(aUsdt), address(0), address(aaveV3Pool));
     }
 
     function test_constructor_invalidAaveV3Pool() public {
         vm.expectRevert("GroveBasinPocket/invalid-aaveV3Pool");
-        new GroveBasinPocket(address(groveBasin), manager, address(usdc), address(usdt), address(usds), address(aUsdt), address(psm3), address(0));
+        new GroveBasinPocket(address(groveBasin), manager, address(usdc), address(usdt), address(usds), address(aUsdt), address(psm), address(0));
     }
 
     function test_constructor_success() public view {
@@ -144,12 +144,12 @@ contract GroveBasinPocketConstructorTests is GroveBasinPocketTestBase {
         assertEq(address(pocket.usdt()),  address(usdt));
         assertEq(address(pocket.usds()),  address(usds));
         assertEq(address(pocket.aUsdt()), address(aUsdt));
-        assertEq(pocket.psm3(),       address(psm3));
+        assertEq(pocket.psm(),       address(psm));
         assertEq(pocket.aaveV3Pool(), address(aaveV3Pool));
 
-        assertEq(usds.allowance(address(pocket), address(psm3)),       type(uint256).max);
+        assertEq(usds.allowance(address(pocket), address(psm)),       type(uint256).max);
         assertEq(usds.allowance(address(pocket), address(groveBasin)), type(uint256).max);
-        assertEq(usdc.allowance(address(pocket), address(psm3)),       type(uint256).max);
+        assertEq(usdc.allowance(address(pocket), address(psm)),       type(uint256).max);
         assertEq(usdc.allowance(address(pocket), address(groveBasin)), type(uint256).max);
         assertEq(usdt.allowance(address(pocket), address(aaveV3Pool)), type(uint256).max);
         assertEq(usdt.allowance(address(pocket), address(groveBasin)), type(uint256).max);
@@ -205,7 +205,7 @@ contract GroveBasinPocketDrawLiquidityUsdcTests is GroveBasinPocketTestBase {
         usds.mint(address(pocket), 1000e18);
 
         // Seed PSM3 with USDC for the swap
-        usdc.mint(address(psm3), 1_000_000e6);
+        usdc.mint(address(psm), 1_000_000e6);
 
         vm.prank(address(groveBasin));
         pocket.drawLiquidity(500e6, address(usdc));
@@ -218,7 +218,7 @@ contract GroveBasinPocketDrawLiquidityUsdcTests is GroveBasinPocketTestBase {
 
     function test_drawLiquidity_usdc_noBalanceSwapsAll() public {
         usds.mint(address(pocket), 1000e18);
-        usdc.mint(address(psm3), 1_000_000e6);
+        usdc.mint(address(psm), 1_000_000e6);
 
         vm.prank(address(groveBasin));
         pocket.drawLiquidity(500e6, address(usdc));
@@ -230,7 +230,7 @@ contract GroveBasinPocketDrawLiquidityUsdcTests is GroveBasinPocketTestBase {
 
     function test_drawLiquidity_usdc_emitsEvent() public {
         usds.mint(address(pocket), 1000e18);
-        usdc.mint(address(psm3), 1_000_000e6);
+        usdc.mint(address(psm), 1_000_000e6);
 
         vm.prank(address(groveBasin));
         vm.expectEmit(address(pocket));
@@ -334,7 +334,7 @@ contract GroveBasinPocketSwapIntegrationTests is GroveBasinPocketTestBase {
         usds.mint(address(pocket), 100_000e18);
 
         // Seed PSM3 with USDC for swaps
-        usdc.mint(address(psm3), 1_000_000e6);
+        usdc.mint(address(psm), 1_000_000e6);
     }
 
     function test_swapExactIn_creditTokenToSwapToken_drawsFromPocket() public {

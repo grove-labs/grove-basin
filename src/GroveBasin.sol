@@ -455,13 +455,15 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /**********************************************************************************************/
 
     function totalAssets() public view override returns (uint256) {
-        uint256 pocketValue = _hasPocket()
-            ? IGroveBasinPocket(pocket).totalAssets()
-            : _getSwapTokenValue(swapToken.balanceOf(pocket));
-
-        return pocketValue
-            +  _getCollateralTokenValue(collateralToken.balanceOf(address(this)))
-            +  _getCreditTokenValue(creditToken.balanceOf(address(this)), false);  // Round down
+        return _getSwapTokenValue(
+                    _getAvailableBalance(address(swapToken))
+                )
+            +  _getCollateralTokenValue(
+                    _getAvailableBalance(address(collateralToken))
+                )
+            +  _getCreditTokenValue(
+                    _getAvailableBalance(address(creditToken)), false // Round down
+                );
     }
 
     /**********************************************************************************************/
@@ -469,7 +471,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /**********************************************************************************************/
 
     function _getAssetValue(address asset, uint256 amount, bool roundUp) internal view returns (uint256) {
-        if      (asset == address(swapToken))  return _getSwapTokenValue(amount);
+        if      (asset == address(swapToken))       return _getSwapTokenValue(amount);
         else if (asset == address(collateralToken)) return _getCollateralTokenValue(amount);
         else if (asset == address(creditToken))     return _getCreditTokenValue(amount, roundUp);
         else revert("GroveBasin/invalid-asset-for-value");
@@ -618,38 +620,31 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     function _drawLiquidity(uint256 amount, address asset) internal {
-        if (_hasPocket()) {
-            address pocket_   = pocket;
-            address custodian = _getAssetCustodian(asset);
+        if (!_hasPocket()) return;
 
-            if (custodian == pocket_) {
-                try IGroveBasinPocket(pocket_).drawLiquidity(amount, asset) {} catch {}
-            } else {
-                uint256 balance = IERC20(asset).balanceOf(address(this));
-                if (balance < amount) {
-                    uint256 deficit = amount - balance;
-                    try IGroveBasinPocket(pocket_).drawLiquidity(deficit, asset) {} catch {}
-                    uint256 pocketBalance = IERC20(asset).balanceOf(pocket_);
-                    if (pocketBalance >= deficit) {
-                        IERC20(asset).safeTransferFrom(pocket_, address(this), deficit);
-                    }
+        if (asset == address(swapToken)) {
+            try IGroveBasinPocket(pocket).drawLiquidity(amount, asset) {} catch {}
+        } else if (asset == address(collateralToken)) {
+            uint256 basinBalance = IERC20(asset).balanceOf(address(this));
+            if (basinBalance < amount) {
+                uint256 deficit = amount - basinBalance;
+                try IGroveBasinPocket(pocket).drawLiquidity(deficit, asset) {} catch {}
+                uint256 drawn = IERC20(asset).balanceOf(pocket);
+                if (drawn > 0) {
+                    IERC20(asset).safeTransferFrom(pocket, address(this), drawn);
                 }
             }
         }
     }
 
     function _depositLiquidity(uint256 amount, address asset) internal {
-        if (asset != address(creditToken) && _hasPocket()) {
-            address pocket_ = pocket;
-            if (asset != address(swapToken)) {
-                IERC20(asset).safeTransfer(pocket_, amount);
-            }
-            IGroveBasinPocket(pocket_).depositLiquidity(amount, asset);
+        if (asset == address(swapToken) && _hasPocket()) {
+            IGroveBasinPocket(pocket).depositLiquidity(amount, asset);
         }
     }
 
     function _getAvailableBalance(address asset) internal view returns (uint256) {
-        if (asset != address(creditToken) && _hasPocket()) {
+        if (asset == address(swapToken) && _hasPocket()) {
             return IGroveBasinPocket(pocket).availableBalance(asset);
         }
 
@@ -673,8 +668,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     function _pushAsset(address asset, address receiver, uint256 amount) internal {
-        if (asset == address(swapToken) && pocket != address(this)) {
-            swapToken.safeTransferFrom(pocket, receiver, amount);
+        if (asset == address(swapToken) && _hasPocket()) {
+            IERC20(asset).safeTransferFrom(pocket, receiver, amount);
         } else {
             IERC20(asset).safeTransfer(receiver, amount);
         }
