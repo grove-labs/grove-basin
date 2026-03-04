@@ -184,9 +184,17 @@ contract GroveBasin is IGroveBasin, AccessControl {
             require(newPocket.code.length > 0, "GroveBasin/pocket-not-contract");
         }
 
+        // Try withdrawing swapToken from it's yield source (ie USDT from aUSDT)
+        if (_hasPocket()) {
+            uint256 availableBalance = IGroveBasinPocket(pocket_).availableBalance(address(swapToken));
+            if (availableBalance > 0) {
+                IGroveBasinPocket(pocket_).drawLiquidity(availableBalance, address(swapToken));
+            }
+        }
+
         uint256 amountToTransfer = swapToken.balanceOf(pocket_);
 
-        if (pocket_ == address(this)) {
+        if (!_hasPocket()) {
             swapToken.safeTransfer(newPocket, amountToTransfer);
         } else {
             swapToken.safeTransferFrom(pocket_, newPocket, amountToTransfer);
