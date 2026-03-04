@@ -67,13 +67,9 @@ contract GroveBasinPocket is IGroveBasinPocket {
         _usdtPrecision  = 10 ** IERC20(usdt_).decimals();
         _aUsdtPrecision = 10 ** IERC20(aUsdt_).decimals();
 
-        IERC20(usds_).safeApprove(psm_, type(uint256).max);
         IERC20(usds_).safeApprove(basin_, type(uint256).max);
-        IERC20(usdc_).safeApprove(psm_, type(uint256).max);
         IERC20(usdc_).safeApprove(basin_, type(uint256).max);
-        IERC20(usdt_).safeApprove(aaveV3Pool_, type(uint256).max);
         IERC20(usdt_).safeApprove(basin_, type(uint256).max);
-        IERC20(aUsdt_).safeApprove(aaveV3Pool_, type(uint256).max);
     }
 
     function depositLiquidity(uint256 amount, address asset) external override onlyBasin {
@@ -82,6 +78,8 @@ contract GroveBasinPocket is IGroveBasinPocket {
         if (asset == address(usds)) {
             emit LiquidityDeposited(asset, amount, 0);
         } else if (asset == address(usdc)) {
+            usdc.safeApprove(psm, amount);
+
             uint256 convertedAmount = IPSMLike(psm).swapExactIn(
                 address(usdc),
                 address(usds),
@@ -93,6 +91,8 @@ contract GroveBasinPocket is IGroveBasinPocket {
 
             emit LiquidityDeposited(asset, amount, convertedAmount);
         } else if (asset == address(usdt)) {
+            usdt.safeApprove(aaveV3Pool, amount);
+
             IAaveV3PoolLike(aaveV3Pool).supply(address(usdt), amount, address(this), 0);
 
             emit LiquidityDeposited(asset, amount, amount);
@@ -110,6 +110,8 @@ contract GroveBasinPocket is IGroveBasinPocket {
             if (balance < amount) {
                 uint256 remainder = amount - balance;
 
+                usds.safeApprove(psm, type(uint256).max);
+
                 convertedAmount = IPSMLike(psm).swapExactOut(
                     address(usds),
                     address(usdc),
@@ -118,6 +120,8 @@ contract GroveBasinPocket is IGroveBasinPocket {
                     address(this),
                     0
                 );
+
+                usds.safeApprove(psm, 0);
             }
 
             emit LiquidityDrawn(asset, amount, convertedAmount);
@@ -128,6 +132,8 @@ contract GroveBasinPocket is IGroveBasinPocket {
 
             if (balance < amount) {
                 uint256 remainder = amount - balance;
+
+                aUsdt.safeApprove(aaveV3Pool, remainder);
 
                 convertedAmount = IAaveV3PoolLike(aaveV3Pool).withdraw(
                     address(usdt),
