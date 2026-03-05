@@ -68,11 +68,11 @@ abstract contract UsdtPocketForkTestBase is Test {
             address(mockAaveV3Pool)
         );
 
-        vm.prank(owner);
+        vm.startPrank(owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
-
-        vm.prank(owner);
         groveBasin.setPocket(address(pocket));
+        vm.stopPrank();
     }
 
     function _getBlock() internal pure virtual returns (uint256) {

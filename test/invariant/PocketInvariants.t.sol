@@ -75,11 +75,11 @@ contract PocketInvariantTest is Test {
             address(psm)
         );
 
-        vm.prank(owner);
+        vm.startPrank(owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
-
-        vm.prank(owner);
         groveBasin.setPocket(address(pocket));
+        vm.stopPrank();
 
         // Seed pool with initial deposit (1e18 of value)
         collateralToken.mint(address(this), 1e18);

@@ -8,6 +8,7 @@ import { ISSROracle }    from "lib/xchain-ssr-oracle/src/interfaces/ISSROracle.s
 
 import { GroveBasin } from "src/GroveBasin.sol";
 
+import { IGroveBasinPocket }       from "src/interfaces/IGroveBasinPocket.sol";
 import { IRateProviderLike } from "src/interfaces/IRateProviderLike.sol";
 
 import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
@@ -131,7 +132,11 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
             expectedCreditTokenInflows     += transferHandler.transfersIn(address(creditToken));
         }
 
-        assertEq(swapToken.balanceOf(groveBasin.pocket()),            expectedSwapTokenInflows            - expectedSwapTokenOutflows);
+        address pocket_ = groveBasin.pocket();
+        uint256 swapBalance = pocket_ == address(groveBasin)
+            ? swapToken.balanceOf(address(groveBasin))
+            : IGroveBasinPocket(pocket_).availableBalance(address(swapToken));
+        assertEq(swapBalance,                                    expectedSwapTokenInflows            - expectedSwapTokenOutflows);
         assertEq(collateralToken.balanceOf(address(groveBasin)), expectedCollateralTokenInflows - expectedCollateralTokenOutflows);
         assertEq(creditToken.balanceOf(address(groveBasin)),     expectedCreditTokenInflows     - expectedCreditTokenOutflows);
     }
