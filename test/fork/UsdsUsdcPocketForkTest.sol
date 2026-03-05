@@ -101,38 +101,38 @@ contract UsdsUsdcPocketForkTest_Deployment is UsdsUsdcPocketForkTestBase {
 }
 
 /**********************************************************************************************/
-/*** drawLiquidity USDC tests                                                               ***/
+/*** withdrawLiquidity USDC tests                                                               ***/
 /**********************************************************************************************/
 
 contract UsdsUsdcPocketForkTest_DrawLiquidityUsdc is UsdsUsdcPocketForkTestBase {
 
-    function test_drawLiquidity_usdc_swapsUsdsForUsdc() public {
+    function test_withdrawLiquidity_usdc_swapsUsdsForUsdc() public {
         deal(Ethereum.USDS, address(pocket), 10_000e18);
 
         vm.prank(address(groveBasin));
-        pocket.drawLiquidity(1000e6, Ethereum.USDC);
+        pocket.withdrawLiquidity(1000e6, Ethereum.USDC);
 
         assertEq(IERC20(Ethereum.USDC).balanceOf(address(pocket)), 1000e6);
         assertEq(IERC20(Ethereum.USDS).balanceOf(address(pocket)), 9000e18);
     }
 
-    function test_drawLiquidity_usdc_existingBalancePartialSwap() public {
+    function test_withdrawLiquidity_usdc_existingBalancePartialSwap() public {
         deal(Ethereum.USDC, address(pocket), 400e6);
         deal(Ethereum.USDS, address(pocket), 10_000e18);
 
         vm.prank(address(groveBasin));
-        pocket.drawLiquidity(1000e6, Ethereum.USDC);
+        pocket.withdrawLiquidity(1000e6, Ethereum.USDC);
 
         assertEq(IERC20(Ethereum.USDC).balanceOf(address(pocket)), 1000e6);
         assertEq(IERC20(Ethereum.USDS).balanceOf(address(pocket)), 9400e18);
     }
 
-    function test_drawLiquidity_usdc_fullBalanceNoSwap() public {
+    function test_withdrawLiquidity_usdc_fullBalanceNoSwap() public {
         deal(Ethereum.USDC, address(pocket), 5000e6);
         deal(Ethereum.USDS, address(pocket), 10_000e18);
 
         vm.prank(address(groveBasin));
-        pocket.drawLiquidity(1000e6, Ethereum.USDC);
+        pocket.withdrawLiquidity(1000e6, Ethereum.USDC);
 
         assertEq(IERC20(Ethereum.USDC).balanceOf(address(pocket)), 5000e6);
         assertEq(IERC20(Ethereum.USDS).balanceOf(address(pocket)), 10_000e18);

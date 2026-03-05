@@ -59,7 +59,7 @@ contract UsdtPocket is IGroveBasinPocket {
         return amount;
     }
 
-    function drawLiquidity(uint256 amount, address asset) external override onlyBasin returns (uint256) {
+    function withdrawLiquidity(uint256 amount, address asset) external override onlyBasin returns (uint256) {
         if (amount == 0) return 0;
 
         require(asset == address(usdt), "UsdtPocket/invalid-asset");

@@ -128,9 +128,9 @@ contract UsdtPocketConstructorTests is UsdtPocketTestBase {
 
 contract UsdtPocketAccessControlTests is UsdtPocketTestBase {
 
-    function test_drawLiquidity_notBasin() public {
+    function test_withdrawLiquidity_notBasin() public {
         vm.expectRevert("UsdtPocket/not-basin");
-        pocket.drawLiquidity(100e6, address(usdt));
+        pocket.withdrawLiquidity(100e6, address(usdt));
     }
 
     function test_depositLiquidity_notBasin() public {
@@ -173,59 +173,59 @@ contract UsdtPocketDepositLiquidityTests is UsdtPocketTestBase {
 }
 
 /**********************************************************************************************/
-/*** drawLiquidity tests                                                                    ***/
+/*** withdrawLiquidity tests                                                                    ***/
 /**********************************************************************************************/
 
 contract UsdtPocketDrawLiquidityTests is UsdtPocketTestBase {
 
-    function test_drawLiquidity_zeroAmount() public {
+    function test_withdrawLiquidity_zeroAmount() public {
         vm.prank(address(groveBasin));
-        pocket.drawLiquidity(0, address(usdt));
+        pocket.withdrawLiquidity(0, address(usdt));
     }
 
-    function test_drawLiquidity_existingBalanceCoversAll() public {
+    function test_withdrawLiquidity_existingBalanceCoversAll() public {
         usdt.mint(address(pocket), 1000e6);
 
         vm.prank(address(groveBasin));
-        pocket.drawLiquidity(500e6, address(usdt));
+        pocket.withdrawLiquidity(500e6, address(usdt));
 
         assertEq(usdt.balanceOf(address(pocket)), 1000e6);
     }
 
-    function test_drawLiquidity_partialBalanceWithdrawsRemainder() public {
+    function test_withdrawLiquidity_partialBalanceWithdrawsRemainder() public {
         usdt.mint(address(pocket), 300e6);
         aUsdt.mint(address(pocket), 1000e6);
 
         vm.prank(address(groveBasin));
-        pocket.drawLiquidity(500e6, address(usdt));
+        pocket.withdrawLiquidity(500e6, address(usdt));
 
         assertEq(usdt.balanceOf(address(pocket)), 500e6);
         assertEq(aUsdt.balanceOf(address(pocket)), 800e6);
     }
 
-    function test_drawLiquidity_noBalanceWithdrawsAll() public {
+    function test_withdrawLiquidity_noBalanceWithdrawsAll() public {
         aUsdt.mint(address(pocket), 1000e6);
 
         vm.prank(address(groveBasin));
-        pocket.drawLiquidity(500e6, address(usdt));
+        pocket.withdrawLiquidity(500e6, address(usdt));
 
         assertEq(usdt.balanceOf(address(pocket)), 500e6);
         assertEq(aUsdt.balanceOf(address(pocket)), 500e6);
     }
 
-    function test_drawLiquidity_emitsEvent() public {
+    function test_withdrawLiquidity_emitsEvent() public {
         aUsdt.mint(address(pocket), 1000e6);
 
         vm.prank(address(groveBasin));
         vm.expectEmit(address(pocket));
         emit IGroveBasinPocket.LiquidityDrawn(address(usdt), 500e6, 500e6);
-        pocket.drawLiquidity(500e6, address(usdt));
+        pocket.withdrawLiquidity(500e6, address(usdt));
     }
 
-    function test_drawLiquidity_invalidAsset() public {
+    function test_withdrawLiquidity_invalidAsset() public {
         vm.prank(address(groveBasin));
         vm.expectRevert("UsdtPocket/invalid-asset");
-        pocket.drawLiquidity(100e6, address(collateralToken));
+        pocket.withdrawLiquidity(100e6, address(collateralToken));
     }
 
 }

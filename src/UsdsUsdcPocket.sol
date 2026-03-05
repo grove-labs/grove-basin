@@ -75,7 +75,7 @@ contract UsdsUsdcPocket is IGroveBasinPocket {
         return 0;
     }
 
-    function drawLiquidity(uint256 amount, address asset) external override onlyBasin returns (uint256) {
+    function withdrawLiquidity(uint256 amount, address asset) external override onlyBasin returns (uint256) {
         if (amount == 0) return 0;
 
         if (asset == address(usdc)) {

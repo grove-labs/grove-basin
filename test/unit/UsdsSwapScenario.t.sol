@@ -87,7 +87,7 @@ contract UsdsSwapScenarioTests is UsdsSwapScenarioTestBase {
         groveBasin.deposit(address(usds), grove, groveDepositAmount);
         vm.stopPrank();
 
-        // Pocket holds USDS; drawLiquidity converts USDS -> USDC via PSM on demand
+        // Pocket holds USDS; withdrawLiquidity converts USDS -> USDC via PSM on demand
         assertEq(usds.balanceOf(address(pocket)), groveDepositAmount);
         assertEq(usdc.balanceOf(address(pocket)), 0);
 

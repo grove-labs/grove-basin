@@ -9,7 +9,7 @@ interface IGroveBasinPocket {
 
     function basin() external view returns (address);
 
-    function drawLiquidity(uint256 amount, address asset) external returns (uint256);
+    function withdrawLiquidity(uint256 amount, address asset) external returns (uint256);
 
     function depositLiquidity(uint256 amount, address asset) external returns (uint256);
 

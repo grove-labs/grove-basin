@@ -107,38 +107,38 @@ contract UsdtPocketForkTest_Deployment is UsdtPocketForkTestBase {
 }
 
 /**********************************************************************************************/
-/*** drawLiquidity tests                                                                    ***/
+/*** withdrawLiquidity tests                                                                    ***/
 /**********************************************************************************************/
 
 contract UsdtPocketForkTest_DrawLiquidity is UsdtPocketForkTestBase {
 
-    function test_drawLiquidity_withdrawsFromAave() public {
+    function test_withdrawLiquidity_withdrawsFromAave() public {
         mockAUsdt.mint(address(pocket), 10_000e6);
 
         vm.prank(address(groveBasin));
-        pocket.drawLiquidity(1000e6, Ethereum.USDT);
+        pocket.withdrawLiquidity(1000e6, Ethereum.USDT);
 
         assertEq(IERC20(Ethereum.USDT).balanceOf(address(pocket)), 1000e6);
         assertEq(mockAUsdt.balanceOf(address(pocket)), 9000e6);
     }
 
-    function test_drawLiquidity_existingBalancePartialWithdraw() public {
+    function test_withdrawLiquidity_existingBalancePartialWithdraw() public {
         deal(Ethereum.USDT, address(pocket), 400e6);
         mockAUsdt.mint(address(pocket), 10_000e6);
 
         vm.prank(address(groveBasin));
-        pocket.drawLiquidity(1000e6, Ethereum.USDT);
+        pocket.withdrawLiquidity(1000e6, Ethereum.USDT);
 
         assertEq(IERC20(Ethereum.USDT).balanceOf(address(pocket)), 1000e6);
         assertEq(mockAUsdt.balanceOf(address(pocket)), 9400e6);
     }
 
-    function test_drawLiquidity_fullBalanceNoWithdraw() public {
+    function test_withdrawLiquidity_fullBalanceNoWithdraw() public {
         deal(Ethereum.USDT, address(pocket), 5000e6);
         mockAUsdt.mint(address(pocket), 10_000e6);
 
         vm.prank(address(groveBasin));
-        pocket.drawLiquidity(1000e6, Ethereum.USDT);
+        pocket.withdrawLiquidity(1000e6, Ethereum.USDT);
 
         assertEq(IERC20(Ethereum.USDT).balanceOf(address(pocket)), 5000e6);
         assertEq(mockAUsdt.balanceOf(address(pocket)), 10_000e6);

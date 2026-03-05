@@ -187,7 +187,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         if (_hasPocket()) {
             uint256 availableBalance = IGroveBasinPocket(pocket_).availableBalance(address(swapToken));
             if (availableBalance > 0) {
-                IGroveBasinPocket(pocket_).drawLiquidity(availableBalance, address(swapToken));
+                IGroveBasinPocket(pocket_).withdrawLiquidity(availableBalance, address(swapToken));
             }
         }
 
@@ -260,7 +260,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         require(amountOut >= minAmountOut, "GroveBasin/amountOut-too-low");
 
-        _drawLiquidityInPocket(amountOut, assetOut);
+        _withdrawLiquidityInPocket(amountOut, assetOut);
         _pullAsset(assetIn, amountIn);
         _pushAsset(assetOut, receiver, amountOut);
 
@@ -284,7 +284,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         require(amountIn <= maxAmountIn, "GroveBasin/amountIn-too-high");
 
-        _drawLiquidityInPocket(amountOut, assetOut);
+        _withdrawLiquidityInPocket(amountOut, assetOut);
         _pullAsset(assetIn, amountIn);
         _pushAsset(assetOut, receiver, amountOut);
 
@@ -326,7 +326,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
             totalShares        -= sharesToBurn;
         }
 
-        _drawLiquidityInPocket(assetsWithdrawn, asset);
+        _withdrawLiquidityInPocket(assetsWithdrawn, asset);
         _pushAsset(asset, receiver, assetsWithdrawn);
 
         emit Withdraw(asset, msg.sender, receiver, assetsWithdrawn, sharesToBurn);
@@ -626,17 +626,17 @@ contract GroveBasin is IGroveBasin, AccessControl {
         );
     }
 
-    function _drawLiquidityInPocket(uint256 amount, address asset) internal {
+    function _withdrawLiquidityInPocket(uint256 amount, address asset) internal {
         if (!_hasPocket()) return;
 
         if (asset == address(swapToken)) {
-            try IGroveBasinPocket(pocket).drawLiquidity(amount, asset) {} catch {}
+            try IGroveBasinPocket(pocket).withdrawLiquidity(amount, asset) {} catch {}
         } else if (asset == address(collateralToken)) {
             uint256 basinBalance = IERC20(asset).balanceOf(address(this));
 
             if (basinBalance < amount) {
                 uint256 deficit = amount - basinBalance;
-                try IGroveBasinPocket(pocket).drawLiquidity(deficit, asset) returns (uint256 drawn) {
+                try IGroveBasinPocket(pocket).withdrawLiquidity(deficit, asset) returns (uint256 drawn) {
                     IERC20(asset).safeTransferFrom(pocket, address(this), drawn);
                 } catch {}
             }
