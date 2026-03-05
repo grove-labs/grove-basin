@@ -8,7 +8,9 @@ import { GroveBasin } from "src/GroveBasin.sol";
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
 import { MockRateProvider, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
-import { MockGroveBasinPocket }                 from "test/mocks/MockGroveBasinPocket.sol";
+import { MockPSM }                              from "test/mocks/MockPSM.sol";
+
+import { UsdsUsdcPocket } from "src/UsdsUsdcPocket.sol";
 
 contract GroveBasinWithdrawTests is GroveBasinTestBase {
 
@@ -30,7 +32,13 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
     }
 
     function test_withdraw_pocketInsufficientApprovalBoundary() public {
-        MockGroveBasinPocket mockPocket = new MockGroveBasinPocket(address(groveBasin), address(swapToken));
+        MockERC20 usds = new MockERC20("USDS", "USDS", 18);
+        MockPSM   psm  = new MockPSM(address(usds), address(swapToken));
+
+        usds.mint(address(psm), type(uint128).max);
+        swapToken.mint(address(psm), type(uint128).max);
+
+        UsdsUsdcPocket mockPocket = new UsdsUsdcPocket(address(groveBasin), address(swapToken), address(usds), address(psm));
 
         vm.prank(owner);
         groveBasin.setPocket(address(mockPocket));

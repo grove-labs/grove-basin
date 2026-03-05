@@ -184,7 +184,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
             require(newPocket.code.length > 0, "GroveBasin/pocket-not-contract");
         }
 
-        // Try withdrawing swapToken from it's yield source (ie USDT from aUSDT)
         if (_hasPocket()) {
             uint256 availableBalance = IGroveBasinPocket(pocket_).availableBalance(address(swapToken));
             if (availableBalance > 0) {
@@ -261,7 +260,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         require(amountOut >= minAmountOut, "GroveBasin/amountOut-too-low");
 
-        _drawLiquidity(amountOut, assetOut);
+        _drawLiquidityInPocket(amountOut, assetOut);
         _pullAsset(assetIn, amountIn);
         _pushAsset(assetOut, receiver, amountOut);
 
@@ -285,7 +284,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         require(amountIn <= maxAmountIn, "GroveBasin/amountIn-too-high");
 
-        _drawLiquidity(amountOut, assetOut);
+        _drawLiquidityInPocket(amountOut, assetOut);
         _pullAsset(assetIn, amountIn);
         _pushAsset(assetOut, receiver, amountOut);
 
@@ -307,7 +306,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         totalShares      += newShares;
 
         _pullAsset(asset, assetsToDeposit);
-        _depositLiquidity(assetsToDeposit, asset);
+        _depositLiquidityInPocket(assetsToDeposit, asset);
 
         emit Deposit(asset, msg.sender, receiver, assetsToDeposit, newShares);
     }
@@ -327,7 +326,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
             totalShares        -= sharesToBurn;
         }
 
-        _drawLiquidity(assetsWithdrawn, asset);
+        _drawLiquidityInPocket(assetsWithdrawn, asset);
         _pushAsset(asset, receiver, assetsWithdrawn);
 
         emit Withdraw(asset, msg.sender, receiver, assetsWithdrawn, sharesToBurn);
@@ -627,25 +626,24 @@ contract GroveBasin is IGroveBasin, AccessControl {
         );
     }
 
-    function _drawLiquidity(uint256 amount, address asset) internal {
+    function _drawLiquidityInPocket(uint256 amount, address asset) internal {
         if (!_hasPocket()) return;
 
         if (asset == address(swapToken)) {
             try IGroveBasinPocket(pocket).drawLiquidity(amount, asset) {} catch {}
         } else if (asset == address(collateralToken)) {
             uint256 basinBalance = IERC20(asset).balanceOf(address(this));
+
             if (basinBalance < amount) {
                 uint256 deficit = amount - basinBalance;
-                try IGroveBasinPocket(pocket).drawLiquidity(deficit, asset) {} catch {}
-                uint256 drawn = IERC20(asset).balanceOf(pocket);
-                if (drawn > 0) {
+                try IGroveBasinPocket(pocket).drawLiquidity(deficit, asset) returns (uint256 drawn) {
                     IERC20(asset).safeTransferFrom(pocket, address(this), drawn);
-                }
+                } catch {}
             }
         }
     }
 
-    function _depositLiquidity(uint256 amount, address asset) internal {
+    function _depositLiquidityInPocket(uint256 amount, address asset) internal {
         if (asset == address(swapToken) && _hasPocket()) {
             IGroveBasinPocket(pocket).depositLiquidity(amount, asset);
         }

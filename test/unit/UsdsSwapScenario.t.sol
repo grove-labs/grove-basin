@@ -3,42 +3,35 @@ pragma solidity ^0.8.34;
 
 import "forge-std/Test.sol";
 
-import { GroveBasin }        from "src/GroveBasin.sol";
-import { GroveBasinPocket }  from "src/GroveBasinPocket.sol";
+import { GroveBasin }       from "src/GroveBasin.sol";
+import { UsdsUsdcPocket }   from "src/UsdsUsdcPocket.sol";
 
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 import { MockPSM }          from "test/mocks/MockPSM.sol";
-import { MockAaveV3Pool }   from "test/mocks/MockAaveV3Pool.sol";
 
 contract UsdsSwapScenarioTestBase is Test {
 
-    address public owner   = makeAddr("owner");
-    address public manager = makeAddr("manager");
-    address public grove   = makeAddr("grove");
+    address public owner = makeAddr("owner");
+    address public grove = makeAddr("grove");
 
-    GroveBasin       public groveBasin;
-    GroveBasinPocket public pocket;
+    GroveBasin     public groveBasin;
+    UsdsUsdcPocket public pocket;
 
     MockERC20 public usds;
     MockERC20 public usdc;
-    MockERC20 public usdt;
-    MockERC20 public aUsdt;
     MockERC20 public jtrsy;
 
     MockRateProvider public usdsRateProvider;
     MockRateProvider public usdcRateProvider;
     MockRateProvider public jtrsyRateProvider;
 
-    MockPSM        public psm;
-    MockAaveV3Pool public aaveV3Pool;
+    MockPSM public psm;
 
     function setUp() public virtual {
         usds  = new MockERC20("USDS",  "USDS",  18);
         usdc  = new MockERC20("USDC",  "USDC",  6);
-        usdt  = new MockERC20("USDT",  "USDT",  6);
-        aUsdt = new MockERC20("aUSDT", "aUSDT", 6);
         jtrsy = new MockERC20("JTRSY", "JTRSY", 18);
 
         usdsRateProvider  = new MockRateProvider();
@@ -59,20 +52,16 @@ contract UsdsSwapScenarioTestBase is Test {
             address(jtrsyRateProvider)
         );
 
-        psm        = new MockPSM(address(usds), address(usdc));
-        aaveV3Pool = new MockAaveV3Pool(address(aUsdt), address(usdt));
+        psm = new MockPSM(address(usds), address(usdc));
 
-        usdt.mint(address(aaveV3Pool), 1_000_000e6);
+        usds.mint(address(psm), 1_000_000_000e18);
+        usdc.mint(address(psm), 1_000_000e6);
 
-        pocket = new GroveBasinPocket(
+        pocket = new UsdsUsdcPocket(
             address(groveBasin),
-            manager,
             address(usdc),
-            address(usdt),
             address(usds),
-            address(aUsdt),
-            address(psm),
-            address(aaveV3Pool)
+            address(psm)
         );
 
         vm.prank(owner);
@@ -80,9 +69,6 @@ contract UsdsSwapScenarioTestBase is Test {
 
         vm.prank(owner);
         groveBasin.setPocket(address(pocket));
-
-        // Seed PSM with USDC for USDS -> USDC conversions
-        usdc.mint(address(psm), 1_000_000e6);
     }
 
 }

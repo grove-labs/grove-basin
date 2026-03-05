@@ -6,38 +6,34 @@ import "forge-std/Test.sol";
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
 import { GroveBasin }       from "src/GroveBasin.sol";
-import { GroveBasinPocket } from "src/GroveBasinPocket.sol";
+import { UsdsUsdcPocket }   from "src/UsdsUsdcPocket.sol";
 import { IRateProviderLike } from "src/interfaces/IRateProviderLike.sol";
 
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
-import { MockPSM }        from "test/mocks/MockPSM.sol";
-import { MockAaveV3Pool }  from "test/mocks/MockAaveV3Pool.sol";
+import { MockPSM }          from "test/mocks/MockPSM.sol";
 
 import { LpHandler }      from "test/invariant/handlers/LpHandler.sol";
 import { SwapperHandler } from "test/invariant/handlers/SwapperHandler.sol";
 
 contract PocketInvariantTest is Test {
 
-    address public owner   = makeAddr("owner");
-    address public manager = makeAddr("manager");
+    address public owner = makeAddr("owner");
     address BURN_ADDRESS   = address(0);
 
-    GroveBasin       public groveBasin;
-    GroveBasinPocket public pocket;
+    GroveBasin     public groveBasin;
+    UsdsUsdcPocket public pocket;
 
     MockERC20 public swapToken;
     MockERC20 public collateralToken;
     MockERC20 public creditToken;
 
     MockERC20 public usds;
-    MockERC20 public aUsdt;
 
     MockRateProvider public swapTokenRateProvider;
     MockRateProvider public collateralTokenRateProvider;
     MockRateProvider public creditTokenRateProvider;
 
-    MockPSM       public psm;
-    MockAaveV3Pool public aaveV3Pool;
+    MockPSM public psm;
 
     LpHandler      public lpHandler;
     SwapperHandler public swapperHandler;
@@ -47,8 +43,7 @@ contract PocketInvariantTest is Test {
         collateralToken = new MockERC20("collateralToken", "collateralToken", 18);
         creditToken     = new MockERC20("creditToken",     "creditToken",     18);
 
-        usds  = new MockERC20("USDS",  "USDS",  18);
-        aUsdt = new MockERC20("aUSDT", "aUSDT", 18);
+        usds = new MockERC20("USDS", "USDS", 18);
 
         swapTokenRateProvider       = new MockRateProvider();
         collateralTokenRateProvider = new MockRateProvider();
@@ -68,26 +63,16 @@ contract PocketInvariantTest is Test {
             address(creditTokenRateProvider)
         );
 
-        // PSM3: swaps USDS -> swapToken (like USDC)
-        psm       = new MockPSM(address(usds), address(swapToken));
-        // Aave: withdraws aUsdt -> collateralToken (like USDT)
-        aaveV3Pool = new MockAaveV3Pool(address(aUsdt), address(collateralToken));
+        psm = new MockPSM(address(usds), address(swapToken));
 
-        // Fund mock pools with tokens for conversions (must cover max fuzz amounts)
-        collateralToken.mint(address(aaveV3Pool), type(uint128).max);
-        aUsdt.mint(address(aaveV3Pool), type(uint128).max);
         usds.mint(address(psm), type(uint128).max);
         swapToken.mint(address(psm), type(uint128).max);
 
-        pocket = new GroveBasinPocket(
+        pocket = new UsdsUsdcPocket(
             address(groveBasin),
-            manager,
-            address(swapToken),        // usdc
-            address(collateralToken),  // usdt
+            address(swapToken),
             address(usds),
-            address(aUsdt),
-            address(psm),
-            address(aaveV3Pool)
+            address(psm)
         );
 
         vm.prank(owner);
@@ -95,10 +80,6 @@ contract PocketInvariantTest is Test {
 
         vm.prank(owner);
         groveBasin.setPocket(address(pocket));
-
-        // Pocket approves GroveBasin to pull swapToken
-        vm.prank(address(pocket));
-        swapToken.approve(address(groveBasin), type(uint256).max);
 
         // Seed pool with initial deposit (1e18 of value)
         collateralToken.mint(address(this), 1e18);
@@ -145,7 +126,7 @@ contract PocketInvariantTest is Test {
         assertApproxEqAbs(lpAssetValue, groveBasin.totalAssets(), 4);
     }
 
-    // Pocket is always the GroveBasinPocket
+    // Pocket is always the UsdsUsdcPocket
     function invariant_D_pocketIsSet() public view {
         assertEq(groveBasin.pocket(), address(pocket));
     }

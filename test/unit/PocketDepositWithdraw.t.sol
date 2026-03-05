@@ -7,42 +7,34 @@ import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
 
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
-import { GroveBasin }        from "src/GroveBasin.sol";
-import { GroveBasinPocket }  from "src/GroveBasinPocket.sol";
-import { IGroveBasinPocket } from "src/interfaces/IGroveBasinPocket.sol";
+import { GroveBasin }       from "src/GroveBasin.sol";
+import { UsdsUsdcPocket }   from "src/UsdsUsdcPocket.sol";
 
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
-import { MockPSM }        from "test/mocks/MockPSM.sol";
-import { MockAaveV3Pool }  from "test/mocks/MockAaveV3Pool.sol";
+import { MockPSM }          from "test/mocks/MockPSM.sol";
 
 contract PocketDepositWithdrawTestBase is Test {
 
     address public owner   = makeAddr("owner");
-    address public manager = makeAddr("manager");
-    address public user1   = makeAddr("user1");
-    address public user2   = makeAddr("user2");
+    address public user1 = makeAddr("user1");
+    address public user2 = makeAddr("user2");
 
-    GroveBasin       public groveBasin;
-    GroveBasinPocket public pocket;
+    GroveBasin     public groveBasin;
+    UsdsUsdcPocket public pocket;
 
     MockERC20 public usds;
     MockERC20 public usdc;
-    MockERC20 public usdt;
-    MockERC20 public aUsdt;
     MockERC20 public creditToken;
 
     MockRateProvider public swapTokenRateProvider;
     MockRateProvider public collateralTokenRateProvider;
     MockRateProvider public creditTokenRateProvider;
 
-    MockPSM       public psm;
-    MockAaveV3Pool public aaveV3Pool;
+    MockPSM public psm;
 
     function setUp() public virtual {
         usds        = new MockERC20("USDS",   "USDS",   18);
         usdc        = new MockERC20("USDC",   "USDC",   6);
-        usdt        = new MockERC20("USDT",   "USDT",   6);
-        aUsdt       = new MockERC20("aUSDT",  "aUSDT",  6);
         creditToken = new MockERC20("CREDIT", "CREDIT", 18);
 
         swapTokenRateProvider       = new MockRateProvider();
@@ -64,27 +56,16 @@ contract PocketDepositWithdrawTestBase is Test {
             address(creditTokenRateProvider)
         );
 
-        psm       = new MockPSM(address(usds), address(usdc));
-        aaveV3Pool = new MockAaveV3Pool(address(aUsdt), address(usdt));
+        psm = new MockPSM(address(usds), address(usdc));
 
-        // Fund MockAaveV3Pool with underlying USDT for withdrawals
-        usdt.mint(address(aaveV3Pool), 1_000_000_000e6);
-        // Fund MockAaveV3Pool with aUSDT for supply
-        aUsdt.mint(address(aaveV3Pool), 1_000_000_000e6);
-        // Fund MockPSM with USDS for swapExactIn (USDC→USDS)
         usds.mint(address(psm), 1_000_000_000e18);
-        // Fund MockPSM with USDC for swapExactOut (USDS→USDC)
         usdc.mint(address(psm), 1_000_000_000e6);
 
-        pocket = new GroveBasinPocket(
+        pocket = new UsdsUsdcPocket(
             address(groveBasin),
-            manager,
             address(usdc),
-            address(usdt),
             address(usds),
-            address(aUsdt),
-            address(psm),
-            address(aaveV3Pool)
+            address(psm)
         );
 
         vm.prank(owner);
@@ -104,186 +85,6 @@ contract PocketDepositWithdrawTestBase is Test {
         MockERC20(asset).approve(address(groveBasin), amount);
         groveBasin.deposit(asset, receiver, amount);
         vm.stopPrank();
-    }
-
-}
-
-/**********************************************************************************************/
-/*** depositLiquidity access control tests                                                  ***/
-/**********************************************************************************************/
-
-contract PocketDepositLiquidityAccessControlTests is PocketDepositWithdrawTestBase {
-
-    function test_depositLiquidity_notBasin() public {
-        vm.expectRevert("GroveBasinPocket/not-basin");
-        pocket.depositLiquidity(100e6, address(usdc));
-    }
-
-    function test_depositLiquidity_notBasin_manager() public {
-        vm.prank(manager);
-        vm.expectRevert("GroveBasinPocket/not-basin");
-        pocket.depositLiquidity(100e6, address(usdc));
-    }
-
-}
-
-/**********************************************************************************************/
-/*** depositLiquidity USDS tests                                                            ***/
-/**********************************************************************************************/
-
-contract PocketDepositLiquidityUsdsTests is PocketDepositWithdrawTestBase {
-
-    function test_depositLiquidity_usds_zeroAmount() public {
-        vm.prank(address(groveBasin));
-        pocket.depositLiquidity(0, address(usds));
-    }
-
-    function test_depositLiquidity_usds_holdsDirectly() public {
-        usds.mint(address(pocket), 100e18);
-
-        assertEq(usds.balanceOf(address(pocket)), 100e18);
-
-        vm.prank(address(groveBasin));
-        pocket.depositLiquidity(100e18, address(usds));
-
-        // USDS stays in pocket, no conversion
-        assertEq(usds.balanceOf(address(pocket)), 100e18);
-    }
-
-    function test_depositLiquidity_usds_emitsEvent() public {
-        usds.mint(address(pocket), 100e18);
-
-        vm.prank(address(groveBasin));
-        vm.expectEmit(address(pocket));
-        emit IGroveBasinPocket.LiquidityDeposited(address(usds), 100e18, 0);
-        pocket.depositLiquidity(100e18, address(usds));
-    }
-
-}
-
-/**********************************************************************************************/
-/*** depositLiquidity USDC tests                                                            ***/
-/**********************************************************************************************/
-
-contract PocketDepositLiquidityUsdcTests is PocketDepositWithdrawTestBase {
-
-    function test_depositLiquidity_usdc_zeroAmount() public {
-        vm.prank(address(groveBasin));
-        pocket.depositLiquidity(0, address(usdc));
-    }
-
-    function test_depositLiquidity_usdc_convertsToUsds() public {
-        usdc.mint(address(pocket), 100e6);
-
-        assertEq(usdc.balanceOf(address(pocket)), 100e6);
-        assertEq(usds.balanceOf(address(pocket)), 0);
-
-        vm.prank(address(groveBasin));
-        pocket.depositLiquidity(100e6, address(usdc));
-
-        // USDC was swapped to USDS via PSM3
-        assertEq(usdc.balanceOf(address(pocket)), 0);
-        assertEq(usds.balanceOf(address(pocket)), 100e18);
-    }
-
-    function test_depositLiquidity_usdc_emitsEvent() public {
-        usdc.mint(address(pocket), 100e6);
-
-        vm.prank(address(groveBasin));
-        vm.expectEmit(address(pocket));
-        emit IGroveBasinPocket.LiquidityDeposited(address(usdc), 100e6, 100e18);
-        pocket.depositLiquidity(100e6, address(usdc));
-    }
-
-}
-
-/**********************************************************************************************/
-/*** depositLiquidity USDT tests                                                            ***/
-/**********************************************************************************************/
-
-contract PocketDepositLiquidityUsdtTests is PocketDepositWithdrawTestBase {
-
-    function test_depositLiquidity_usdt_zeroAmount() public {
-        vm.prank(address(groveBasin));
-        pocket.depositLiquidity(0, address(usdt));
-    }
-
-    function test_depositLiquidity_usdt_depositsToAave() public {
-        usdt.mint(address(pocket), 100e6);
-
-        assertEq(usdt.balanceOf(address(pocket)),  100e6);
-        assertEq(aUsdt.balanceOf(address(pocket)), 0);
-
-        vm.prank(address(groveBasin));
-        pocket.depositLiquidity(100e6, address(usdt));
-
-        // USDT was deposited into Aave, pocket now holds aUSDT
-        assertEq(usdt.balanceOf(address(pocket)),  0);
-        assertEq(aUsdt.balanceOf(address(pocket)), 100e6);
-    }
-
-    function test_depositLiquidity_usdt_emitsEvent() public {
-        usdt.mint(address(pocket), 100e6);
-
-        vm.prank(address(groveBasin));
-        vm.expectEmit(address(pocket));
-        emit IGroveBasinPocket.LiquidityDeposited(address(usdt), 100e6, 100e6);
-        pocket.depositLiquidity(100e6, address(usdt));
-    }
-
-}
-
-/**********************************************************************************************/
-/*** depositLiquidity unsupported asset tests                                               ***/
-/**********************************************************************************************/
-
-contract PocketDepositLiquidityUnsupportedTests is PocketDepositWithdrawTestBase {
-
-    function test_depositLiquidity_unsupportedAsset_noOp() public {
-        vm.prank(address(groveBasin));
-        pocket.depositLiquidity(100e18, address(creditToken));
-    }
-
-}
-
-/**********************************************************************************************/
-/*** Pocket availableBalance tests                                                          ***/
-/**********************************************************************************************/
-
-contract PocketAvailableBalanceTests is PocketDepositWithdrawTestBase {
-
-    function test_availableBalance_usds() public {
-        usds.mint(address(pocket), 100e18);
-        assertEq(pocket.availableBalance(address(usds)), 100e18);
-    }
-
-    function test_availableBalance_usdc_directOnly() public {
-        usdc.mint(address(pocket), 100e6);
-        assertEq(pocket.availableBalance(address(usdc)), 100e6);
-    }
-
-    function test_availableBalance_usdc_includesConvertibleUsds() public {
-        usdc.mint(address(pocket), 50e6);
-        usds.mint(address(pocket), 100e18);
-
-        // 50 USDC direct + 100 USDS convertible (100e18 / 1e12 = 100e6)
-        assertEq(pocket.availableBalance(address(usdc)), 150e6);
-    }
-
-    function test_availableBalance_usdt_directOnly() public {
-        usdt.mint(address(pocket), 100e6);
-        assertEq(pocket.availableBalance(address(usdt)), 100e6);
-    }
-
-    function test_availableBalance_usdt_includesAUsdt() public {
-        usdt.mint(address(pocket), 50e6);
-        aUsdt.mint(address(pocket), 100e6);
-
-        assertEq(pocket.availableBalance(address(usdt)), 150e6);
-    }
-
-    function test_availableBalance_unsupportedAsset() public view {
-        assertEq(pocket.availableBalance(address(creditToken)), 0);
     }
 
 }
@@ -364,7 +165,7 @@ contract BasinDepositThroughPocketTests is PocketDepositWithdrawTestBase {
         _deposit(address(usdc), user1, 50e6);
         _deposit(address(creditToken), user1, 80e18);
 
-        // 100 USDS + 50 USDC (now USDS in pocket) + 80 creditToken * 1.25 = 250
+        // 100 USDS + 50 USDC + 80 creditToken * 1.25 = 250
         assertEq(groveBasin.totalAssets(), 250e18);
     }
 
@@ -501,31 +302,27 @@ contract BasinWithdrawThroughPocketTests is PocketDepositWithdrawTestBase {
 
 contract BasinUsdtCollateralPocketTests is Test {
 
-    address public owner   = makeAddr("owner");
-    address public manager = makeAddr("manager");
-    address public user1   = makeAddr("user1");
+    address public owner = makeAddr("owner");
+    address public user1 = makeAddr("user1");
 
-    GroveBasin       public groveBasin;
-    GroveBasinPocket public pocket;
+    GroveBasin     public groveBasin;
+    UsdsUsdcPocket public pocket;
 
     MockERC20 public usds;
     MockERC20 public usdc;
     MockERC20 public usdt;
-    MockERC20 public aUsdt;
     MockERC20 public creditToken;
 
     MockRateProvider public swapTokenRateProvider;
     MockRateProvider public collateralTokenRateProvider;
     MockRateProvider public creditTokenRateProvider;
 
-    MockPSM       public psm;
-    MockAaveV3Pool public aaveV3Pool;
+    MockPSM public psm;
 
     function setUp() public {
         usds        = new MockERC20("USDS",   "USDS",   18);
         usdc        = new MockERC20("USDC",   "USDC",   6);
         usdt        = new MockERC20("USDT",   "USDT",   6);
-        aUsdt       = new MockERC20("aUSDT",  "aUSDT",  6);
         creditToken = new MockERC20("CREDIT", "CREDIT", 18);
 
         swapTokenRateProvider       = new MockRateProvider();
@@ -547,23 +344,16 @@ contract BasinUsdtCollateralPocketTests is Test {
             address(creditTokenRateProvider)
         );
 
-        psm       = new MockPSM(address(usds), address(usdc));
-        aaveV3Pool = new MockAaveV3Pool(address(aUsdt), address(usdt));
+        psm = new MockPSM(address(usds), address(usdc));
 
-        usdt.mint(address(aaveV3Pool), 1_000_000_000e6);
-        aUsdt.mint(address(aaveV3Pool), 1_000_000_000e6);
         usds.mint(address(psm), 1_000_000_000e18);
         usdc.mint(address(psm), 1_000_000_000e6);
 
-        pocket = new GroveBasinPocket(
+        pocket = new UsdsUsdcPocket(
             address(groveBasin),
-            manager,
             address(usdc),
-            address(usdt),
             address(usds),
-            address(aUsdt),
-            address(psm),
-            address(aaveV3Pool)
+            address(psm)
         );
 
         vm.prank(owner);
@@ -587,7 +377,6 @@ contract BasinUsdtCollateralPocketTests is Test {
         // USDT (collateral) stays in basin, not sent to pocket
         assertEq(usdt.balanceOf(user1),               0);
         assertEq(usdt.balanceOf(address(groveBasin)),  100e6);
-        assertEq(aUsdt.balanceOf(address(pocket)),     0);
 
         assertEq(groveBasin.totalShares(), 100e18);
         assertEq(groveBasin.shares(user1), 100e18);
@@ -623,7 +412,7 @@ contract BasinUsdtCollateralPocketTests is Test {
         groveBasin.deposit(address(usdc), user1, 100e6);
         vm.stopPrank();
 
-        // USDC went to pocket → converted to USDS via PSM3
+        // USDC went to pocket → converted to USDS via PSM
         assertEq(usds.balanceOf(address(pocket)), 100e18);
         assertEq(usdc.balanceOf(address(pocket)), 0);
 
