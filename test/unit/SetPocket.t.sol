@@ -36,7 +36,7 @@ contract GroveBasinSetPocketFailureTests is GroveBasinTestBase {
     function test_setPocket_samePocket() public {
         vm.prank(owner);
         vm.expectRevert("GroveBasin/same-pocket");
-        groveBasin.setPocket(address(groveBasin));
+        groveBasin.setPocket(pocket);
     }
 
     function test_setPocket_notContract() public {
@@ -71,8 +71,6 @@ contract GroveBasinSetPocketFailureTests is GroveBasinTestBase {
 
 contract GroveBasinSetPocketSuccessTests is GroveBasinTestBase {
 
-    MockERC20      usds;
-    MockPSM        psm;
     UsdsUsdcPocket pocket1;
     UsdsUsdcPocket pocket2;
 
@@ -84,17 +82,15 @@ contract GroveBasinSetPocketSuccessTests is GroveBasinTestBase {
 
     function setUp() public override {
         super.setUp();
-        usds = new MockERC20("USDS", "USDS", 18);
-        psm  = new MockPSM(address(usds), address(swapToken));
-
-        usds.mint(address(psm), 1_000_000_000e18);
-        swapToken.mint(address(psm), 1_000_000_000e6);
 
         pocket1 = new UsdsUsdcPocket(address(groveBasin), address(swapToken), address(usds), address(psm));
         pocket2 = new UsdsUsdcPocket(address(groveBasin), address(swapToken), address(usds), address(psm));
     }
 
     function test_setPocket_pocketIsGroveBasin() public {
+        vm.prank(owner);
+        groveBasin.setPocket(address(groveBasin));
+
         deal(address(swapToken), address(groveBasin), 1_000_000e6);
 
         assertEq(swapToken.balanceOf(address(groveBasin)), 1_000_000e6);
@@ -226,11 +222,11 @@ contract GroveBasinSetPocketYieldDeployedTests is Test {
             address(psm)
         );
 
-        vm.prank(owner);
+        vm.startPrank(owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
-
-        vm.prank(owner);
         groveBasin.setPocket(address(pocket1));
+        vm.stopPrank();
     }
 
     function test_setPocket_swapTokenFullyDeployedToYield() public {
@@ -359,11 +355,11 @@ contract GroveBasinSetPocketUsdtWithdrawalTests is Test {
         pocket1 = new UsdtPocket(address(groveBasin), manager, address(usdt), address(aUsdt), address(aaveV3Pool));
         pocket2 = new UsdtPocket(address(groveBasin), manager, address(usdt), address(aUsdt), address(aaveV3Pool));
 
-        vm.prank(owner);
+        vm.startPrank(owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
-
-        vm.prank(owner);
         groveBasin.setPocket(address(pocket1));
+        vm.stopPrank();
     }
 
     function test_setPocket_withdrawsAUsdtAndUsdt() public {

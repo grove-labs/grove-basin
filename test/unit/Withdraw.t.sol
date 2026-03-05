@@ -86,7 +86,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
 
         assertEq(swapToken.balanceOf(user1),     0);
         assertEq(swapToken.balanceOf(receiver1), 0);
-        assertEq(swapToken.balanceOf(pocket),    100e6);
+        assertEq(_pocketSwapBalance(),    100e6);
 
         assertEq(groveBasin.totalShares(), 100e18);
         assertEq(groveBasin.shares(user1), 100e18);
@@ -100,7 +100,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
 
         assertEq(swapToken.balanceOf(user1),     0);
         assertEq(swapToken.balanceOf(receiver1), 100e6);
-        assertEq(swapToken.balanceOf(pocket),    0);
+        assertEq(_pocketSwapBalance(),    0);
 
         assertEq(groveBasin.totalShares(), 0);
         assertEq(groveBasin.shares(user1), 0);
@@ -109,6 +109,10 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
     }
 
     function test_withdraw_onlySwapTokenInGroveBasin_pocketIsGroveBasin() public {
+        vm.prank(owner);
+        groveBasin.setPocket(address(groveBasin));
+        pocket = address(groveBasin);
+
         _deposit(address(swapToken), user1, 100e6);
 
         assertEq(swapToken.balanceOf(user1),        0);
@@ -168,7 +172,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
 
         assertEq(swapToken.balanceOf(user1),     0);
         assertEq(swapToken.balanceOf(receiver1), 0);
-        assertEq(swapToken.balanceOf(pocket),    100e6);
+        assertEq(_pocketSwapBalance(),    100e6);
 
         assertEq(creditToken.balanceOf(user1),        0);
         assertEq(creditToken.balanceOf(receiver1),    0);
@@ -186,7 +190,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
 
         assertEq(swapToken.balanceOf(user1),     0);
         assertEq(swapToken.balanceOf(receiver1), 100e6);
-        assertEq(swapToken.balanceOf(pocket),    0);
+        assertEq(_pocketSwapBalance(),    0);
 
         assertEq(creditToken.balanceOf(user1),        0);
         assertEq(creditToken.balanceOf(receiver1),    0);
@@ -204,7 +208,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
 
         assertEq(swapToken.balanceOf(user1),     0);
         assertEq(swapToken.balanceOf(receiver1), 100e6);
-        assertEq(swapToken.balanceOf(pocket),    0);
+        assertEq(_pocketSwapBalance(),    0);
 
         assertEq(creditToken.balanceOf(user1),        0);
         assertEq(creditToken.balanceOf(receiver1),    100e18);
@@ -222,7 +226,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
 
         assertEq(swapToken.balanceOf(user1),     0);
         assertEq(swapToken.balanceOf(receiver1), 0);
-        assertEq(swapToken.balanceOf(pocket),    100e6);
+        assertEq(_pocketSwapBalance(),    100e6);
 
         assertEq(groveBasin.totalShares(), 225e18);
         assertEq(groveBasin.shares(user1), 225e18);
@@ -236,7 +240,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
 
         assertEq(swapToken.balanceOf(user1),     0);
         assertEq(swapToken.balanceOf(receiver1), 100e6);
-        assertEq(swapToken.balanceOf(pocket),    0);
+        assertEq(_pocketSwapBalance(),    0);
 
         assertEq(groveBasin.totalShares(), 125e18);  // Only burns $100 of shares
         assertEq(groveBasin.shares(user1), 125e18);
@@ -249,7 +253,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
 
         assertEq(swapToken.balanceOf(user2),     0);
         assertEq(swapToken.balanceOf(receiver2), 0);
-        assertEq(swapToken.balanceOf(pocket),    300e6);
+        assertEq(_pocketSwapBalance(),    300e6);
 
         assertEq(groveBasin.totalShares(), 425e18);
         assertEq(groveBasin.shares(user2), 200e18);
@@ -263,7 +267,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
 
         assertEq(swapToken.balanceOf(user2),     0);
         assertEq(swapToken.balanceOf(receiver2), 200e6);  // Gets highest amount possible
-        assertEq(swapToken.balanceOf(pocket),    100e6);
+        assertEq(_pocketSwapBalance(),    100e6);
 
         assertEq(groveBasin.totalShares(), 225e18);
         assertEq(groveBasin.shares(user2), 0);  // Burns the users full amount of shares
@@ -370,7 +374,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
 
         assertEq(swapToken.balanceOf(user1),     0);
         assertEq(swapToken.balanceOf(receiver1), 0);
-        assertEq(swapToken.balanceOf(pocket),    vars.totalSwapToken);
+        assertEq(_pocketSwapBalance(),    vars.totalSwapToken);
 
         assertEq(groveBasin.shares(user1), depositAmount1 * 1e12);
         assertEq(groveBasin.totalShares(), vars.totalValue);
@@ -396,7 +400,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         assertEq(swapToken.balanceOf(receiver1), vars.expectedWithdrawnAmount1);
         assertEq(swapToken.balanceOf(user2),     0);
         assertEq(swapToken.balanceOf(receiver2), 0);
-        assertEq(swapToken.balanceOf(pocket),    vars.totalSwapToken - vars.expectedWithdrawnAmount1);
+        assertEq(_pocketSwapBalance(),    vars.totalSwapToken - vars.expectedWithdrawnAmount1);
 
         assertEq(groveBasin.shares(user1), (depositAmount1 - vars.expectedWithdrawnAmount1) * 1e12);
         assertEq(groveBasin.shares(user2), depositAmount2 * 1e12 + depositAmount3 * 125/100);  // Includes creditToken deposit
@@ -420,7 +424,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         assertEq(swapToken.balanceOf(receiver1), vars.expectedWithdrawnAmount1);
         assertEq(swapToken.balanceOf(user2),     0);
         assertEq(swapToken.balanceOf(receiver2), vars.expectedWithdrawnAmount2);
-        assertEq(swapToken.balanceOf(pocket),    vars.totalSwapToken - (vars.expectedWithdrawnAmount1 + vars.expectedWithdrawnAmount2));
+        assertEq(_pocketSwapBalance(),    vars.totalSwapToken - (vars.expectedWithdrawnAmount1 + vars.expectedWithdrawnAmount2));
 
         assertEq(creditToken.balanceOf(user2),        0);
         assertEq(creditToken.balanceOf(receiver2),    0);
@@ -461,7 +465,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         assertEq(swapToken.balanceOf(receiver1), vars.expectedWithdrawnAmount1);
         assertEq(swapToken.balanceOf(user2),     0);
         assertEq(swapToken.balanceOf(receiver2), vars.expectedWithdrawnAmount2);
-        assertEq(swapToken.balanceOf(pocket),    vars.totalSwapToken - (vars.expectedWithdrawnAmount1 + vars.expectedWithdrawnAmount2));
+        assertEq(_pocketSwapBalance(),    vars.totalSwapToken - (vars.expectedWithdrawnAmount1 + vars.expectedWithdrawnAmount2));
 
         assertApproxEqAbs(creditToken.balanceOf(user2),        0,                                              0);
         assertApproxEqAbs(creditToken.balanceOf(receiver2),    vars.expectedWithdrawnAmount3,                  1);
@@ -498,7 +502,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         assertEq(groveBasin.convertToShares(1e18), 0.9e18);
 
         assertEq(swapToken.balanceOf(user1),  0);
-        assertEq(swapToken.balanceOf(pocket), 100e6);
+        assertEq(_pocketSwapBalance(), 100e6);
 
         assertEq(groveBasin.totalShares(), 225e18);
         assertEq(groveBasin.shares(user1), 100e18);
@@ -511,7 +515,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         assertEq(amount, 100e6);
 
         assertEq(swapToken.balanceOf(user1),  100e6);
-        assertEq(swapToken.balanceOf(pocket), 0);
+        assertEq(_pocketSwapBalance(), 0);
 
         assertEq(creditToken.balanceOf(user1),        0);
         assertEq(creditToken.balanceOf(user2),        0);
@@ -595,7 +599,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         assertEq(groveBasin.shares(user2), user2Shares);
 
         assertEq(swapToken.balanceOf(user1),  0);
-        assertEq(swapToken.balanceOf(pocket), swapTokenAmount);
+        assertEq(_pocketSwapBalance(), swapTokenAmount);
 
         // NOTE: Users shares have more value than the balance of USDC now
         vm.prank(user1);
@@ -604,7 +608,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         assertEq(amount, swapTokenAmount);  // Withdraws all USDC since shares are worth more
 
         assertEq(swapToken.balanceOf(user1),  swapTokenAmount);
-        assertEq(swapToken.balanceOf(pocket), 0);
+        assertEq(_pocketSwapBalance(), 0);
 
         assertEq(creditToken.balanceOf(user1),        0);
         assertEq(creditToken.balanceOf(user2),        0);
@@ -671,7 +675,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         uint256 totalSharesValue = groveBasin.convertToAssetValue(groveBasin.totalShares());
         uint256 totalAssetsValue =
             creditToken.balanceOf(address(groveBasin)) * creditTokenRateProvider.getConversionRate() / 1e27
-            + swapToken.balanceOf(pocket) * 1e12;
+            + _pocketSwapBalance() * 1e12;
 
         assertApproxEqAbs(totalSharesValue, totalAssetsValue, 1);
     }
@@ -679,9 +683,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
     function _getExpectedWithdrawnAmount(MockERC20 asset, address user, uint256 amount)
         internal view returns (uint256 withdrawAmount)
     {
-        address custodian = address(asset) == address(swapToken) ? pocket : address(groveBasin);
-
-        uint256 balance    = asset.balanceOf(custodian);
+        uint256 balance = address(asset) == address(swapToken) ? _pocketSwapBalance() : asset.balanceOf(address(groveBasin));
         uint256 userAssets = groveBasin.convertToAssets(address(asset), groveBasin.shares(user));
 
         // Return the min of assets, balance, and amount

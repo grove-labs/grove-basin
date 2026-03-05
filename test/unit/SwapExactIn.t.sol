@@ -401,13 +401,15 @@ contract GroveBasinSwapExactInFuzzTests is GroveBasinTestBase {
                 assetOut = creditToken;
             }
 
-            address assetOutCustodian = address(assetOut) == address(swapToken) ? pocket : address(groveBasin);
+            uint256 assetOutBalance = address(assetOut) == address(swapToken)
+                ? _pocketSwapBalance()
+                : assetOut.balanceOf(address(groveBasin));
 
             // Calculate the maximum amount that can be swapped by using the inverse conversion rate
             uint256 maxAmountIn = groveBasin.previewSwapExactOut(
                 address(assetIn),
                 address(assetOut),
-                assetOut.balanceOf(assetOutCustodian)
+                assetOutBalance
             );
 
             uint256 amountIn = _bound(_hash(i, "amountIn"), 0, maxAmountIn - 1);  // Rounding

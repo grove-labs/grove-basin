@@ -81,7 +81,7 @@ contract InflationAttackTests is GroveBasinTestBase {
         _withdraw(address(swapToken), firstDepositor, type(uint256).max);
         _withdraw(address(swapToken), frontRunner,    type(uint256).max);
 
-        assertEq(swapToken.balanceOf(pocket), 0);
+        assertEq(_pocketSwapBalance(), 0);
 
         // Front runner profits 5m USDC, first depositor loses 5m USDC
         assertEq(swapToken.balanceOf(firstDepositor), 15_000_000e6);
