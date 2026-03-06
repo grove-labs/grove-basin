@@ -18,9 +18,10 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     uint256 public constant override BPS = 10_000;
 
-    bytes32 public constant override OWNER_ROLE         = DEFAULT_ADMIN_ROLE;
-    bytes32 public constant override MANAGER_ROLE       = keccak256("MANAGER_ROLE");
-    bytes32 public constant override MANAGER_ADMIN_ROLE = keccak256("MANAGER_ADMIN_ROLE");
+    bytes32 public constant override OWNER_ROLE              = DEFAULT_ADMIN_ROLE;
+    bytes32 public constant override MANAGER_ROLE            = keccak256("MANAGER_ROLE");
+    bytes32 public constant override MANAGER_ADMIN_ROLE      = keccak256("MANAGER_ADMIN_ROLE");
+    bytes32 public constant override LIQUIDITY_PROVIDER_ROLE = keccak256("LIQUIDITY_PROVIDER_ROLE");
 
     uint256 internal immutable _swapTokenPrecision;
     uint256 internal immutable _collateralTokenPrecision;
@@ -35,6 +36,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
     address public override immutable creditTokenRateProvider;
 
     address public override pocket;
+
+    bool public override creditTokenDepositsDisabled;
 
     uint256 public override stalenessThreshold;
     uint256 public override totalShares;
@@ -110,6 +113,15 @@ contract GroveBasin is IGroveBasin, AccessControl {
         // Necessary to ensure rounding works as expected
         require(_swapTokenPrecision  <= 1e18, "GroveBasin/swapToken-precision-too-high");
         require(_collateralTokenPrecision <= 1e18, "GroveBasin/collateralToken-precision-too-high");
+    }
+
+    /**********************************************************************************************/
+    /*** Owner functions                                                                        ***/
+    /**********************************************************************************************/
+
+    function setCreditTokenDepositsDisabled(bool disabled) external override onlyRole(OWNER_ROLE) {
+        creditTokenDepositsDisabled = disabled;
+        emit CreditTokenDepositsDisabledSet(disabled);
     }
 
     /**********************************************************************************************/
@@ -287,9 +299,13 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /**********************************************************************************************/
 
     function deposit(address asset, address receiver, uint256 assetsToDeposit)
-        external override returns (uint256 newShares)
+        external override onlyRole(LIQUIDITY_PROVIDER_ROLE) returns (uint256 newShares)
     {
         require(assetsToDeposit != 0, "GroveBasin/invalid-amount");
+        require(
+            !(asset == address(creditToken) && creditTokenDepositsDisabled),
+            "GroveBasin/creditToken-deposits-disabled"
+        );
 
         newShares = previewDeposit(asset, assetsToDeposit);
 

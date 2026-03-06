@@ -9,6 +9,7 @@ contract LpHandler is HandlerBase {
 
     MockERC20[3] public assets;
 
+    address public owner;
     address[] public lps;
 
     uint256 public depositCount;
@@ -22,8 +23,10 @@ contract LpHandler is HandlerBase {
         MockERC20 swapToken,
         MockERC20 collateralToken,
         MockERC20 creditToken,
-        uint256   lpCount
+        uint256   lpCount,
+        address   owner_
     ) HandlerBase(groveBasin_) {
+        owner = owner_;
         assets[0] = swapToken;
         assets[1] = collateralToken;
         assets[2] = creditToken;
@@ -53,6 +56,10 @@ contract LpHandler is HandlerBase {
         uint256 startingValue      = groveBasin.totalAssets();
 
         // 3. Perform action against protocol
+        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
+        vm.prank(owner);
+        groveBasin.grantRole(lpRole, lp);
+
         vm.startPrank(lp);
         asset.mint(lp, amount);
         asset.approve(address(groveBasin), amount);

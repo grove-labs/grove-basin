@@ -94,6 +94,12 @@ interface IGroveBasin {
     );
 
     /**
+     *  @dev   Emitted when the credit token deposits disabled flag is set.
+     *  @param disabled Whether credit token deposits are disabled.
+     */
+    event CreditTokenDepositsDisabledSet(bool disabled);
+
+    /**
      *  @dev   Emitted when an asset is deposited into the GroveBasin.
      *  @param asset           Address of the asset deposited.
      *  @param user            Address of the user that deposited the asset.
@@ -243,6 +249,19 @@ interface IGroveBasin {
     function MANAGER_ADMIN_ROLE() external view returns (bytes32);
 
     /**
+     *  @dev    Returns the role identifier for the liquidity provider role. This role is
+     *          required to deposit assets into the GroveBasin. Grantable by DEFAULT_ADMIN_ROLE.
+     *  @return The bytes32 role identifier.
+     */
+    function LIQUIDITY_PROVIDER_ROLE() external view returns (bytes32);
+
+    /**
+     *  @dev    Returns whether credit token deposits are disabled.
+     *  @return Whether credit token deposits are disabled.
+     */
+    function creditTokenDepositsDisabled() external view returns (bool);
+
+    /**
      *  @dev    Returns the current purchase fee in BPS. Applied when buying credit tokens.
      *  @return The purchase fee in BPS.
      */
@@ -276,6 +295,12 @@ interface IGroveBasin {
      *  @param  newMaxSwapSize New max swap size in 1e18 precision.
      */
     function setMaxSwapSize(uint256 newMaxSwapSize) external;
+
+    /**
+     *  @dev    Sets whether credit token deposits are disabled. Callable only by the owner.
+     *  @param  disabled Whether to disable credit token deposits.
+     */
+    function setCreditTokenDepositsDisabled(bool disabled) external;
     
     /**
      *  @dev   Sets the staleness threshold in seconds. Must be within
