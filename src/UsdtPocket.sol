@@ -72,7 +72,6 @@ contract UsdtPocket is IGroveBasinPocket {
         if (balance < amount) {
             uint256 remainder = amount - balance;
 
-            aUsdt.safeApprove(aaveV3Pool, 0);
             aUsdt.safeApprove(aaveV3Pool, remainder);
 
             convertedAmount = IAaveV3PoolLike(aaveV3Pool).withdraw(
