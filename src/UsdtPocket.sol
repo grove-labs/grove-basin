@@ -52,6 +52,7 @@ contract UsdtPocket is IGroveBasinPocket {
 
         require(asset == address(usdt), "UsdtPocket/invalid-asset");
 
+        usdt.safeApprove(aaveV3Pool, 0);
         usdt.safeApprove(aaveV3Pool, amount);
         IAaveV3PoolLike(aaveV3Pool).supply(address(usdt), amount, address(this), 0);
 
@@ -71,6 +72,7 @@ contract UsdtPocket is IGroveBasinPocket {
         if (balance < amount) {
             uint256 remainder = amount - balance;
 
+            aUsdt.safeApprove(aaveV3Pool, 0);
             aUsdt.safeApprove(aaveV3Pool, remainder);
 
             convertedAmount = IAaveV3PoolLike(aaveV3Pool).withdraw(

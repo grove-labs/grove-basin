@@ -180,16 +180,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         require(newPocket != pocket_, "GroveBasin/same-pocket");
 
-        if (newPocket != address(this)) {
-            require(newPocket.code.length > 0, "GroveBasin/pocket-not-contract");
-        }
-
-        if (_hasPocket()) {
-            uint256 availableBalance = IGroveBasinPocket(pocket_).availableBalance(address(swapToken));
-            if (availableBalance > 0) {
-                IGroveBasinPocket(pocket_).withdrawLiquidity(availableBalance, address(swapToken));
-            }
-        }
+        _withdrawLiquidityInPocket(_getAvailableBalance(address(swapToken)), address(swapToken));
 
         uint256 amountToTransfer = swapToken.balanceOf(pocket_);
 
@@ -626,6 +617,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
         );
     }
 
+    // NOTE: For swapToken, tokens remain in the pocket after withdraw - `_pushAsset` uses
+    //       `transferFrom(pocket, receiver)` to send them out. For collateralToken, the deficit
+    //       is pulled back to Basin since `_pushAsset` uses `transfer(receiver)` directly.
     function _withdrawLiquidityInPocket(uint256 amount, address asset) internal {
         if (!_hasPocket()) return;
 

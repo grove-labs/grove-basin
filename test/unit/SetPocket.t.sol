@@ -39,12 +39,6 @@ contract GroveBasinSetPocketFailureTests is GroveBasinTestBase {
         groveBasin.setPocket(pocket);
     }
 
-    function test_setPocket_notContract() public {
-        vm.prank(owner);
-        vm.expectRevert("GroveBasin/pocket-not-contract");
-        groveBasin.setPocket(makeAddr("eoa"));
-    }
-
     function test_setPocket_migrationTransfersSwapToken() public {
         MockERC20 usds = new MockERC20("USDS", "USDS", 18);
         MockPSM   psm  = new MockPSM(address(usds), address(swapToken));

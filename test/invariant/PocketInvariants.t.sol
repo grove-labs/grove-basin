@@ -131,4 +131,9 @@ contract PocketInvariantTest is Test {
         assertEq(groveBasin.pocket(), address(pocket));
     }
 
+    // Pocket is never address(0)
+    function invariant_E_pocketNotZero() public view {
+        assertTrue(groveBasin.pocket() != address(0));
+    }
+
 }
