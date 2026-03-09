@@ -75,11 +75,19 @@ contract PocketDepositWithdrawTestBase is Test {
         vm.stopPrank();
     }
 
+    function _grantLpRole(address user) internal {
+        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
+        vm.prank(owner);
+        groveBasin.grantRole(lpRole, user);
+    }
+
     function _deposit(address asset, address user, uint256 amount) internal {
         _deposit(asset, user, user, amount);
     }
 
     function _deposit(address asset, address user, address receiver, uint256 amount) internal {
+        _grantLpRole(user);
+
         vm.startPrank(user);
         MockERC20(asset).mint(user, amount);
         MockERC20(asset).approve(address(groveBasin), amount);
@@ -96,6 +104,8 @@ contract PocketDepositWithdrawTestBase is Test {
 contract BasinDepositThroughPocketTests is PocketDepositWithdrawTestBase {
 
     function test_deposit_usds_goesToPocket() public {
+        _grantLpRole(user1);
+
         usds.mint(user1, 100e18);
 
         vm.startPrank(user1);
@@ -119,6 +129,8 @@ contract BasinDepositThroughPocketTests is PocketDepositWithdrawTestBase {
     }
 
     function test_deposit_usdc_staysInBasin() public {
+        _grantLpRole(user1);
+
         usdc.mint(user1, 100e6);
 
         vm.startPrank(user1);
@@ -142,6 +154,8 @@ contract BasinDepositThroughPocketTests is PocketDepositWithdrawTestBase {
     }
 
     function test_deposit_creditToken_goesToBasin() public {
+        _grantLpRole(user1);
+
         creditToken.mint(user1, 100e18);
 
         vm.startPrank(user1);
@@ -363,7 +377,15 @@ contract BasinUsdtCollateralPocketTests is Test {
         vm.stopPrank();
     }
 
+    function _grantLpRole(address user) internal {
+        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
+        vm.prank(owner);
+        groveBasin.grantRole(lpRole, user);
+    }
+
     function test_deposit_usdt_staysInBasin() public {
+        _grantLpRole(user1);
+
         usdt.mint(user1, 100e6);
 
         vm.startPrank(user1);
@@ -384,6 +406,8 @@ contract BasinUsdtCollateralPocketTests is Test {
     }
 
     function test_withdraw_usdt_fromBasin() public {
+        _grantLpRole(user1);
+
         usdt.mint(user1, 100e6);
 
         vm.startPrank(user1);
@@ -405,6 +429,8 @@ contract BasinUsdtCollateralPocketTests is Test {
     }
 
     function test_deposit_usdc_thenWithdraw_usdc() public {
+        _grantLpRole(user1);
+
         usdc.mint(user1, 100e6);
 
         vm.startPrank(user1);

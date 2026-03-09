@@ -86,7 +86,7 @@ contract PocketInvariantTest is Test {
         collateralToken.approve(address(groveBasin), 1e18);
         groveBasin.deposit(address(collateralToken), BURN_ADDRESS, 1e18);
 
-        lpHandler      = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
+        lpHandler      = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner);
         swapperHandler = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
 
         targetContract(address(lpHandler));

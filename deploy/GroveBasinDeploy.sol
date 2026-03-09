@@ -28,7 +28,8 @@ library GroveBasinDeploy {
             creditTokenRateProvider
         ));
 
-        IERC20(swapToken).transfer(groveBasin, 1e6);
+        IERC20(swapToken).approve(groveBasin, 1e6);
+        GroveBasin(groveBasin).deposit(swapToken, address(0), 1e6);
     }
 
 }
