@@ -9,6 +9,7 @@ import { AccessControl } from "openzeppelin-contracts/contracts/access/AccessCon
 import { Math }          from "openzeppelin-contracts/contracts/utils/math/Math.sol";
 
 import { IGroveBasin }             from "src/interfaces/IGroveBasin.sol";
+import { IGroveBasinPocket }       from "src/interfaces/IGroveBasinPocket.sol";
 import { IRateProviderLike } from "src/interfaces/IRateProviderLike.sol";
 
 contract GroveBasin is IGroveBasin, AccessControl {
@@ -179,9 +180,11 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         require(newPocket != pocket_, "GroveBasin/same-pocket");
 
+        _withdrawLiquidityInPocket(_getAvailableBalance(address(swapToken)), address(swapToken));
+
         uint256 amountToTransfer = swapToken.balanceOf(pocket_);
 
-        if (pocket_ == address(this)) {
+        if (!_hasPocket()) {
             swapToken.safeTransfer(newPocket, amountToTransfer);
         } else {
             swapToken.safeTransferFrom(pocket_, newPocket, amountToTransfer);
@@ -248,6 +251,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         require(amountOut >= minAmountOut, "GroveBasin/amountOut-too-low");
 
+        _withdrawLiquidityInPocket(amountOut, assetOut);
         _pullAsset(assetIn, amountIn);
         _pushAsset(assetOut, receiver, amountOut);
 
@@ -271,6 +275,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         require(amountIn <= maxAmountIn, "GroveBasin/amountIn-too-high");
 
+        _withdrawLiquidityInPocket(amountOut, assetOut);
         _pullAsset(assetIn, amountIn);
         _pushAsset(assetOut, receiver, amountOut);
 
@@ -292,6 +297,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         totalShares      += newShares;
 
         _pullAsset(asset, assetsToDeposit);
+        _depositLiquidityInPocket(assetsToDeposit, asset);
 
         emit Deposit(asset, msg.sender, receiver, assetsToDeposit, newShares);
     }
@@ -311,6 +317,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
             totalShares        -= sharesToBurn;
         }
 
+        _withdrawLiquidityInPocket(assetsWithdrawn, asset);
         _pushAsset(asset, receiver, assetsWithdrawn);
 
         emit Withdraw(asset, msg.sender, receiver, assetsWithdrawn, sharesToBurn);
@@ -333,7 +340,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     {
         require(_isValidAsset(asset), "GroveBasin/invalid-asset");
 
-        uint256 assetBalance = IERC20(asset).balanceOf(_getAssetCustodian(asset));
+        uint256 assetBalance = _getAvailableBalance(asset);
 
         assetsWithdrawn = assetBalance < maxAssetsToWithdraw
             ? assetBalance
@@ -446,9 +453,15 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /**********************************************************************************************/
 
     function totalAssets() public view override returns (uint256) {
-        return _getSwapTokenValue(swapToken.balanceOf(pocket))
-            +  _getCollateralTokenValue(collateralToken.balanceOf(address(this)))
-            +  _getCreditTokenValue(creditToken.balanceOf(address(this)), false);  // Round down
+        return _getSwapTokenValue(
+                    _getAvailableBalance(address(swapToken))
+                )
+            +  _getCollateralTokenValue(
+                    _getAvailableBalance(address(collateralToken))
+                )
+            +  _getCreditTokenValue(
+                    _getAvailableBalance(address(creditToken)), false // Round down
+                );
     }
 
     /**********************************************************************************************/
@@ -456,7 +469,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /**********************************************************************************************/
 
     function _getAssetValue(address asset, uint256 amount, bool roundUp) internal view returns (uint256) {
-        if      (asset == address(swapToken))  return _getSwapTokenValue(amount);
+        if      (asset == address(swapToken))       return _getSwapTokenValue(amount);
         else if (asset == address(collateralToken)) return _getCollateralTokenValue(amount);
         else if (asset == address(creditToken))     return _getCreditTokenValue(amount, roundUp);
         else revert("GroveBasin/invalid-asset-for-value");
@@ -604,6 +617,44 @@ contract GroveBasin is IGroveBasin, AccessControl {
         );
     }
 
+    // NOTE: For swapToken, tokens remain in the pocket after withdraw - `_pushAsset` uses
+    //       `transferFrom(pocket, receiver)` to send them out. For collateralToken, the deficit
+    //       is pulled back to Basin since `_pushAsset` uses `transfer(receiver)` directly.
+    function _withdrawLiquidityInPocket(uint256 amount, address asset) internal {
+        if (!_hasPocket()) return;
+
+        if (asset == address(swapToken)) {
+            try IGroveBasinPocket(pocket).withdrawLiquidity(amount, asset) {} catch {}
+        } else if (asset == address(collateralToken)) {
+            uint256 basinBalance = IERC20(asset).balanceOf(address(this));
+
+            if (basinBalance < amount) {
+                uint256 deficit = amount - basinBalance;
+                try IGroveBasinPocket(pocket).withdrawLiquidity(deficit, asset) returns (uint256 drawn) {
+                    IERC20(asset).safeTransferFrom(pocket, address(this), drawn);
+                } catch {}
+            }
+        }
+    }
+
+    function _depositLiquidityInPocket(uint256 amount, address asset) internal {
+        if (asset == address(swapToken) && _hasPocket()) {
+            IGroveBasinPocket(pocket).depositLiquidity(amount, asset);
+        }
+    }
+
+    function _getAvailableBalance(address asset) internal view returns (uint256) {
+        if (asset == address(swapToken) && _hasPocket()) {
+            return IGroveBasinPocket(pocket).availableBalance(asset);
+        }
+
+        return IERC20(asset).balanceOf(_getAssetCustodian(asset));
+    }
+
+    function _hasPocket() internal view returns (bool) {
+        return pocket != address(this);
+    }
+
     function _isValidAsset(address asset) internal view returns (bool) {
         return asset == address(swapToken) || asset == address(collateralToken) || asset == address(creditToken);
     }
@@ -617,8 +668,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     function _pushAsset(address asset, address receiver, uint256 amount) internal {
-        if (asset == address(swapToken) && pocket != address(this)) {
-            swapToken.safeTransferFrom(pocket, receiver, amount);
+        if (asset == address(swapToken) && _hasPocket()) {
+            IERC20(asset).safeTransferFrom(pocket, receiver, amount);
         } else {
             IERC20(asset).safeTransfer(receiver, amount);
         }

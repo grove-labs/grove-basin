@@ -13,7 +13,7 @@ import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 abstract contract ForkTestBase is Test {
 
     address public owner  = makeAddr("owner");
-    address public pocket = makeAddr("pocket");
+    address public pocket;
 
     GroveBasin public groveBasin;
 
@@ -44,11 +44,17 @@ abstract contract ForkTestBase is Test {
         vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
-        groveBasin.setPocket(pocket);
+        if (pocket != address(0)) {
+            groveBasin.setPocket(pocket);
+        } else {
+            pocket = address(groveBasin);
+        }
         vm.stopPrank();
 
-        vm.prank(pocket);
-        swapToken.approve(address(groveBasin), type(uint256).max);
+        if (pocket != address(groveBasin)) {
+            vm.prank(pocket);
+            swapToken.approve(address(groveBasin), type(uint256).max);
+        }
 
         _postDeploy();
 

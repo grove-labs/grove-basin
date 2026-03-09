@@ -223,8 +223,10 @@ contract GroveBasinSwapExactInCollateralTokenAssetInTests is GroveBasinSwapExact
     ) public {
         vm.assume(fuzzSwapper  != address(groveBasin));
         vm.assume(fuzzSwapper  != address(pocket));
+        vm.assume(fuzzSwapper  != address(psm));
         vm.assume(fuzzReceiver != address(groveBasin));
         vm.assume(fuzzReceiver != address(pocket));
+        vm.assume(fuzzReceiver != address(psm));
         vm.assume(fuzzReceiver != address(0));
 
         amountIn       = _bound(amountIn,       1,       COLLATERAL_TOKEN_MAX);
@@ -261,8 +263,10 @@ contract GroveBasinSwapExactInSwapTokenAssetInTests is GroveBasinSwapExactInSucc
     ) public {
         vm.assume(fuzzSwapper  != address(groveBasin));
         vm.assume(fuzzSwapper  != address(pocket));
+        vm.assume(fuzzSwapper  != address(psm));
         vm.assume(fuzzReceiver != address(groveBasin));
         vm.assume(fuzzReceiver != address(pocket));
+        vm.assume(fuzzReceiver != address(psm));
         vm.assume(fuzzReceiver != address(0));
 
         amountIn       = _bound(amountIn,       1,       SWAP_TOKEN_MAX);
@@ -303,8 +307,10 @@ contract GroveBasinSwapExactInCreditTokenAssetInTests is GroveBasinSwapExactInSu
     ) public {
         vm.assume(fuzzSwapper  != address(groveBasin));
         vm.assume(fuzzSwapper  != address(pocket));
+        vm.assume(fuzzSwapper  != address(psm));
         vm.assume(fuzzReceiver != address(groveBasin));
         vm.assume(fuzzReceiver != address(pocket));
+        vm.assume(fuzzReceiver != address(psm));
         vm.assume(fuzzReceiver != address(0));
 
         amountIn       = _bound(amountIn,       1,       CREDIT_TOKEN_MAX);
@@ -325,8 +331,10 @@ contract GroveBasinSwapExactInCreditTokenAssetInTests is GroveBasinSwapExactInSu
     ) public {
         vm.assume(fuzzSwapper  != address(groveBasin));
         vm.assume(fuzzSwapper  != address(pocket));
+        vm.assume(fuzzSwapper  != address(psm));
         vm.assume(fuzzReceiver != address(groveBasin));
         vm.assume(fuzzReceiver != address(pocket));
+        vm.assume(fuzzReceiver != address(psm));
         vm.assume(fuzzReceiver != address(0));
 
         amountIn       = _bound(amountIn,       1,       CREDIT_TOKEN_MAX);
@@ -401,13 +409,15 @@ contract GroveBasinSwapExactInFuzzTests is GroveBasinTestBase {
                 assetOut = creditToken;
             }
 
-            address assetOutCustodian = address(assetOut) == address(swapToken) ? pocket : address(groveBasin);
+            uint256 assetOutBalance = address(assetOut) == address(swapToken)
+                ? _pocketSwapBalance()
+                : assetOut.balanceOf(address(groveBasin));
 
             // Calculate the maximum amount that can be swapped by using the inverse conversion rate
             uint256 maxAmountIn = groveBasin.previewSwapExactOut(
                 address(assetIn),
                 address(assetOut),
-                assetOut.balanceOf(assetOutCustodian)
+                assetOutBalance
             );
 
             uint256 amountIn = _bound(_hash(i, "amountIn"), 0, maxAmountIn - 1);  // Rounding

@@ -15,7 +15,7 @@ contract InflationAttackTests is GroveBasinTestBase {
         swapToken.mint(address(this), 100e6);
         swapToken.transfer(pocket, 100e6);
 
-        assertEq(swapToken.balanceOf(pocket), 100e6);
+        assertEq(_pocketSwapBalance(), 100e6);
 
         assertEq(groveBasin.totalShares(), 0);
         assertEq(groveBasin.shares(user1), 0);
@@ -27,7 +27,7 @@ contract InflationAttackTests is GroveBasinTestBase {
         // because totalValue is not zero so it enters that if statement.
         // This results in the funds going in the pool with no way for the user
         // to recover them.
-        assertEq(swapToken.balanceOf(pocket), 1_000_100e6);
+        assertEq(_pocketSwapBalance(), 1_000_100e6);
 
         assertEq(groveBasin.totalShares(), 0);
         assertEq(groveBasin.shares(user1), 0);
@@ -37,7 +37,7 @@ contract InflationAttackTests is GroveBasinTestBase {
         // get above zero.
         _deposit(address(swapToken), address(user2), 1_000_000e6);
 
-        assertEq(swapToken.balanceOf(pocket), 2_000_100e6);
+        assertEq(_pocketSwapBalance(), 2_000_100e6);
 
         assertEq(groveBasin.totalShares(), 0);
         assertEq(groveBasin.shares(user1), 0);

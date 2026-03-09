@@ -302,7 +302,7 @@ contract GroveBasinMaxSwapSizeFuzzTests is GroveBasinTestBase {
         groveBasin.setMaxSwapSize(maxSwapSize);
 
         // Swap credit -> swap token. amountOut in swap token terms.
-        amountOut = _bound(amountOut, 1, swapToken.balanceOf(pocket));
+        amountOut = _bound(amountOut, 1, _pocketSwapBalance());
 
         // Compute the expected input value to determine if the swap exceeds maxSwapSize.
         // amountOut is in swap token (6 decimals), value = amountOut * 1e12.

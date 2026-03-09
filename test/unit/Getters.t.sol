@@ -25,7 +25,7 @@ contract GroveBasinHarnessTests is GroveBasinTestBase {
 
         vm.startPrank(owner);
         groveBasinHarness.grantRole(groveBasinHarness.MANAGER_ADMIN_ROLE(), owner);
-        groveBasinHarness.setPocket(pocket);
+        groveBasinHarness.setPocket(address(groveBasin));
         vm.stopPrank();
     }
 
@@ -220,7 +220,7 @@ contract GroveBasinHarnessTests is GroveBasinTestBase {
     }
 
     function test_getAssetCustodian() public view {
-        assertEq(groveBasinHarness.getAssetCustodian(address(swapToken)),  address(pocket));
+        assertEq(groveBasinHarness.getAssetCustodian(address(swapToken)),  address(groveBasin));
         assertEq(groveBasinHarness.getAssetCustodian(address(collateralToken)),  address(groveBasinHarness));
         assertEq(groveBasinHarness.getAssetCustodian(address(creditToken)), address(groveBasinHarness));
     }

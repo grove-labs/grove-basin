@@ -420,10 +420,12 @@ contract GroveBasinSwapExactOutFuzzTests is GroveBasinTestBase {
                 assetOut = creditToken;
             }
 
-            address assetOutCustodian = address(assetOut) == address(swapToken) ? pocket : address(groveBasin);
+            uint256 assetOutBalance = address(assetOut) == address(swapToken)
+                ? _pocketSwapBalance()
+                : assetOut.balanceOf(address(groveBasin));
 
             uint256 amountOut
-                = _bound(_hash(i, "amountOut"), 0, assetOut.balanceOf(assetOutCustodian));
+                = _bound(_hash(i, "amountOut"), 0, assetOutBalance);
 
             uint256 amountIn
                 = groveBasin.previewSwapExactOut(address(assetIn), address(assetOut), amountOut);
