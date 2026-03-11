@@ -109,6 +109,10 @@ contract GroveBasinTestBase is Test {
     }
 
     function _deposit(address asset, address user, address receiver, uint256 amount) internal {
+        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
+        vm.prank(owner);
+        groveBasin.grantRole(lpRole, user);
+
         vm.startPrank(user);
         MockERC20(asset).mint(user, amount);
         MockERC20(asset).approve(address(groveBasin), amount);

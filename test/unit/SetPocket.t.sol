@@ -226,6 +226,10 @@ contract GroveBasinSetPocketYieldDeployedTests is Test {
     function test_setPocket_swapTokenFullyDeployedToYield() public {
         uint256 depositAmount = 1_000_000e6;
 
+        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
+        vm.prank(owner);
+        groveBasin.grantRole(lpRole, owner);
+
         usdc.mint(owner, depositAmount);
         vm.startPrank(owner);
         usdc.approve(address(groveBasin), depositAmount);

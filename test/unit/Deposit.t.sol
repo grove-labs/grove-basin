@@ -14,13 +14,25 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
     address receiver1 = makeAddr("receiver1");
     address receiver2 = makeAddr("receiver2");
 
+    function setUp() public override {
+        super.setUp();
+
+        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
+        vm.startPrank(owner);
+        groveBasin.grantRole(lpRole, user1);
+        groveBasin.grantRole(lpRole, user2);
+        vm.stopPrank();
+    }
+
     function test_deposit_zeroAmount() public {
+        vm.prank(user1);
         vm.expectRevert("GroveBasin/invalid-amount");
         groveBasin.deposit(address(swapToken), user1, 0);
     }
 
     function test_deposit_invalidAsset() public {
         // NOTE: This reverts in _getAssetValue
+        vm.prank(user1);
         vm.expectRevert("GroveBasin/invalid-asset-for-value");
         groveBasin.deposit(makeAddr("new-asset"), user1, 100e6);
     }

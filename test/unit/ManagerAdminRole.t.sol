@@ -83,6 +83,32 @@ contract GroveBasinManagerAdminRoleTests is GroveBasinTestBase {
     }
 
     /**********************************************************************************************/
+    /*** LIQUIDITY_PROVIDER_ROLE is admin-only (DEFAULT_ADMIN_ROLE)                             ***/
+    /**********************************************************************************************/
+
+    function test_managerAdmin_cannotGrantLiquidityProviderRole() public {
+        address lp = makeAddr("lp");
+        bytes32 lpRole   = groveBasin.LIQUIDITY_PROVIDER_ROLE();
+        bytes32 adminRole = groveBasin.DEFAULT_ADMIN_ROLE();
+
+        vm.prank(managerAdmin);
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                managerAdmin,
+                adminRole
+            )
+        );
+        groveBasin.grantRole(lpRole, lp);
+    }
+
+    function test_liquidityProviderRoleAdmin() public {
+        bytes32 lpRole   = groveBasin.LIQUIDITY_PROVIDER_ROLE();
+        bytes32 adminRole = groveBasin.DEFAULT_ADMIN_ROLE();
+        assertEq(groveBasin.getRoleAdmin(lpRole), adminRole);
+    }
+
+    /**********************************************************************************************/
     /*** MANAGER_ADMIN_ROLE can set staleness threshold bounds                                  ***/
     /**********************************************************************************************/
 

@@ -74,6 +74,10 @@ abstract contract UsdsUsdcPocketForkTestBase is Test {
     }
 
     function _deposit(address asset, address user, uint256 amount) internal {
+        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
+        vm.prank(owner);
+        groveBasin.grantRole(lpRole, user);
+
         deal(asset, user, amount);
         vm.startPrank(user);
         SafeERC20.safeApprove(IERC20(asset), address(groveBasin), 0);

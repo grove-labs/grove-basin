@@ -18,7 +18,15 @@ library GroveBasinDeploy {
     )
         internal returns (address groveBasin)
     {
-        groveBasin = address(new GroveBasin(owner, swapToken, collateralToken, creditToken, swapTokenRateProvider, collateralTokenRateProvider, creditTokenRateProvider));
+        groveBasin = address(new GroveBasin(
+            owner,
+            swapToken,
+            collateralToken,
+            creditToken,
+            swapTokenRateProvider,
+            collateralTokenRateProvider,
+            creditTokenRateProvider
+        ));
 
         IERC20(swapToken).approve(groveBasin, 1e6);
         GroveBasin(groveBasin).deposit(swapToken, address(0), 1e6);

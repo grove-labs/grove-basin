@@ -37,6 +37,10 @@ contract GroveBasinEventTests is GroveBasinTestBase {
     address receiver = makeAddr("receiver");
 
     function test_deposit_events() public {
+        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
+        vm.prank(owner);
+        groveBasin.grantRole(lpRole, sender);
+
         vm.startPrank(sender);
 
         collateralToken.mint(sender, 100e18);
