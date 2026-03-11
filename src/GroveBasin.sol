@@ -10,7 +10,8 @@ import { Math }          from "openzeppelin-contracts/contracts/utils/math/Math.
 
 import { IGroveBasin }             from "src/interfaces/IGroveBasin.sol";
 import { IGroveBasinPocket }       from "src/interfaces/IGroveBasinPocket.sol";
-import { IRateProviderLike } from "src/interfaces/IRateProviderLike.sol";
+import { IRateProviderLike }       from "src/interfaces/IRateProviderLike.sol";
+import { ITokenRedeemer }          from "src/interfaces/ITokenRedeemer.sol";
 
 contract GroveBasin is IGroveBasin, AccessControl {
 
@@ -22,6 +23,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
     bytes32 public constant override MANAGER_ROLE            = keccak256("MANAGER_ROLE");
     bytes32 public constant override MANAGER_ADMIN_ROLE      = keccak256("MANAGER_ADMIN_ROLE");
     bytes32 public constant override LIQUIDITY_PROVIDER_ROLE = keccak256("LIQUIDITY_PROVIDER_ROLE");
+    bytes32 public constant override REDEEMER_ROLE           = keccak256("REDEEMER_ROLE");
+    bytes32 public constant override REDEEMER_CONTRACT_ROLE  = keccak256("REDEEMER_CONTRACT_ROLE");
 
     uint256 internal immutable _swapTokenPrecision;
     uint256 internal immutable _collateralTokenPrecision;
@@ -52,6 +55,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
     uint256 public override maxStalenessThreshold;
 
     mapping(address user => uint256 shares) public override shares;
+
+    uint256 public override creditTokenBalance;
 
     constructor(
         address owner_,
@@ -207,6 +212,39 @@ contract GroveBasin is IGroveBasin, AccessControl {
         pocket = newPocket;
 
         emit PocketSet(pocket_, newPocket, amountToTransfer);
+    }
+
+    function addTokenRedeemer(address redeemer) external override onlyRole(OWNER_ROLE) {
+        require(redeemer != address(0), "GroveBasin/invalid-redeemer");
+        require(!hasRole(REDEEMER_CONTRACT_ROLE, redeemer), "GroveBasin/redeemer-already-added");
+
+        _grantRole(REDEEMER_CONTRACT_ROLE, redeemer);
+
+        ITokenRedeemer(redeemer).setUp(address(this));
+
+        emit TokenRedeemerAdded(redeemer);
+    }
+
+    function removeTokenRedeemer(address redeemer) external override onlyRole(OWNER_ROLE) {
+        require(hasRole(REDEEMER_CONTRACT_ROLE, redeemer), "GroveBasin/invalid-redeemer");
+
+        ITokenRedeemer(redeemer).tearDown(address(this));
+
+        _revokeRole(REDEEMER_CONTRACT_ROLE, redeemer);
+
+        emit TokenRedeemerRemoved(redeemer);
+    }
+
+    /**********************************************************************************************/
+    /*** Owner functions (redeem)                                                               ***/
+    /**********************************************************************************************/
+
+    function initiateRedeem(address redeemer, uint256 creditTokenAmount) external override onlyRole(REDEEMER_ROLE) {
+        _initiateRedeem(redeemer, creditTokenAmount);
+    }
+
+    function completeRedeem(address redeemer, uint256 creditTokenAmount) external override {
+        _completeRedeem(redeemer, creditTokenAmount);
     }
 
     /**********************************************************************************************/
@@ -471,6 +509,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /*** Asset value functions                                                                  ***/
     /**********************************************************************************************/
 
+    // NOTE: Returns only the value of assets currently held by the basin. Does not include
+    //       credit tokens in pending redemptions. Use `totalAssetsWithRedemptions()` for a
+    //       closer approximation of the basin's total value.
     function totalAssets() public view override returns (uint256) {
         return _getSwapTokenValue(
                     _getAvailableBalance(address(swapToken))
@@ -481,6 +522,12 @@ contract GroveBasin is IGroveBasin, AccessControl {
             +  _getCreditTokenValue(
                     _getAvailableBalance(address(creditToken)), false // Round down
                 );
+    }
+
+    // NOTE: The actual amount of yield returned may be slightly higher than reported here
+    //       because some credit tokens may appreciate in value during the redemption period.
+    function totalAssetsWithRedemptions() public view returns (uint256) {
+        return totalAssets() + _getCreditTokenValue(creditTokenBalance, false);
     }
 
     /**********************************************************************************************/
@@ -692,6 +739,19 @@ contract GroveBasin is IGroveBasin, AccessControl {
         } else {
             IERC20(asset).safeTransfer(receiver, amount);
         }
+    }
+
+    function _initiateRedeem(address redeemer, uint256 creditTokenAmount) internal {
+        creditToken.approve(redeemer, creditTokenAmount);
+        ITokenRedeemer(redeemer).initiateRedeem(creditTokenAmount);
+        creditTokenBalance += creditTokenAmount;
+        emit RedeemInitiated(redeemer, msg.sender, creditTokenAmount);
+    }
+
+    function _completeRedeem(address redeemer, uint256 creditTokenAmount) internal {
+        ITokenRedeemer(redeemer).completeRedeem(creditTokenAmount);
+        creditTokenBalance = creditTokenAmount > creditTokenBalance ? 0 : creditTokenBalance - creditTokenAmount;
+        emit RedeemCompleted(redeemer, msg.sender, creditTokenAmount);
     }
 
     function _calculatePurchaseFee(uint256 amount, bool roundUp) internal view returns (uint256) {
