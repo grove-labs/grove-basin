@@ -16,6 +16,12 @@ interface ITokenRedeemer {
     function vault() external view returns (address);
 
     /**
+     *  @dev    Returns the address of the basin contract that this redeemer is bound to.
+     *  @return The address of the basin.
+     */
+    function basin() external view returns (address);
+
+    /**
      *  @dev   Performs any redeemer-specific setup. Called by the basin when adding a redeemer.
      *  @param basin The address of the basin.
      */
