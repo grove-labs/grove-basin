@@ -91,6 +91,30 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         vm.stopPrank();
     }
 
+    function test_previewDeposit_creditToken_disabled() public {
+        vm.prank(owner);
+        groveBasin.setCreditTokenDepositsDisabled(true);
+
+        vm.expectRevert("GroveBasin/creditToken-deposits-disabled");
+        groveBasin.previewDeposit(address(creditToken), 100e18);
+    }
+
+    function test_previewDeposit_swapToken_whenCreditTokenDisabled() public {
+        vm.prank(owner);
+        groveBasin.setCreditTokenDepositsDisabled(true);
+
+        uint256 shares = groveBasin.previewDeposit(address(swapToken), 100e6);
+        assertEq(shares, 100e18);
+    }
+
+    function test_previewDeposit_collateralToken_whenCreditTokenDisabled() public {
+        vm.prank(owner);
+        groveBasin.setCreditTokenDepositsDisabled(true);
+
+        uint256 shares = groveBasin.previewDeposit(address(collateralToken), 100e18);
+        assertEq(shares, 100e18);
+    }
+
     function test_deposit_swapToken_whenCreditTokenDisabled() public {
         vm.prank(owner);
         groveBasin.setCreditTokenDepositsDisabled(true);

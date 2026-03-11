@@ -303,10 +303,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
         external override onlyRole(LIQUIDITY_PROVIDER_ROLE) returns (uint256 newShares)
     {
         require(assetsToDeposit != 0, "GroveBasin/invalid-amount");
-        require(
-            !(asset == address(creditToken) && creditTokenDepositsDisabled),
-            "GroveBasin/creditToken-deposits-disabled"
-        );
 
         newShares = previewDeposit(asset, assetsToDeposit);
 
@@ -347,6 +343,11 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function previewDeposit(address asset, uint256 assetsToDeposit)
         public view override returns (uint256)
     {
+        require(
+            !(asset == address(creditToken) && creditTokenDepositsDisabled),
+            "GroveBasin/creditToken-deposits-disabled"
+        );
+
         // Convert amount to 1e18 precision denominated in value of USD then convert to shares.
         // NOTE: Don't need to check valid asset here since `_getAssetValue` will revert if invalid
         return convertToShares(_getAssetValue(asset, assetsToDeposit, false));  // Round down
