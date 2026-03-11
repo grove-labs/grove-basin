@@ -228,7 +228,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function removeTokenRedeemer(address redeemer) external override onlyRole(OWNER_ROLE) {
         require(hasRole(REDEEMER_CONTRACT_ROLE, redeemer), "GroveBasin/invalid-redeemer");
 
-        ITokenRedeemer(redeemer).tearDown(address(this));
+        try ITokenRedeemer(redeemer).tearDown(address(this)) {} catch {}
 
         _revokeRole(REDEEMER_CONTRACT_ROLE, redeemer);
 
@@ -240,10 +240,12 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /**********************************************************************************************/
 
     function initiateRedeem(address redeemer, uint256 creditTokenAmount) external override onlyRole(REDEEMER_ROLE) {
+        require(hasRole(REDEEMER_CONTRACT_ROLE, redeemer), "GroveBasin/invalid-redeemer");
         _initiateRedeem(redeemer, creditTokenAmount);
     }
 
     function completeRedeem(address redeemer, uint256 creditTokenAmount) external override {
+        require(hasRole(REDEEMER_CONTRACT_ROLE, redeemer), "GroveBasin/invalid-redeemer");
         _completeRedeem(redeemer, creditTokenAmount);
     }
 
@@ -744,6 +746,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function _initiateRedeem(address redeemer, uint256 creditTokenAmount) internal {
         creditToken.approve(redeemer, creditTokenAmount);
         ITokenRedeemer(redeemer).initiateRedeem(creditTokenAmount);
+        creditToken.approve(redeemer, 0);
         creditTokenBalance += creditTokenAmount;
         emit RedeemInitiated(redeemer, msg.sender, creditTokenAmount);
     }
