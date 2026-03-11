@@ -51,14 +51,14 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
     /*** creditTokenDepositsDisabled                                                            ***/
     /**********************************************************************************************/
 
-    function test_setCreditTokenDepositsDisabled_notOwner() public {
-        bytes32 ownerRole = groveBasin.OWNER_ROLE();
+    function test_setCreditTokenDepositsDisabled_notManagerAdmin() public {
+        bytes32 managerAdminRole = groveBasin.MANAGER_ADMIN_ROLE();
         vm.prank(lp);
         vm.expectRevert(
             abi.encodeWithSignature(
                 "AccessControlUnauthorizedAccount(address,bytes32)",
                 lp,
-                ownerRole
+                managerAdminRole
             )
         );
         groveBasin.setCreditTokenDepositsDisabled(true);
