@@ -261,11 +261,12 @@ contract GroveBasinSetPurchaseFeeFailureTests is GroveBasinTestBase {
     }
 
     function test_setPurchaseFee_adminCannotSet() public {
-        vm.prank(owner);
+        address admin = makeAddr("admin");
+        vm.prank(admin);
         vm.expectRevert(
             abi.encodeWithSignature(
                 "AccessControlUnauthorizedAccount(address,bytes32)",
-                owner,
+                admin,
                 lpRole
             )
         );

@@ -70,6 +70,7 @@ contract PocketDepositWithdrawTestBase is Test {
 
         vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), owner);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
         groveBasin.setPocket(address(pocket));
         vm.stopPrank();
@@ -372,6 +373,7 @@ contract BasinUsdtCollateralPocketTests is Test {
 
         vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), owner);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
         groveBasin.setPocket(address(pocket));
         vm.stopPrank();

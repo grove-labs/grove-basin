@@ -83,29 +83,43 @@ contract GroveBasinManagerAdminRoleTests is GroveBasinTestBase {
     }
 
     /**********************************************************************************************/
-    /*** LIQUIDITY_PROVIDER_ROLE is admin-only (DEFAULT_ADMIN_ROLE)                             ***/
+    /*** LIQUIDITY_PROVIDER_ROLE is managed by MANAGER_ROLE                                     ***/
     /**********************************************************************************************/
+
+    function test_manager_canGrantLiquidityProviderRole() public {
+        address lp = makeAddr("lp");
+        bytes32 lpRole      = groveBasin.LIQUIDITY_PROVIDER_ROLE();
+        bytes32 managerRole = groveBasin.MANAGER_ROLE();
+
+        vm.prank(owner);
+        groveBasin.grantRole(managerRole, manager);
+
+        vm.prank(manager);
+        groveBasin.grantRole(lpRole, lp);
+
+        assertTrue(groveBasin.hasRole(lpRole, lp));
+    }
 
     function test_managerAdmin_cannotGrantLiquidityProviderRole() public {
         address lp = makeAddr("lp");
-        bytes32 lpRole   = groveBasin.LIQUIDITY_PROVIDER_ROLE();
-        bytes32 adminRole = groveBasin.DEFAULT_ADMIN_ROLE();
+        bytes32 lpRole      = groveBasin.LIQUIDITY_PROVIDER_ROLE();
+        bytes32 managerRole = groveBasin.MANAGER_ROLE();
 
         vm.prank(managerAdmin);
         vm.expectRevert(
             abi.encodeWithSignature(
                 "AccessControlUnauthorizedAccount(address,bytes32)",
                 managerAdmin,
-                adminRole
+                managerRole
             )
         );
         groveBasin.grantRole(lpRole, lp);
     }
 
     function test_liquidityProviderRoleAdmin() public {
-        bytes32 lpRole   = groveBasin.LIQUIDITY_PROVIDER_ROLE();
-        bytes32 adminRole = groveBasin.DEFAULT_ADMIN_ROLE();
-        assertEq(groveBasin.getRoleAdmin(lpRole), adminRole);
+        bytes32 lpRole      = groveBasin.LIQUIDITY_PROVIDER_ROLE();
+        bytes32 managerRole = groveBasin.MANAGER_ROLE();
+        assertEq(groveBasin.getRoleAdmin(lpRole), managerRole);
     }
 
     /**********************************************************************************************/
