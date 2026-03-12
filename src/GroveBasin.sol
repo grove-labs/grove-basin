@@ -197,6 +197,17 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         uint256 amountToTransfer = swapToken.balanceOf(pocket_);
 
+        // Verify no yield-bearing tokens remain stranded in the old pocket.
+        // availableBalance includes yield tokens; swapToken.balanceOf is only idle tokens.
+        // If the difference is non-zero, yield tokens would be permanently lost.
+        if (_hasPocket()) {
+            uint256 availableBalance_ = IGroveBasinPocket(pocket_).availableBalance(address(swapToken));
+            require(
+                availableBalance_ - amountToTransfer == 0,
+                "GroveBasin/pocket-funds-stranded"
+            );
+        }
+
         if (!_hasPocket()) {
             swapToken.safeTransfer(newPocket, amountToTransfer);
         } else {
@@ -628,6 +639,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function _getConversionRate(address rateProvider) internal view returns (uint256 rate) {
         uint256 lastUpdated;
         (rate, lastUpdated) = IRateProviderLike(rateProvider).getConversionRateWithAge();
+
+        require(rate != 0, "GroveBasin/zero-rate");
 
         require(
             block.timestamp - lastUpdated <= stalenessThreshold,

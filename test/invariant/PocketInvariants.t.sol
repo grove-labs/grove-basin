@@ -136,4 +136,60 @@ contract PocketInvariantTest is Test {
         assertTrue(groveBasin.pocket() != address(0));
     }
 
+    // Preview functions return the same amounts as actual swap execution
+    function invariant_previewExecuteConsistency() public view {
+        // Every successful swap should have a corresponding preview consistency check.
+        assertEq(
+            swapperHandler.previewConsistencyCheckCount(),
+            swapperHandler.swapCount(),
+            "invariant_previewExecuteConsistency: consistency check count != swap count"
+        );
+    }
+
+    // Pocket never holds collateralToken from Basin operations
+    function invariant_F_pocketNeverHoldsCollateralToken() public view {
+        assertEq(
+            collateralToken.balanceOf(address(pocket)),
+            0,
+            "invariant_F: pocket holds collateralToken"
+        );
+    }
+
+    // Pocket never holds creditToken from Basin operations
+    function invariant_G_pocketNeverHoldsCreditToken() public view {
+        assertEq(
+            creditToken.balanceOf(address(pocket)),
+            0,
+            "invariant_G: pocket holds creditToken"
+        );
+    }
+
+    // totalAssets() equals the sum of pocket's swapToken value + Basin's collateralToken value
+    // + Basin's creditToken value, computed independently from rate providers and token balances.
+    function invariant_H_totalAssetsDecomposition() public view {
+        uint256 swapRate       = swapTokenRateProvider.getConversionRate();
+        uint256 collateralRate = collateralTokenRateProvider.getConversionRate();
+        uint256 creditRate     = creditTokenRateProvider.getConversionRate();
+
+        // Pocket's available swapToken balance (includes USDS converted value)
+        uint256 swapBalance       = pocket.availableBalance(address(swapToken));
+        // Basin's direct collateralToken balance
+        uint256 collateralBalance = collateralToken.balanceOf(address(groveBasin));
+        // Basin's direct creditToken balance
+        uint256 creditBalance     = creditToken.balanceOf(address(groveBasin));
+
+        // Replicate GroveBasin's internal valuation: amount * rate / 1e9 / precision
+        uint256 expectedSwapValue       = swapBalance * swapRate / 1e9 / (10 ** swapToken.decimals());
+        uint256 expectedCollateralValue = collateralBalance * collateralRate / 1e9 / (10 ** collateralToken.decimals());
+        uint256 expectedCreditValue     = creditBalance * creditRate / 1e9 / (10 ** creditToken.decimals());
+
+        uint256 expectedTotalAssets = expectedSwapValue + expectedCollateralValue + expectedCreditValue;
+
+        assertEq(
+            groveBasin.totalAssets(),
+            expectedTotalAssets,
+            "invariant_H: totalAssets mismatch with decomposed pocket + basin balances"
+        );
+    }
+
 }

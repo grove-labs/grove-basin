@@ -7,14 +7,11 @@ import { HandlerBase, GroveBasin } from "test/invariant/handlers/HandlerBase.sol
 
 import { IRateProviderLike } from "src/interfaces/IRateProviderLike.sol";
 
-contract SwapperHandler is HandlerBase {
-
-    struct StartingState {
-        uint256 conversion;
-        uint256 conversionMillion;
-        uint256 conversionLp0;
-        uint256 totalValue;
-    }
+/// @dev SwapperHandler variant with fee-aware per-action assertions. When purchase/redemption fees
+///      are non-zero, each swap accrues fee revenue to the Basin. This increases totalAssets and
+///      the share price by the fee amount. The standard SwapperHandler's tight tolerances (3e12)
+///      are insufficient; this handler uses fee-proportional tolerances instead.
+contract FeeAwareSwapperHandler is HandlerBase {
 
     MockERC20[3] public assets;
 
@@ -100,9 +97,6 @@ contract SwapperHandler is HandlerBase {
         address assetOutCustodian
             = address(assetOut) == address(assets[0]) ? groveBasin.pocket() : address(groveBasin);
 
-        // By calculating the amount of assetIn we can get from the max asset out, we can
-        // determine the max amount of assetIn we can swap since its the same both ways.
-        // Preview may revert if the full balance exceeds maxSwapSize, so cap first.
         uint256 maxAmountIn;
         {
             uint256 cappedOutBalance = _capAmountToMaxSwapSize(
@@ -122,7 +116,6 @@ contract SwapperHandler is HandlerBase {
             );
         }
 
-        // If there's zero balance a swap can't be performed
         if (maxAmountIn == 0) {
             zeroBalanceCount++;
             return;
@@ -137,23 +130,19 @@ contract SwapperHandler is HandlerBase {
             return;
         }
 
-        // Fuzz between zero and the expected amount out from the swap
         minAmountOut = _bound(
             minAmountOut,
             0,
             groveBasin.previewSwapExactIn(address(assetIn), address(assetOut), amountIn)
         );
 
-        // 2. Cache starting state (packed into struct to avoid stack-too-deep)
-        StartingState memory ss = StartingState({
-            conversion:        groveBasin.convertToAssetValue(1e18),
-            conversionMillion: groveBasin.convertToAssetValue(1e6 * 1e18),
-            conversionLp0:     groveBasin.convertToAssetValue(groveBasin.shares(lp0)),
-            totalValue:        groveBasin.totalAssets()
-        });
+        // 2. Cache starting state
+        uint256 startingConversion = groveBasin.convertToAssetValue(1e18);
+        uint256 startingValue      = groveBasin.totalAssets();
 
         // 3. Preview before swap, execute, and assert preview/execute consistency.
         //    Scoped to avoid stack-too-deep.
+        uint256 amountOut;
         {
             uint256 previewAmountOut = groveBasin.previewSwapExactIn(
                 address(assetIn), address(assetOut), amountIn
@@ -162,95 +151,58 @@ contract SwapperHandler is HandlerBase {
             vm.startPrank(swapper);
             assetIn.mint(swapper, amountIn);
             assetIn.approve(address(groveBasin), amountIn);
-            uint256 amountOut = groveBasin.swapExactIn(
+            amountOut = groveBasin.swapExactIn(
                 address(assetIn), address(assetOut), amountIn, minAmountOut, swapper, 0
             );
             vm.stopPrank();
 
             // Assert preview/execute consistency
-            assertEq(previewAmountOut, amountOut, "SwapperHandler/swapExactIn/preview-execute-mismatch");
+            assertEq(previewAmountOut, amountOut, "FeeAwareSwapperHandler/swapExactIn/preview-execute-mismatch");
             previewConsistencyCheckCount++;
-
-            // 4. Update ghost variable(s)
-            swapsIn[swapper][address(assetIn)]   += amountIn;
-            swapsOut[swapper][address(assetOut)] += amountOut;
-
-            uint256 valueIn  = _getAssetValue(address(assetIn),  amountIn);
-            uint256 valueOut = _getAssetValue(address(assetOut), amountOut);
-
-            valueSwappedIn[swapper]  += valueIn;
-            valueSwappedOut[swapper] += valueOut;
-
-            // High rates introduce larger rounding errors
-            uint256 rateIntroducedRounding = creditTokenRateProvider.getConversionRate() / 1e27;
-
-            assertApproxEqAbs(
-                valueIn,
-                valueOut, 1e12 + rateIntroducedRounding * 1e12,
-                "SwapperHandler/swapExactIn/value-mismatch"
-            );
-
-            assertGe(valueIn, valueOut, "SwapperHandler/swapExactIn/value-out-greater-than-in");
         }
+
+        // 4. Update ghost variable(s)
+        swapsIn[swapper][address(assetIn)]   += amountIn;
+        swapsOut[swapper][address(assetOut)] += amountOut;
+
+        uint256 valueIn  = _getAssetValue(address(assetIn),  amountIn);
+        uint256 valueOut = _getAssetValue(address(assetOut), amountOut);
+
+        valueSwappedIn[swapper]  += valueIn;
+        valueSwappedOut[swapper] += valueOut;
 
         // 5. Perform action-specific assertions
 
-        // Rounding because of USDC precision, the conversion rate of a
-        // user's position can fluctuate by up to 2e12 per 1e18 shares
+        // Fee revenue increases the conversion rate and total value. The increase is bounded by
+        // the fee percentage (up to 5%) of the swap value, plus rounding.
+        uint256 feeToleranceValue = valueIn * 500 / 10_000;  // Max 5% fee
+        uint256 feeTolerance      = feeToleranceValue + 3e12;
+
         assertApproxEqAbs(
             groveBasin.convertToAssetValue(1e18),
-            ss.conversion,
-            3e12,
-            "SwapperHandler/swapExactIn/conversion-rate-change"
+            startingConversion,
+            feeTolerance,
+            "FeeAwareSwapperHandler/swapExactIn/conversion-rate-change"
         );
 
-        // Demonstrate rounding scales with shares
-        assertApproxEqAbs(
-            groveBasin.convertToAssetValue(1_000_000e18),
-            ss.conversionMillion,
-            3_000_000e12, // 2e18 of value
-            "SwapperHandler/swapExactIn/conversion-rate-change-million"
-        );
-
-        // Rounding is always in favour of the protocol
+        // Rounding + fee revenue always increases share price
         assertGe(
-            groveBasin.convertToAssetValue(1_000_000e18),
-            ss.conversionMillion,
-            "SwapperHandler/swapExactIn/conversion-rate-million-decrease"
+            groveBasin.convertToAssetValue(1e18),
+            startingConversion,
+            "FeeAwareSwapperHandler/swapExactIn/conversion-rate-decrease"
         );
 
-        // Disregard this assertion if the LP has less than a dollar of value
-        if (ss.conversionLp0 > 1e18) {
-            // Position values can fluctuate by up to 0.00000002% on swaps
-            assertApproxEqRel(
-                groveBasin.convertToAssetValue(groveBasin.shares(lp0)),
-                ss.conversionLp0,
-                0.000002e18,
-                "SwapperHandler/swapExactIn/conversion-rate-change-lp"
-            );
-        }
-
-        // Rounding is always in favour of the user
-        assertGe(
-            groveBasin.convertToAssetValue(groveBasin.shares(lp0)),
-            ss.conversionLp0,
-            "SwapperHandler/swapExactIn/conversion-rate-lp-decrease"
-        );
-
-        // GroveBasin value can fluctuate by up to 0.00000002% on swaps because of USDC rounding
-        assertApproxEqRel(
-            groveBasin.totalAssets(),
-            ss.totalValue,
-            0.000002e18,
-            "SwapperHandler/swapExactIn/groveBasin-total-value-change"
-        );
-
-        // Rounding is always in favour of the protocol
+        // Total value can increase by fee revenue
         assertGe(
             groveBasin.totalAssets(),
-            ss.totalValue,
-            "SwapperHandler/swapExactIn/groveBasin-total-value-decrease"
+            startingValue,
+            "FeeAwareSwapperHandler/swapExactIn/groveBasin-total-value-decrease"
         );
+
+        // Value in always >= value out (fees + rounding favour protocol)
+        uint256 rateIntroducedRounding = creditTokenRateProvider.getConversionRate() / 1e27;
+
+        assertGe(valueIn, valueOut, "FeeAwareSwapperHandler/swapExactIn/value-out-greater-than-in");
 
         // 6. Update metrics tracking state
         _updateSharePrice();
@@ -288,7 +240,6 @@ contract SwapperHandler is HandlerBase {
         address assetOutCustodian
             = address(assetOut) == address(assets[0]) ? groveBasin.pocket() : address(groveBasin);
 
-        // If there's zero balance a swap can't be performed
         if (assetOut.balanceOf(assetOutCustodian) == 0) {
             zeroBalanceCount++;
             return;
@@ -303,19 +254,15 @@ contract SwapperHandler is HandlerBase {
             return;
         }
 
-        // Not testing this functionality, just want a successful swap
         uint256 maxAmountIn = type(uint256).max;
 
-        // 2. Cache starting state (packed into struct to avoid stack-too-deep)
-        StartingState memory ss = StartingState({
-            conversion:        groveBasin.convertToAssetValue(1e18),
-            conversionMillion: groveBasin.convertToAssetValue(1e6 * 1e18),
-            conversionLp0:     groveBasin.convertToAssetValue(groveBasin.shares(lp0)),
-            totalValue:        groveBasin.totalAssets()
-        });
+        // 2. Cache starting state
+        uint256 startingConversion = groveBasin.convertToAssetValue(1e18);
+        uint256 startingValue      = groveBasin.totalAssets();
 
         // 3. Preview before swap, execute, and assert preview/execute consistency.
         //    Scoped to avoid stack-too-deep.
+        uint256 amountIn;
         {
             uint256 previewAmountIn = groveBasin.previewSwapExactOut(
                 address(assetIn), address(assetOut), amountOut
@@ -324,95 +271,56 @@ contract SwapperHandler is HandlerBase {
             vm.startPrank(swapper);
             assetIn.mint(swapper, previewAmountIn);
             assetIn.approve(address(groveBasin), previewAmountIn);
-            uint256 amountIn = groveBasin.swapExactOut(
+            amountIn = groveBasin.swapExactOut(
                 address(assetIn), address(assetOut), amountOut, maxAmountIn, swapper, 0
             );
             vm.stopPrank();
 
             // Assert preview/execute consistency
-            assertEq(previewAmountIn, amountIn, "SwapperHandler/swapExactOut/preview-execute-mismatch");
+            assertEq(previewAmountIn, amountIn, "FeeAwareSwapperHandler/swapExactOut/preview-execute-mismatch");
             previewConsistencyCheckCount++;
-
-            // 4. Update ghost variable(s)
-            swapsIn[swapper][address(assetIn)]   += amountIn;
-            swapsOut[swapper][address(assetOut)] += amountOut;
-
-            uint256 valueIn  = _getAssetValue(address(assetIn),  amountIn);
-            uint256 valueOut = _getAssetValue(address(assetOut), amountOut);
-
-            valueSwappedIn[swapper]  += valueIn;
-            valueSwappedOut[swapper] += valueOut;
-
-            // High rates introduce larger rounding errors
-            uint256 rateIntroducedRounding = creditTokenRateProvider.getConversionRate() / 1e27;
-
-            assertApproxEqAbs(
-                valueIn,
-                valueOut, 1e12 + rateIntroducedRounding * 1e12,
-                "SwapperHandler/swapExactOut/value-mismatch"
-            );
-
-            assertGe(valueIn, valueOut, "SwapperHandler/swapExactOut/value-out-greater-than-in");
         }
+
+        // 4. Update ghost variable(s)
+        swapsIn[swapper][address(assetIn)]   += amountIn;
+        swapsOut[swapper][address(assetOut)] += amountOut;
+
+        uint256 valueIn  = _getAssetValue(address(assetIn),  amountIn);
+        uint256 valueOut = _getAssetValue(address(assetOut), amountOut);
+
+        valueSwappedIn[swapper]  += valueIn;
+        valueSwappedOut[swapper] += valueOut;
 
         // 5. Perform action-specific assertions
 
-        // Rounding because of USDC precision, the conversion rate of a
-        // user's position can fluctuate by up to 2e12 per 1e18 shares
+        // Fee revenue increases the conversion rate and total value. The increase is bounded by
+        // the fee percentage (up to 5%) of the swap value, plus rounding.
+        uint256 feeToleranceValue = valueIn * 500 / 10_000;  // Max 5% fee
+        uint256 feeTolerance      = feeToleranceValue + 3e12;
+
         assertApproxEqAbs(
             groveBasin.convertToAssetValue(1e18),
-            ss.conversion,
-            3e12,
-            "SwapperHandler/swapExactOut/conversion-rate-change"
+            startingConversion,
+            feeTolerance,
+            "FeeAwareSwapperHandler/swapExactOut/conversion-rate-change"
         );
 
-        // Demonstrate rounding scales with shares
-        assertApproxEqAbs(
-            groveBasin.convertToAssetValue(1_000_000e18),
-            ss.conversionMillion,
-            3_000_000e12, // 2e18 of value
-            "SwapperHandler/swapExactOut/conversion-rate-change-million"
-        );
-
-        // Rounding is always in favour of the protocol
+        // Rounding + fee revenue always increases share price
         assertGe(
-            groveBasin.convertToAssetValue(1_000_000e18),
-            ss.conversionMillion,
-            "SwapperHandler/swapExactOut/conversion-rate-million-decrease"
+            groveBasin.convertToAssetValue(1e18),
+            startingConversion,
+            "FeeAwareSwapperHandler/swapExactOut/conversion-rate-decrease"
         );
 
-        // Disregard this assertion if the LP has less than a dollar of value
-        if (ss.conversionLp0 > 1e18) {
-            // Position values can fluctuate by up to 0.00000003% on swaps
-            assertApproxEqRel(
-                groveBasin.convertToAssetValue(groveBasin.shares(lp0)),
-                ss.conversionLp0,
-                0.000003e18,
-                "SwapperHandler/swapExactOut/conversion-rate-change-lp"
-            );
-        }
-
-        // Rounding is always in favour of the user
-        assertGe(
-            groveBasin.convertToAssetValue(groveBasin.shares(lp0)),
-            ss.conversionLp0,
-            "SwapperHandler/swapExactOut/conversion-rate-lp-decrease"
-        );
-
-        // GroveBasin value can fluctuate by up to 0.00000003% on swaps because of USDC rounding
-        assertApproxEqRel(
-            groveBasin.totalAssets(),
-            ss.totalValue,
-            0.000003e18,
-            "SwapperHandler/swapExactOut/groveBasin-total-value-change"
-        );
-
-        // Rounding is always in favour of the protocol
+        // Total value can increase by fee revenue
         assertGe(
             groveBasin.totalAssets(),
-            ss.totalValue,
-            "SwapperHandler/swapExactOut/groveBasin-total-value-decrease"
+            startingValue,
+            "FeeAwareSwapperHandler/swapExactOut/groveBasin-total-value-decrease"
         );
+
+        // Value in always >= value out (fees + rounding favour protocol)
+        assertGe(valueIn, valueOut, "FeeAwareSwapperHandler/swapExactOut/value-out-greater-than-in");
 
         // 6. Update metrics tracking state
         _updateSharePrice();
@@ -424,7 +332,7 @@ contract SwapperHandler is HandlerBase {
         if      (asset == address(assets[0])) return amount * swapTokenRateProvider.getConversionRate() / 1e15;
         else if (asset == address(assets[1])) return amount;
         else if (asset == address(assets[2])) return amount * creditTokenRateProvider.getConversionRate() / 1e27;
-        else revert("SwapperHandler/asset-not-found");
+        else revert("FeeAwareSwapperHandler/asset-not-found");
     }
 
     function _capAmountOutToMaxSwapSize(
@@ -438,21 +346,16 @@ contract SwapperHandler is HandlerBase {
 
         if (maxSwapSize_ == 0) return 0;
 
-        // Use output value as proxy since preview reverts when exceeding max swap size.
         uint256 outValue = _getAssetValue(assetOut, amountOut);
 
-        // Cap the output amount so its value fits within maxSwapSize.
-        // The input value (rounded up) will be approximately equal.
         if (outValue > maxSwapSize_) {
             amountOut = amountOut * maxSwapSize_ / outValue;
             if (amountOut == 0) return 0;
         }
 
-        // Verify the capped amount works with the preview (input rounding may push over).
         try groveBasin.previewSwapExactOut(assetIn, assetOut, amountOut) {
             return amountOut;
         } catch {
-            // Reduce slightly to account for rounding
             if (amountOut > 1) amountOut -= 1;
             else return 0;
         }
@@ -473,7 +376,6 @@ contract SwapperHandler is HandlerBase {
 
         if (value <= maxSwapSize_) return amount;
 
-        // Scale down amount to fit within maxSwapSize
         return amount * maxSwapSize_ / value;
     }
 

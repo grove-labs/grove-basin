@@ -68,6 +68,7 @@ contract TransferHandler is HandlerBase {
         );
 
         // 6. Update metrics tracking state
+        _updateSharePrice();
         transferCount += 1;
     }
 

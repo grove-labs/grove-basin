@@ -57,6 +57,7 @@ contract TimeBasedRateHandler is HandlerBase, StdCheats {
         );
 
         // 5. Update metrics tracking state
+        _updateSharePrice();
         setRateDataCount++;
     }
 
@@ -85,6 +86,7 @@ contract TimeBasedRateHandler is HandlerBase, StdCheats {
         );
 
         // 5. Update metrics tracking state
+        _updateSharePrice();
         warpCount++;
     }
 

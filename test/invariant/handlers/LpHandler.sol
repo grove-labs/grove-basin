@@ -93,6 +93,7 @@ contract LpHandler is HandlerBase {
         );
 
         // 6. Update metrics tracking state
+        _updateSharePrice();
         depositCount++;
     }
 
@@ -139,6 +140,7 @@ contract LpHandler is HandlerBase {
         );
 
         // 6. Update metrics tracking state
+        _updateSharePrice();
         withdrawCount++;
     }
 

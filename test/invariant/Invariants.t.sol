@@ -45,6 +45,36 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
     /*** Invariant assertion functions                                                          ***/
     /**********************************************************************************************/
 
+    function _checkInvariant_PreviewExecuteConsistency() public view {
+        // Every successful swap should have a corresponding preview consistency check.
+        // The counter equals the swap count because each swap asserts preview == execution.
+        assertEq(
+            swapperHandler.previewConsistencyCheckCount(),
+            swapperHandler.swapCount(),
+            "invariant_previewExecuteConsistency: consistency check count != swap count"
+        );
+    }
+
+    function _checkInvariant_SharePriceMonotonicity() public view {
+        uint256 currentSharePrice = groveBasin.convertToAssetValue(1e18);
+
+        // Check against all handlers that have been initialized
+        assertGe(currentSharePrice, lpHandler.lastSharePrice());
+        assertGe(currentSharePrice, swapperHandler.lastSharePrice());
+
+        if (address(rateSetterHandler) != address(0)) {
+            assertGe(currentSharePrice, rateSetterHandler.lastSharePrice());
+        }
+
+        if (address(transferHandler) != address(0)) {
+            assertGe(currentSharePrice, transferHandler.lastSharePrice());
+        }
+
+        if (address(timeBasedRateHandler) != address(0)) {
+            assertGe(currentSharePrice, timeBasedRateHandler.lastSharePrice());
+        }
+    }
+
     function _checkInvariant_A() public view {
         uint256 lpShares = 1e18;  // Seed amount
 
@@ -377,6 +407,14 @@ contract GroveBasinInvariants_ConstantRate_NoTransfer is GroveBasinInvariantTest
         assertEq(swapperHandler.lp0(), lpHandler.lps(0));
     }
 
+    function invariant_previewExecuteConsistency() public view {
+        _checkInvariant_PreviewExecuteConsistency();
+    }
+
+    function invariant_sharePriceMonotonicity() public view {
+        _checkInvariant_SharePriceMonotonicity();
+    }
+
     function invariant_A() public view {
         _checkInvariant_A();
     }
@@ -419,6 +457,14 @@ contract GroveBasinInvariants_ConstantRate_WithTransfers is GroveBasinInvariantT
         targetContract(address(lpHandler));
         targetContract(address(swapperHandler));
         targetContract(address(transferHandler));
+    }
+
+    function invariant_previewExecuteConsistency() public view {
+        _checkInvariant_PreviewExecuteConsistency();
+    }
+
+    function invariant_sharePriceMonotonicity() public view {
+        _checkInvariant_SharePriceMonotonicity();
     }
 
     function invariant_A() public view {
@@ -467,6 +513,14 @@ contract GroveBasinInvariants_RateSetting_NoTransfer is GroveBasinInvariantTestB
         assertEq(swapperHandler.lp0(), lpHandler.lps(0));
     }
 
+    function invariant_previewExecuteConsistency() public view {
+        _checkInvariant_PreviewExecuteConsistency();
+    }
+
+    function invariant_sharePriceMonotonicity() public view {
+        _checkInvariant_SharePriceMonotonicity();
+    }
+
     function invariant_A() public view {
         _checkInvariant_A();
     }
@@ -513,6 +567,14 @@ contract GroveBasinInvariants_RateSetting_WithTransfers is GroveBasinInvariantTe
 
         // Check that LPs used for swap assertions are correct to not get zero values
         assertEq(swapperHandler.lp0(), lpHandler.lps(0));
+    }
+
+    function invariant_previewExecuteConsistency() public view {
+        _checkInvariant_PreviewExecuteConsistency();
+    }
+
+    function invariant_sharePriceMonotonicity() public view {
+        _checkInvariant_SharePriceMonotonicity();
     }
 
     function invariant_A() public view {
@@ -598,6 +660,14 @@ contract GroveBasinInvariants_TimeBasedRateSetting_NoTransfer is GroveBasinInvar
 
         // Check that LPs used for swap assertions are correct to not get zero values
         assertEq(swapperHandler.lp0(), lpHandler.lps(0));
+    }
+
+    function invariant_previewExecuteConsistency() public view {
+        _checkInvariant_PreviewExecuteConsistency();
+    }
+
+    function invariant_sharePriceMonotonicity() public view {
+        _checkInvariant_SharePriceMonotonicity();
     }
 
     function invariant_A() public view {
@@ -692,6 +762,14 @@ contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinIn
 
         // Check that LPs used for swap assertions are correct to not get zero values
         assertEq(swapperHandler.lp0(), lpHandler.lps(0));
+    }
+
+    function invariant_previewExecuteConsistency() public view {
+        _checkInvariant_PreviewExecuteConsistency();
+    }
+
+    function invariant_sharePriceMonotonicity() public view {
+        _checkInvariant_SharePriceMonotonicity();
     }
 
     function invariant_A() public view {

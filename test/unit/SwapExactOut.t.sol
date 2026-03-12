@@ -217,8 +217,10 @@ contract GroveBasinSwapExactOutCollateralTokenAssetInTests is GroveBasinSwapExac
     ) public {
         vm.assume(fuzzSwapper  != address(groveBasin));
         vm.assume(fuzzSwapper  != address(pocket));
+        vm.assume(fuzzSwapper  != address(psm));
         vm.assume(fuzzReceiver != address(groveBasin));
         vm.assume(fuzzReceiver != address(pocket));
+        vm.assume(fuzzReceiver != address(psm));
         vm.assume(fuzzReceiver != address(0));
 
         amountOut      = _bound(amountOut,      1,       COLLATERAL_TOKEN_MAX);
@@ -261,8 +263,10 @@ contract GroveBasinSwapExactOutSwapTokenAssetInTests is GroveBasinSwapExactOutSu
     ) public {
         vm.assume(fuzzSwapper  != address(groveBasin));
         vm.assume(fuzzSwapper  != address(pocket));
+        vm.assume(fuzzSwapper  != address(psm));
         vm.assume(fuzzReceiver != address(groveBasin));
         vm.assume(fuzzReceiver != address(pocket));
+        vm.assume(fuzzReceiver != address(psm));
         vm.assume(fuzzReceiver != address(0));
 
         amountOut      = _bound(amountOut,      1,       CREDIT_TOKEN_MAX);
@@ -309,8 +313,10 @@ contract GroveBasinSwapExactOutCreditTokenAssetInTests is GroveBasinSwapExactOut
     ) public {
         vm.assume(fuzzSwapper  != address(groveBasin));
         vm.assume(fuzzSwapper  != address(pocket));
+        vm.assume(fuzzSwapper  != address(psm));
         vm.assume(fuzzReceiver != address(groveBasin));
         vm.assume(fuzzReceiver != address(pocket));
+        vm.assume(fuzzReceiver != address(psm));
         vm.assume(fuzzReceiver != address(0));
 
         amountOut      = _bound(amountOut,      1,       COLLATERAL_TOKEN_MAX);
@@ -337,8 +343,10 @@ contract GroveBasinSwapExactOutCreditTokenAssetInTests is GroveBasinSwapExactOut
     ) public {
         vm.assume(fuzzSwapper  != address(groveBasin));
         vm.assume(fuzzSwapper  != address(pocket));
+        vm.assume(fuzzSwapper  != address(psm));
         vm.assume(fuzzReceiver != address(groveBasin));
         vm.assume(fuzzReceiver != address(pocket));
+        vm.assume(fuzzReceiver != address(psm));
         vm.assume(fuzzReceiver != address(0));
 
         amountOut      = _bound(amountOut,      1,       SWAP_TOKEN_MAX);

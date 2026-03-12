@@ -13,8 +13,14 @@ contract HandlerBase is CommonBase, StdCheatsSafe, StdUtils {
 
     GroveBasin public groveBasin;
 
+    uint256 public lastSharePrice;
+
     constructor(GroveBasin groveBasin_) {
         groveBasin = groveBasin_;
+    }
+
+    function _updateSharePrice() internal {
+        lastSharePrice = groveBasin.convertToAssetValue(1e18);
     }
 
     function _hash(uint256 number_, string memory salt) internal pure returns (uint256 hash_) {

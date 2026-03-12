@@ -61,6 +61,8 @@ contract OwnerHandler is HandlerBase {
             startingConversion,
             "OwnerHandler/starting-conversion"
         );
+
+        _updateSharePrice();
     }
 
 }

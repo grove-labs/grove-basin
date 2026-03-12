@@ -142,7 +142,7 @@ contract GroveBasinHarnessTests is GroveBasinTestBase {
     }
 
     function testFuzz_getCreditTokenValue_roundDown(uint256 conversionRate, uint256 amount) public {
-        conversionRate = _bound(conversionRate, 0, 1000e27);
+        conversionRate = _bound(conversionRate, 1, 1000e27);
         amount         = _bound(amount,         0, CREDIT_TOKEN_MAX);
 
         mockCreditTokenRateProvider.__setConversionRate(conversionRate);
