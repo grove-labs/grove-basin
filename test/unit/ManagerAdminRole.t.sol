@@ -343,6 +343,98 @@ contract GroveBasinManagerAdminRoleTests is GroveBasinTestBase {
     }
 
     /**********************************************************************************************/
+    /*** MANAGER_ADMIN_ROLE can grant/revoke REDEEMER_ROLE                                      ***/
+    /**********************************************************************************************/
+
+    function test_managerAdmin_grantRedeemerRole() public {
+        bytes32 redeemerRole = groveBasin.REDEEMER_ROLE();
+        address redeemer = makeAddr("redeemer");
+
+        vm.prank(managerAdmin);
+        groveBasin.grantRole(redeemerRole, redeemer);
+
+        assertTrue(groveBasin.hasRole(redeemerRole, redeemer));
+    }
+
+    function test_managerAdmin_revokeRedeemerRole() public {
+        bytes32 redeemerRole = groveBasin.REDEEMER_ROLE();
+        address redeemer = makeAddr("redeemer");
+
+        vm.prank(managerAdmin);
+        groveBasin.grantRole(redeemerRole, redeemer);
+
+        vm.prank(managerAdmin);
+        groveBasin.revokeRole(redeemerRole, redeemer);
+
+        assertFalse(groveBasin.hasRole(redeemerRole, redeemer));
+    }
+
+    function test_managerAdmin_redeemerRoleAdmin() public {
+        assertEq(groveBasin.getRoleAdmin(groveBasin.REDEEMER_ROLE()), managerAdminRole);
+    }
+
+    function test_unauthorized_cannotGrantRedeemerRole() public {
+        bytes32 redeemerRole = groveBasin.REDEEMER_ROLE();
+        address redeemer = makeAddr("redeemer");
+
+        vm.prank(manager);
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                manager,
+                managerAdminRole
+            )
+        );
+        groveBasin.grantRole(redeemerRole, redeemer);
+    }
+
+    /**********************************************************************************************/
+    /*** MANAGER_ADMIN_ROLE can grant/revoke REDEEMER_CONTRACT_ROLE                             ***/
+    /**********************************************************************************************/
+
+    function test_managerAdmin_grantRedeemerContractRole() public {
+        bytes32 redeemerContractRole = groveBasin.REDEEMER_CONTRACT_ROLE();
+        address redeemerContract = makeAddr("redeemerContract");
+
+        vm.prank(managerAdmin);
+        groveBasin.grantRole(redeemerContractRole, redeemerContract);
+
+        assertTrue(groveBasin.hasRole(redeemerContractRole, redeemerContract));
+    }
+
+    function test_managerAdmin_revokeRedeemerContractRole() public {
+        bytes32 redeemerContractRole = groveBasin.REDEEMER_CONTRACT_ROLE();
+        address redeemerContract = makeAddr("redeemerContract");
+
+        vm.prank(managerAdmin);
+        groveBasin.grantRole(redeemerContractRole, redeemerContract);
+
+        vm.prank(managerAdmin);
+        groveBasin.revokeRole(redeemerContractRole, redeemerContract);
+
+        assertFalse(groveBasin.hasRole(redeemerContractRole, redeemerContract));
+    }
+
+    function test_managerAdmin_redeemerContractRoleAdmin() public {
+        assertEq(groveBasin.getRoleAdmin(groveBasin.REDEEMER_CONTRACT_ROLE()), managerAdminRole);
+    }
+
+    function test_unauthorized_cannotGrantRedeemerContractRole() public {
+        bytes32 redeemerContractRole = groveBasin.REDEEMER_CONTRACT_ROLE();
+        address redeemerContract = makeAddr("redeemerContract");
+
+        vm.prank(manager);
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                manager,
+                managerAdminRole
+            )
+        );
+        groveBasin.grantRole(redeemerContractRole, redeemerContract);
+    }
+
+    /**********************************************************************************************/
     /*** End-to-end: MANAGER_ADMIN_ROLE grants MANAGER_ROLE, manager sets fees                  ***/
     /**********************************************************************************************/
 
