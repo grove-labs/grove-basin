@@ -75,15 +75,15 @@ contract GroveBasin is IGroveBasin, AccessControl {
         require(collateralTokenRateProvider_ != address(0), "GroveBasin/invalid-collateralTokenRateProvider");
         require(creditTokenRateProvider_     != address(0), "GroveBasin/invalid-creditTokenRateProvider");
 
-        require(swapToken_ != collateralToken_, "GroveBasin/swapToken-collateralToken-same");
-        require(swapToken_ != creditToken_,     "GroveBasin/swapToken-creditToken-same");
-        require(collateralToken_ != creditToken_,    "GroveBasin/collateralToken-creditToken-same");
+        require(swapToken_ != collateralToken_,   "GroveBasin/swapToken-collateralToken-same");
+        require(swapToken_ != creditToken_,       "GroveBasin/swapToken-creditToken-same");
+        require(collateralToken_ != creditToken_, "GroveBasin/collateralToken-creditToken-same");
 
-        swapToken  = IERC20(swapToken_);
+        swapToken       = IERC20(swapToken_);
         collateralToken = IERC20(collateralToken_);
         creditToken     = IERC20(creditToken_);
 
-        swapTokenRateProvider  = swapTokenRateProvider_;
+        swapTokenRateProvider       = swapTokenRateProvider_;
         collateralTokenRateProvider = collateralTokenRateProvider_;
         creditTokenRateProvider     = creditTokenRateProvider_;
         pocket                      = address(this);
@@ -112,15 +112,15 @@ contract GroveBasin is IGroveBasin, AccessControl {
         maxStalenessThreshold = 12 hours;
         stalenessThreshold    = minStalenessThreshold;
 
-        _grantRole(OWNER_ROLE, owner_);
+        _grantRole(OWNER_ROLE,              owner_);
         _grantRole(LIQUIDITY_PROVIDER_ROLE, msg.sender);
         _setRoleAdmin(MANAGER_ROLE, MANAGER_ADMIN_ROLE);
         _setRoleAdmin(LIQUIDITY_PROVIDER_ROLE, MANAGER_ADMIN_ROLE);
         _setRoleAdmin(REDEEMER_CONTRACT_ROLE, MANAGER_ADMIN_ROLE);
-        _setRoleAdmin(REDEEMER_ROLE, MANAGER_ADMIN_ROLE);
+        _setRoleAdmin(REDEEMER_ROLE,          MANAGER_ADMIN_ROLE);
 
         // Necessary to ensure rounding works as expected
-        require(_swapTokenPrecision  <= 1e18, "GroveBasin/swapToken-precision-too-high");
+        require(_swapTokenPrecision  <= 1e18,      "GroveBasin/swapToken-precision-too-high");
         require(_collateralTokenPrecision <= 1e18, "GroveBasin/collateralToken-precision-too-high");
     }
 
