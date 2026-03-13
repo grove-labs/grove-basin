@@ -76,20 +76,12 @@ contract GroveBasinSetFeeBoundsSuccessTests is GroveBasinTestBase {
 
     function test_setFeeBounds_sameMinMax() public {
         // First set bounds wide, set fees, then tighten
-        address lp = makeAddr("lp");
-
         vm.startPrank(owner);
         groveBasin.setFeeBounds(0, 500);
-        groveBasin.grantRole(lpRole, lp);
-        vm.stopPrank();
-
-        vm.startPrank(lp);
         groveBasin.setPurchaseFee(100);
         groveBasin.setRedemptionFee(100);
-        vm.stopPrank();
-
-        vm.prank(owner);
         groveBasin.setFeeBounds(100, 100);
+        vm.stopPrank();
 
         assertEq(groveBasin.minFee(), 100);
         assertEq(groveBasin.maxFee(), 100);
@@ -119,14 +111,8 @@ contract GroveBasinSetFeeBoundsSuccessTests is GroveBasinTestBase {
     }
 
     function test_setFeeBounds_tightenBoundsAroundFees() public {
-        address lp = makeAddr("lp");
-
         vm.startPrank(owner);
         groveBasin.setFeeBounds(0, 500);
-        groveBasin.grantRole(lpRole, lp);
-        vm.stopPrank();
-
-        vm.startPrank(lp);
         groveBasin.setPurchaseFee(200);
         groveBasin.setRedemptionFee(300);
         vm.stopPrank();
@@ -141,88 +127,52 @@ contract GroveBasinSetFeeBoundsSuccessTests is GroveBasinTestBase {
     }
 
     function test_setFeeBounds_clampsPurchaseFeeToMin() public {
-        address lp = makeAddr("lp");
-
         vm.startPrank(owner);
         groveBasin.setFeeBounds(0, 500);
-        groveBasin.grantRole(lpRole, lp);
-        vm.stopPrank();
-
-        vm.prank(lp);
         groveBasin.setPurchaseFee(200);
-
-        vm.prank(owner);
         groveBasin.setFeeBounds(300, 500);
+        vm.stopPrank();
 
         assertEq(groveBasin.purchaseFee(), 300);
     }
 
     function test_setFeeBounds_clampsPurchaseFeeToMax() public {
-        address lp = makeAddr("lp");
-
         vm.startPrank(owner);
         groveBasin.setFeeBounds(0, 500);
-        groveBasin.grantRole(lpRole, lp);
-        vm.stopPrank();
-
-        vm.prank(lp);
         groveBasin.setPurchaseFee(400);
-
-        vm.prank(owner);
         groveBasin.setFeeBounds(0, 300);
+        vm.stopPrank();
 
         assertEq(groveBasin.purchaseFee(), 300);
     }
 
     function test_setFeeBounds_clampsRedemptionFeeToMin() public {
-        address lp = makeAddr("lp");
-
         vm.startPrank(owner);
         groveBasin.setFeeBounds(0, 500);
-        groveBasin.grantRole(lpRole, lp);
-        vm.stopPrank();
-
-        vm.prank(lp);
         groveBasin.setRedemptionFee(100);
-
-        vm.prank(owner);
         groveBasin.setFeeBounds(200, 500);
+        vm.stopPrank();
 
         assertEq(groveBasin.redemptionFee(), 200);
     }
 
     function test_setFeeBounds_clampsRedemptionFeeToMax() public {
-        address lp = makeAddr("lp");
-
         vm.startPrank(owner);
         groveBasin.setFeeBounds(0, 500);
-        groveBasin.grantRole(lpRole, lp);
-        vm.stopPrank();
-
-        vm.prank(lp);
         groveBasin.setRedemptionFee(400);
-
-        vm.prank(owner);
         groveBasin.setFeeBounds(0, 300);
+        vm.stopPrank();
 
         assertEq(groveBasin.redemptionFee(), 300);
     }
 
     function test_setFeeBounds_clampsBothFees() public {
-        address lp = makeAddr("lp");
-
         vm.startPrank(owner);
         groveBasin.setFeeBounds(0, 500);
-        groveBasin.grantRole(lpRole, lp);
-        vm.stopPrank();
-
-        vm.startPrank(lp);
         groveBasin.setPurchaseFee(100);
         groveBasin.setRedemptionFee(400);
-        vm.stopPrank();
-
-        vm.prank(owner);
         groveBasin.setFeeBounds(200, 300);
+        vm.stopPrank();
 
         assertEq(groveBasin.purchaseFee(),   200);
         assertEq(groveBasin.redemptionFee(), 300);
@@ -236,59 +186,59 @@ contract GroveBasinSetFeeBoundsSuccessTests is GroveBasinTestBase {
 
 contract GroveBasinSetPurchaseFeeFailureTests is GroveBasinTestBase {
 
-    address lp = makeAddr("lp");
-    bytes32 lpRole;
+    bytes32 ownerRole;
 
     function setUp() public override {
         super.setUp();
-        lpRole = groveBasin.MANAGER_ROLE();
+        ownerRole = groveBasin.OWNER_ROLE();
 
-        vm.startPrank(owner);
+        vm.prank(owner);
         groveBasin.setFeeBounds(0, 500);
-        groveBasin.grantRole(lpRole, lp);
-        vm.stopPrank();
     }
 
-    function test_setPurchaseFee_notLp() public {
+    function test_setPurchaseFee_notOwner() public {
         vm.expectRevert(
             abi.encodeWithSignature(
                 "AccessControlUnauthorizedAccount(address,bytes32)",
                 address(this),
-                lpRole
+                ownerRole
             )
         );
         groveBasin.setPurchaseFee(100);
     }
 
-    function test_setPurchaseFee_adminCannotSet() public {
-        address admin = makeAddr("admin");
-        vm.prank(admin);
+    function test_setPurchaseFee_managerCannotSet() public {
+        address manager = makeAddr("manager");
+        bytes32 managerRole = groveBasin.MANAGER_ROLE();
+
+        vm.prank(owner);
+        groveBasin.grantRole(managerRole, manager);
+
+        vm.prank(manager);
         vm.expectRevert(
             abi.encodeWithSignature(
                 "AccessControlUnauthorizedAccount(address,bytes32)",
-                admin,
-                lpRole
+                manager,
+                ownerRole
             )
         );
         groveBasin.setPurchaseFee(100);
     }
 
     function test_setPurchaseFee_aboveMax() public {
-        vm.prank(lp);
+        vm.prank(owner);
         vm.expectRevert("GroveBasin/purchase-fee-out-of-bounds");
         groveBasin.setPurchaseFee(501);
     }
 
     function test_setPurchaseFee_belowMin() public {
-        vm.startPrank(lp);
+        vm.startPrank(owner);
         groveBasin.setPurchaseFee(50);
         groveBasin.setRedemptionFee(50);
+        groveBasin.setFeeBounds(50, 500);
         vm.stopPrank();
 
         vm.prank(owner);
-        groveBasin.setFeeBounds(50, 500);
-
-        vm.prank(lp);
         vm.expectRevert("GroveBasin/purchase-fee-out-of-bounds");
         groveBasin.setPurchaseFee(49);
     }
@@ -299,22 +249,17 @@ contract GroveBasinSetPurchaseFeeSuccessTests is GroveBasinTestBase {
 
     event PurchaseFeeSet(uint256 oldPurchaseFee, uint256 newPurchaseFee);
 
-    address lp = makeAddr("lp");
-
     function setUp() public override {
         super.setUp();
-        bytes32 lpRole = groveBasin.MANAGER_ROLE();
 
-        vm.startPrank(owner);
+        vm.prank(owner);
         groveBasin.setFeeBounds(0, 500);
-        groveBasin.grantRole(lpRole, lp);
-        vm.stopPrank();
     }
 
     function test_setPurchaseFee() public {
         assertEq(groveBasin.purchaseFee(), 0);
 
-        vm.prank(lp);
+        vm.prank(owner);
         vm.expectEmit(address(groveBasin));
         emit PurchaseFeeSet(0, 100);
         groveBasin.setPurchaseFee(100);
@@ -323,10 +268,10 @@ contract GroveBasinSetPurchaseFeeSuccessTests is GroveBasinTestBase {
     }
 
     function test_setPurchaseFee_toZero() public {
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setPurchaseFee(100);
 
-        vm.prank(lp);
+        vm.prank(owner);
         vm.expectEmit(address(groveBasin));
         emit PurchaseFeeSet(100, 0);
         groveBasin.setPurchaseFee(0);
@@ -335,7 +280,7 @@ contract GroveBasinSetPurchaseFeeSuccessTests is GroveBasinTestBase {
     }
 
     function test_setPurchaseFee_toMax() public {
-        vm.prank(lp);
+        vm.prank(owner);
         vm.expectEmit(address(groveBasin));
         emit PurchaseFeeSet(0, 500);
         groveBasin.setPurchaseFee(500);
@@ -344,19 +289,17 @@ contract GroveBasinSetPurchaseFeeSuccessTests is GroveBasinTestBase {
     }
 
     function test_setPurchaseFee_atBoundaries() public {
-        vm.startPrank(lp);
+        vm.startPrank(owner);
         groveBasin.setPurchaseFee(50);
         groveBasin.setRedemptionFee(50);
+        groveBasin.setFeeBounds(50, 500);
         vm.stopPrank();
 
         vm.prank(owner);
-        groveBasin.setFeeBounds(50, 500);
-
-        vm.prank(lp);
         groveBasin.setPurchaseFee(50);
         assertEq(groveBasin.purchaseFee(), 50);
 
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setPurchaseFee(500);
         assertEq(groveBasin.purchaseFee(), 500);
     }
@@ -369,46 +312,41 @@ contract GroveBasinSetPurchaseFeeSuccessTests is GroveBasinTestBase {
 
 contract GroveBasinSetRedemptionFeeFailureTests is GroveBasinTestBase {
 
-    address lp = makeAddr("lp");
-    bytes32 lpRole;
+    bytes32 ownerRole;
 
     function setUp() public override {
         super.setUp();
-        lpRole = groveBasin.MANAGER_ROLE();
+        ownerRole = groveBasin.OWNER_ROLE();
 
-        vm.startPrank(owner);
+        vm.prank(owner);
         groveBasin.setFeeBounds(0, 500);
-        groveBasin.grantRole(lpRole, lp);
-        vm.stopPrank();
     }
 
-    function test_setRedemptionFee_notLp() public {
+    function test_setRedemptionFee_notOwner() public {
         vm.expectRevert(
             abi.encodeWithSignature(
                 "AccessControlUnauthorizedAccount(address,bytes32)",
                 address(this),
-                lpRole
+                ownerRole
             )
         );
         groveBasin.setRedemptionFee(100);
     }
 
     function test_setRedemptionFee_aboveMax() public {
-        vm.prank(lp);
+        vm.prank(owner);
         vm.expectRevert("GroveBasin/redemption-fee-out-of-bounds");
         groveBasin.setRedemptionFee(501);
     }
 
     function test_setRedemptionFee_belowMin() public {
-        vm.startPrank(lp);
+        vm.startPrank(owner);
         groveBasin.setRedemptionFee(50);
         groveBasin.setPurchaseFee(50);
+        groveBasin.setFeeBounds(50, 500);
         vm.stopPrank();
 
         vm.prank(owner);
-        groveBasin.setFeeBounds(50, 500);
-
-        vm.prank(lp);
         vm.expectRevert("GroveBasin/redemption-fee-out-of-bounds");
         groveBasin.setRedemptionFee(49);
     }
@@ -419,22 +357,17 @@ contract GroveBasinSetRedemptionFeeSuccessTests is GroveBasinTestBase {
 
     event RedemptionFeeSet(uint256 oldRedemptionFee, uint256 newRedemptionFee);
 
-    address lp = makeAddr("lp");
-
     function setUp() public override {
         super.setUp();
-        bytes32 lpRole = groveBasin.MANAGER_ROLE();
 
-        vm.startPrank(owner);
+        vm.prank(owner);
         groveBasin.setFeeBounds(0, 500);
-        groveBasin.grantRole(lpRole, lp);
-        vm.stopPrank();
     }
 
     function test_setRedemptionFee() public {
         assertEq(groveBasin.redemptionFee(), 0);
 
-        vm.prank(lp);
+        vm.prank(owner);
         vm.expectEmit(address(groveBasin));
         emit RedemptionFeeSet(0, 100);
         groveBasin.setRedemptionFee(100);
@@ -443,7 +376,7 @@ contract GroveBasinSetRedemptionFeeSuccessTests is GroveBasinTestBase {
     }
 
     function test_setRedemptionFee_toMax() public {
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setRedemptionFee(500);
         assertEq(groveBasin.redemptionFee(), 500);
     }
@@ -456,16 +389,11 @@ contract GroveBasinSetRedemptionFeeSuccessTests is GroveBasinTestBase {
 
 contract GroveBasinFeeCalculationTests is GroveBasinTestBase {
 
-    address lp = makeAddr("lp");
-
     function setUp() public override {
         super.setUp();
-        bytes32 lpRole = groveBasin.MANAGER_ROLE();
 
-        vm.startPrank(owner);
+        vm.prank(owner);
         groveBasin.setFeeBounds(0, 500);
-        groveBasin.grantRole(lpRole, lp);
-        vm.stopPrank();
     }
 
     function test_calculatePurchaseFee_zeroFee() public view {
@@ -473,7 +401,7 @@ contract GroveBasinFeeCalculationTests is GroveBasinTestBase {
     }
 
     function test_calculatePurchaseFee_withFee() public {
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setPurchaseFee(100);  // 1%
 
         assertEq(groveBasin.calculatePurchaseFee(100e18, false), 1e18);
@@ -486,7 +414,7 @@ contract GroveBasinFeeCalculationTests is GroveBasinTestBase {
     }
 
     function test_calculateRedemptionFee_withFee() public {
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setRedemptionFee(50);  // 0.5%
 
         assertEq(groveBasin.calculateRedemptionFee(10_000e18, false), 50e18);
@@ -497,7 +425,7 @@ contract GroveBasinFeeCalculationTests is GroveBasinTestBase {
         fee    = _bound(fee, 0, 500);
         amount = _bound(amount, 0, 1e30);
 
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setPurchaseFee(fee);
 
         assertEq(groveBasin.calculatePurchaseFee(amount, false), amount * fee / 10_000);
@@ -507,14 +435,14 @@ contract GroveBasinFeeCalculationTests is GroveBasinTestBase {
         fee    = _bound(fee, 0, 500);
         amount = _bound(amount, 0, 1e30);
 
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setRedemptionFee(fee);
 
         assertEq(groveBasin.calculateRedemptionFee(amount, false), amount * fee / 10_000);
     }
 
     function test_calculatePurchaseFee_roundUp() public {
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setPurchaseFee(100);  // 1%
 
         assertEq(groveBasin.calculatePurchaseFee(100e18, true), 1e18);
@@ -525,7 +453,7 @@ contract GroveBasinFeeCalculationTests is GroveBasinTestBase {
     }
 
     function test_calculateRedemptionFee_roundUp() public {
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setRedemptionFee(50);  // 0.5%
 
         assertEq(groveBasin.calculateRedemptionFee(10_000e18, true), 50e18);
@@ -539,7 +467,7 @@ contract GroveBasinFeeCalculationTests is GroveBasinTestBase {
         fee    = _bound(fee, 0, 500);
         amount = _bound(amount, 0, 1e30);
 
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setPurchaseFee(fee);
 
         uint256 expected = fee == 0 ? 0 : Math.ceilDiv(amount * fee, 10_000);
@@ -550,7 +478,7 @@ contract GroveBasinFeeCalculationTests is GroveBasinTestBase {
         fee    = _bound(fee, 0, 500);
         amount = _bound(amount, 0, 1e30);
 
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setRedemptionFee(fee);
 
         uint256 expected = fee == 0 ? 0 : Math.ceilDiv(amount * fee, 10_000);
@@ -565,17 +493,13 @@ contract GroveBasinFeeCalculationTests is GroveBasinTestBase {
 
 contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
 
-    address lp      = makeAddr("lp");
     address swapper = makeAddr("swapper");
 
     function setUp() public override {
         super.setUp();
-        bytes32 lpRole = groveBasin.MANAGER_ROLE();
 
-        vm.startPrank(owner);
+        vm.prank(owner);
         groveBasin.setFeeBounds(0, 500);
-        groveBasin.grantRole(lpRole, lp);
-        vm.stopPrank();
 
         swapToken.mint(pocket, 1_000_000e6);
         collateralToken.mint(address(groveBasin), 1_000_000e18);
@@ -585,7 +509,7 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
     // --- Purchase fee (swap/collateral -> credit) ---
 
     function test_previewSwapExactIn_purchaseFee_swapToCreditToken() public {
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setPurchaseFee(100);  // 1%
 
         // Without fee: 100 USDC -> 80 credit (rate 1.25)
@@ -595,7 +519,7 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
     }
 
     function test_previewSwapExactIn_purchaseFee_collateralToCreditToken() public {
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setPurchaseFee(100);  // 1%
 
         // Without fee: 100 collateral -> 80 credit
@@ -605,7 +529,7 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
     }
 
     function test_previewSwapExactOut_purchaseFee_swapToCreditToken() public {
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setPurchaseFee(100);  // 1%
 
         // Without fee: 80 credit needs 100 USDC
@@ -617,7 +541,7 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
     // --- Redemption fee (credit -> swap/collateral) ---
 
     function test_previewSwapExactIn_redemptionFee_creditTokenToSwap() public {
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setRedemptionFee(100);  // 1%
 
         // Without fee: 100 credit -> 125 USDC
@@ -627,7 +551,7 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
     }
 
     function test_previewSwapExactIn_redemptionFee_creditTokenToCollateral() public {
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setRedemptionFee(100);  // 1%
 
         // Without fee: 100 credit -> 125 collateral
@@ -637,7 +561,7 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
     }
 
     function test_previewSwapExactOut_redemptionFee_creditTokenToSwap() public {
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setRedemptionFee(100);  // 1%
 
         // Without fee: 125 USDC needs 100 credit
@@ -661,7 +585,7 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
     // --- Full swap execution with fees ---
 
     function test_swapExactIn_withPurchaseFee() public {
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setPurchaseFee(100);  // 1%
 
         uint256 amountIn = 100e6;
@@ -679,7 +603,7 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
     }
 
     function test_swapExactIn_withRedemptionFee() public {
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setRedemptionFee(100);  // 1%
 
         uint256 amountIn = 100e18;
@@ -697,7 +621,7 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
     }
 
     function test_swapExactOut_withPurchaseFee() public {
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setPurchaseFee(100);  // 1%
 
         uint256 expectedAmountIn = groveBasin.previewSwapExactOut(
@@ -718,7 +642,7 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
     }
 
     function test_swapExactOut_withRedemptionFee() public {
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setRedemptionFee(100);  // 1%
 
         uint256 expectedAmountIn = groveBasin.previewSwapExactOut(
@@ -745,7 +669,7 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
 
         uint256 totalAssetsBefore = groveBasin.totalAssets();
 
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setPurchaseFee(100);  // 1%
 
         swapToken.mint(swapper, 100e6);
@@ -761,7 +685,7 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
     // --- Purchase fee doesn't affect redemptions and vice versa ---
 
     function test_purchaseFee_doesNotAffectRedemption() public {
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setPurchaseFee(500);  // 5%
 
         uint256 amountOut = groveBasin.previewSwapExactIn(address(creditToken), address(swapToken), 100e18);
@@ -769,7 +693,7 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
     }
 
     function test_redemptionFee_doesNotAffectPurchase() public {
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setRedemptionFee(500);  // 5%
 
         uint256 amountOut = groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), 100e6);
@@ -779,7 +703,7 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
     // --- Both fees active simultaneously ---
 
     function test_bothFeesActive() public {
-        vm.startPrank(lp);
+        vm.startPrank(owner);
         groveBasin.setPurchaseFee(100);    // 1%
         groveBasin.setRedemptionFee(200);  // 2%
         vm.stopPrank();
@@ -805,17 +729,13 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
 
 contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
 
-    address lp      = makeAddr("lp");
     address swapper = makeAddr("swapper");
 
     function setUp() public override {
         super.setUp();
-        bytes32 lpRole = groveBasin.MANAGER_ROLE();
 
-        vm.startPrank(owner);
+        vm.prank(owner);
         groveBasin.setFeeBounds(0, 2000);  // Max 20% for fuzz range
-        groveBasin.grantRole(lpRole, lp);
-        vm.stopPrank();
 
         collateralToken.mint(address(groveBasin), COLLATERAL_TOKEN_MAX * 100);
         swapToken.mint(pocket, SWAP_TOKEN_MAX * 100);
@@ -833,7 +753,7 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
 
         mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setPurchaseFee(fee);
 
         uint256 rawAmountOut = amountIn * 1e27 / conversionRate * 1e12;
@@ -854,7 +774,7 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
 
         mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setRedemptionFee(fee);
 
         uint256 rawAmountOut = amountIn * conversionRate / 1e27 / 1e12;
@@ -875,7 +795,7 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
 
         mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setPurchaseFee(fee);
 
         uint256 rawAmountOut = amountIn * 1e27 / conversionRate;
@@ -896,7 +816,7 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
 
         mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setRedemptionFee(fee);
 
         uint256 rawAmountOut = amountIn * conversionRate / 1e27;
@@ -917,7 +837,7 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
 
         mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setPurchaseFee(fee);
 
         uint256 rawAmountIn = Math.ceilDiv(
@@ -942,7 +862,7 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
 
         mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setRedemptionFee(fee);
 
         uint256 rawAmountIn = Math.ceilDiv(
@@ -967,7 +887,7 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
 
         _deposit(address(collateralToken), makeAddr("depositor"), 10_000e18);
 
-        vm.startPrank(lp);
+        vm.startPrank(owner);
         groveBasin.setPurchaseFee(purchaseFee_);
         groveBasin.setRedemptionFee(redemptionFee_);
         vm.stopPrank();
@@ -996,7 +916,7 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
     function testFuzz_setPurchaseFee(uint256 fee) public {
         fee = _bound(fee, 0, 2000);
 
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setPurchaseFee(fee);
 
         assertEq(groveBasin.purchaseFee(), fee);
@@ -1005,7 +925,7 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
     function testFuzz_setRedemptionFee(uint256 fee) public {
         fee = _bound(fee, 0, 2000);
 
-        vm.prank(lp);
+        vm.prank(owner);
         groveBasin.setRedemptionFee(fee);
 
         assertEq(groveBasin.redemptionFee(), fee);
@@ -1047,7 +967,7 @@ contract GroveBasinSwapWithFeesMultiFuzzTests is GroveBasinTestBase {
         purchaseFee_   = _bound(purchaseFee_, 0, 2000);
         redemptionFee_ = _bound(redemptionFee_, 0, 2000);
 
-        vm.startPrank(lpRole_);
+        vm.startPrank(owner);
         groveBasin.setPurchaseFee(purchaseFee_);
         groveBasin.setRedemptionFee(redemptionFee_);
         vm.stopPrank();

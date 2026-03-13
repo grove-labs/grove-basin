@@ -424,14 +424,14 @@ interface IGroveBasin {
 
     /**
      *  @dev    Sets the purchase fee applied when buying credit tokens. Callable only by
-     *          the MANAGER_ROLE. Fee must be within [minFee, maxFee].
+     *          the OWNER_ROLE. Fee must be within [minFee, maxFee].
      *  @param  newPurchaseFee New purchase fee in BPS.
      */
     function setPurchaseFee(uint256 newPurchaseFee) external;
 
     /**
      *  @dev    Sets the redemption fee applied when redeeming credit tokens. Callable only by
-     *          the MANAGER_ROLE. Fee must be within [minFee, maxFee].
+     *          the OWNER_ROLE. Fee must be within [minFee, maxFee].
      *  @param  newRedemptionFee New redemption fee in BPS.
      */
     function setRedemptionFee(uint256 newRedemptionFee) external;
