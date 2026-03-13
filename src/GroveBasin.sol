@@ -104,7 +104,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         maxSwapSize           = 50_000_000e18;
         minStalenessThreshold = 5 minutes;
-        maxStalenessThreshold = 12 hours;
+        maxStalenessThreshold = 48 hours;
         stalenessThreshold    = minStalenessThreshold;
 
         _grantRole(OWNER_ROLE, owner_);
