@@ -83,43 +83,40 @@ contract GroveBasinManagerAdminRoleTests is GroveBasinTestBase {
     }
 
     /**********************************************************************************************/
-    /*** LIQUIDITY_PROVIDER_ROLE is managed by MANAGER_ROLE                                     ***/
+    /*** LIQUIDITY_PROVIDER_ROLE is managed by MANAGER_ADMIN_ROLE                                ***/
     /**********************************************************************************************/
 
-    function test_manager_canGrantLiquidityProviderRole() public {
+    function test_managerAdmin_canGrantLiquidityProviderRole() public {
         address lp = makeAddr("lp");
-        bytes32 lpRole      = groveBasin.LIQUIDITY_PROVIDER_ROLE();
-        bytes32 managerRole = groveBasin.MANAGER_ROLE();
+        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
 
-        vm.prank(owner);
-        groveBasin.grantRole(managerRole, manager);
-
-        vm.prank(manager);
+        vm.prank(managerAdmin);
         groveBasin.grantRole(lpRole, lp);
 
         assertTrue(groveBasin.hasRole(lpRole, lp));
     }
 
-    function test_managerAdmin_cannotGrantLiquidityProviderRole() public {
+    function test_manager_cannotGrantLiquidityProviderRole() public {
         address lp = makeAddr("lp");
-        bytes32 lpRole      = groveBasin.LIQUIDITY_PROVIDER_ROLE();
-        bytes32 managerRole = groveBasin.MANAGER_ROLE();
+        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
 
         vm.prank(managerAdmin);
+        groveBasin.grantRole(managerRole, manager);
+
+        vm.prank(manager);
         vm.expectRevert(
             abi.encodeWithSignature(
                 "AccessControlUnauthorizedAccount(address,bytes32)",
-                managerAdmin,
-                managerRole
+                manager,
+                managerAdminRole
             )
         );
         groveBasin.grantRole(lpRole, lp);
     }
 
     function test_liquidityProviderRoleAdmin() public {
-        bytes32 lpRole      = groveBasin.LIQUIDITY_PROVIDER_ROLE();
-        bytes32 managerRole = groveBasin.MANAGER_ROLE();
-        assertEq(groveBasin.getRoleAdmin(lpRole), managerRole);
+        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
+        assertEq(groveBasin.getRoleAdmin(lpRole), managerAdminRole);
     }
 
     /**********************************************************************************************/
