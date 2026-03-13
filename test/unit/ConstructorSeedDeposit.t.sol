@@ -43,7 +43,7 @@ contract ConstructorSeedDepositTests is GroveBasinTestBase {
         bytes32 lpRole    = newGroveBasin.LIQUIDITY_PROVIDER_ROLE();
         bytes32 adminRole = newGroveBasin.getRoleAdmin(lpRole);
 
-        assertEq(adminRole, newGroveBasin.DEFAULT_ADMIN_ROLE());
+        assertEq(adminRole, newGroveBasin.MANAGER_ADMIN_ROLE());
     }
 
     function test_deploy_seedShareDeposit() public {

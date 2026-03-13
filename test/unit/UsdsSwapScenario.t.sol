@@ -66,6 +66,7 @@ contract UsdsSwapScenarioTestBase is Test {
 
         vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), owner);
         groveBasin.grantRole(groveBasin.LIQUIDITY_PROVIDER_ROLE(), grove);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
         groveBasin.setPocket(address(pocket));

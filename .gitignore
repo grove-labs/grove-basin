@@ -12,3 +12,10 @@ docs/
 .env
 
 lcov.info
+
+tmp/
+
+.factory/
+!.factory/skills
+
+.DS_Store

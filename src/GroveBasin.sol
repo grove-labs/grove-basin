@@ -110,6 +110,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         _grantRole(OWNER_ROLE, owner_);
         _grantRole(LIQUIDITY_PROVIDER_ROLE, msg.sender);
         _setRoleAdmin(MANAGER_ROLE, MANAGER_ADMIN_ROLE);
+        _setRoleAdmin(LIQUIDITY_PROVIDER_ROLE, MANAGER_ADMIN_ROLE);
 
         // Necessary to ensure rounding works as expected
         require(_swapTokenPrecision  <= 1e18, "GroveBasin/swapToken-precision-too-high");
