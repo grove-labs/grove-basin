@@ -238,6 +238,10 @@ contract GroveBasin is IGroveBasin, AccessControl {
         emit PocketSet(pocket_, newPocket, amountToTransfer);
     }
 
+    /**********************************************************************************************/
+    /*** Owner functions                                                             ***/
+    /**********************************************************************************************/
+
     function addTokenRedeemer(address redeemer) external override onlyRole(OWNER_ROLE) {
         require(redeemer != address(0), "GroveBasin/invalid-redeemer");
         require(!hasRole(REDEEMER_CONTRACT_ROLE, redeemer), "GroveBasin/redeemer-already-added");
@@ -259,10 +263,14 @@ contract GroveBasin is IGroveBasin, AccessControl {
         emit TokenRedeemerRemoved(redeemer);
     }
 
-    /**********************************************************************************************/
-    /*** Owner functions (redeem)                                                               ***/
-    /**********************************************************************************************/
+    function setPurchaseFee(uint256 newPurchaseFee) external override onlyRole(OWNER_ROLE) {
+        _setPurchaseFee(newPurchaseFee);
+    }
 
+    function setRedemptionFee(uint256 newRedemptionFee) external override onlyRole(OWNER_ROLE) {
+        _setRedemptionFee(newRedemptionFee);
+    }
+    
     function initiateRedeem(address redeemer, uint256 creditTokenAmount) external override onlyRole(REDEEMER_ROLE) {
         _initiateRedeem(redeemer, creditTokenAmount);
     }
@@ -274,14 +282,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /**********************************************************************************************/
     /*** Manager functions                                                                      ***/
     /**********************************************************************************************/
-
-    function setPurchaseFee(uint256 newPurchaseFee) external override onlyRole(OWNER_ROLE) {
-        _setPurchaseFee(newPurchaseFee);
-    }
-
-    function setRedemptionFee(uint256 newRedemptionFee) external override onlyRole(OWNER_ROLE) {
-        _setRedemptionFee(newRedemptionFee);
-    }
 
     function setStalenessThreshold(uint256 newThreshold)
         external override onlyRole(MANAGER_ROLE)
