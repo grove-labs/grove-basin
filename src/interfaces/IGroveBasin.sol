@@ -10,6 +10,14 @@ interface IGroveBasin {
     /**********************************************************************************************/
 
     /**
+     *  @dev   Emitted when a rate provider is updated.
+     *  @param token           Address of the token whose rate provider was changed.
+     *  @param oldRateProvider Address of the old rate provider.
+     *  @param newRateProvider Address of the new rate provider.
+     */
+    event RateProviderSet(address indexed token, address indexed oldRateProvider, address indexed newRateProvider);
+
+    /**
      *  @dev   Emitted when the max swap size is set in the GroveBasin.
      *  @param oldMaxSwapSize Old max swap size.
      *  @param newMaxSwapSize New max swap size.
@@ -335,21 +343,30 @@ interface IGroveBasin {
     function maxFee() external view returns (uint256);
 
     /**********************************************************************************************/
-    /*** Owner functions                                                                        ***/
+    /*** Manager admin functions                                                                ***/
     /**********************************************************************************************/
 
     /**
      *  @dev    Sets the maximum value of a swap in 1e18 precision. If set to zero, there is no
-     *          limit on swap size. Callable only by the owner.
+     *          limit on swap size. Callable only by MANAGER_ADMIN_ROLE.
      *  @param  newMaxSwapSize New max swap size in 1e18 precision.
      */
     function setMaxSwapSize(uint256 newMaxSwapSize) external;
 
     /**
-     *  @dev    Sets whether credit token deposits are disabled. Callable only by the owner.
+     *  @dev    Sets whether credit token deposits are disabled. Callable only by MANAGER_ADMIN_ROLE.
      *  @param  disabled Whether to disable credit token deposits.
      */
     function setCreditTokenDepositsDisabled(bool disabled) external;
+
+    /**
+     *  @dev    Sets the rate provider for a given token. The token must be one of the supported
+     *          assets (swapToken, collateralToken, creditToken). The new rate provider must return
+     *          a non-zero conversion rate. Callable only by MANAGER_ADMIN_ROLE.
+     *  @param  token           Address of the token whose rate provider is being updated.
+     *  @param  newRateProvider  Address of the new rate provider.
+     */
+    function setRateProvider(address token, address newRateProvider) external;
     
     /**
      *  @dev   Sets the staleness threshold in seconds. Must be within

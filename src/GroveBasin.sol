@@ -34,9 +34,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
     IERC20 public override immutable collateralToken;
     IERC20 public override immutable creditToken;
 
-    address public override immutable swapTokenRateProvider;
-    address public override immutable collateralTokenRateProvider;
-    address public override immutable creditTokenRateProvider;
+    address public override swapTokenRateProvider;
+    address public override collateralTokenRateProvider;
+    address public override creditTokenRateProvider;
 
     address public override pocket;
 
@@ -126,17 +126,38 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     /**********************************************************************************************/
-    /*** Owner functions                                                                        ***/
+    /*** Manager admin functions                                                                ***/
     /**********************************************************************************************/
 
-    function setCreditTokenDepositsDisabled(bool disabled) external override onlyRole(OWNER_ROLE) {
+    function setCreditTokenDepositsDisabled(bool disabled) external override onlyRole(MANAGER_ADMIN_ROLE) {
         creditTokenDepositsDisabled = disabled;
         emit CreditTokenDepositsDisabledSet(disabled);
     }
 
-    /**********************************************************************************************/
-    /*** Manager admin functions                                                                ***/
-    /**********************************************************************************************/
+    function setRateProvider(address token, address newRateProvider) external override onlyRole(MANAGER_ADMIN_ROLE) {
+        require(newRateProvider != address(0), "GroveBasin/invalid-rate-provider");
+        require(
+            IRateProviderLike(newRateProvider).getConversionRate() != 0,
+            "GroveBasin/rate-provider-returns-zero"
+        );
+
+        address oldRateProvider;
+
+        if (token == address(swapToken)) {
+            oldRateProvider = swapTokenRateProvider;
+            swapTokenRateProvider = newRateProvider;
+        } else if (token == address(collateralToken)) {
+            oldRateProvider = collateralTokenRateProvider;
+            collateralTokenRateProvider = newRateProvider;
+        } else if (token == address(creditToken)) {
+            oldRateProvider = creditTokenRateProvider;
+            creditTokenRateProvider = newRateProvider;
+        } else {
+            revert("GroveBasin/invalid-token");
+        }
+
+        emit RateProviderSet(token, oldRateProvider, newRateProvider);
+    }
 
     function setMaxSwapSize(uint256 newMaxSwapSize) external override onlyRole(MANAGER_ADMIN_ROLE) {
         uint256 oldMaxSwapSize = maxSwapSize;

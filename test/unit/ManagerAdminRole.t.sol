@@ -22,6 +22,89 @@ contract GroveBasinManagerAdminRoleTests is GroveBasinTestBase {
     }
 
     /**********************************************************************************************/
+    /*** MANAGER_ADMIN_ROLE can set rate providers                                              ***/
+    /**********************************************************************************************/
+
+    function test_managerAdmin_setRateProvider() public {
+        MockRateProvider newProvider = new MockRateProvider();
+        newProvider.__setConversionRate(1e27);
+
+        vm.prank(managerAdmin);
+        groveBasin.setRateProvider(address(swapToken), address(newProvider));
+
+        assertEq(groveBasin.swapTokenRateProvider(), address(newProvider));
+    }
+
+    function test_unauthorized_setRateProvider() public {
+        MockRateProvider newProvider = new MockRateProvider();
+        newProvider.__setConversionRate(1e27);
+
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                address(this),
+                managerAdminRole
+            )
+        );
+        groveBasin.setRateProvider(address(swapToken), address(newProvider));
+    }
+
+    function test_manager_cannotSetRateProvider() public {
+        vm.prank(managerAdmin);
+        groveBasin.grantRole(managerRole, manager);
+
+        MockRateProvider newProvider = new MockRateProvider();
+        newProvider.__setConversionRate(1e27);
+
+        vm.prank(manager);
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                manager,
+                managerAdminRole
+            )
+        );
+        groveBasin.setRateProvider(address(swapToken), address(newProvider));
+    }
+
+    /**********************************************************************************************/
+    /*** MANAGER_ADMIN_ROLE can set credit token deposits disabled                              ***/
+    /**********************************************************************************************/
+
+    function test_managerAdmin_setCreditTokenDepositsDisabled() public {
+        vm.prank(managerAdmin);
+        groveBasin.setCreditTokenDepositsDisabled(true);
+
+        assertTrue(groveBasin.creditTokenDepositsDisabled());
+    }
+
+    function test_unauthorized_setCreditTokenDepositsDisabled() public {
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                address(this),
+                managerAdminRole
+            )
+        );
+        groveBasin.setCreditTokenDepositsDisabled(true);
+    }
+
+    function test_manager_cannotSetCreditTokenDepositsDisabled() public {
+        vm.prank(managerAdmin);
+        groveBasin.grantRole(managerRole, manager);
+
+        vm.prank(manager);
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                manager,
+                managerAdminRole
+            )
+        );
+        groveBasin.setCreditTokenDepositsDisabled(true);
+    }
+
+    /**********************************************************************************************/
     /*** MANAGER_ADMIN_ROLE can set fee bounds                                                  ***/
     /**********************************************************************************************/
 
