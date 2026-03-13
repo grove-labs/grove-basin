@@ -275,11 +275,11 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /*** Manager functions                                                                      ***/
     /**********************************************************************************************/
 
-    function setPurchaseFee(uint256 newPurchaseFee) external override onlyRole(MANAGER_ROLE) {
+    function setPurchaseFee(uint256 newPurchaseFee) external override onlyRole(OWNER_ROLE) {
         _setPurchaseFee(newPurchaseFee);
     }
 
-    function setRedemptionFee(uint256 newRedemptionFee) external override onlyRole(MANAGER_ROLE) {
+    function setRedemptionFee(uint256 newRedemptionFee) external override onlyRole(OWNER_ROLE) {
         _setRedemptionFee(newRedemptionFee);
     }
 

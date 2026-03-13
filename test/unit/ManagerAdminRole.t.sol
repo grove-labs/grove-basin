@@ -521,14 +521,11 @@ contract GroveBasinManagerAdminRoleTests is GroveBasinTestBase {
     /*** End-to-end: MANAGER_ADMIN_ROLE grants MANAGER_ROLE, manager sets fees                  ***/
     /**********************************************************************************************/
 
-    function test_endToEnd_managerAdminGrantsManagerAndManagerSetsFees() public {
+    function test_endToEnd_ownerSetsFees() public {
         vm.prank(managerAdmin);
         groveBasin.setFeeBounds(0, 500);
 
-        vm.prank(managerAdmin);
-        groveBasin.grantRole(managerRole, manager);
-
-        vm.startPrank(manager);
+        vm.startPrank(owner);
         groveBasin.setPurchaseFee(100);
         groveBasin.setRedemptionFee(200);
         vm.stopPrank();
