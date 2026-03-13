@@ -104,7 +104,6 @@ contract GroveBasinConstructorTests is GroveBasinTestBase {
     }
 
     function test_constructor() public {
-        // Deploy new GroveBasin to get test coverage
         groveBasin = new GroveBasin(owner, address(swapToken), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider));
 
         assertTrue(groveBasin.hasRole(groveBasin.OWNER_ROLE(), owner));

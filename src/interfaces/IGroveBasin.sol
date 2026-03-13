@@ -100,6 +100,34 @@ interface IGroveBasin {
     event CreditTokenDepositsDisabledSet(bool disabled);
 
     /**
+     *  @dev   Emitted when a token redeemer is added to the basin.
+     *  @param redeemer Address of the redeemer contract.
+     */
+    event TokenRedeemerAdded(address indexed redeemer);
+
+    /**
+     *  @dev   Emitted when a token redeemer is removed from the basin.
+     *  @param redeemer Address of the redeemer contract.
+     */
+    event TokenRedeemerRemoved(address indexed redeemer);
+
+    /**
+     *  @dev   Emitted when a credit token redemption is initiated via a redeemer.
+     *  @param redeemer Address of the redeemer contract.
+     *  @param caller   Address of the caller that initiated the redemption.
+     *  @param amount   Amount of credit tokens sent to the redeemer.
+     */
+    event RedeemInitiated(address indexed redeemer, address indexed caller, uint256 amount);
+
+    /**
+     *  @dev   Emitted when a credit token redemption is completed via a redeemer.
+     *  @param redeemer Address of the redeemer contract.
+     *  @param caller   Address of the caller that completed the redemption.
+     *  @param amount   Amount passed to the redeemer's completeRedeem.
+     */
+    event RedeemCompleted(address indexed redeemer, address indexed caller, uint256 amount);
+
+    /**
      *  @dev   Emitted when an asset is deposited into the GroveBasin.
      *  @param asset           Address of the asset deposited.
      *  @param user            Address of the user that deposited the asset.
@@ -262,6 +290,27 @@ interface IGroveBasin {
     function creditTokenDepositsDisabled() external view returns (bool);
 
     /**
+     *  @dev    Returns the role identifier for the redeemer role. Addresses with this role
+     *          can call initiateRedeem.
+     *  @return The bytes32 role identifier.
+     */
+    function REDEEMER_ROLE() external view returns (bytes32);
+
+    /**
+     *  @dev    Returns the role identifier for the redeemer contract role. Addresses with this
+     *          role can be used as redeemer targets in initiateRedeem and completeRedeem.
+     *  @return The bytes32 role identifier.
+     */
+    function REDEEMER_CONTRACT_ROLE() external view returns (bytes32);
+
+    /**
+     *  @dev    Returns the amount of credit tokens outstanding in pending redemptions.
+     *          Incremented on initiateRedeem and decremented on completeRedeem.
+     *  @return The amount of credit tokens in pending redemptions.
+     */
+    function creditTokenBalance() external view returns (uint256);
+
+    /**
      *  @dev    Returns the current purchase fee in BPS. Applied when buying credit tokens.
      *  @return The purchase fee in BPS.
      */
@@ -335,6 +384,39 @@ interface IGroveBasin {
      *  @param  newPocket Address of the new pocket.
      */
     function setPocket(address newPocket) external;
+
+    /**
+     *  @dev   Adds a token redeemer to the basin. Grants the REDEEMER_CONTRACT_ROLE and calls the
+     *         redeemer's setUp function. Callable only by the OWNER_ROLE.
+     *  @param redeemer Address of the token redeemer to add.
+     */
+    function addTokenRedeemer(address redeemer) external;
+
+    /**
+     *  @dev   Removes a token redeemer from the basin. Calls the redeemer's tearDown function and
+     *         revokes the REDEEMER_CONTRACT_ROLE. Callable only by the OWNER_ROLE.
+     *  @param redeemer Address of the token redeemer to remove.
+     */
+    function removeTokenRedeemer(address redeemer) external;
+
+    /**********************************************************************************************/
+    /*** Owner functions (redeem)                                                               ***/
+    /**********************************************************************************************/
+
+    /**
+     *  @dev    Initiates a credit token redemption using a specific token redeemer.
+     *          Callable only by the REDEEMER_ROLE.
+     *  @param  redeemer         Address of the token redeemer to use.
+     *  @param  creditTokenAmount Amount of credit tokens to redeem.
+     */
+    function initiateRedeem(address redeemer, uint256 creditTokenAmount) external;
+
+    /**
+     *  @dev    Completes a credit token redemption using a specific token redeemer.
+     *  @param  redeemer         Address of the token redeemer to use.
+     *  @param  creditTokenAmount Amount of credit tokens to complete redemption for.
+     */
+    function completeRedeem(address redeemer, uint256 creditTokenAmount) external;
 
     /**********************************************************************************************/
     /*** Liquidity provider functions                                                           ***/
@@ -555,9 +637,20 @@ interface IGroveBasin {
     /**********************************************************************************************/
 
     /**
-     *  @dev View function that returns the total value of the balance of all assets in the GroveBasin
-     *       converted to swap token/collateral token terms denominated in 18 decimal precision.
+     *  @dev View function that returns the total value of the balance of all assets currently held
+     *       by the GroveBasin, converted to swap token/collateral token terms denominated in 18
+     *       decimal precision. Does not include credit tokens in pending redemptions. Use
+     *       `totalAssetsWithRedemptions()` for a closer approximation of the basin's total value.
      */
     function totalAssets() external view returns (uint256);
+
+    /**
+     *  @dev    View function that returns the total value of all assets in the GroveBasin including
+     *          the value of credit tokens in pending redemptions. The actual yield may be slightly
+     *          higher than reported because some credit tokens may appreciate in value during the
+     *          redemption period.
+     *  @return The total value including pending redemptions, in 18 decimal precision.
+     */
+    function totalAssetsWithRedemptions() external view returns (uint256);
 
 }
