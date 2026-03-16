@@ -11,6 +11,8 @@ import { GroveBasin } from "src/GroveBasin.sol";
 import { IGroveBasinPocket }       from "src/interfaces/IGroveBasinPocket.sol";
 import { IRateProviderLike } from "src/interfaces/IRateProviderLike.sol";
 
+import { MockERC20 } from "erc20-helpers/MockERC20.sol";
+
 import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
 import { LpHandler }            from "test/invariant/handlers/LpHandler.sol";
@@ -733,21 +735,27 @@ contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinIn
 //       called is too high to be considered reflective of reality (setting pocket as often as deposits for example).
 //       This inherited test suite is the most complex and realistic, so setting the pocket in this
 //       one is sufficient to ensure the expected behavior and accounting.
-// contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers_WithPocketSetting is GroveBasinInvariants_TimeBasedRateSetting_WithTransfers {
+contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers_WithPocketSetting is GroveBasinInvariants_TimeBasedRateSetting_WithTransfers {
 
-//     OwnerHandler ownerHandler;
+    OwnerHandler ownerHandler;
 
-//     function setUp() public override {
-//         super.setUp();
+    function setUp() public override {
+        super.setUp();
 
-//         // NOTE: The GroveBasin is the pocket to start, so the test suite will start with it as the pocket
-//         //       and transfer it to other addresses.
+        // NOTE: The GroveBasin is the pocket to start, so the test suite will start with it as the pocket
+        //       and transfer it to other addresses.
 
-//         ownerHandler = new OwnerHandler(groveBasin, swapToken);
-//         targetContract(address(ownerHandler));
+        // Create a mock aToken for the OwnerHandler to use when creating AaveV3UsdtPocket instances.
+        // NOTE: This aToken is not used directly — each Aave pocket created by the OwnerHandler
+        //       will create its own fresh aToken + pool pair.
+        MockERC20 aToken = new MockERC20("aToken", "aToken", 6);
 
-//         vm.prank(owner);
-//         groveBasin.grantRole(groveBasin.DEFAULT_ADMIN_ROLE(), address(ownerHandler));
-//     }
+        ownerHandler = new OwnerHandler(groveBasin, swapToken, aToken, usds, psm);
+        targetContract(address(ownerHandler));
 
-// }
+        bytes32 managerAdminRole = groveBasin.MANAGER_ADMIN_ROLE();
+        vm.prank(owner);
+        groveBasin.grantRole(managerAdminRole, address(ownerHandler));
+    }
+
+}

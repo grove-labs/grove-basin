@@ -5,12 +5,26 @@ import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
 
 import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
 
+import { AccessControl } from "openzeppelin-contracts/contracts/access/AccessControl.sol";
+
 import { IGroveBasinPocket } from "src/interfaces/IGroveBasinPocket.sol";
 import { IPSMLike }          from "src/interfaces/IPSMLike.sol";
 
-contract UsdsUsdcPocket is IGroveBasinPocket {
+/**
+ * @title  UsdsUsdcPocket
+ * @notice Pocket that converts USDC to USDS via PSM on deposit and reverses on withdraw.
+ *
+ * @dev    Trust model:
+ *         - DEFAULT_ADMIN_ROLE: Trusted. Can manage MANAGER_ROLE grants/revocations.
+ *         - MANAGER_ROLE: Semi-trusted. Can call depositLiquidity and withdrawLiquidity.
+ *         - Basin: Immutable address set at construction. Can call depositLiquidity and
+ *           withdrawLiquidity independently of any role assignments.
+ */
+contract UsdsUsdcPocket is IGroveBasinPocket, AccessControl {
 
     using SafeERC20 for IERC20;
+
+    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
     address public override immutable basin;
 
@@ -22,18 +36,20 @@ contract UsdsUsdcPocket is IGroveBasinPocket {
     uint256 internal immutable _usdsPrecision;
     uint256 internal immutable _usdcPrecision;
 
-    modifier onlyBasin() {
-        require(msg.sender == basin, "UsdsUsdcPocket/not-basin");
+    modifier onlyBasinOrManager() {
+        require(msg.sender == basin || hasRole(MANAGER_ROLE, msg.sender), "UsdsUsdcPocket/not-authorized");
         _;
     }
 
     constructor(
         address basin_,
+        address admin_,
         address usdc_,
         address usds_,
         address psm_
     ) {
         require(basin_   != address(0), "UsdsUsdcPocket/invalid-basin");
+        require(admin_   != address(0), "UsdsUsdcPocket/invalid-admin");
         require(usdc_    != address(0), "UsdsUsdcPocket/invalid-usdc");
         require(usds_    != address(0), "UsdsUsdcPocket/invalid-usds");
         require(psm_     != address(0), "UsdsUsdcPocket/invalid-psm");
@@ -46,11 +62,13 @@ contract UsdsUsdcPocket is IGroveBasinPocket {
         _usdsPrecision = 10 ** IERC20(usds_).decimals();
         _usdcPrecision = 10 ** IERC20(usdc_).decimals();
 
+        _grantRole(DEFAULT_ADMIN_ROLE, admin_);
+
         IERC20(usds_).safeApprove(basin_, type(uint256).max);
         IERC20(usdc_).safeApprove(basin_, type(uint256).max);
     }
 
-    function depositLiquidity(uint256 amount, address asset) external override onlyBasin returns (uint256) {
+    function depositLiquidity(uint256 amount, address asset) external override onlyBasinOrManager returns (uint256) {
         if (amount == 0) return 0;
 
         if (asset == address(usds)) {
@@ -77,7 +95,7 @@ contract UsdsUsdcPocket is IGroveBasinPocket {
         return 0;
     }
 
-    function withdrawLiquidity(uint256 amount, address asset) external override onlyBasin returns (uint256) {
+    function withdrawLiquidity(uint256 amount, address asset) external override onlyBasinOrManager returns (uint256) {
         if (amount == 0) return 0;
 
         if (asset == address(usdc)) {

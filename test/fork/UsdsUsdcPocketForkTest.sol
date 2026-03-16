@@ -57,6 +57,7 @@ abstract contract UsdsUsdcPocketForkTestBase is Test {
 
         pocket = new UsdsUsdcPocket(
             address(groveBasin),
+            owner,
             Ethereum.USDC,
             Ethereum.USDS,
             address(mockPsm)
@@ -158,6 +159,7 @@ contract UsdsUsdcPocketForkTest_SetPocket is UsdsUsdcPocketForkTestBase {
 
         UsdsUsdcPocket pocket2 = new UsdsUsdcPocket(
             address(groveBasin),
+            owner,
             Ethereum.USDC,
             Ethereum.USDS,
             address(mockPsm)

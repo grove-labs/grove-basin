@@ -63,6 +63,7 @@ contract PocketDepositWithdrawTestBase is Test {
 
         pocket = new UsdsUsdcPocket(
             address(groveBasin),
+            owner,
             address(usdc),
             address(usds),
             address(psm)
@@ -367,6 +368,7 @@ contract BasinUsdtCollateralPocketTests is Test {
 
         pocket = new UsdsUsdcPocket(
             address(groveBasin),
+            owner,
             address(usdc),
             address(usds),
             address(psm)

@@ -16,6 +16,7 @@ lcov.info
 tmp/
 
 .factory/
+.factory/validation
 !.factory/skills
 
 .DS_Store

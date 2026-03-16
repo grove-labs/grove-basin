@@ -78,6 +78,7 @@ contract GroveBasinTestBase is Test {
 
         pocket = address(new UsdsUsdcPocket(
             address(groveBasin),
+            owner,
             address(swapToken),
             address(usds),
             address(psm)
