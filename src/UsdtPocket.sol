@@ -52,11 +52,12 @@ contract UsdtPocket is IGroveBasinPocket {
 
         require(asset == address(usdt), "UsdtPocket/invalid-asset");
 
+        emit LiquidityDeposited(asset, amount, amount);
+
         usdt.safeApprove(aaveV3Pool, 0);
         usdt.safeApprove(aaveV3Pool, amount);
         IAaveV3PoolLike(aaveV3Pool).supply(address(usdt), amount, address(this), 0);
 
-        emit LiquidityDeposited(asset, amount, amount);
         return amount;
     }
 
@@ -79,9 +80,12 @@ contract UsdtPocket is IGroveBasinPocket {
                 remainder,
                 address(this)
             );
+
+            emit LiquidityDrawn(asset, amount, convertedAmount);
+        } else {
+            emit LiquidityDrawn(asset, amount, 0);
         }
 
-        emit LiquidityDrawn(asset, amount, convertedAmount);
         return amount;
     }
 

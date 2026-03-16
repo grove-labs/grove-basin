@@ -68,6 +68,8 @@ contract UsdsUsdcPocket is IGroveBasinPocket {
                 0
             );
 
+            usds.safeApprove(psm, 0);
+
             emit LiquidityDeposited(asset, amount, convertedAmount);
             return convertedAmount;
         }
@@ -98,9 +100,12 @@ contract UsdsUsdcPocket is IGroveBasinPocket {
                 );
 
                 usds.safeApprove(psm, 0);
+
+                emit LiquidityDrawn(asset, amount, convertedAmount);
+            } else {
+                emit LiquidityDrawn(asset, amount, 0);
             }
 
-            emit LiquidityDrawn(asset, amount, convertedAmount);
             return amount;
         }
 
