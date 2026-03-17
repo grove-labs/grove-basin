@@ -797,8 +797,9 @@ contract TransferPocketForkTest_ManagerDeposit is TransferPocketForkTestBase {
         // Manager deposits directly to pocket (bypassing basin)
         address pocketManager = makeAddr("pocketManager");
 
-        vm.prank(owner);
+        vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ROLE(), pocketManager);
+        vm.stopPrank();
 
         uint256 managerAmount = 3_000e6;
         deal(Ethereum.USDT, address(aavePocket), managerAmount);

@@ -3,17 +3,12 @@ pragma solidity ^0.8.24;
 
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
-import { AaveV3UsdtPocket } from "src/pockets/AaveV3UsdtPocket.sol";
-import { MorphoUsdtPocket } from "src/pockets/MorphoUsdtPocket.sol";
-import { UsdsUsdcPocket }   from "src/pockets/UsdsUsdcPocket.sol";
-
 import { IGroveBasinPocket } from "src/interfaces/IGroveBasinPocket.sol";
 
-import { MockAaveV3Pool }   from "test/mocks/MockAaveV3Pool.sol";
-import { MockERC4626Vault } from "test/mocks/MockERC4626Vault.sol";
-import { MockPSM }          from "test/mocks/MockPSM.sol";
+import { MockPSM } from "test/mocks/MockPSM.sol";
 
 import { HandlerBase, GroveBasin } from "test/invariant/handlers/HandlerBase.sol";
+import { PocketFactory }           from "test/invariant/handlers/PocketFactory.sol";
 
 contract OwnerHandler is HandlerBase {
 
@@ -32,10 +27,11 @@ contract OwnerHandler is HandlerBase {
     /**********************************************************************************************/
 
     MockERC20 public swapToken;
-    MockERC20 public aToken;
     MockERC20 public usds;
 
     MockPSM public psm;
+
+    PocketFactory public pocketFactory;
 
     uint256 public pocketNonce;
 
@@ -44,16 +40,16 @@ contract OwnerHandler is HandlerBase {
     /**********************************************************************************************/
 
     constructor(
-        GroveBasin groveBasin_,
-        MockERC20  swapToken_,
-        MockERC20  aToken_,
-        MockERC20  usds_,
-        MockPSM    psm_
+        GroveBasin    groveBasin_,
+        MockERC20     swapToken_,
+        MockERC20     usds_,
+        MockPSM       psm_,
+        PocketFactory pocketFactory_
     ) HandlerBase(groveBasin_) {
-        swapToken = swapToken_;
-        aToken    = aToken_;
-        usds      = usds_;
-        psm       = psm_;
+        swapToken     = swapToken_;
+        usds          = usds_;
+        psm           = psm_;
+        pocketFactory = pocketFactory_;
     }
 
     /**********************************************************************************************/
@@ -108,44 +104,20 @@ contract OwnerHandler is HandlerBase {
     /**********************************************************************************************/
 
     function _createAavePocket() internal returns (address) {
-        // Create mock aToken and pool for each new pocket
-        MockERC20 mockAToken = new MockERC20("aToken", "aToken", 6);
-        MockAaveV3Pool pool  = new MockAaveV3Pool(address(mockAToken), address(swapToken));
-
-        // Fund the pool with aTokens so supply() can transfer them
-        mockAToken.mint(address(pool), type(uint128).max);
-
-        AaveV3UsdtPocket pocket_ = new AaveV3UsdtPocket(
-            address(groveBasin),
-            address(swapToken),
-            address(mockAToken),
-            address(pool)
-        );
-
-        return address(pocket_);
+        return pocketFactory.createAavePocket(address(groveBasin), address(swapToken));
     }
 
     function _createMorphoPocket() internal returns (address) {
-        MockERC4626Vault vault = new MockERC4626Vault(address(swapToken));
-
-        MorphoUsdtPocket pocket_ = new MorphoUsdtPocket(
-            address(groveBasin),
-            address(swapToken),
-            address(vault)
-        );
-
-        return address(pocket_);
+        return pocketFactory.createMorphoPocket(address(groveBasin), address(swapToken));
     }
 
     function _createUsdsUsdcPocket() internal returns (address) {
-        UsdsUsdcPocket pocket_ = new UsdsUsdcPocket(
+        return pocketFactory.createUsdsUsdcPocket(
             address(groveBasin),
             address(swapToken),
             address(usds),
             address(psm)
         );
-
-        return address(pocket_);
     }
 
     /**********************************************************************************************/

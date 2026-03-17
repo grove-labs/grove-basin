@@ -21,6 +21,7 @@ import { SwapperHandler }       from "test/invariant/handlers/SwapperHandler.sol
 import { TimeBasedRateHandler } from "test/invariant/handlers/TimeBasedRateHandler.sol";
 import { TransferHandler }      from "test/invariant/handlers/TransferHandler.sol";
 import { OwnerHandler }         from "test/invariant/handlers/OwnerHandler.sol";
+import { PocketFactory }        from "test/invariant/handlers/PocketFactory.sol";
 import { MockSSRRateProvider }  from "test/mocks/MockSSRRateProvider.sol";
 
 abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
@@ -745,12 +746,9 @@ contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers_WithPocketSetti
         // NOTE: The GroveBasin is the pocket to start, so the test suite will start with it as the pocket
         //       and transfer it to other addresses.
 
-        // Create a mock aToken for the OwnerHandler to use when creating AaveV3UsdtPocket instances.
-        // NOTE: This aToken is not used directly — each Aave pocket created by the OwnerHandler
-        //       will create its own fresh aToken + pool pair.
-        MockERC20 aToken = new MockERC20("aToken", "aToken", 6);
+        PocketFactory pocketFactory = new PocketFactory();
 
-        ownerHandler = new OwnerHandler(groveBasin, swapToken, aToken, usds, psm);
+        ownerHandler = new OwnerHandler(groveBasin, swapToken, usds, psm, pocketFactory);
         targetContract(address(ownerHandler));
 
         bytes32 managerAdminRole = groveBasin.MANAGER_ADMIN_ROLE();
