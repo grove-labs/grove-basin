@@ -221,8 +221,9 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
 
         address user = makeAddr("user");
 
+        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
         vm.prank(owner);
-        groveBasin.grantRole(groveBasin.LIQUIDITY_PROVIDER_ROLE(), user);
+        groveBasin.grantRole(lpRole, user);
 
         swapToken.mint(user, 100e6);
         vm.startPrank(user);
@@ -242,8 +243,9 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
 
         address user = makeAddr("user");
 
+        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
         vm.prank(owner);
-        groveBasin.grantRole(groveBasin.LIQUIDITY_PROVIDER_ROLE(), user);
+        groveBasin.grantRole(lpRole, user);
 
         swapToken.mint(user, 100e6);
         vm.startPrank(user);
@@ -262,8 +264,9 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
 
         address redeemer = makeAddr("redeemer");
 
+        bytes32 redeemerRole = groveBasin.REDEEMER_ROLE();
         vm.prank(owner);
-        groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), redeemer);
+        groveBasin.grantRole(redeemerRole, redeemer);
 
         vm.prank(redeemer);
         vm.expectRevert("GroveBasin/initiate-redeem-paused");
