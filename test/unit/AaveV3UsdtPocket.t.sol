@@ -185,8 +185,9 @@ contract AaveV3UsdtPocketManagerTests is AaveV3UsdtPocketTestBase {
 contract AaveV3UsdtPocketRoleManagementTests is AaveV3UsdtPocketTestBase {
 
     function test_revokedManager_cannotDeposit() public {
-        vm.prank(owner);
+        vm.startPrank(owner);
         groveBasin.revokeRole(groveBasin.MANAGER_ROLE(), manager);
+        vm.stopPrank();
 
         vm.prank(manager);
         vm.expectRevert("BasePocket/not-authorized");
@@ -194,8 +195,9 @@ contract AaveV3UsdtPocketRoleManagementTests is AaveV3UsdtPocketTestBase {
     }
 
     function test_revokedManager_cannotWithdraw() public {
-        vm.prank(owner);
+        vm.startPrank(owner);
         groveBasin.revokeRole(groveBasin.MANAGER_ROLE(), manager);
+        vm.stopPrank();
 
         vm.prank(manager);
         vm.expectRevert("BasePocket/not-authorized");
@@ -205,8 +207,9 @@ contract AaveV3UsdtPocketRoleManagementTests is AaveV3UsdtPocketTestBase {
     function test_multipleManagers() public {
         address manager2 = makeAddr("manager2");
 
-        vm.prank(owner);
+        vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ROLE(), manager2);
+        vm.stopPrank();
 
         usdt.mint(address(pocket), 2000e6);
 
@@ -230,8 +233,9 @@ contract AaveV3UsdtPocketRoleManagementTests is AaveV3UsdtPocketTestBase {
 contract AaveV3UsdtPocketBasinIndependenceTests is AaveV3UsdtPocketTestBase {
 
     function test_basin_canDepositRegardlessOfRoles() public {
-        vm.prank(owner);
+        vm.startPrank(owner);
         groveBasin.revokeRole(groveBasin.MANAGER_ROLE(), manager);
+        vm.stopPrank();
 
         usdt.mint(address(pocket), 1000e6);
 
@@ -242,8 +246,9 @@ contract AaveV3UsdtPocketBasinIndependenceTests is AaveV3UsdtPocketTestBase {
     }
 
     function test_basin_canWithdrawRegardlessOfRoles() public {
-        vm.prank(owner);
+        vm.startPrank(owner);
         groveBasin.revokeRole(groveBasin.MANAGER_ROLE(), manager);
+        vm.stopPrank();
 
         aUsdt.mint(address(pocket), 1000e6);
 

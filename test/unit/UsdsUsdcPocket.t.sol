@@ -198,8 +198,9 @@ contract UsdsUsdcPocketManagerTests is UsdsUsdcPocketTestBase {
 contract UsdsUsdcPocketRoleManagementTests is UsdsUsdcPocketTestBase {
 
     function test_revokedManager_cannotDeposit() public {
-        vm.prank(owner);
+        vm.startPrank(owner);
         groveBasin.revokeRole(groveBasin.MANAGER_ROLE(), manager);
+        vm.stopPrank();
 
         vm.prank(manager);
         vm.expectRevert("BasePocket/not-authorized");
@@ -207,8 +208,9 @@ contract UsdsUsdcPocketRoleManagementTests is UsdsUsdcPocketTestBase {
     }
 
     function test_revokedManager_cannotWithdraw() public {
-        vm.prank(owner);
+        vm.startPrank(owner);
         groveBasin.revokeRole(groveBasin.MANAGER_ROLE(), manager);
+        vm.stopPrank();
 
         vm.prank(manager);
         vm.expectRevert("BasePocket/not-authorized");
@@ -218,8 +220,9 @@ contract UsdsUsdcPocketRoleManagementTests is UsdsUsdcPocketTestBase {
     function test_multipleManagers() public {
         address manager2 = makeAddr("manager2");
 
-        vm.prank(owner);
+        vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ROLE(), manager2);
+        vm.stopPrank();
 
         usdc.mint(address(pocket), 2000e6);
 
@@ -243,8 +246,9 @@ contract UsdsUsdcPocketRoleManagementTests is UsdsUsdcPocketTestBase {
 contract UsdsUsdcPocketBasinIndependenceTests is UsdsUsdcPocketTestBase {
 
     function test_basin_canDepositRegardlessOfRoles() public {
-        vm.prank(owner);
+        vm.startPrank(owner);
         groveBasin.revokeRole(groveBasin.MANAGER_ROLE(), manager);
+        vm.stopPrank();
 
         usdc.mint(address(pocket), 1000e6);
 
@@ -255,8 +259,9 @@ contract UsdsUsdcPocketBasinIndependenceTests is UsdsUsdcPocketTestBase {
     }
 
     function test_basin_canWithdrawRegardlessOfRoles() public {
-        vm.prank(owner);
+        vm.startPrank(owner);
         groveBasin.revokeRole(groveBasin.MANAGER_ROLE(), manager);
+        vm.stopPrank();
 
         usds.mint(address(pocket), 1000e18);
 

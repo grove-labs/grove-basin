@@ -383,8 +383,9 @@ contract MorphoUsdtPocketAvailableBalanceTests is MorphoUsdtPocketTestBase {
 contract MorphoUsdtPocketRoleManagementTests is MorphoUsdtPocketTestBase {
 
     function test_revokedManager_cannotDeposit() public {
-        vm.prank(owner);
+        vm.startPrank(owner);
         groveBasin.revokeRole(groveBasin.MANAGER_ROLE(), manager);
+        vm.stopPrank();
 
         vm.prank(manager);
         vm.expectRevert("BasePocket/not-authorized");
@@ -392,8 +393,9 @@ contract MorphoUsdtPocketRoleManagementTests is MorphoUsdtPocketTestBase {
     }
 
     function test_revokedManager_cannotWithdraw() public {
-        vm.prank(owner);
+        vm.startPrank(owner);
         groveBasin.revokeRole(groveBasin.MANAGER_ROLE(), manager);
+        vm.stopPrank();
 
         vm.prank(manager);
         vm.expectRevert("BasePocket/not-authorized");
@@ -403,8 +405,9 @@ contract MorphoUsdtPocketRoleManagementTests is MorphoUsdtPocketTestBase {
     function test_multipleManagers() public {
         address manager2 = makeAddr("manager2");
 
-        vm.prank(owner);
+        vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ROLE(), manager2);
+        vm.stopPrank();
 
         usdt.mint(address(pocket), 2000e6);
 
@@ -428,8 +431,9 @@ contract MorphoUsdtPocketRoleManagementTests is MorphoUsdtPocketTestBase {
 contract MorphoUsdtPocketBasinIndependenceTests is MorphoUsdtPocketTestBase {
 
     function test_basin_canDepositRegardlessOfRoles() public {
-        vm.prank(owner);
+        vm.startPrank(owner);
         groveBasin.revokeRole(groveBasin.MANAGER_ROLE(), manager);
+        vm.stopPrank();
 
         usdt.mint(address(pocket), 1000e6);
 
@@ -440,8 +444,9 @@ contract MorphoUsdtPocketBasinIndependenceTests is MorphoUsdtPocketTestBase {
     }
 
     function test_basin_canWithdrawRegardlessOfRoles() public {
-        vm.prank(owner);
+        vm.startPrank(owner);
         groveBasin.revokeRole(groveBasin.MANAGER_ROLE(), manager);
+        vm.stopPrank();
 
         usdt.mint(address(pocket), 1000e6);
         vm.prank(address(groveBasin));
