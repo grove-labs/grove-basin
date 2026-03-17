@@ -29,6 +29,7 @@ contract TotalAssetsWithRedemptionsTests is GroveBasinTestBase {
         vm.startPrank(owner);
         groveBasin.addTokenRedeemer(address(redeemer));
         groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), address(this));
         vm.stopPrank();
     }
 

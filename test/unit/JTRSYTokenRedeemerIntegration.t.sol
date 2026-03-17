@@ -237,6 +237,7 @@ contract JTRSYTokenRedeemerCompleteRedeemIntegrationTests is GroveBasinTestBase 
 
         vm.startPrank(owner);
         groveBasin.addTokenRedeemer(address(redeemer));
+        groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), address(this));
         vm.stopPrank();
 
         // Fund vault with collateral so it can pay out on redeem
@@ -295,6 +296,7 @@ contract JTRSYTokenRedeemerMultipleRedeemersTests is GroveBasinTestBase {
         groveBasin.addTokenRedeemer(address(redeemer1));
         groveBasin.addTokenRedeemer(address(redeemer2));
         groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), address(this));
         vm.stopPrank();
 
         creditToken.mint(address(groveBasin), 10_000e18);
@@ -344,6 +346,7 @@ contract JTRSYTokenRedeemerFullFlowTests is GroveBasinTestBase {
         vm.startPrank(owner);
         groveBasin.addTokenRedeemer(address(redeemer));
         groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), address(this));
         vm.stopPrank();
 
         creditToken.mint(address(groveBasin), 10_000e18);
@@ -396,6 +399,7 @@ contract CreditTokenBalanceTrackingTests is GroveBasinTestBase {
         vm.startPrank(owner);
         groveBasin.addTokenRedeemer(address(redeemer));
         groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), address(this));
         vm.stopPrank();
 
         creditToken.mint(address(groveBasin), 10_000e18);

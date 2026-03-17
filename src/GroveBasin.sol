@@ -275,7 +275,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         _initiateRedeem(redeemer, creditTokenAmount);
     }
 
-    function completeRedeem(address redeemer, uint256 creditTokenAmount) external override {
+    function completeRedeem(address redeemer, uint256 creditTokenAmount) external override onlyRole(REDEEMER_ROLE) {
         _completeRedeem(redeemer, creditTokenAmount);
     }
 

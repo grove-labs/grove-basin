@@ -430,6 +430,7 @@ interface IGroveBasin {
 
     /**
      *  @dev    Completes a credit token redemption using a specific token redeemer.
+     *          Callable only by the REDEEMER_ROLE.
      *  @param  redeemer         Address of the token redeemer to use.
      *  @param  creditTokenAmount Amount of credit tokens to complete redemption for.
      */
