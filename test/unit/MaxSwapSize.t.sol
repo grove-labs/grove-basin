@@ -336,6 +336,7 @@ contract GroveBasinMaxSwapSizeFuzzTests is GroveBasinTestBase {
     }
 
     function testFuzz_setMaxSwapSize(uint256 maxSwapSize) public {
+        maxSwapSize = _bound(maxSwapSize, groveBasin.maxSwapSizeLowerBound(), groveBasin.maxSwapSizeUpperBound());
         vm.prank(owner);
         groveBasin.setMaxSwapSize(maxSwapSize);
 

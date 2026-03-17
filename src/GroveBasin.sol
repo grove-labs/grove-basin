@@ -45,6 +45,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
     uint256 public override stalenessThreshold;
     uint256 public override totalShares;
     uint256 public override maxSwapSize;
+    uint256 public override maxSwapSizeLowerBound;
+    uint256 public override maxSwapSizeUpperBound;
 
     uint256 public override purchaseFee;
     uint256 public override redemptionFee;
@@ -108,6 +110,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
         _creditTokenPrecision     = 10 ** IERC20(creditToken_).decimals();
 
         maxSwapSize           = 50_000_000e18;
+        maxSwapSizeLowerBound = 0;
+        maxSwapSizeUpperBound = 1_000_000_000e18;
         minStalenessThreshold = 5 minutes;
         maxStalenessThreshold = 48 hours;
         stalenessThreshold    = minStalenessThreshold;
@@ -159,10 +163,27 @@ contract GroveBasin is IGroveBasin, AccessControl {
         emit RateProviderSet(token, oldRateProvider, newRateProvider);
     }
 
-    function setMaxSwapSize(uint256 newMaxSwapSize) external override onlyRole(MANAGER_ADMIN_ROLE) {
-        uint256 oldMaxSwapSize = maxSwapSize;
-        maxSwapSize = newMaxSwapSize;
-        emit MaxSwapSizeSet(oldMaxSwapSize, newMaxSwapSize);
+    function setMaxSwapSizeBounds(uint256 newLowerBound, uint256 newUpperBound)
+        external override onlyRole(MANAGER_ADMIN_ROLE)
+    {
+        require(newLowerBound <= newUpperBound, "GroveBasin/min-gt-max-swap-size");
+
+        uint256 oldLowerBound = maxSwapSizeLowerBound;
+        uint256 oldUpperBound = maxSwapSizeUpperBound;
+
+        maxSwapSizeLowerBound = newLowerBound;
+        maxSwapSizeUpperBound = newUpperBound;
+
+        emit MaxSwapSizeBoundsSet(oldLowerBound, oldUpperBound, newLowerBound, newUpperBound);
+
+        uint256 currentMaxSwapSize = maxSwapSize;
+        if (currentMaxSwapSize < newLowerBound) {
+            maxSwapSize = newLowerBound;
+            emit MaxSwapSizeSet(currentMaxSwapSize, newLowerBound);
+        } else if (currentMaxSwapSize > newUpperBound) {
+            maxSwapSize = newUpperBound;
+            emit MaxSwapSizeSet(currentMaxSwapSize, newUpperBound);
+        }
     }
 
     function setStalenessThresholdBounds(uint256 newMinThreshold, uint256 newMaxThreshold)
@@ -286,6 +307,16 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /**********************************************************************************************/
     /*** Manager functions                                                                      ***/
     /**********************************************************************************************/
+
+    function setMaxSwapSize(uint256 newMaxSwapSize) external override onlyRole(MANAGER_ROLE) {
+        require(
+            newMaxSwapSize >= maxSwapSizeLowerBound && newMaxSwapSize <= maxSwapSizeUpperBound,
+            "GroveBasin/swap-size-out-of-bounds"
+        );
+        uint256 oldMaxSwapSize = maxSwapSize;
+        maxSwapSize = newMaxSwapSize;
+        emit MaxSwapSizeSet(oldMaxSwapSize, newMaxSwapSize);
+    }
 
     function setStalenessThreshold(uint256 newThreshold)
         external override onlyRole(MANAGER_ROLE)
