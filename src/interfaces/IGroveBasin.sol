@@ -150,6 +150,13 @@ interface IGroveBasin {
     event RedeemCompleted(address indexed redeemer, address indexed caller, uint256 amount);
 
     /**
+     *  @dev   Emitted when a pause flag is set or unset.
+     *  @param action The action being paused/unpaused.
+     *  @param paused Whether the action is paused.
+     */
+    event PausedSet(bytes32 indexed action, bool paused);
+
+    /**
      *  @dev   Emitted when an asset is deposited into the GroveBasin.
      *  @param asset           Address of the asset deposited.
      *  @param user            Address of the user that deposited the asset.
@@ -324,6 +331,36 @@ interface IGroveBasin {
     function creditTokenDepositsDisabled() external view returns (bool);
 
     /**
+     *  @dev    Returns whether swap token to credit token swaps are paused.
+     */
+    function swapToCreditPaused() external view returns (bool);
+
+    /**
+     *  @dev    Returns whether credit token to swap token swaps are paused.
+     */
+    function creditToSwapPaused() external view returns (bool);
+
+    /**
+     *  @dev    Returns whether collateral token to credit token swaps are paused.
+     */
+    function collateralToCreditPaused() external view returns (bool);
+
+    /**
+     *  @dev    Returns whether credit token to collateral token swaps are paused.
+     */
+    function creditToCollateralPaused() external view returns (bool);
+
+    /**
+     *  @dev    Returns whether deposits are paused.
+     */
+    function depositsPaused() external view returns (bool);
+
+    /**
+     *  @dev    Returns whether initiateRedeem is paused.
+     */
+    function initiateRedeemPaused() external view returns (bool);
+
+    /**
      *  @dev    Returns the role identifier for the redeemer role. Addresses with this role
      *          can call initiateRedeem.
      *  @return The bytes32 role identifier.
@@ -402,6 +439,15 @@ interface IGroveBasin {
      */
     function setRateProvider(address token, address newRateProvider) external;
     
+    /**
+     *  @dev   Sets or unsets a pause flag. Callable only by MANAGER_ROLE.
+     *         Valid actions: "swapToCredit", "creditToSwap", "collateralToCredit",
+     *         "creditToCollateral", "deposits", "initiateRedeem".
+     *  @param action The action to pause/unpause.
+     *  @param paused Whether to pause the action.
+     */
+    function setPaused(bytes32 action, bool paused) external;
+
     /**
      *  @dev   Sets the staleness threshold in seconds. Must be within
      *         [minStalenessThreshold, maxStalenessThreshold]. Callable only by DEFAULT_ADMIN_ROLE.

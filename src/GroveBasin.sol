@@ -42,6 +42,13 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     bool public override creditTokenDepositsDisabled;
 
+    bool public override swapToCreditPaused;
+    bool public override creditToSwapPaused;
+    bool public override collateralToCreditPaused;
+    bool public override creditToCollateralPaused;
+    bool public override depositsPaused;
+    bool public override initiateRedeemPaused;
+
     uint256 public override stalenessThreshold;
     uint256 public override totalShares;
     uint256 public override maxSwapSize;
@@ -318,6 +325,20 @@ contract GroveBasin is IGroveBasin, AccessControl {
         emit MaxSwapSizeSet(oldMaxSwapSize, newMaxSwapSize);
     }
 
+    function setPaused(bytes32 action, bool paused)
+        external override onlyRole(MANAGER_ROLE)
+    {
+        if      (action == "swapToCredit")        swapToCreditPaused        = paused;
+        else if (action == "creditToSwap")        creditToSwapPaused        = paused;
+        else if (action == "collateralToCredit")  collateralToCreditPaused  = paused;
+        else if (action == "creditToCollateral")  creditToCollateralPaused  = paused;
+        else if (action == "deposits")            depositsPaused            = paused;
+        else if (action == "initiateRedeem")      initiateRedeemPaused      = paused;
+        else revert("GroveBasin/invalid-action");
+
+        emit PausedSet(action, paused);
+    }
+
     function setStalenessThreshold(uint256 newThreshold)
         external override onlyRole(MANAGER_ROLE)
     {
@@ -358,6 +379,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
         require(amountIn != 0,          "GroveBasin/invalid-amountIn");
         require(receiver != address(0), "GroveBasin/invalid-receiver");
 
+        _checkSwapNotPaused(assetIn, assetOut);
+
         amountOut = previewSwapExactIn(assetIn, assetOut, amountIn);
 
         require(amountOut >= minAmountOut, "GroveBasin/amountOut-too-low");
@@ -382,6 +405,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
         require(amountOut != 0,         "GroveBasin/invalid-amountOut");
         require(receiver != address(0), "GroveBasin/invalid-receiver");
 
+        _checkSwapNotPaused(assetIn, assetOut);
+
         amountIn = previewSwapExactOut(assetIn, assetOut, amountOut);
 
         require(amountIn <= maxAmountIn, "GroveBasin/amountIn-too-high");
@@ -400,6 +425,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function deposit(address asset, address receiver, uint256 assetsToDeposit)
         external override onlyRole(LIQUIDITY_PROVIDER_ROLE) returns (uint256 newShares)
     {
+        require(!depositsPaused,      "GroveBasin/deposits-paused");
         require(assetsToDeposit != 0, "GroveBasin/invalid-amount");
 
         newShares = previewDeposit(asset, assetsToDeposit);
@@ -784,6 +810,18 @@ contract GroveBasin is IGroveBasin, AccessControl {
         return pocket != address(this);
     }
 
+    function _checkSwapNotPaused(address assetIn, address assetOut) internal view {
+        if (assetIn == address(swapToken) && assetOut == address(creditToken)) {
+            require(!swapToCreditPaused, "GroveBasin/swap-to-credit-paused");
+        } else if (assetIn == address(creditToken) && assetOut == address(swapToken)) {
+            require(!creditToSwapPaused, "GroveBasin/credit-to-swap-paused");
+        } else if (assetIn == address(collateralToken) && assetOut == address(creditToken)) {
+            require(!collateralToCreditPaused, "GroveBasin/collateral-to-credit-paused");
+        } else if (assetIn == address(creditToken) && assetOut == address(collateralToken)) {
+            require(!creditToCollateralPaused, "GroveBasin/credit-to-collateral-paused");
+        }
+    }
+
     function _isValidAsset(address asset) internal view returns (bool) {
         return asset == address(swapToken) || asset == address(collateralToken) || asset == address(creditToken);
     }
@@ -805,6 +843,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     function _initiateRedeem(address redeemer, uint256 creditTokenAmount) internal {
+        require(!initiateRedeemPaused, "GroveBasin/initiate-redeem-paused");
         require(hasRole(REDEEMER_CONTRACT_ROLE, redeemer), "GroveBasin/invalid-redeemer");
         creditToken.approve(redeemer, creditTokenAmount);
         ITokenRedeemer(redeemer).initiateRedeem(creditTokenAmount);
