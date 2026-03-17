@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.34;
 
+import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
+
 interface ITokenRedeemer {
 
     /**
@@ -16,10 +18,10 @@ interface ITokenRedeemer {
     function vault() external view returns (address);
 
     /**
-     *  @dev    Returns the address of the basin contract that this redeemer is bound to.
-     *  @return The address of the basin.
+     *  @dev    Returns the IGroveBasin interface of the basin contract that this redeemer is bound to.
+     *  @return The IGroveBasin interface of the basin.
      */
-    function basin() external view returns (address);
+    function basin() external view returns (IGroveBasin);
 
     /**
      *  @dev   Performs any redeemer-specific setup. Called by the basin when adding a redeemer.
