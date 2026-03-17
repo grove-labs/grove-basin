@@ -404,14 +404,14 @@ interface IGroveBasin {
 
     /**
      *  @dev   Adds a token redeemer to the basin. Grants the REDEEMER_CONTRACT_ROLE and calls the
-     *         redeemer's setUp function. Callable only by the OWNER_ROLE.
+     *         redeemer's setUp function. Callable only by the MANAGER_ADMIN_ROLE.
      *  @param redeemer Address of the token redeemer to add.
      */
     function addTokenRedeemer(address redeemer) external;
 
     /**
      *  @dev   Removes a token redeemer from the basin. Calls the redeemer's tearDown function and
-     *         revokes the REDEEMER_CONTRACT_ROLE. Callable only by the OWNER_ROLE.
+     *         revokes the REDEEMER_CONTRACT_ROLE. Callable only by the MANAGER_ADMIN_ROLE.
      *  @param redeemer Address of the token redeemer to remove.
      */
     function removeTokenRedeemer(address redeemer) external;

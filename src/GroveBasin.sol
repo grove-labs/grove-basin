@@ -242,7 +242,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /*** Owner functions                                                             ***/
     /**********************************************************************************************/
 
-    function addTokenRedeemer(address redeemer) external override onlyRole(OWNER_ROLE) {
+    function addTokenRedeemer(address redeemer) external override onlyRole(MANAGER_ADMIN_ROLE) {
         require(redeemer != address(0), "GroveBasin/invalid-redeemer");
         require(!hasRole(REDEEMER_CONTRACT_ROLE, redeemer), "GroveBasin/redeemer-already-added");
 
@@ -253,7 +253,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         emit TokenRedeemerAdded(redeemer);
     }
 
-    function removeTokenRedeemer(address redeemer) external override onlyRole(OWNER_ROLE) {
+    function removeTokenRedeemer(address redeemer) external override onlyRole(MANAGER_ADMIN_ROLE) {
         require(hasRole(REDEEMER_CONTRACT_ROLE, redeemer), "GroveBasin/invalid-redeemer");
 
         try ITokenRedeemer(redeemer).tearDown(address(this)) {} catch {}

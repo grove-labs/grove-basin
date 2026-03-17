@@ -96,13 +96,13 @@ contract RedeemerRoleManagementTests is GroveBasinTestBase {
 
     function test_addTokenRedeemer_unauthorized() public {
         address nonOwner = makeAddr("nonOwner");
-        bytes32 ownerRole = groveBasin.OWNER_ROLE();
+        bytes32 managerAdminRole = groveBasin.MANAGER_ADMIN_ROLE();
 
         vm.expectRevert(
             abi.encodeWithSignature(
                 "AccessControlUnauthorizedAccount(address,bytes32)",
                 nonOwner,
-                ownerRole
+                managerAdminRole
             )
         );
         vm.prank(nonOwner);
@@ -111,7 +111,7 @@ contract RedeemerRoleManagementTests is GroveBasinTestBase {
 
     function test_removeTokenRedeemer_unauthorized() public {
         address nonOwner = makeAddr("nonOwner");
-        bytes32 ownerRole = groveBasin.OWNER_ROLE();
+        bytes32 managerAdminRole = groveBasin.MANAGER_ADMIN_ROLE();
 
         vm.prank(owner);
         groveBasin.addTokenRedeemer(address(redeemer));
@@ -120,7 +120,7 @@ contract RedeemerRoleManagementTests is GroveBasinTestBase {
             abi.encodeWithSignature(
                 "AccessControlUnauthorizedAccount(address,bytes32)",
                 nonOwner,
-                ownerRole
+                managerAdminRole
             )
         );
         vm.prank(nonOwner);
