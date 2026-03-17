@@ -90,7 +90,7 @@ contract AaveV3UsdtPocket is BasePocket {
         if (asset == address(usdt)) {
             return usdt.balanceOf(address(this)) + aUsdt.balanceOf(address(this));
         }
-        return 0;
+        return IERC20(asset).balanceOf(address(this));
     }
 
 }

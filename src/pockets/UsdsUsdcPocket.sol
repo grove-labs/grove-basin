@@ -120,7 +120,7 @@ contract UsdsUsdcPocket is BasePocket {
             return usdc.balanceOf(address(this))
                 + usds.balanceOf(address(this)) * _usdcPrecision / _usdsPrecision;
         }
-        return 0;
+        return IERC20(asset).balanceOf(address(this));
     }
 
 }

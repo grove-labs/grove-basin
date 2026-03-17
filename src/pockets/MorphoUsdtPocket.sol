@@ -84,7 +84,7 @@ contract MorphoUsdtPocket is BasePocket {
                     IERC4626VaultLike(vault).balanceOf(address(this))
                 );
         }
-        return 0;
+        return IERC20(asset).balanceOf(address(this));
     }
 
 }
