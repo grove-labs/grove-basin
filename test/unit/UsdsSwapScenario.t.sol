@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import "forge-std/Test.sol";
 
 import { GroveBasin }       from "src/GroveBasin.sol";
-import { UsdsUsdcPocket }   from "src/UsdsUsdcPocket.sol";
+import { UsdsUsdcPocket }   from "src/pockets/UsdsUsdcPocket.sol";
 
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
@@ -59,7 +59,6 @@ contract UsdsSwapScenarioTestBase is Test {
 
         pocket = new UsdsUsdcPocket(
             address(groveBasin),
-            owner,
             address(usdc),
             address(usds),
             address(psm)

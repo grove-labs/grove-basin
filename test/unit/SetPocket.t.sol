@@ -6,8 +6,8 @@ import "forge-std/Test.sol";
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
 import { GroveBasin }       from "src/GroveBasin.sol";
-import { UsdsUsdcPocket }   from "src/UsdsUsdcPocket.sol";
-import { AaveV3UsdtPocket } from "src/AaveV3UsdtPocket.sol";
+import { UsdsUsdcPocket }   from "src/pockets/UsdsUsdcPocket.sol";
+import { AaveV3UsdtPocket } from "src/pockets/AaveV3UsdtPocket.sol";
 
 import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 import { MockRateProvider }   from "test/mocks/MockRateProvider.sol";
@@ -46,8 +46,8 @@ contract GroveBasinSetPocketFailureTests is GroveBasinTestBase {
         usds.mint(address(psm), 1_000_000_000e18);
         swapToken.mint(address(psm), 1_000_000_000e6);
 
-        UsdsUsdcPocket pocket1 = new UsdsUsdcPocket(address(groveBasin), owner, address(swapToken), address(usds), address(psm));
-        UsdsUsdcPocket pocket2 = new UsdsUsdcPocket(address(groveBasin), owner, address(swapToken), address(usds), address(psm));
+        UsdsUsdcPocket pocket1 = new UsdsUsdcPocket(address(groveBasin), address(swapToken), address(usds), address(psm));
+        UsdsUsdcPocket pocket2 = new UsdsUsdcPocket(address(groveBasin), address(swapToken), address(usds), address(psm));
 
         vm.prank(owner);
         groveBasin.setPocket(address(pocket1));
@@ -77,8 +77,8 @@ contract GroveBasinSetPocketSuccessTests is GroveBasinTestBase {
     function setUp() public override {
         super.setUp();
 
-        pocket1 = new UsdsUsdcPocket(address(groveBasin), owner, address(swapToken), address(usds), address(psm));
-        pocket2 = new UsdsUsdcPocket(address(groveBasin), owner, address(swapToken), address(usds), address(psm));
+        pocket1 = new UsdsUsdcPocket(address(groveBasin), address(swapToken), address(usds), address(psm));
+        pocket2 = new UsdsUsdcPocket(address(groveBasin), address(swapToken), address(usds), address(psm));
     }
 
     function test_setPocket_pocketIsGroveBasin() public {
@@ -204,7 +204,6 @@ contract GroveBasinSetPocketYieldDeployedTests is Test {
 
         pocket1 = new UsdsUsdcPocket(
             address(groveBasin),
-            owner,
             address(usdc),
             address(usds),
             address(psm)
@@ -212,7 +211,6 @@ contract GroveBasinSetPocketYieldDeployedTests is Test {
 
         pocket2 = new UsdsUsdcPocket(
             address(groveBasin),
-            owner,
             address(usdc),
             address(usds),
             address(psm)
@@ -353,8 +351,8 @@ contract GroveBasinSetPocketUsdtWithdrawalTests is Test {
         usdt.mint(address(aaveV3Pool), 1_000_000_000e6);
         aUsdt.mint(address(aaveV3Pool), 1_000_000_000e6);
 
-        pocket1 = new AaveV3UsdtPocket(address(groveBasin), admin, address(usdt), address(aUsdt), address(aaveV3Pool));
-        pocket2 = new AaveV3UsdtPocket(address(groveBasin), admin, address(usdt), address(aUsdt), address(aaveV3Pool));
+        pocket1 = new AaveV3UsdtPocket(address(groveBasin), address(usdt), address(aUsdt), address(aaveV3Pool));
+        pocket2 = new AaveV3UsdtPocket(address(groveBasin), address(usdt), address(aUsdt), address(aaveV3Pool));
 
         vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);

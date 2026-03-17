@@ -10,7 +10,7 @@ import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 import { MockRateProvider, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 import { MockPSM }                              from "test/mocks/MockPSM.sol";
 
-import { UsdsUsdcPocket } from "src/UsdsUsdcPocket.sol";
+import { UsdsUsdcPocket } from "src/pockets/UsdsUsdcPocket.sol";
 
 contract GroveBasinWithdrawTests is GroveBasinTestBase {
 
@@ -38,7 +38,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         usds.mint(address(psm), type(uint128).max);
         swapToken.mint(address(psm), type(uint128).max);
 
-        UsdsUsdcPocket mockPocket = new UsdsUsdcPocket(address(groveBasin), owner, address(swapToken), address(usds), address(psm));
+        UsdsUsdcPocket mockPocket = new UsdsUsdcPocket(address(groveBasin), address(swapToken), address(usds), address(psm));
 
         vm.prank(owner);
         groveBasin.setPocket(address(mockPocket));

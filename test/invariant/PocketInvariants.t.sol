@@ -6,9 +6,9 @@ import "forge-std/Test.sol";
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
 import { GroveBasin }        from "src/GroveBasin.sol";
-import { AaveV3UsdtPocket }  from "src/AaveV3UsdtPocket.sol";
-import { MorphoUsdtPocket }  from "src/MorphoUsdtPocket.sol";
-import { UsdsUsdcPocket }    from "src/UsdsUsdcPocket.sol";
+import { AaveV3UsdtPocket }  from "src/pockets/AaveV3UsdtPocket.sol";
+import { MorphoUsdtPocket }  from "src/pockets/MorphoUsdtPocket.sol";
+import { UsdsUsdcPocket }    from "src/pockets/UsdsUsdcPocket.sol";
 import { IRateProviderLike } from "src/interfaces/IRateProviderLike.sol";
 
 import { MockRateProvider }  from "test/mocks/MockRateProvider.sol";
@@ -78,7 +78,6 @@ contract PocketInvariantTest is Test {
 
         pocket = new UsdsUsdcPocket(
             address(groveBasin),
-            owner,
             address(swapToken),
             address(usds),
             address(psm)
@@ -208,7 +207,6 @@ contract AaveV3PocketInvariantTest is Test {
 
         pocket = new AaveV3UsdtPocket(
             address(groveBasin),
-            owner,
             address(swapToken),
             address(aToken),
             address(aaveV3Pool)
@@ -330,7 +328,6 @@ contract MorphoPocketInvariantTest is Test {
 
         pocket = new MorphoUsdtPocket(
             address(groveBasin),
-            owner,
             address(swapToken),
             address(vault)
         );

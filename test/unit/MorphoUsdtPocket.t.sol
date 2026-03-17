@@ -7,10 +7,8 @@ import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
 
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
-import { IAccessControl } from "openzeppelin-contracts/contracts/access/IAccessControl.sol";
-
 import { GroveBasin }          from "src/GroveBasin.sol";
-import { MorphoUsdtPocket }    from "src/MorphoUsdtPocket.sol";
+import { MorphoUsdtPocket }    from "src/pockets/MorphoUsdtPocket.sol";
 import { IGroveBasinPocket }   from "src/interfaces/IGroveBasinPocket.sol";
 import { IERC4626VaultLike }   from "src/interfaces/IERC4626VaultLike.sol";
 
@@ -20,7 +18,6 @@ import { MockERC4626Vault }   from "test/mocks/MockERC4626Vault.sol";
 contract MorphoUsdtPocketTestBase is Test {
 
     address public owner   = makeAddr("owner");
-    address public admin   = makeAddr("admin");
     address public manager = makeAddr("manager");
 
     GroveBasin          public groveBasin;
@@ -66,18 +63,13 @@ contract MorphoUsdtPocketTestBase is Test {
 
         pocket = new MorphoUsdtPocket(
             address(groveBasin),
-            admin,
             address(usdt),
             address(vault)
         );
 
-        // Grant MANAGER_ROLE to manager
-        vm.startPrank(admin);
-        pocket.grantRole(pocket.MANAGER_ROLE(), manager);
-        vm.stopPrank();
-
         vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), manager);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
         groveBasin.setPocket(address(pocket));
         vm.stopPrank();
@@ -92,23 +84,18 @@ contract MorphoUsdtPocketTestBase is Test {
 contract MorphoUsdtPocketConstructorTests is MorphoUsdtPocketTestBase {
 
     function test_constructor_invalidBasin() public {
-        vm.expectRevert("MorphoUsdtPocket/invalid-basin");
-        new MorphoUsdtPocket(address(0), admin, address(usdt), address(vault));
-    }
-
-    function test_constructor_invalidAdmin() public {
-        vm.expectRevert("MorphoUsdtPocket/invalid-admin");
-        new MorphoUsdtPocket(address(groveBasin), address(0), address(usdt), address(vault));
+        vm.expectRevert("BasePocket/invalid-basin");
+        new MorphoUsdtPocket(address(0), address(usdt), address(vault));
     }
 
     function test_constructor_invalidUsdt() public {
         vm.expectRevert("MorphoUsdtPocket/invalid-usdt");
-        new MorphoUsdtPocket(address(groveBasin), admin, address(0), address(vault));
+        new MorphoUsdtPocket(address(groveBasin), address(0), address(vault));
     }
 
     function test_constructor_invalidVault() public {
         vm.expectRevert("MorphoUsdtPocket/invalid-vault");
-        new MorphoUsdtPocket(address(groveBasin), admin, address(usdt), address(0));
+        new MorphoUsdtPocket(address(groveBasin), address(usdt), address(0));
     }
 
     function test_constructor_success() public view {
@@ -119,17 +106,7 @@ contract MorphoUsdtPocketConstructorTests is MorphoUsdtPocketTestBase {
         assertEq(usdt.allowance(address(pocket), address(groveBasin)), type(uint256).max);
     }
 
-    function test_constructor_grantsDefaultAdminRole() public view {
-        assertTrue(pocket.hasRole(pocket.DEFAULT_ADMIN_ROLE(), admin));
-    }
-
-    function test_constructor_managerRoleDefined() public view {
-        assertEq(pocket.MANAGER_ROLE(), keccak256("MANAGER_ROLE"));
-    }
-
     function test_constructor_vaultIsImmutable() public view {
-        // Vault is an immutable — verify it's set and there's no setter function.
-        // Solidity immutables have no setter by design; we confirm the value is correct.
         assertEq(pocket.vault(), address(vault));
     }
 
@@ -142,24 +119,12 @@ contract MorphoUsdtPocketConstructorTests is MorphoUsdtPocketTestBase {
 contract MorphoUsdtPocketAccessControlTests is MorphoUsdtPocketTestBase {
 
     function test_depositLiquidity_notAuthorized() public {
-        vm.expectRevert("MorphoUsdtPocket/not-authorized");
+        vm.expectRevert("BasePocket/not-authorized");
         pocket.depositLiquidity(100e6, address(usdt));
     }
 
     function test_withdrawLiquidity_notAuthorized() public {
-        vm.expectRevert("MorphoUsdtPocket/not-authorized");
-        pocket.withdrawLiquidity(100e6, address(usdt));
-    }
-
-    function test_depositLiquidity_adminOnly_notAuthorized() public {
-        vm.prank(admin);
-        vm.expectRevert("MorphoUsdtPocket/not-authorized");
-        pocket.depositLiquidity(100e6, address(usdt));
-    }
-
-    function test_withdrawLiquidity_adminOnly_notAuthorized() public {
-        vm.prank(admin);
-        vm.expectRevert("MorphoUsdtPocket/not-authorized");
+        vm.expectRevert("BasePocket/not-authorized");
         pocket.withdrawLiquidity(100e6, address(usdt));
     }
 
@@ -204,7 +169,6 @@ contract MorphoUsdtPocketDepositLiquidityTests is MorphoUsdtPocketTestBase {
     }
 
     function test_depositLiquidity_consecutiveDeposits() public {
-        // Tests USDT-safe approve(0)/approve(amount) pattern
         usdt.mint(address(pocket), 2000e6);
 
         vm.startPrank(address(groveBasin));
@@ -239,7 +203,6 @@ contract MorphoUsdtPocketManagerTests is MorphoUsdtPocketTestBase {
     }
 
     function test_withdrawLiquidity_manager_withdrawsFromVault() public {
-        // First deposit to vault
         usdt.mint(address(pocket), 1000e6);
         vm.prank(address(groveBasin));
         pocket.depositLiquidity(1000e6, address(usdt));
@@ -266,7 +229,6 @@ contract MorphoUsdtPocketManagerTests is MorphoUsdtPocketTestBase {
     }
 
     function test_depositLiquidity_manager_consecutiveDeposits() public {
-        // Tests USDT-safe approve(0)/approve(amount) pattern via manager
         usdt.mint(address(pocket), 2000e6);
 
         vm.startPrank(manager);
@@ -303,7 +265,6 @@ contract MorphoUsdtPocketWithdrawLiquidityTests is MorphoUsdtPocketTestBase {
     function test_withdrawLiquidity_existingBalanceCoversAll() public {
         usdt.mint(address(pocket), 1000e6);
 
-        // Deposit some to vault to verify vault is NOT called when balance covers
         vm.prank(address(groveBasin));
         pocket.depositLiquidity(500e6, address(usdt));
 
@@ -312,7 +273,6 @@ contract MorphoUsdtPocketWithdrawLiquidityTests is MorphoUsdtPocketTestBase {
         vm.prank(address(groveBasin));
         pocket.withdrawLiquidity(500e6, address(usdt));
 
-        // Vault shares unchanged — no vault interaction needed
         assertEq(vault.balanceOf(address(pocket)), vaultSharesBefore);
         assertEq(usdt.balanceOf(address(pocket)), 500e6);
     }
@@ -320,25 +280,21 @@ contract MorphoUsdtPocketWithdrawLiquidityTests is MorphoUsdtPocketTestBase {
     function test_withdrawLiquidity_partialBalanceWithdrawsRemainder() public {
         usdt.mint(address(pocket), 300e6);
 
-        // Deposit 1000 to vault
         usdt.mint(address(pocket), 1000e6);
         vm.prank(address(groveBasin));
         pocket.depositLiquidity(1000e6, address(usdt));
 
-        // pocket has 300 USDT + 1000 vault shares
         assertEq(usdt.balanceOf(address(pocket)), 300e6);
         assertEq(vault.balanceOf(address(pocket)), 1000e6);
 
         vm.prank(address(groveBasin));
         pocket.withdrawLiquidity(500e6, address(usdt));
 
-        // Should withdraw 200 from vault (500 - 300 balance)
         assertEq(usdt.balanceOf(address(pocket)), 500e6);
         assertEq(vault.balanceOf(address(pocket)), 800e6);
     }
 
     function test_withdrawLiquidity_noBalanceWithdrawsAllFromVault() public {
-        // Deposit everything to vault
         usdt.mint(address(pocket), 1000e6);
         vm.prank(address(groveBasin));
         pocket.depositLiquidity(1000e6, address(usdt));
@@ -399,7 +355,6 @@ contract MorphoUsdtPocketAvailableBalanceTests is MorphoUsdtPocketTestBase {
         vm.prank(address(groveBasin));
         pocket.depositLiquidity(1000e6, address(usdt));
 
-        // 500 USDT + 1000 shares (1:1 rate)
         assertEq(pocket.availableBalance(address(usdt)), 1500e6);
     }
 
@@ -412,13 +367,10 @@ contract MorphoUsdtPocketAvailableBalanceTests is MorphoUsdtPocketTestBase {
         vm.prank(address(groveBasin));
         pocket.depositLiquidity(1000e6, address(usdt));
 
-        // Verify initial balance (1:1 rate)
         assertEq(pocket.availableBalance(address(usdt)), 1000e6);
 
-        // Simulate yield accrual: 1 share = 1.5 USDT (3/2)
         vault.setExchangeRate(3, 2);
 
-        // 1000 shares * 3/2 = 1500 USDT
         assertEq(pocket.availableBalance(address(usdt)), 1500e6);
     }
 
@@ -430,90 +382,29 @@ contract MorphoUsdtPocketAvailableBalanceTests is MorphoUsdtPocketTestBase {
 
 contract MorphoUsdtPocketRoleManagementTests is MorphoUsdtPocketTestBase {
 
-    bytes32 managerRole;
-
-    function setUp() public override {
-        super.setUp();
-        managerRole = pocket.MANAGER_ROLE();
-    }
-
-    function test_admin_grantManagerRole() public {
-        address newManager = makeAddr("newManager");
-
-        vm.prank(admin);
-        pocket.grantRole(managerRole, newManager);
-
-        assertTrue(pocket.hasRole(managerRole, newManager));
-    }
-
-    function test_admin_revokeManagerRole() public {
-        vm.prank(admin);
-        pocket.revokeRole(managerRole, manager);
-
-        assertFalse(pocket.hasRole(managerRole, manager));
-    }
-
     function test_revokedManager_cannotDeposit() public {
-        vm.prank(admin);
-        pocket.revokeRole(managerRole, manager);
+        vm.prank(owner);
+        groveBasin.revokeRole(groveBasin.MANAGER_ROLE(), manager);
 
         vm.prank(manager);
-        vm.expectRevert("MorphoUsdtPocket/not-authorized");
+        vm.expectRevert("BasePocket/not-authorized");
         pocket.depositLiquidity(100e6, address(usdt));
     }
 
     function test_revokedManager_cannotWithdraw() public {
-        vm.prank(admin);
-        pocket.revokeRole(managerRole, manager);
+        vm.prank(owner);
+        groveBasin.revokeRole(groveBasin.MANAGER_ROLE(), manager);
 
         vm.prank(manager);
-        vm.expectRevert("MorphoUsdtPocket/not-authorized");
+        vm.expectRevert("BasePocket/not-authorized");
         pocket.withdrawLiquidity(100e6, address(usdt));
-    }
-
-    function test_manager_canRenounceOwnRole() public {
-        vm.prank(manager);
-        pocket.renounceRole(managerRole, manager);
-
-        assertFalse(pocket.hasRole(managerRole, manager));
-    }
-
-    function test_nonAdmin_cannotGrantManagerRole() public {
-        address randomUser = makeAddr("randomUser");
-        address newManager = makeAddr("newManager");
-
-        vm.startPrank(randomUser);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IAccessControl.AccessControlUnauthorizedAccount.selector,
-                randomUser,
-                pocket.DEFAULT_ADMIN_ROLE()
-            )
-        );
-        pocket.grantRole(managerRole, newManager);
-        vm.stopPrank();
-    }
-
-    function test_nonAdmin_cannotRevokeManagerRole() public {
-        address randomUser = makeAddr("randomUser");
-
-        vm.startPrank(randomUser);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IAccessControl.AccessControlUnauthorizedAccount.selector,
-                randomUser,
-                pocket.DEFAULT_ADMIN_ROLE()
-            )
-        );
-        pocket.revokeRole(managerRole, manager);
-        vm.stopPrank();
     }
 
     function test_multipleManagers() public {
         address manager2 = makeAddr("manager2");
 
-        vm.prank(admin);
-        pocket.grantRole(managerRole, manager2);
+        vm.prank(owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), manager2);
 
         usdt.mint(address(pocket), 2000e6);
 
@@ -536,16 +427,9 @@ contract MorphoUsdtPocketRoleManagementTests is MorphoUsdtPocketTestBase {
 
 contract MorphoUsdtPocketBasinIndependenceTests is MorphoUsdtPocketTestBase {
 
-    bytes32 managerRole;
-
-    function setUp() public override {
-        super.setUp();
-        managerRole = pocket.MANAGER_ROLE();
-    }
-
     function test_basin_canDepositRegardlessOfRoles() public {
-        vm.prank(admin);
-        pocket.revokeRole(managerRole, manager);
+        vm.prank(owner);
+        groveBasin.revokeRole(groveBasin.MANAGER_ROLE(), manager);
 
         usdt.mint(address(pocket), 1000e6);
 
@@ -556,8 +440,8 @@ contract MorphoUsdtPocketBasinIndependenceTests is MorphoUsdtPocketTestBase {
     }
 
     function test_basin_canWithdrawRegardlessOfRoles() public {
-        vm.prank(admin);
-        pocket.revokeRole(managerRole, manager);
+        vm.prank(owner);
+        groveBasin.revokeRole(groveBasin.MANAGER_ROLE(), manager);
 
         usdt.mint(address(pocket), 1000e6);
         vm.prank(address(groveBasin));
@@ -570,7 +454,7 @@ contract MorphoUsdtPocketBasinIndependenceTests is MorphoUsdtPocketTestBase {
     }
 
     function test_basin_doesNotNeedManagerRole() public view {
-        assertFalse(pocket.hasRole(managerRole, address(groveBasin)));
+        assertFalse(groveBasin.hasRole(groveBasin.MANAGER_ROLE(), address(groveBasin)));
     }
 
 }
@@ -622,17 +506,12 @@ contract MorphoUsdtPocketEventTests is MorphoUsdtPocketTestBase {
     }
 
     function test_withdrawLiquidity_nonOneToOneRate_emitsUsdtAmount() public {
-        // Deposit 1000 USDT at 1:1 rate → 1000 shares
         usdt.mint(address(pocket), 1000e6);
         vm.prank(address(groveBasin));
         pocket.depositLiquidity(1000e6, address(usdt));
 
-        // Change exchange rate: 1 share = 1.5 USDT (3/2)
         vault.setExchangeRate(3, 2);
 
-        // Withdraw 600 USDT from vault.
-        // At 3/2 rate, vault.withdraw(600e6) burns 400e6 shares (600 * 2/3 = 400).
-        // convertedAmount should be 600e6 (USDT amount), NOT 400e6 (shares burned).
         vm.prank(address(groveBasin));
         vm.expectEmit(address(pocket));
         emit IGroveBasinPocket.LiquidityDrawn(address(usdt), 600e6, 600e6);

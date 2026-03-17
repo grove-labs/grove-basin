@@ -12,7 +12,7 @@ import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 import { Ethereum } from "lib/grove-address-registry/src/Ethereum.sol";
 
 import { GroveBasin }          from "src/GroveBasin.sol";
-import { AaveV3UsdtPocket }    from "src/AaveV3UsdtPocket.sol";
+import { AaveV3UsdtPocket }    from "src/pockets/AaveV3UsdtPocket.sol";
 
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 import { MockAaveV3Pool }  from "test/mocks/MockAaveV3Pool.sol";
@@ -62,7 +62,6 @@ abstract contract AaveV3UsdtPocketForkTestBase is Test {
 
         pocket = new AaveV3UsdtPocket(
             address(groveBasin),
-            admin,
             Ethereum.USDT,
             address(mockAUsdt),
             address(mockAaveV3Pool)
@@ -107,7 +106,7 @@ contract AaveV3UsdtPocketForkTest_Deployment is AaveV3UsdtPocketForkTestBase {
         assertEq(address(pocket.usdt()),  Ethereum.USDT);
         assertEq(pocket.aaveV3Pool(), address(mockAaveV3Pool));
         assertEq(groveBasin.pocket(), address(pocket));
-        assertTrue(pocket.hasRole(pocket.DEFAULT_ADMIN_ROLE(), admin));
+        assertEq(pocket.basin(), address(groveBasin));
     }
 
 }
@@ -164,7 +163,6 @@ contract AaveV3UsdtPocketForkTest_SetPocket is AaveV3UsdtPocketForkTestBase {
 
         AaveV3UsdtPocket pocket2 = new AaveV3UsdtPocket(
             address(groveBasin),
-            admin,
             Ethereum.USDT,
             address(mockAUsdt),
             address(mockAaveV3Pool)

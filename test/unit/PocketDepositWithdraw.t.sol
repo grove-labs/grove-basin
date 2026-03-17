@@ -8,7 +8,7 @@ import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
 import { GroveBasin }       from "src/GroveBasin.sol";
-import { UsdsUsdcPocket }   from "src/UsdsUsdcPocket.sol";
+import { UsdsUsdcPocket }   from "src/pockets/UsdsUsdcPocket.sol";
 
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 import { MockPSM }          from "test/mocks/MockPSM.sol";
@@ -63,7 +63,6 @@ contract PocketDepositWithdrawTestBase is Test {
 
         pocket = new UsdsUsdcPocket(
             address(groveBasin),
-            owner,
             address(usdc),
             address(usds),
             address(psm)
@@ -368,7 +367,6 @@ contract BasinUsdtCollateralPocketTests is Test {
 
         pocket = new UsdsUsdcPocket(
             address(groveBasin),
-            owner,
             address(usdc),
             address(usds),
             address(psm)

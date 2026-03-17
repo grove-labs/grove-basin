@@ -7,10 +7,8 @@ import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
 
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
-import { IAccessControl }    from "openzeppelin-contracts/contracts/access/IAccessControl.sol";
-
 import { GroveBasin }           from "src/GroveBasin.sol";
-import { AaveV3UsdtPocket }     from "src/AaveV3UsdtPocket.sol";
+import { AaveV3UsdtPocket }     from "src/pockets/AaveV3UsdtPocket.sol";
 import { IGroveBasinPocket }    from "src/interfaces/IGroveBasinPocket.sol";
 
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
@@ -19,7 +17,6 @@ import { MockAaveV3Pool }  from "test/mocks/MockAaveV3Pool.sol";
 contract AaveV3UsdtPocketTestBase is Test {
 
     address public owner   = makeAddr("owner");
-    address public admin   = makeAddr("admin");
     address public manager = makeAddr("manager");
 
     GroveBasin           public groveBasin;
@@ -67,19 +64,14 @@ contract AaveV3UsdtPocketTestBase is Test {
 
         pocket = new AaveV3UsdtPocket(
             address(groveBasin),
-            admin,
             address(usdt),
             address(aUsdt),
             address(aaveV3Pool)
         );
 
-        // Grant MANAGER_ROLE to manager
-        vm.startPrank(admin);
-        pocket.grantRole(pocket.MANAGER_ROLE(), manager);
-        vm.stopPrank();
-
         vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), manager);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
         groveBasin.setPocket(address(pocket));
         vm.stopPrank();
@@ -94,28 +86,23 @@ contract AaveV3UsdtPocketTestBase is Test {
 contract AaveV3UsdtPocketConstructorTests is AaveV3UsdtPocketTestBase {
 
     function test_constructor_invalidBasin() public {
-        vm.expectRevert("AaveV3UsdtPocket/invalid-basin");
-        new AaveV3UsdtPocket(address(0), admin, address(usdt), address(aUsdt), address(aaveV3Pool));
-    }
-
-    function test_constructor_invalidAdmin() public {
-        vm.expectRevert("AaveV3UsdtPocket/invalid-admin");
-        new AaveV3UsdtPocket(address(groveBasin), address(0), address(usdt), address(aUsdt), address(aaveV3Pool));
+        vm.expectRevert("BasePocket/invalid-basin");
+        new AaveV3UsdtPocket(address(0), address(usdt), address(aUsdt), address(aaveV3Pool));
     }
 
     function test_constructor_invalidUsdt() public {
         vm.expectRevert("AaveV3UsdtPocket/invalid-usdt");
-        new AaveV3UsdtPocket(address(groveBasin), admin, address(0), address(aUsdt), address(aaveV3Pool));
+        new AaveV3UsdtPocket(address(groveBasin), address(0), address(aUsdt), address(aaveV3Pool));
     }
 
     function test_constructor_invalidAUsdt() public {
         vm.expectRevert("AaveV3UsdtPocket/invalid-aUsdt");
-        new AaveV3UsdtPocket(address(groveBasin), admin, address(usdt), address(0), address(aaveV3Pool));
+        new AaveV3UsdtPocket(address(groveBasin), address(usdt), address(0), address(aaveV3Pool));
     }
 
     function test_constructor_invalidAaveV3Pool() public {
         vm.expectRevert("AaveV3UsdtPocket/invalid-aaveV3Pool");
-        new AaveV3UsdtPocket(address(groveBasin), admin, address(usdt), address(aUsdt), address(0));
+        new AaveV3UsdtPocket(address(groveBasin), address(usdt), address(aUsdt), address(0));
     }
 
     function test_constructor_success() public view {
@@ -127,14 +114,6 @@ contract AaveV3UsdtPocketConstructorTests is AaveV3UsdtPocketTestBase {
         assertEq(usdt.allowance(address(pocket), address(groveBasin)), type(uint256).max);
     }
 
-    function test_constructor_grantsDefaultAdminRole() public view {
-        assertTrue(pocket.hasRole(pocket.DEFAULT_ADMIN_ROLE(), admin));
-    }
-
-    function test_constructor_managerRoleDefined() public view {
-        assertEq(pocket.MANAGER_ROLE(), keccak256("MANAGER_ROLE"));
-    }
-
 }
 
 /**********************************************************************************************/
@@ -144,24 +123,12 @@ contract AaveV3UsdtPocketConstructorTests is AaveV3UsdtPocketTestBase {
 contract AaveV3UsdtPocketAccessControlTests is AaveV3UsdtPocketTestBase {
 
     function test_depositLiquidity_notAuthorized() public {
-        vm.expectRevert("AaveV3UsdtPocket/not-authorized");
+        vm.expectRevert("BasePocket/not-authorized");
         pocket.depositLiquidity(100e6, address(usdt));
     }
 
     function test_withdrawLiquidity_notAuthorized() public {
-        vm.expectRevert("AaveV3UsdtPocket/not-authorized");
-        pocket.withdrawLiquidity(100e6, address(usdt));
-    }
-
-    function test_depositLiquidity_adminOnly_notAuthorized() public {
-        vm.prank(admin);
-        vm.expectRevert("AaveV3UsdtPocket/not-authorized");
-        pocket.depositLiquidity(100e6, address(usdt));
-    }
-
-    function test_withdrawLiquidity_adminOnly_notAuthorized() public {
-        vm.prank(admin);
-        vm.expectRevert("AaveV3UsdtPocket/not-authorized");
+        vm.expectRevert("BasePocket/not-authorized");
         pocket.withdrawLiquidity(100e6, address(usdt));
     }
 
@@ -217,90 +184,29 @@ contract AaveV3UsdtPocketManagerTests is AaveV3UsdtPocketTestBase {
 
 contract AaveV3UsdtPocketRoleManagementTests is AaveV3UsdtPocketTestBase {
 
-    bytes32 managerRole;
-
-    function setUp() public override {
-        super.setUp();
-        managerRole = pocket.MANAGER_ROLE();
-    }
-
-    function test_admin_grantManagerRole() public {
-        address newManager = makeAddr("newManager");
-
-        vm.prank(admin);
-        pocket.grantRole(managerRole, newManager);
-
-        assertTrue(pocket.hasRole(managerRole, newManager));
-    }
-
-    function test_admin_revokeManagerRole() public {
-        vm.prank(admin);
-        pocket.revokeRole(managerRole, manager);
-
-        assertFalse(pocket.hasRole(managerRole, manager));
-    }
-
     function test_revokedManager_cannotDeposit() public {
-        vm.prank(admin);
-        pocket.revokeRole(managerRole, manager);
+        vm.prank(owner);
+        groveBasin.revokeRole(groveBasin.MANAGER_ROLE(), manager);
 
         vm.prank(manager);
-        vm.expectRevert("AaveV3UsdtPocket/not-authorized");
+        vm.expectRevert("BasePocket/not-authorized");
         pocket.depositLiquidity(100e6, address(usdt));
     }
 
     function test_revokedManager_cannotWithdraw() public {
-        vm.prank(admin);
-        pocket.revokeRole(managerRole, manager);
+        vm.prank(owner);
+        groveBasin.revokeRole(groveBasin.MANAGER_ROLE(), manager);
 
         vm.prank(manager);
-        vm.expectRevert("AaveV3UsdtPocket/not-authorized");
+        vm.expectRevert("BasePocket/not-authorized");
         pocket.withdrawLiquidity(100e6, address(usdt));
-    }
-
-    function test_manager_canRenounceOwnRole() public {
-        vm.prank(manager);
-        pocket.renounceRole(managerRole, manager);
-
-        assertFalse(pocket.hasRole(managerRole, manager));
-    }
-
-    function test_nonAdmin_cannotGrantManagerRole() public {
-        address randomUser = makeAddr("randomUser");
-        address newManager = makeAddr("newManager");
-
-        vm.startPrank(randomUser);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IAccessControl.AccessControlUnauthorizedAccount.selector,
-                randomUser,
-                pocket.DEFAULT_ADMIN_ROLE()
-            )
-        );
-        pocket.grantRole(managerRole, newManager);
-        vm.stopPrank();
-    }
-
-    function test_nonAdmin_cannotRevokeManagerRole() public {
-        address randomUser = makeAddr("randomUser");
-
-        vm.startPrank(randomUser);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IAccessControl.AccessControlUnauthorizedAccount.selector,
-                randomUser,
-                pocket.DEFAULT_ADMIN_ROLE()
-            )
-        );
-        pocket.revokeRole(managerRole, manager);
-        vm.stopPrank();
     }
 
     function test_multipleManagers() public {
         address manager2 = makeAddr("manager2");
 
-        vm.prank(admin);
-        pocket.grantRole(managerRole, manager2);
+        vm.prank(owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), manager2);
 
         usdt.mint(address(pocket), 2000e6);
 
@@ -323,17 +229,9 @@ contract AaveV3UsdtPocketRoleManagementTests is AaveV3UsdtPocketTestBase {
 
 contract AaveV3UsdtPocketBasinIndependenceTests is AaveV3UsdtPocketTestBase {
 
-    bytes32 managerRole;
-
-    function setUp() public override {
-        super.setUp();
-        managerRole = pocket.MANAGER_ROLE();
-    }
-
     function test_basin_canDepositRegardlessOfRoles() public {
-        // Revoke manager role from everyone — basin should still work
-        vm.prank(admin);
-        pocket.revokeRole(managerRole, manager);
+        vm.prank(owner);
+        groveBasin.revokeRole(groveBasin.MANAGER_ROLE(), manager);
 
         usdt.mint(address(pocket), 1000e6);
 
@@ -344,9 +242,8 @@ contract AaveV3UsdtPocketBasinIndependenceTests is AaveV3UsdtPocketTestBase {
     }
 
     function test_basin_canWithdrawRegardlessOfRoles() public {
-        // Revoke manager role from everyone — basin should still work
-        vm.prank(admin);
-        pocket.revokeRole(managerRole, manager);
+        vm.prank(owner);
+        groveBasin.revokeRole(groveBasin.MANAGER_ROLE(), manager);
 
         aUsdt.mint(address(pocket), 1000e6);
 
@@ -357,7 +254,7 @@ contract AaveV3UsdtPocketBasinIndependenceTests is AaveV3UsdtPocketTestBase {
     }
 
     function test_basin_doesNotNeedManagerRole() public view {
-        assertFalse(pocket.hasRole(managerRole, address(groveBasin)));
+        assertFalse(groveBasin.hasRole(groveBasin.MANAGER_ROLE(), address(groveBasin)));
     }
 
 }

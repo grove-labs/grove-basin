@@ -5,10 +5,8 @@ import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
 
 import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
 
-import { AccessControl } from "openzeppelin-contracts/contracts/access/AccessControl.sol";
-
-import { IGroveBasinPocket }  from "src/interfaces/IGroveBasinPocket.sol";
-import { IERC4626VaultLike }  from "src/interfaces/IERC4626VaultLike.sol";
+import { BasePocket }        from "src/pockets/BasePocket.sol";
+import { IERC4626VaultLike } from "src/interfaces/IERC4626VaultLike.sol";
 
 /**
  * @title  MorphoUsdtPocket
@@ -16,47 +14,32 @@ import { IERC4626VaultLike }  from "src/interfaces/IERC4626VaultLike.sol";
  *         demand.
  *
  * @dev    Trust model:
- *         - DEFAULT_ADMIN_ROLE: Trusted. Can manage MANAGER_ROLE grants/revocations.
- *         - MANAGER_ROLE: Semi-trusted. Can call depositLiquidity and withdrawLiquidity.
  *         - Basin: Immutable address set at construction. Can call depositLiquidity and
- *           withdrawLiquidity independently of any role assignments.
+ *           withdrawLiquidity unconditionally.
+ *         - MANAGER_ROLE: Determined by the Grove Basin's AccessControl. Any address that holds
+ *           MANAGER_ROLE in the basin can call depositLiquidity and withdrawLiquidity.
  *
  *         The vault address is immutable and set at construction — there is no setter. This
  *         ensures the yield strategy cannot be changed after deployment.
  */
-contract MorphoUsdtPocket is IGroveBasinPocket, AccessControl {
+contract MorphoUsdtPocket is BasePocket {
 
     using SafeERC20 for IERC20;
-
-    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
-
-    address public override immutable basin;
 
     IERC20 public immutable usdt;
 
     address public immutable vault;
 
-    modifier onlyBasinOrManager() {
-        require(msg.sender == basin || hasRole(MANAGER_ROLE, msg.sender), "MorphoUsdtPocket/not-authorized");
-        _;
-    }
-
     constructor(
         address basin_,
-        address admin_,
         address usdt_,
         address vault_
-    ) {
-        require(basin_ != address(0), "MorphoUsdtPocket/invalid-basin");
-        require(admin_ != address(0), "MorphoUsdtPocket/invalid-admin");
+    ) BasePocket(basin_) {
         require(usdt_  != address(0), "MorphoUsdtPocket/invalid-usdt");
         require(vault_ != address(0), "MorphoUsdtPocket/invalid-vault");
 
-        basin = basin_;
         usdt  = IERC20(usdt_);
         vault = vault_;
-
-        _grantRole(DEFAULT_ADMIN_ROLE, admin_);
 
         IERC20(usdt_).safeApprove(basin_, type(uint256).max);
     }

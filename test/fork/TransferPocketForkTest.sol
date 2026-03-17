@@ -12,9 +12,9 @@ import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 import { Ethereum } from "lib/grove-address-registry/src/Ethereum.sol";
 
 import { GroveBasin }         from "src/GroveBasin.sol";
-import { AaveV3UsdtPocket }   from "src/AaveV3UsdtPocket.sol";
-import { MorphoUsdtPocket }   from "src/MorphoUsdtPocket.sol";
-import { UsdsUsdcPocket }     from "src/UsdsUsdcPocket.sol";
+import { AaveV3UsdtPocket }   from "src/pockets/AaveV3UsdtPocket.sol";
+import { MorphoUsdtPocket }   from "src/pockets/MorphoUsdtPocket.sol";
+import { UsdsUsdcPocket }     from "src/pockets/UsdsUsdcPocket.sol";
 import { IGroveBasin }        from "src/interfaces/IGroveBasin.sol";
 import { IERC4626VaultLike }  from "src/interfaces/IERC4626VaultLike.sol";
 
@@ -91,7 +91,6 @@ abstract contract TransferPocketForkTestBase is Test {
     function _createAavePocket() internal returns (AaveV3UsdtPocket) {
         return new AaveV3UsdtPocket(
             address(groveBasin),
-            admin,
             Ethereum.USDT,
             address(mockAUsdt),
             address(mockAaveV3Pool)
@@ -101,7 +100,6 @@ abstract contract TransferPocketForkTestBase is Test {
     function _createMorphoPocket() internal returns (MorphoUsdtPocket) {
         return new MorphoUsdtPocket(
             address(groveBasin),
-            admin,
             Ethereum.USDT,
             address(mockVault)
         );
@@ -798,10 +796,9 @@ contract TransferPocketForkTest_ManagerDeposit is TransferPocketForkTestBase {
 
         // Manager deposits directly to pocket (bypassing basin)
         address pocketManager = makeAddr("pocketManager");
-        bytes32 managerRole = aavePocket.MANAGER_ROLE();
 
-        vm.prank(admin);
-        aavePocket.grantRole(managerRole, pocketManager);
+        vm.prank(owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), pocketManager);
 
         uint256 managerAmount = 3_000e6;
         deal(Ethereum.USDT, address(aavePocket), managerAmount);
@@ -986,7 +983,6 @@ abstract contract TransferPocketForkTestBase_USDC is Test {
     function _createUsdcPocket() internal returns (UsdsUsdcPocket) {
         return new UsdsUsdcPocket(
             address(groveBasin),
-            admin,
             Ethereum.USDC,
             Ethereum.USDS,
             address(mockPsm)
