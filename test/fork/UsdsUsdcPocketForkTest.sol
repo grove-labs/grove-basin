@@ -10,7 +10,7 @@ import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
 import { Ethereum } from "lib/grove-address-registry/src/Ethereum.sol";
 
 import { GroveBasin }      from "src/GroveBasin.sol";
-import { UsdsUsdcPocket }  from "src/UsdsUsdcPocket.sol";
+import { UsdsUsdcPocket }  from "src/pockets/UsdsUsdcPocket.sol";
 
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 import { MockPSM }          from "test/mocks/MockPSM.sol";

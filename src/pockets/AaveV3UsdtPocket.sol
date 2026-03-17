@@ -5,41 +5,38 @@ import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
 
 import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
 
-import { IGroveBasinPocket } from "src/interfaces/IGroveBasinPocket.sol";
-import { IAaveV3PoolLike }   from "src/interfaces/IAaveV3PoolLike.sol";
+import { BasePocket }       from "src/pockets/BasePocket.sol";
+import { IAaveV3PoolLike }  from "src/interfaces/IAaveV3PoolLike.sol";
 
-contract UsdtPocket is IGroveBasinPocket {
+/**
+ * @title  AaveV3UsdtPocket
+ * @notice Pocket that deploys USDT liquidity into Aave V3 and withdraws on demand.
+ *
+ * @dev    Trust model:
+ *         - Basin: Immutable address set at construction. Can call depositLiquidity and
+ *           withdrawLiquidity unconditionally.
+ *         - MANAGER_ROLE: Determined by the Grove Basin's AccessControl. Any address that holds
+ *           MANAGER_ROLE in the basin can call depositLiquidity and withdrawLiquidity.
+ */
+contract AaveV3UsdtPocket is BasePocket {
 
     using SafeERC20 for IERC20;
-
-    address public override immutable basin;
-    address public immutable manager;
 
     IERC20 public immutable usdt;
     IERC20 public immutable aUsdt;
 
     address public immutable aaveV3Pool;
 
-    modifier onlyBasin() {
-        require(msg.sender == basin, "UsdtPocket/not-basin");
-        _;
-    }
-
     constructor(
         address basin_,
-        address manager_,
         address usdt_,
         address aUsdt_,
         address aaveV3Pool_
-    ) {
-        require(basin_      != address(0), "UsdtPocket/invalid-basin");
-        require(manager_    != address(0), "UsdtPocket/invalid-manager");
-        require(usdt_       != address(0), "UsdtPocket/invalid-usdt");
-        require(aUsdt_      != address(0), "UsdtPocket/invalid-aUsdt");
-        require(aaveV3Pool_ != address(0), "UsdtPocket/invalid-aaveV3Pool");
+    ) BasePocket(basin_) {
+        require(usdt_       != address(0), "AaveV3UsdtPocket/invalid-usdt");
+        require(aUsdt_      != address(0), "AaveV3UsdtPocket/invalid-aUsdt");
+        require(aaveV3Pool_ != address(0), "AaveV3UsdtPocket/invalid-aaveV3Pool");
 
-        basin      = basin_;
-        manager    = manager_;
         usdt       = IERC20(usdt_);
         aUsdt      = IERC20(aUsdt_);
         aaveV3Pool = aaveV3Pool_;
@@ -47,10 +44,10 @@ contract UsdtPocket is IGroveBasinPocket {
         IERC20(usdt_).safeApprove(basin_, type(uint256).max);
     }
 
-    function depositLiquidity(uint256 amount, address asset) external override onlyBasin returns (uint256) {
+    function depositLiquidity(uint256 amount, address asset) external override onlyBasinOrManager returns (uint256) {
         if (amount == 0) return 0;
 
-        require(asset == address(usdt), "UsdtPocket/invalid-asset");
+        require(asset == address(usdt), "AaveV3UsdtPocket/invalid-asset");
 
         emit LiquidityDeposited(asset, amount, amount);
 
@@ -61,10 +58,10 @@ contract UsdtPocket is IGroveBasinPocket {
         return amount;
     }
 
-    function withdrawLiquidity(uint256 amount, address asset) external override onlyBasin returns (uint256) {
+    function withdrawLiquidity(uint256 amount, address asset) external override onlyBasinOrManager returns (uint256) {
         if (amount == 0) return 0;
 
-        require(asset == address(usdt), "UsdtPocket/invalid-asset");
+        require(asset == address(usdt), "AaveV3UsdtPocket/invalid-asset");
 
         uint256 balance = usdt.balanceOf(address(this));
 
@@ -93,7 +90,7 @@ contract UsdtPocket is IGroveBasinPocket {
         if (asset == address(usdt)) {
             return usdt.balanceOf(address(this)) + aUsdt.balanceOf(address(this));
         }
-        return 0;
+        return IERC20(asset).balanceOf(address(this));
     }
 
 }

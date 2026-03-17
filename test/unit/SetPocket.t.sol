@@ -6,8 +6,8 @@ import "forge-std/Test.sol";
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
 import { GroveBasin }       from "src/GroveBasin.sol";
-import { UsdsUsdcPocket }   from "src/UsdsUsdcPocket.sol";
-import { UsdtPocket }       from "src/UsdtPocket.sol";
+import { UsdsUsdcPocket }   from "src/pockets/UsdsUsdcPocket.sol";
+import { AaveV3UsdtPocket } from "src/pockets/AaveV3UsdtPocket.sol";
 
 import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 import { MockRateProvider }   from "test/mocks/MockRateProvider.sol";
@@ -306,10 +306,11 @@ contract GroveBasinSetPocketYieldDeployedTests is Test {
 contract GroveBasinSetPocketUsdtWithdrawalTests is Test {
 
     address public owner = makeAddr("owner");
+    address public admin = makeAddr("admin");
 
-    GroveBasin     public groveBasin;
-    UsdtPocket     public pocket1;
-    UsdtPocket     public pocket2;
+    GroveBasin           public groveBasin;
+    AaveV3UsdtPocket     public pocket1;
+    AaveV3UsdtPocket     public pocket2;
 
     MockERC20 public usdt;
     MockERC20 public aUsdt;
@@ -350,10 +351,8 @@ contract GroveBasinSetPocketUsdtWithdrawalTests is Test {
         usdt.mint(address(aaveV3Pool), 1_000_000_000e6);
         aUsdt.mint(address(aaveV3Pool), 1_000_000_000e6);
 
-        address manager = makeAddr("manager");
-
-        pocket1 = new UsdtPocket(address(groveBasin), manager, address(usdt), address(aUsdt), address(aaveV3Pool));
-        pocket2 = new UsdtPocket(address(groveBasin), manager, address(usdt), address(aUsdt), address(aaveV3Pool));
+        pocket1 = new AaveV3UsdtPocket(address(groveBasin), address(usdt), address(aUsdt), address(aaveV3Pool));
+        pocket2 = new AaveV3UsdtPocket(address(groveBasin), address(usdt), address(aUsdt), address(aaveV3Pool));
 
         vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);

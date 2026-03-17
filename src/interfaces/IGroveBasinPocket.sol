@@ -27,7 +27,7 @@ interface IGroveBasinPocket {
 
     /**
      *  @dev    Withdraws liquidity from the pocket, converting from yield-bearing positions if
-     *          necessary to fulfill the requested amount. Callable only by the basin.
+     *          necessary to fulfill the requested amount. Callable by the basin or MANAGER_ROLE.
      *  @param  amount Amount of the asset to withdraw.
      *  @param  asset  Address of the asset to withdraw.
      *  @return The amount of the asset made available.
@@ -36,7 +36,7 @@ interface IGroveBasinPocket {
 
     /**
      *  @dev    Deposits liquidity into the pocket, optionally deploying it to yield-bearing
-     *          strategies. Callable only by the basin.
+     *          strategies. Callable by the basin or MANAGER_ROLE.
      *  @param  amount Amount of the asset to deposit.
      *  @param  asset  Address of the asset to deposit.
      *  @return The amount of the asset deposited (or converted equivalent).

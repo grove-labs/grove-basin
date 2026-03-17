@@ -11,19 +11,19 @@ import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
 import { Ethereum } from "lib/grove-address-registry/src/Ethereum.sol";
 
-import { GroveBasin }  from "src/GroveBasin.sol";
-import { UsdtPocket }  from "src/UsdtPocket.sol";
+import { GroveBasin }          from "src/GroveBasin.sol";
+import { AaveV3UsdtPocket }    from "src/pockets/AaveV3UsdtPocket.sol";
 
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 import { MockAaveV3Pool }  from "test/mocks/MockAaveV3Pool.sol";
 
-abstract contract UsdtPocketForkTestBase is Test {
+abstract contract AaveV3UsdtPocketForkTestBase is Test {
 
     address public owner   = makeAddr("owner");
-    address public manager = makeAddr("manager");
+    address public admin   = makeAddr("admin");
 
-    GroveBasin     public groveBasin;
-    UsdtPocket     public pocket;
+    GroveBasin           public groveBasin;
+    AaveV3UsdtPocket     public pocket;
 
     MockRateProvider public swapTokenRateProvider;
     MockRateProvider public collateralTokenRateProvider;
@@ -60,9 +60,8 @@ abstract contract UsdtPocketForkTestBase is Test {
         deal(Ethereum.USDT, address(mockAaveV3Pool), 10_000_000e6);
         mockAUsdt.mint(address(mockAaveV3Pool), 10_000_000e6);
 
-        pocket = new UsdtPocket(
+        pocket = new AaveV3UsdtPocket(
             address(groveBasin),
-            manager,
             Ethereum.USDT,
             address(mockAUsdt),
             address(mockAaveV3Pool)
@@ -100,23 +99,23 @@ abstract contract UsdtPocketForkTestBase is Test {
 /*** Deployment tests                                                                       ***/
 /**********************************************************************************************/
 
-contract UsdtPocketForkTest_Deployment is UsdtPocketForkTestBase {
+contract AaveV3UsdtPocketForkTest_Deployment is AaveV3UsdtPocketForkTestBase {
 
     function test_deployment() public view {
         assertEq(pocket.basin(),      address(groveBasin));
-        assertEq(pocket.manager(),    manager);
         assertEq(address(pocket.usdt()),  Ethereum.USDT);
         assertEq(pocket.aaveV3Pool(), address(mockAaveV3Pool));
         assertEq(groveBasin.pocket(), address(pocket));
+        assertEq(pocket.basin(), address(groveBasin));
     }
 
 }
 
 /**********************************************************************************************/
-/*** withdrawLiquidity tests                                                                    ***/
+/*** withdrawLiquidity tests                                                                ***/
 /**********************************************************************************************/
 
-contract UsdtPocketForkTest_DrawLiquidity is UsdtPocketForkTestBase {
+contract AaveV3UsdtPocketForkTest_DrawLiquidity is AaveV3UsdtPocketForkTestBase {
 
     function test_withdrawLiquidity_withdrawsFromAave() public {
         mockAUsdt.mint(address(pocket), 10_000e6);
@@ -156,15 +155,14 @@ contract UsdtPocketForkTest_DrawLiquidity is UsdtPocketForkTestBase {
 /*** setPocket migration tests                                                              ***/
 /**********************************************************************************************/
 
-contract UsdtPocketForkTest_SetPocket is UsdtPocketForkTestBase {
+contract AaveV3UsdtPocketForkTest_SetPocket is AaveV3UsdtPocketForkTestBase {
 
     function test_setPocket_migratesUsdtToNewPocket() public {
         deal(Ethereum.USDT, address(pocket), 500e6);
         mockAUsdt.mint(address(pocket), 1000e6);
 
-        UsdtPocket pocket2 = new UsdtPocket(
+        AaveV3UsdtPocket pocket2 = new AaveV3UsdtPocket(
             address(groveBasin),
-            manager,
             Ethereum.USDT,
             address(mockAUsdt),
             address(mockAaveV3Pool)
@@ -185,7 +183,7 @@ contract UsdtPocketForkTest_SetPocket is UsdtPocketForkTestBase {
 /*** End-to-end swap tests                                                                  ***/
 /**********************************************************************************************/
 
-contract UsdtPocketForkTest_SwapE2E is UsdtPocketForkTestBase {
+contract AaveV3UsdtPocketForkTest_SwapE2E is AaveV3UsdtPocketForkTestBase {
 
     address public swapper  = makeAddr("swapper");
     address public receiver = makeAddr("receiver");

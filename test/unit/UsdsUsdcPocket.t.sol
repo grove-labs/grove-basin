@@ -8,7 +8,7 @@ import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
 import { GroveBasin }        from "src/GroveBasin.sol";
-import { UsdsUsdcPocket }    from "src/UsdsUsdcPocket.sol";
+import { UsdsUsdcPocket }    from "src/pockets/UsdsUsdcPocket.sol";
 import { IGroveBasinPocket } from "src/interfaces/IGroveBasinPocket.sol";
 
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
@@ -71,6 +71,7 @@ contract UsdsUsdcPocketTestBase is Test {
         vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
         groveBasin.grantRole(groveBasin.MANAGER_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), manager);
         groveBasin.setMaxSwapSizeBounds(0, 10_000_000_000_000_000e18);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
         groveBasin.setPocket(address(pocket));
@@ -86,7 +87,7 @@ contract UsdsUsdcPocketTestBase is Test {
 contract UsdsUsdcPocketConstructorTests is UsdsUsdcPocketTestBase {
 
     function test_constructor_invalidBasin() public {
-        vm.expectRevert("UsdsUsdcPocket/invalid-basin");
+        vm.expectRevert("BasePocket/invalid-basin");
         new UsdsUsdcPocket(address(0), address(usdc), address(usds), address(psm));
     }
 
@@ -123,21 +124,161 @@ contract UsdsUsdcPocketConstructorTests is UsdsUsdcPocketTestBase {
 
 contract UsdsUsdcPocketAccessControlTests is UsdsUsdcPocketTestBase {
 
-    function test_withdrawLiquidity_notBasin() public {
-        vm.expectRevert("UsdsUsdcPocket/not-basin");
-        pocket.withdrawLiquidity(100e6, address(usdc));
-    }
-
-    function test_depositLiquidity_notBasin() public {
-        vm.expectRevert("UsdsUsdcPocket/not-basin");
+    function test_depositLiquidity_notAuthorized() public {
+        vm.expectRevert("BasePocket/not-authorized");
         pocket.depositLiquidity(100e6, address(usdc));
     }
 
+    function test_withdrawLiquidity_notAuthorized() public {
+        vm.expectRevert("BasePocket/not-authorized");
+        pocket.withdrawLiquidity(100e6, address(usdc));
+    }
 
 }
 
 /**********************************************************************************************/
-/*** depositLiquidity tests                                                                 ***/
+/*** MANAGER_ROLE deposit/withdraw tests                                                    ***/
+/**********************************************************************************************/
+
+contract UsdsUsdcPocketManagerTests is UsdsUsdcPocketTestBase {
+
+    function test_depositLiquidity_manager_usdc_swapsToUsds() public {
+        usdc.mint(address(pocket), 1000e6);
+
+        vm.prank(manager);
+        vm.expectEmit(address(pocket));
+        emit IGroveBasinPocket.LiquidityDeposited(address(usdc), 1000e6, 1000e18);
+        pocket.depositLiquidity(1000e6, address(usdc));
+
+        assertEq(usdc.balanceOf(address(pocket)), 0);
+        assertEq(usds.balanceOf(address(pocket)), 1000e18);
+    }
+
+    function test_depositLiquidity_manager_usds_holdsDirectly() public {
+        usds.mint(address(pocket), 1000e18);
+
+        vm.prank(manager);
+        vm.expectEmit(address(pocket));
+        emit IGroveBasinPocket.LiquidityDeposited(address(usds), 1000e18, 0);
+        pocket.depositLiquidity(1000e18, address(usds));
+
+        assertEq(usds.balanceOf(address(pocket)), 1000e18);
+    }
+
+    function test_withdrawLiquidity_manager_usdc() public {
+        usds.mint(address(pocket), 1000e18);
+
+        vm.prank(manager);
+        vm.expectEmit(address(pocket));
+        emit IGroveBasinPocket.LiquidityDrawn(address(usdc), 500e6, 500e18);
+        pocket.withdrawLiquidity(500e6, address(usdc));
+
+        assertEq(usdc.balanceOf(address(pocket)), 500e6);
+        assertEq(usds.balanceOf(address(pocket)), 500e18);
+    }
+
+    function test_depositLiquidity_manager_zeroAmount() public {
+        vm.prank(manager);
+        uint256 result = pocket.depositLiquidity(0, address(usdc));
+        assertEq(result, 0);
+    }
+
+    function test_withdrawLiquidity_manager_zeroAmount() public {
+        vm.prank(manager);
+        uint256 result = pocket.withdrawLiquidity(0, address(usdc));
+        assertEq(result, 0);
+    }
+
+}
+
+/**********************************************************************************************/
+/*** Role management tests                                                                  ***/
+/**********************************************************************************************/
+
+contract UsdsUsdcPocketRoleManagementTests is UsdsUsdcPocketTestBase {
+
+    function test_revokedManager_cannotDeposit() public {
+        vm.startPrank(owner);
+        groveBasin.revokeRole(groveBasin.MANAGER_ROLE(), manager);
+        vm.stopPrank();
+
+        vm.prank(manager);
+        vm.expectRevert("BasePocket/not-authorized");
+        pocket.depositLiquidity(100e6, address(usdc));
+    }
+
+    function test_revokedManager_cannotWithdraw() public {
+        vm.startPrank(owner);
+        groveBasin.revokeRole(groveBasin.MANAGER_ROLE(), manager);
+        vm.stopPrank();
+
+        vm.prank(manager);
+        vm.expectRevert("BasePocket/not-authorized");
+        pocket.withdrawLiquidity(100e6, address(usdc));
+    }
+
+    function test_multipleManagers() public {
+        address manager2 = makeAddr("manager2");
+
+        vm.startPrank(owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), manager2);
+        vm.stopPrank();
+
+        usdc.mint(address(pocket), 2000e6);
+
+        vm.prank(manager);
+        pocket.depositLiquidity(1000e6, address(usdc));
+
+        usdc.mint(address(pocket), 1000e6);
+
+        vm.prank(manager2);
+        pocket.depositLiquidity(1000e6, address(usdc));
+
+        assertEq(usds.balanceOf(address(pocket)), 2000e18);
+    }
+
+}
+
+/**********************************************************************************************/
+/*** Basin independence from roles tests                                                    ***/
+/**********************************************************************************************/
+
+contract UsdsUsdcPocketBasinIndependenceTests is UsdsUsdcPocketTestBase {
+
+    function test_basin_canDepositRegardlessOfRoles() public {
+        vm.startPrank(owner);
+        groveBasin.revokeRole(groveBasin.MANAGER_ROLE(), manager);
+        vm.stopPrank();
+
+        usdc.mint(address(pocket), 1000e6);
+
+        vm.prank(address(groveBasin));
+        pocket.depositLiquidity(1000e6, address(usdc));
+
+        assertEq(usds.balanceOf(address(pocket)), 1000e18);
+    }
+
+    function test_basin_canWithdrawRegardlessOfRoles() public {
+        vm.startPrank(owner);
+        groveBasin.revokeRole(groveBasin.MANAGER_ROLE(), manager);
+        vm.stopPrank();
+
+        usds.mint(address(pocket), 1000e18);
+
+        vm.prank(address(groveBasin));
+        pocket.withdrawLiquidity(500e6, address(usdc));
+
+        assertEq(usdc.balanceOf(address(pocket)), 500e6);
+    }
+
+    function test_basin_doesNotNeedManagerRole() public view {
+        assertFalse(groveBasin.hasRole(groveBasin.MANAGER_ROLE(), address(groveBasin)));
+    }
+
+}
+
+/**********************************************************************************************/
+/*** depositLiquidity tests (basin caller)                                                  ***/
 /**********************************************************************************************/
 
 contract UsdsUsdcPocketDepositLiquidityTests is UsdsUsdcPocketTestBase {
@@ -267,4 +408,46 @@ contract UsdsUsdcPocketAvailableBalanceTests is UsdsUsdcPocketTestBase {
 
 }
 
+/**********************************************************************************************/
+/*** Event emission tests for both callers                                                  ***/
+/**********************************************************************************************/
 
+contract UsdsUsdcPocketEventTests is UsdsUsdcPocketTestBase {
+
+    function test_depositLiquidity_basin_emitsEvent() public {
+        usdc.mint(address(pocket), 1000e6);
+
+        vm.prank(address(groveBasin));
+        vm.expectEmit(address(pocket));
+        emit IGroveBasinPocket.LiquidityDeposited(address(usdc), 1000e6, 1000e18);
+        pocket.depositLiquidity(1000e6, address(usdc));
+    }
+
+    function test_depositLiquidity_manager_emitsEvent() public {
+        usdc.mint(address(pocket), 500e6);
+
+        vm.prank(manager);
+        vm.expectEmit(address(pocket));
+        emit IGroveBasinPocket.LiquidityDeposited(address(usdc), 500e6, 500e18);
+        pocket.depositLiquidity(500e6, address(usdc));
+    }
+
+    function test_withdrawLiquidity_basin_emitsEvent() public {
+        usds.mint(address(pocket), 1000e18);
+
+        vm.prank(address(groveBasin));
+        vm.expectEmit(address(pocket));
+        emit IGroveBasinPocket.LiquidityDrawn(address(usdc), 500e6, 500e18);
+        pocket.withdrawLiquidity(500e6, address(usdc));
+    }
+
+    function test_withdrawLiquidity_manager_emitsEvent() public {
+        usds.mint(address(pocket), 1000e18);
+
+        vm.prank(manager);
+        vm.expectEmit(address(pocket));
+        emit IGroveBasinPocket.LiquidityDrawn(address(usdc), 500e6, 500e18);
+        pocket.withdrawLiquidity(500e6, address(usdc));
+    }
+
+}

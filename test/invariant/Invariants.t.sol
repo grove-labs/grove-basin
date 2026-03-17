@@ -11,6 +11,8 @@ import { GroveBasin } from "src/GroveBasin.sol";
 import { IGroveBasinPocket }       from "src/interfaces/IGroveBasinPocket.sol";
 import { IRateProviderLike } from "src/interfaces/IRateProviderLike.sol";
 
+import { MockERC20 } from "erc20-helpers/MockERC20.sol";
+
 import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
 import { LpHandler }            from "test/invariant/handlers/LpHandler.sol";
@@ -19,6 +21,7 @@ import { SwapperHandler }       from "test/invariant/handlers/SwapperHandler.sol
 import { TimeBasedRateHandler } from "test/invariant/handlers/TimeBasedRateHandler.sol";
 import { TransferHandler }      from "test/invariant/handlers/TransferHandler.sol";
 import { OwnerHandler }         from "test/invariant/handlers/OwnerHandler.sol";
+import { PocketFactory }        from "test/invariant/handlers/PocketFactory.sol";
 import { MockSSRRateProvider }  from "test/mocks/MockSSRRateProvider.sol";
 
 abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
@@ -733,21 +736,24 @@ contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinIn
 //       called is too high to be considered reflective of reality (setting pocket as often as deposits for example).
 //       This inherited test suite is the most complex and realistic, so setting the pocket in this
 //       one is sufficient to ensure the expected behavior and accounting.
-// contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers_WithPocketSetting is GroveBasinInvariants_TimeBasedRateSetting_WithTransfers {
+contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers_WithPocketSetting is GroveBasinInvariants_TimeBasedRateSetting_WithTransfers {
 
-//     OwnerHandler ownerHandler;
+    OwnerHandler ownerHandler;
 
-//     function setUp() public override {
-//         super.setUp();
+    function setUp() public override {
+        super.setUp();
 
-//         // NOTE: The GroveBasin is the pocket to start, so the test suite will start with it as the pocket
-//         //       and transfer it to other addresses.
+        // NOTE: The GroveBasin is the pocket to start, so the test suite will start with it as the pocket
+        //       and transfer it to other addresses.
 
-//         ownerHandler = new OwnerHandler(groveBasin, swapToken);
-//         targetContract(address(ownerHandler));
+        PocketFactory pocketFactory = new PocketFactory();
 
-//         vm.prank(owner);
-//         groveBasin.grantRole(groveBasin.DEFAULT_ADMIN_ROLE(), address(ownerHandler));
-//     }
+        ownerHandler = new OwnerHandler(groveBasin, swapToken, usds, psm, pocketFactory);
+        targetContract(address(ownerHandler));
 
-// }
+        bytes32 managerAdminRole = groveBasin.MANAGER_ADMIN_ROLE();
+        vm.prank(owner);
+        groveBasin.grantRole(managerAdminRole, address(ownerHandler));
+    }
+
+}

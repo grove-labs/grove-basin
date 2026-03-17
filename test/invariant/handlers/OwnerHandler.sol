@@ -3,63 +3,143 @@ pragma solidity ^0.8.24;
 
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
+import { IGroveBasinPocket } from "src/interfaces/IGroveBasinPocket.sol";
+
+import { MockPSM } from "test/mocks/MockPSM.sol";
+
 import { HandlerBase, GroveBasin } from "test/invariant/handlers/HandlerBase.sol";
+import { PocketFactory }           from "test/invariant/handlers/PocketFactory.sol";
 
 contract OwnerHandler is HandlerBase {
 
-    MockERC20 public swapToken;
+    /**********************************************************************************************/
+    /*** Structs to avoid stack-too-deep                                                        ***/
+    /**********************************************************************************************/
 
-    constructor(GroveBasin groveBasin_, MockERC20 swapToken_) HandlerBase(groveBasin_) {
-        swapToken = swapToken_;
+    struct SetPocketSnapshot {
+        address oldPocket;
+        uint256 totalAssets;
+        uint256 startingConversion;
     }
 
-    function setPocket(string memory salt) public {
-        address newPocket = makeAddr(salt);
+    /**********************************************************************************************/
+    /*** State variables                                                                        ***/
+    /**********************************************************************************************/
 
-        // Avoid "same pocket" error
-        if (newPocket == groveBasin.pocket()) {
-            newPocket = makeAddr(string(abi.encodePacked(salt, "salt")));
+    MockERC20 public swapToken;
+    MockERC20 public usds;
+
+    MockPSM public psm;
+
+    PocketFactory public pocketFactory;
+
+    uint256 public pocketNonce;
+
+    /**********************************************************************************************/
+    /*** Constructor                                                                            ***/
+    /**********************************************************************************************/
+
+    constructor(
+        GroveBasin    groveBasin_,
+        MockERC20     swapToken_,
+        MockERC20     usds_,
+        MockPSM       psm_,
+        PocketFactory pocketFactory_
+    ) HandlerBase(groveBasin_) {
+        swapToken     = swapToken_;
+        usds          = usds_;
+        psm           = psm_;
+        pocketFactory = pocketFactory_;
+    }
+
+    /**********************************************************************************************/
+    /*** Handler functions                                                                      ***/
+    /**********************************************************************************************/
+
+    function setPocket(uint256 pocketTypeSeed) public {
+        // Use modular arithmetic to pick pocket type: 0 = Aave, 1 = Morpho, 2 = UsdsUsdc
+        uint256 pocketType = pocketTypeSeed % 3;
+        pocketNonce++;
+
+        SetPocketSnapshot memory snap;
+        snap.oldPocket          = groveBasin.pocket();
+        snap.totalAssets        = groveBasin.totalAssets();
+        snap.startingConversion = groveBasin.convertToAssetValue(1e18);
+
+        address newPocket;
+
+        if (pocketType == 0) {
+            newPocket = _createAavePocket();
+        } else if (pocketType == 1) {
+            newPocket = _createMorphoPocket();
+        } else {
+            newPocket = _createUsdsUsdcPocket();
         }
 
-        // Assumption is made that the pocket will always infinite approve the GroveBasin
-        vm.prank(newPocket);
-        swapToken.approve(address(groveBasin), type(uint256).max);
-
-        uint256 oldPocketBalance   = swapToken.balanceOf(groveBasin.pocket());
-        uint256 newPocketBalance   = swapToken.balanceOf(newPocket);
-        uint256 totalAssets        = groveBasin.totalAssets();
-        uint256 startingConversion = groveBasin.convertToAssetValue(1e18);
-
-        address oldPocket = groveBasin.pocket();
+        // Avoid "same pocket" error
+        if (newPocket == snap.oldPocket) return;
 
         groveBasin.setPocket(newPocket);
 
-        // Old pocket should be cleared of swapToken
-        assertEq(
-            swapToken.balanceOf(oldPocket),
-            0,
-            "OwnerHandler/old-pocket-balance"
-        );
+        // --- No-dust invariant: old pocket must have exactly zero balance in all tokens ---
+        _assertOldPocketZeroBalance(snap.oldPocket);
 
-        // New pocket should get full pocket balance
-        assertEq(
-            swapToken.balanceOf(newPocket),
-            newPocketBalance + oldPocketBalance,
-            "OwnerHandler/new-pocket-balance"
-        );
-
-        // Total assets should be exactly the same
+        // --- totalAssets conservation ---
         assertEq(
             groveBasin.totalAssets(),
-            totalAssets,
+            snap.totalAssets,
             "OwnerHandler/total-assets"
         );
 
-        // Conversion rate should be exactly the same
+        // --- Conversion rate conservation ---
         assertEq(
             groveBasin.convertToAssetValue(1e18),
-            startingConversion,
+            snap.startingConversion,
             "OwnerHandler/starting-conversion"
+        );
+    }
+
+    /**********************************************************************************************/
+    /*** Internal: pocket factory functions                                                     ***/
+    /**********************************************************************************************/
+
+    function _createAavePocket() internal returns (address) {
+        return pocketFactory.createAavePocket(address(groveBasin), address(swapToken));
+    }
+
+    function _createMorphoPocket() internal returns (address) {
+        return pocketFactory.createMorphoPocket(address(groveBasin), address(swapToken));
+    }
+
+    function _createUsdsUsdcPocket() internal returns (address) {
+        return pocketFactory.createUsdsUsdcPocket(
+            address(groveBasin),
+            address(swapToken),
+            address(usds),
+            address(psm)
+        );
+    }
+
+    /**********************************************************************************************/
+    /*** Internal: no-dust assertion                                                            ***/
+    /**********************************************************************************************/
+
+    function _assertOldPocketZeroBalance(address oldPocket) internal view {
+        // swapToken balance must be zero (applies to all pocket types)
+        assertEq(
+            swapToken.balanceOf(oldPocket),
+            0,
+            "OwnerHandler/old-pocket-swap-balance"
+        );
+
+        // Check if old pocket is a real pocket (not the basin itself)
+        if (oldPocket == address(groveBasin)) return;
+
+        // Check availableBalance is zero for the pocket
+        assertEq(
+            IGroveBasinPocket(oldPocket).availableBalance(address(swapToken)),
+            0,
+            "OwnerHandler/old-pocket-available-balance"
         );
     }
 
