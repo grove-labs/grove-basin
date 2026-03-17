@@ -230,6 +230,10 @@ contract GroveBasin is IGroveBasin, AccessControl {
         if (!_hasPocket()) {
             swapToken.safeTransfer(newPocket, amountToTransfer);
         } else {
+            // NOTE: This transferFrom uses pocket_ as the 'from' address. This is safe because:
+            // 1. pocket_ must be a trusted IGroveBasinPocket implementation
+            // 2. Pocket contracts grant unlimited approval to this contract in their constructor
+            // 3. This function is protected by MANAGER_ADMIN_ROLE
             swapToken.safeTransferFrom(pocket_, newPocket, amountToTransfer);
         }
 
@@ -701,6 +705,10 @@ contract GroveBasin is IGroveBasin, AccessControl {
         uint256 lastUpdated;
         (rate, lastUpdated) = IRateProviderLike(rateProvider).getConversionRateWithAge();
 
+        // NOTE: Using block.timestamp for staleness checks is acceptable here because:
+        // 1. Miners can only manipulate timestamps by a few seconds (< 15 seconds)
+        // 2. Staleness threshold is typically set to minutes or hours (5 minutes to 48 hours)
+        // 3. Minor timestamp manipulation won't bypass the staleness check
         require(
             block.timestamp - lastUpdated <= stalenessThreshold,
             "GroveBasin/stale-rate"
@@ -776,9 +784,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     function _completeRedeem(address redeemer, uint256 creditTokenAmount) internal {
         require(hasRole(REDEEMER_CONTRACT_ROLE, redeemer), "GroveBasin/invalid-redeemer");
-        ITokenRedeemer(redeemer).completeRedeem(creditTokenAmount);
         creditTokenBalance = creditTokenAmount > creditTokenBalance ? 0 : creditTokenBalance - creditTokenAmount;
         emit RedeemCompleted(redeemer, msg.sender, creditTokenAmount);
+        ITokenRedeemer(redeemer).completeRedeem(creditTokenAmount);
     }
 
     function _calculatePurchaseFee(uint256 amount, bool roundUp) internal view returns (uint256) {
