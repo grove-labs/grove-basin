@@ -28,3 +28,25 @@ contract GroveBasinInitiateRedeemTests is GroveBasinTestBase {
     }
 
 }
+
+/**********************************************************************************************/
+/*** CompleteRedeem tests                                                                   ***/
+/**********************************************************************************************/
+
+contract GroveBasinCompleteRedeemTests is GroveBasinTestBase {
+
+    function test_completeRedeem_notRedeemer() public {
+        address nonRedeemer = makeAddr("nonRedeemer");
+
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                nonRedeemer,
+                groveBasin.REDEEMER_ROLE()
+            )
+        );
+        vm.prank(nonRedeemer);
+        groveBasin.completeRedeem(makeAddr("redeemer"), 1000e18);
+    }
+
+}

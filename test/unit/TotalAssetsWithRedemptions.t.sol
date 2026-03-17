@@ -19,14 +19,17 @@ contract TotalAssetsWithRedemptionsTests is GroveBasinTestBase {
     function setUp() public override {
         super.setUp();
 
-        vault    = new MockAsyncVault(address(collateralToken), address(creditToken));
-        redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault));
+        vault = new MockAsyncVault(address(collateralToken), address(creditToken));
 
-        vault.__setPermissioned(address(redeemer), true);
+        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
+        vault.__setPermissioned(predictedRedeemer, true);
+
+        redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(groveBasin));
 
         vm.startPrank(owner);
         groveBasin.addTokenRedeemer(address(redeemer));
         groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), address(this));
         vm.stopPrank();
     }
 

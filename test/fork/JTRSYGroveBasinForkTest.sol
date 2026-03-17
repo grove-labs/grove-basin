@@ -37,11 +37,6 @@ abstract contract JTRSYGroveBasinForkTestBase is JTRSYForkTestBase {
             address(creditTokenRateProvider)
         );
 
-        tokenRedeemer = new JTRSYTokenRedeemer(
-            address(creditToken),
-            CENTRIFUGE_JTRSY_VAULT
-        );
-
         vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
@@ -50,8 +45,15 @@ abstract contract JTRSYGroveBasinForkTestBase is JTRSYForkTestBase {
 
         _postDeploy();
 
-        // Also allowlist the TokenRedeemer on the JTRSY restrictions
-        _addToJTRSYAllowlist(address(tokenRedeemer));
+        // Predict redeemer address and allowlist it before deployment
+        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
+        _addToJTRSYAllowlist(predictedRedeemer);
+
+        tokenRedeemer = new JTRSYTokenRedeemer(
+            address(creditToken),
+            CENTRIFUGE_JTRSY_VAULT,
+            address(groveBasin)
+        );
 
         vm.prank(owner);
         groveBasin.addTokenRedeemer(address(tokenRedeemer));

@@ -21,28 +21,60 @@ import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 contract JTRSYTokenRedeemerConstructorTests is Test {
 
     MockERC20      public creditToken;
+    MockERC20      public collateralToken;
     MockAsyncVault public vault;
+    GroveBasin     public basin;
 
     function setUp() public {
-        creditToken = new MockERC20("creditToken", "creditToken", 18);
-        vault       = new MockAsyncVault(address(0), address(creditToken));
+        creditToken     = new MockERC20("creditToken", "creditToken", 18);
+        collateralToken = new MockERC20("collateralToken", "collateralToken", 18);
+        vault           = new MockAsyncVault(address(collateralToken), address(creditToken));
+        basin           = _deployBasin(address(collateralToken), address(creditToken));
     }
 
     function test_constructor() public {
-        JTRSYTokenRedeemer redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault));
+        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
+        vault.__setPermissioned(predictedRedeemer, true);
+        JTRSYTokenRedeemer redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(basin));
 
-        assertEq(redeemer.creditToken(), address(creditToken));
-        assertEq(redeemer.vault(),       address(vault));
+        assertEq(redeemer.creditToken(),    address(creditToken));
+        assertEq(redeemer.vault(),          address(vault));
+        assertEq(address(redeemer.basin()), address(basin));
     }
 
     function test_constructor_invalidCreditToken() public {
         vm.expectRevert("JTRSYTokenRedeemer/invalid-creditToken");
-        new JTRSYTokenRedeemer(address(0), address(vault));
+        new JTRSYTokenRedeemer(address(0), address(vault), address(basin));
     }
 
     function test_constructor_invalidVault() public {
         vm.expectRevert("JTRSYTokenRedeemer/invalid-vault");
-        new JTRSYTokenRedeemer(address(creditToken), address(0));
+        new JTRSYTokenRedeemer(address(creditToken), address(0), address(basin));
+    }
+
+    function test_constructor_invalidBasin() public {
+        vm.expectRevert("JTRSYTokenRedeemer/invalid-basin");
+        new JTRSYTokenRedeemer(address(creditToken), address(vault), address(0));
+    }
+
+    function _deployBasin(address collateralToken_, address creditToken_) internal returns (GroveBasin) {
+        MockERC20 swapToken_ = new MockERC20("swapToken", "swapToken", 6);
+        MockRateProvider swapRp       = new MockRateProvider();
+        MockRateProvider collateralRp = new MockRateProvider();
+        MockRateProvider creditRp     = new MockRateProvider();
+        swapRp.__setConversionRate(1e27);
+        collateralRp.__setConversionRate(1e27);
+        creditRp.__setConversionRate(1e27);
+
+        return new GroveBasin(
+            address(this),
+            address(swapToken_),
+            collateralToken_,
+            creditToken_,
+            address(swapRp),
+            address(collateralRp),
+            address(creditRp)
+        );
     }
 
 }
@@ -53,100 +85,17 @@ contract JTRSYTokenRedeemerConstructorTests is Test {
 
 contract JTRSYTokenRedeemerSetUpTests is Test {
 
-    function test_setUp_setsBasin() public {
-        MockERC20 creditToken     = new MockERC20("creditToken", "creditToken", 18);
-        MockERC20 collateralToken = new MockERC20("collateralToken", "collateralToken", 18);
-        MockAsyncVault vault      = new MockAsyncVault(address(collateralToken), address(creditToken));
-
-        JTRSYTokenRedeemer redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault));
-
-        vault.__setPermissioned(address(redeemer), true);
-
-        GroveBasin basin = _deployBasin(address(collateralToken), address(creditToken));
-
-        vm.prank(address(basin));
-        redeemer.setUp(address(basin));
-
-        assertEq(redeemer.basin(), address(basin));
-    }
-
-    function test_setUp_alreadySetUp() public {
-        MockERC20 creditToken     = new MockERC20("creditToken", "creditToken", 18);
-        MockERC20 collateralToken = new MockERC20("collateralToken", "collateralToken", 18);
-        MockAsyncVault vault      = new MockAsyncVault(address(collateralToken), address(creditToken));
-
-        JTRSYTokenRedeemer redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault));
-
-        vault.__setPermissioned(address(redeemer), true);
-
-        GroveBasin basin1 = _deployBasin(address(collateralToken), address(creditToken));
-        GroveBasin basin2 = _deployBasin(address(collateralToken), address(creditToken));
-
-        vm.prank(address(basin1));
-        redeemer.setUp(address(basin1));
-
-        vm.prank(address(basin2));
-        vm.expectRevert("JTRSYTokenRedeemer/already-set-up");
-        redeemer.setUp(address(basin2));
-    }
-
-    function test_setUp_creditTokenMismatch() public {
-        MockERC20 creditToken     = new MockERC20("creditToken", "creditToken", 18);
-        MockERC20 otherCreditToken = new MockERC20("otherCreditToken", "otherCreditToken", 18);
-        MockERC20 collateralToken = new MockERC20("collateralToken", "collateralToken", 18);
-        MockAsyncVault vault      = new MockAsyncVault(address(collateralToken), address(otherCreditToken));
-
-        JTRSYTokenRedeemer redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault));
-
-        // Deploy a basin with a different creditToken
-        GroveBasin basin = _deployBasin(address(collateralToken), address(otherCreditToken));
-
-        vm.prank(address(basin));
-        vm.expectRevert("JTRSYTokenRedeemer/creditToken-mismatch");
-        redeemer.setUp(address(basin));
-    }
-
-    function test_setUp_collateralAssetMismatch() public {
-        MockERC20 creditToken     = new MockERC20("creditToken", "creditToken", 18);
-        MockERC20 collateralToken = new MockERC20("collateralToken", "collateralToken", 18);
-        MockERC20 otherAsset      = new MockERC20("otherAsset", "otherAsset", 18);
-        MockAsyncVault vault      = new MockAsyncVault(address(otherAsset), address(creditToken));
-
-        JTRSYTokenRedeemer redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault));
-
-        vault.__setPermissioned(address(redeemer), true);
-
-        GroveBasin basin = _deployBasin(address(collateralToken), address(creditToken));
-
-        vm.prank(address(basin));
-        vm.expectRevert("JTRSYTokenRedeemer/collateral-asset-mismatch");
-        redeemer.setUp(address(basin));
-    }
-
-    function test_setUp_notAllowlisted() public {
-        MockERC20 creditToken     = new MockERC20("creditToken", "creditToken", 18);
-        MockERC20 collateralToken = new MockERC20("collateralToken", "collateralToken", 18);
-        MockAsyncVault vault      = new MockAsyncVault(address(collateralToken), address(creditToken));
-
-        JTRSYTokenRedeemer redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault));
-
-        GroveBasin basin = _deployBasin(address(collateralToken), address(creditToken));
-
-        vm.prank(address(basin));
-        vm.expectRevert("JTRSYTokenRedeemer/not-allowlisted");
-        redeemer.setUp(address(basin));
-    }
-
     function test_setUp_onlyBasin() public {
         MockERC20 creditToken     = new MockERC20("creditToken", "creditToken", 18);
         MockERC20 collateralToken = new MockERC20("collateralToken", "collateralToken", 18);
         MockAsyncVault vault      = new MockAsyncVault(address(collateralToken), address(creditToken));
 
-        JTRSYTokenRedeemer redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault));
-
-        vault.__setPermissioned(address(redeemer), true);
-
         GroveBasin basin = _deployBasin(address(collateralToken), address(creditToken));
+
+        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
+        vault.__setPermissioned(predictedRedeemer, true);
+
+        JTRSYTokenRedeemer redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(basin));
 
         address notBasin = makeAddr("notBasin");
 
@@ -160,14 +109,12 @@ contract JTRSYTokenRedeemerSetUpTests is Test {
         MockERC20 collateralToken = new MockERC20("collateralToken", "collateralToken", 18);
         MockAsyncVault vault      = new MockAsyncVault(address(collateralToken), address(creditToken));
 
-        JTRSYTokenRedeemer redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault));
-
-        vault.__setPermissioned(address(redeemer), true);
-
         GroveBasin basin = _deployBasin(address(collateralToken), address(creditToken));
 
-        vm.prank(address(basin));
-        redeemer.setUp(address(basin));
+        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
+        vault.__setPermissioned(predictedRedeemer, true);
+
+        JTRSYTokenRedeemer redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(basin));
 
         address notBasin = makeAddr("notBasin");
 
@@ -214,9 +161,6 @@ contract JTRSYTokenRedeemerInitiateRedeemTests is Test {
         creditToken     = new MockERC20("creditToken", "creditToken", 18);
         collateralToken = new MockERC20("collateralToken", "collateralToken", 18);
         vault           = new MockAsyncVault(address(collateralToken), address(creditToken));
-        redeemer        = new JTRSYTokenRedeemer(address(creditToken), address(vault));
-
-        vault.__setPermissioned(address(redeemer), true);
 
         MockERC20 swapToken = new MockERC20("swapToken", "swapToken", 6);
         MockRateProvider swapRp       = new MockRateProvider();
@@ -236,8 +180,10 @@ contract JTRSYTokenRedeemerInitiateRedeemTests is Test {
             address(creditRp)
         ));
 
-        vm.prank(basin);
-        redeemer.setUp(basin);
+        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
+        vault.__setPermissioned(predictedRedeemer, true);
+
+        redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), basin);
 
         creditToken.mint(basin, 10_000e18);
         vm.prank(basin);
@@ -294,9 +240,6 @@ contract JTRSYTokenRedeemerCompleteRedeemTests is Test {
         collateralToken = new MockERC20("collateralToken", "collateralToken", 18);
         creditToken     = new MockERC20("creditToken", "creditToken", 18);
         vault           = new MockAsyncVault(address(collateralToken), address(creditToken));
-        redeemer        = new JTRSYTokenRedeemer(address(creditToken), address(vault));
-
-        vault.__setPermissioned(address(redeemer), true);
 
         MockERC20 swapToken = new MockERC20("swapToken", "swapToken", 6);
         MockRateProvider swapRp       = new MockRateProvider();
@@ -316,8 +259,10 @@ contract JTRSYTokenRedeemerCompleteRedeemTests is Test {
             address(creditRp)
         ));
 
-        vm.prank(basin);
-        redeemer.setUp(basin);
+        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
+        vault.__setPermissioned(predictedRedeemer, true);
+
+        redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), basin);
 
         // Fund vault with collateral so it can pay out on redeem
         collateralToken.mint(address(vault), 100_000e18);

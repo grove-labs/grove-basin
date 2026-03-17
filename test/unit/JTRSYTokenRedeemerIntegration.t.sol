@@ -26,10 +26,12 @@ contract RedeemerRoleManagementTests is GroveBasinTestBase {
     function setUp() public override {
         super.setUp();
 
-        vault    = new MockAsyncVault(address(collateralToken), address(creditToken));
-        redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault));
+        vault = new MockAsyncVault(address(collateralToken), address(creditToken));
 
-        vault.__setPermissioned(address(redeemer), true);
+        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
+        vault.__setPermissioned(predictedRedeemer, true);
+
+        redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(groveBasin));
     }
 
     function test_addTokenRedeemer() public {
@@ -94,13 +96,13 @@ contract RedeemerRoleManagementTests is GroveBasinTestBase {
 
     function test_addTokenRedeemer_unauthorized() public {
         address nonOwner = makeAddr("nonOwner");
-        bytes32 ownerRole = groveBasin.OWNER_ROLE();
+        bytes32 managerAdminRole = groveBasin.MANAGER_ADMIN_ROLE();
 
         vm.expectRevert(
             abi.encodeWithSignature(
                 "AccessControlUnauthorizedAccount(address,bytes32)",
                 nonOwner,
-                ownerRole
+                managerAdminRole
             )
         );
         vm.prank(nonOwner);
@@ -109,7 +111,7 @@ contract RedeemerRoleManagementTests is GroveBasinTestBase {
 
     function test_removeTokenRedeemer_unauthorized() public {
         address nonOwner = makeAddr("nonOwner");
-        bytes32 ownerRole = groveBasin.OWNER_ROLE();
+        bytes32 managerAdminRole = groveBasin.MANAGER_ADMIN_ROLE();
 
         vm.prank(owner);
         groveBasin.addTokenRedeemer(address(redeemer));
@@ -118,7 +120,7 @@ contract RedeemerRoleManagementTests is GroveBasinTestBase {
             abi.encodeWithSignature(
                 "AccessControlUnauthorizedAccount(address,bytes32)",
                 nonOwner,
-                ownerRole
+                managerAdminRole
             )
         );
         vm.prank(nonOwner);
@@ -126,10 +128,12 @@ contract RedeemerRoleManagementTests is GroveBasinTestBase {
     }
 
     function test_addMultipleRedeemers() public {
-        MockAsyncVault vault2    = new MockAsyncVault(address(collateralToken), address(creditToken));
-        JTRSYTokenRedeemer redeemer2 = new JTRSYTokenRedeemer(address(creditToken), address(vault2));
+        MockAsyncVault vault2 = new MockAsyncVault(address(collateralToken), address(creditToken));
 
-        vault2.__setPermissioned(address(redeemer2), true);
+        address predictedRedeemer2 = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
+        vault2.__setPermissioned(predictedRedeemer2, true);
+
+        JTRSYTokenRedeemer redeemer2 = new JTRSYTokenRedeemer(address(creditToken), address(vault2), address(groveBasin));
 
         bytes32 redeemerRole = groveBasin.REDEEMER_CONTRACT_ROLE();
 
@@ -156,10 +160,12 @@ contract JTRSYTokenRedeemerInitiateRedeemIntegrationTests is GroveBasinTestBase 
     function setUp() public override {
         super.setUp();
 
-        vault    = new MockAsyncVault(address(collateralToken), address(creditToken));
-        redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault));
+        vault = new MockAsyncVault(address(collateralToken), address(creditToken));
 
-        vault.__setPermissioned(address(redeemer), true);
+        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
+        vault.__setPermissioned(predictedRedeemer, true);
+
+        redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(groveBasin));
 
         vm.startPrank(owner);
         groveBasin.addTokenRedeemer(address(redeemer));
@@ -222,13 +228,16 @@ contract JTRSYTokenRedeemerCompleteRedeemIntegrationTests is GroveBasinTestBase 
     function setUp() public override {
         super.setUp();
 
-        vault    = new MockAsyncVault(address(collateralToken), address(creditToken));
-        redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault));
+        vault = new MockAsyncVault(address(collateralToken), address(creditToken));
 
-        vault.__setPermissioned(address(redeemer), true);
+        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
+        vault.__setPermissioned(predictedRedeemer, true);
+
+        redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(groveBasin));
 
         vm.startPrank(owner);
         groveBasin.addTokenRedeemer(address(redeemer));
+        groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), address(this));
         vm.stopPrank();
 
         // Fund vault with collateral so it can pay out on redeem
@@ -272,18 +281,22 @@ contract JTRSYTokenRedeemerMultipleRedeemersTests is GroveBasinTestBase {
     function setUp() public override {
         super.setUp();
 
-        vault1    = new MockAsyncVault(address(collateralToken), address(creditToken));
-        vault2    = new MockAsyncVault(address(collateralToken), address(creditToken));
-        redeemer1 = new JTRSYTokenRedeemer(address(creditToken), address(vault1));
-        redeemer2 = new JTRSYTokenRedeemer(address(creditToken), address(vault2));
+        vault1 = new MockAsyncVault(address(collateralToken), address(creditToken));
+        vault2 = new MockAsyncVault(address(collateralToken), address(creditToken));
 
-        vault1.__setPermissioned(address(redeemer1), true);
-        vault2.__setPermissioned(address(redeemer2), true);
+        address predictedRedeemer1 = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
+        vault1.__setPermissioned(predictedRedeemer1, true);
+        redeemer1 = new JTRSYTokenRedeemer(address(creditToken), address(vault1), address(groveBasin));
+
+        address predictedRedeemer2 = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
+        vault2.__setPermissioned(predictedRedeemer2, true);
+        redeemer2 = new JTRSYTokenRedeemer(address(creditToken), address(vault2), address(groveBasin));
 
         vm.startPrank(owner);
         groveBasin.addTokenRedeemer(address(redeemer1));
         groveBasin.addTokenRedeemer(address(redeemer2));
         groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), address(this));
         vm.stopPrank();
 
         creditToken.mint(address(groveBasin), 10_000e18);
@@ -323,14 +336,17 @@ contract JTRSYTokenRedeemerFullFlowTests is GroveBasinTestBase {
     function setUp() public override {
         super.setUp();
 
-        vault    = new MockAsyncVault(address(collateralToken), address(creditToken));
-        redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault));
+        vault = new MockAsyncVault(address(collateralToken), address(creditToken));
 
-        vault.__setPermissioned(address(redeemer), true);
+        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
+        vault.__setPermissioned(predictedRedeemer, true);
+
+        redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(groveBasin));
 
         vm.startPrank(owner);
         groveBasin.addTokenRedeemer(address(redeemer));
         groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), address(this));
         vm.stopPrank();
 
         creditToken.mint(address(groveBasin), 10_000e18);
@@ -373,14 +389,17 @@ contract CreditTokenBalanceTrackingTests is GroveBasinTestBase {
     function setUp() public override {
         super.setUp();
 
-        vault    = new MockAsyncVault(address(collateralToken), address(creditToken));
-        redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault));
+        vault = new MockAsyncVault(address(collateralToken), address(creditToken));
 
-        vault.__setPermissioned(address(redeemer), true);
+        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
+        vault.__setPermissioned(predictedRedeemer, true);
+
+        redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(groveBasin));
 
         vm.startPrank(owner);
         groveBasin.addTokenRedeemer(address(redeemer));
         groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), address(this));
         vm.stopPrank();
 
         creditToken.mint(address(groveBasin), 10_000e18);

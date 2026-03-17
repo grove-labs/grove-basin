@@ -16,30 +16,28 @@ contract JTRSYTokenRedeemer is ITokenRedeemer {
     address public immutable override creditToken;
     address public immutable override vault;
 
-    address public override basin;
+    IGroveBasin public immutable override basin;
 
     modifier onlyBasin() {
-        require(msg.sender == basin, "JTRSYTokenRedeemer/only-basin");
+        require(msg.sender == address(basin), "JTRSYTokenRedeemer/only-basin");
         _;
     }
 
-    constructor(address creditToken_, address vault_) {
+    constructor(address creditToken_, address vault_, address basin_) {
         require(creditToken_ != address(0), "JTRSYTokenRedeemer/invalid-creditToken");
         require(vault_       != address(0), "JTRSYTokenRedeemer/invalid-vault");
+        require(basin_       != address(0), "JTRSYTokenRedeemer/invalid-basin");
+
+        require(address(IGroveBasin(basin_).creditToken()) == creditToken_,                       "JTRSYTokenRedeemer/creditToken-mismatch");
+        require(address(IGroveBasin(basin_).collateralToken()) == IAsyncVaultLike(vault_).asset(), "JTRSYTokenRedeemer/collateral-asset-mismatch");
+        require(IAsyncVaultLike(vault_).isPermissioned(address(this)),                             "JTRSYTokenRedeemer/not-allowlisted");
 
         creditToken = creditToken_;
         vault       = vault_;
+        basin       = IGroveBasin(basin_);
     }
 
-    function setUp(address basin_) external override {
-        require(basin == address(0),                                                              "JTRSYTokenRedeemer/already-set-up");
-        require(msg.sender == basin_,                                                             "JTRSYTokenRedeemer/only-basin");
-        require(address(IGroveBasin(basin_).creditToken()) == creditToken,                        "JTRSYTokenRedeemer/creditToken-mismatch");
-        require(address(IGroveBasin(basin_).collateralToken()) == IAsyncVaultLike(vault).asset(), "JTRSYTokenRedeemer/collateral-asset-mismatch");
-        require(IAsyncVaultLike(vault).isPermissioned(address(this)),                             "JTRSYTokenRedeemer/not-allowlisted");
-
-        basin = basin_;
-    }
+    function setUp(address) external override onlyBasin {}
 
     function tearDown(address) external override onlyBasin {}
 
