@@ -10,10 +10,28 @@ contract GroveBasinSetMaxSwapSizeFailureTests is GroveBasinTestBase {
             abi.encodeWithSignature(
                 "AccessControlUnauthorizedAccount(address,bytes32)",
                 address(this),
-                groveBasin.MANAGER_ADMIN_ROLE()
+                groveBasin.MANAGER_ROLE()
             )
         );
         groveBasin.setMaxSwapSize(1e18);
+    }
+
+    function test_setMaxSwapSize_belowLowerBound() public {
+        vm.prank(owner);
+        groveBasin.setMaxSwapSizeBounds(100e18, 1_000_000e18);
+
+        vm.prank(owner);
+        vm.expectRevert("GroveBasin/swap-size-out-of-bounds");
+        groveBasin.setMaxSwapSize(50e18);
+    }
+
+    function test_setMaxSwapSize_aboveUpperBound() public {
+        vm.prank(owner);
+        groveBasin.setMaxSwapSizeBounds(100e18, 1_000_000e18);
+
+        vm.prank(owner);
+        vm.expectRevert("GroveBasin/swap-size-out-of-bounds");
+        groveBasin.setMaxSwapSize(2_000_000e18);
     }
 
 }

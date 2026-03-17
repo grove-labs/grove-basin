@@ -23,6 +23,20 @@ interface IGroveBasin {
      *  @param newMaxSwapSize New max swap size.
      */
     event MaxSwapSizeSet(uint256 oldMaxSwapSize, uint256 newMaxSwapSize);
+
+    /**
+     *  @dev   Emitted when the max swap size bounds are updated.
+     *  @param oldLowerBound Previous lower bound for max swap size.
+     *  @param oldUpperBound Previous upper bound for max swap size.
+     *  @param newLowerBound New lower bound for max swap size.
+     *  @param newUpperBound New upper bound for max swap size.
+     */
+    event MaxSwapSizeBoundsSet(
+        uint256 oldLowerBound,
+        uint256 oldUpperBound,
+        uint256 newLowerBound,
+        uint256 newUpperBound
+    );
     
     /**
      *  @dev   Emitted when the staleness threshold is updated.
@@ -192,11 +206,23 @@ interface IGroveBasin {
     function creditToken() external view returns (IERC20);
 
     /**
-     *  @dev    Returns the maximum value of a swap in 1e18 precision. Settable by the owner.
+     *  @dev    Returns the maximum value of a swap in 1e18 precision. Settable by the manager.
      *          If set to zero, there is no limit on swap size.
      *  @return The maximum swap size in 1e18 precision.
      */
     function maxSwapSize() external view returns (uint256);
+
+    /**
+     *  @dev    Returns the lower bound for max swap size in 1e18 precision.
+     *  @return The lower bound for max swap size in 1e18 precision.
+     */
+    function maxSwapSizeLowerBound() external view returns (uint256);
+
+    /**
+     *  @dev    Returns the upper bound for max swap size in 1e18 precision.
+     *  @return The upper bound for max swap size in 1e18 precision.
+     */
+    function maxSwapSizeUpperBound() external view returns (uint256);
 
     /**
      *  @dev    Returns the staleness threshold in seconds. If the oracle's updatedAt timestamp is
@@ -347,11 +373,19 @@ interface IGroveBasin {
     /**********************************************************************************************/
 
     /**
-     *  @dev    Sets the maximum value of a swap in 1e18 precision. If set to zero, there is no
-     *          limit on swap size. Callable only by MANAGER_ADMIN_ROLE.
+     *  @dev    Sets the maximum value of a swap in 1e18 precision. Must be within
+     *          [maxSwapSizeLowerBound, maxSwapSizeUpperBound]. Callable only by MANAGER_ROLE.
      *  @param  newMaxSwapSize New max swap size in 1e18 precision.
      */
     function setMaxSwapSize(uint256 newMaxSwapSize) external;
+
+    /**
+     *  @dev   Sets the max swap size bounds. If the current max swap size is outside
+     *         the new bounds, it is clamped. Callable only by MANAGER_ADMIN_ROLE.
+     *  @param newLowerBound The new lower bound for max swap size in 1e18 precision.
+     *  @param newUpperBound The new upper bound for max swap size in 1e18 precision.
+     */
+    function setMaxSwapSizeBounds(uint256 newLowerBound, uint256 newUpperBound) external;
 
     /**
      *  @dev    Sets whether credit token deposits are disabled. Callable only by MANAGER_ADMIN_ROLE.

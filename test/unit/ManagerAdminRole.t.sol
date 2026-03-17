@@ -117,11 +117,26 @@ contract GroveBasinManagerAdminRoleTests is GroveBasinTestBase {
     }
 
     /**********************************************************************************************/
-    /*** MANAGER_ADMIN_ROLE can set max swap size                                               ***/
+    /*** MANAGER_ADMIN_ROLE can set max swap size bounds                                        ***/
     /**********************************************************************************************/
 
-    function test_managerAdmin_setMaxSwapSize() public {
+    function test_managerAdmin_setMaxSwapSizeBounds() public {
         vm.prank(managerAdmin);
+        groveBasin.setMaxSwapSizeBounds(100e18, 1_000_000e18);
+
+        assertEq(groveBasin.maxSwapSizeLowerBound(), 100e18);
+        assertEq(groveBasin.maxSwapSizeUpperBound(), 1_000_000e18);
+    }
+
+    /**********************************************************************************************/
+    /*** MANAGER_ROLE can set max swap size                                                     ***/
+    /**********************************************************************************************/
+
+    function test_manager_setMaxSwapSize() public {
+        vm.prank(managerAdmin);
+        groveBasin.grantRole(managerRole, manager);
+
+        vm.prank(manager);
         groveBasin.setMaxSwapSize(1_000_000e18);
 
         assertEq(groveBasin.maxSwapSize(), 1_000_000e18);
@@ -251,6 +266,14 @@ contract GroveBasinManagerAdminRoleTests is GroveBasinTestBase {
         assertEq(groveBasin.maxFee(), 500);
     }
 
+    function test_admin_setMaxSwapSizeBounds() public {
+        vm.prank(owner);
+        groveBasin.setMaxSwapSizeBounds(100e18, 2_000_000e18);
+
+        assertEq(groveBasin.maxSwapSizeLowerBound(), 100e18);
+        assertEq(groveBasin.maxSwapSizeUpperBound(), 2_000_000e18);
+    }
+
     function test_admin_setMaxSwapSize() public {
         vm.prank(owner);
         groveBasin.setMaxSwapSize(2_000_000e18);
@@ -326,10 +349,21 @@ contract GroveBasinManagerAdminRoleTests is GroveBasinTestBase {
             abi.encodeWithSignature(
                 "AccessControlUnauthorizedAccount(address,bytes32)",
                 address(this),
-                managerAdminRole
+                managerRole
             )
         );
         groveBasin.setMaxSwapSize(1e18);
+    }
+
+    function test_unauthorized_setMaxSwapSizeBounds() public {
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                address(this),
+                managerAdminRole
+            )
+        );
+        groveBasin.setMaxSwapSizeBounds(100e18, 1_000_000e18);
     }
 
     function test_unauthorized_setPocket() public {
@@ -358,7 +392,7 @@ contract GroveBasinManagerAdminRoleTests is GroveBasinTestBase {
         groveBasin.setFeeBounds(0, 100);
     }
 
-    function test_manager_cannotSetMaxSwapSize() public {
+    function test_manager_cannotSetMaxSwapSizeBounds() public {
         vm.prank(managerAdmin);
         groveBasin.grantRole(managerRole, manager);
 
@@ -370,7 +404,7 @@ contract GroveBasinManagerAdminRoleTests is GroveBasinTestBase {
                 managerAdminRole
             )
         );
-        groveBasin.setMaxSwapSize(1e18);
+        groveBasin.setMaxSwapSizeBounds(100e18, 1_000_000e18);
     }
 
     function test_manager_cannotSetPocket() public {
