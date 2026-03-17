@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-pragma solidity ^0.8.34;
+pragma solidity ^0.8.24;
 
 import { SSRAuthOracle } from "lib/xchain-ssr-oracle/src/SSRAuthOracle.sol";
 import { ISSROracle }    from "lib/xchain-ssr-oracle/src/interfaces/ISSROracle.sol";
