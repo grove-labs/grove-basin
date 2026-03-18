@@ -11,6 +11,42 @@ import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
 contract ConstructorSeedDepositTests is GroveBasinTestBase {
 
+    function test_deploy() public {
+        deal(address(swapToken), address(this), 1e6);
+
+        GroveBasin newGroveBasin = GroveBasin(GroveBasinDeploy.deploy(
+            address(owner),
+            address(swapToken),
+            address(collateralToken),
+            address(creditToken),
+            address(swapTokenRateProvider),
+            address(collateralTokenRateProvider),
+            address(creditTokenRateProvider)
+        ));
+
+        // Role checks
+        assertTrue(newGroveBasin.hasRole(newGroveBasin.OWNER_ROLE(), owner));
+        assertTrue(newGroveBasin.hasRole(newGroveBasin.LIQUIDITY_PROVIDER_ROLE(), address(this)));
+        assertEq(newGroveBasin.OWNER_ROLE(), newGroveBasin.DEFAULT_ADMIN_ROLE());
+
+        // Token and rate provider getters
+        assertEq(address(newGroveBasin.swapToken()),              address(swapToken));
+        assertEq(address(newGroveBasin.collateralToken()),             address(collateralToken));
+        assertEq(address(newGroveBasin.creditToken()),                 address(creditToken));
+        assertEq(address(newGroveBasin.swapTokenRateProvider()),  address(swapTokenRateProvider));
+        assertEq(address(newGroveBasin.collateralTokenRateProvider()), address(collateralTokenRateProvider));
+        assertEq(address(newGroveBasin.creditTokenRateProvider()),     address(creditTokenRateProvider));
+
+        // Balance checks
+        assertEq(swapToken.balanceOf(address(this)),   0);
+        assertEq(swapToken.balanceOf(address(newGroveBasin)), 1e6);
+
+        // Share and asset checks
+        assertEq(newGroveBasin.totalAssets(), 1e18);
+        assertEq(newGroveBasin.totalShares(), 1e18);
+        assertEq(newGroveBasin.shares(address(0)), 1e18);
+    }
+
     function test_constructor_grantsLpRoleToDeployer() public {
         deal(address(swapToken), address(this), 1e6);
 
