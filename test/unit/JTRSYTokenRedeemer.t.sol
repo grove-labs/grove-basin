@@ -33,8 +33,6 @@ contract JTRSYTokenRedeemerConstructorTests is Test {
     }
 
     function test_constructor() public {
-        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
-        vault.__setPermissioned(predictedRedeemer, true);
         JTRSYTokenRedeemer redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(basin));
 
         assertEq(redeemer.creditToken(),    address(creditToken));
@@ -94,9 +92,6 @@ contract JTRSYTokenRedeemerSetUpTests is Test {
 
         GroveBasin basin = _deployBasin(address(collateralToken), address(creditToken));
 
-        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
-        vault.__setPermissioned(predictedRedeemer, true);
-
         JTRSYTokenRedeemer redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(basin));
 
         address notBasin = makeAddr("notBasin");
@@ -112,9 +107,6 @@ contract JTRSYTokenRedeemerSetUpTests is Test {
         MockAsyncVault vault      = new MockAsyncVault(address(collateralToken), address(creditToken));
 
         GroveBasin basin = _deployBasin(address(collateralToken), address(creditToken));
-
-        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
-        vault.__setPermissioned(predictedRedeemer, true);
 
         JTRSYTokenRedeemer redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(basin));
 
@@ -185,9 +177,6 @@ contract JTRSYTokenRedeemerInitiateRedeemTests is Test {
             address(collateralRp),
             address(creditRp)
         ));
-
-        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
-        vault.__setPermissioned(predictedRedeemer, true);
 
         redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), basin);
 
@@ -266,9 +255,6 @@ contract JTRSYTokenRedeemerCompleteRedeemTests is Test {
             address(collateralRp),
             address(creditRp)
         ));
-
-        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
-        vault.__setPermissioned(predictedRedeemer, true);
 
         redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), basin);
 

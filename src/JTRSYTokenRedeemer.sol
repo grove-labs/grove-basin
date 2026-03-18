@@ -53,10 +53,6 @@ contract JTRSYTokenRedeemer is ITokenRedeemer {
             address(IGroveBasin(basin_).collateralToken()) == IAsyncVaultLike(vault_).asset(),
             "JTRSYTokenRedeemer/collateral-asset-mismatch"
         );
-        require(
-            IAsyncVaultLike(vault_).isPermissioned(address(this)),
-            "JTRSYTokenRedeemer/not-allowlisted"
-        );
 
         creditToken = creditToken_;
         vault       = vault_;

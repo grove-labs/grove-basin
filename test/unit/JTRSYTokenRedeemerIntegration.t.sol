@@ -28,9 +28,6 @@ contract RedeemerRoleManagementTests is GroveBasinTestBase {
 
         vault = new MockAsyncVault(address(collateralToken), address(creditToken));
 
-        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
-        vault.__setPermissioned(predictedRedeemer, true);
-
         redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(groveBasin));
     }
 
@@ -130,9 +127,6 @@ contract RedeemerRoleManagementTests is GroveBasinTestBase {
     function test_addMultipleRedeemers() public {
         MockAsyncVault vault2 = new MockAsyncVault(address(collateralToken), address(creditToken));
 
-        address predictedRedeemer2 = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
-        vault2.__setPermissioned(predictedRedeemer2, true);
-
         JTRSYTokenRedeemer redeemer2 = new JTRSYTokenRedeemer(address(creditToken), address(vault2), address(groveBasin));
 
         bytes32 redeemerRole = groveBasin.REDEEMER_CONTRACT_ROLE();
@@ -161,9 +155,6 @@ contract JTRSYTokenRedeemerInitiateRedeemIntegrationTests is GroveBasinTestBase 
         super.setUp();
 
         vault = new MockAsyncVault(address(collateralToken), address(creditToken));
-
-        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
-        vault.__setPermissioned(predictedRedeemer, true);
 
         redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(groveBasin));
 
@@ -231,9 +222,6 @@ contract JTRSYTokenRedeemerCompleteRedeemIntegrationTests is GroveBasinTestBase 
 
         vault = new MockAsyncVault(address(collateralToken), address(creditToken));
 
-        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
-        vault.__setPermissioned(predictedRedeemer, true);
-
         redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(groveBasin));
 
         vm.startPrank(owner);
@@ -286,12 +274,7 @@ contract JTRSYTokenRedeemerMultipleRedeemersTests is GroveBasinTestBase {
         vault1 = new MockAsyncVault(address(collateralToken), address(creditToken));
         vault2 = new MockAsyncVault(address(collateralToken), address(creditToken));
 
-        address predictedRedeemer1 = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
-        vault1.__setPermissioned(predictedRedeemer1, true);
         redeemer1 = new JTRSYTokenRedeemer(address(creditToken), address(vault1), address(groveBasin));
-
-        address predictedRedeemer2 = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
-        vault2.__setPermissioned(predictedRedeemer2, true);
         redeemer2 = new JTRSYTokenRedeemer(address(creditToken), address(vault2), address(groveBasin));
 
         vm.startPrank(owner);
@@ -340,9 +323,6 @@ contract JTRSYTokenRedeemerFullFlowTests is GroveBasinTestBase {
         super.setUp();
 
         vault = new MockAsyncVault(address(collateralToken), address(creditToken));
-
-        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
-        vault.__setPermissioned(predictedRedeemer, true);
 
         redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(groveBasin));
 
@@ -394,9 +374,6 @@ contract CreditTokenBalanceTrackingTests is GroveBasinTestBase {
         super.setUp();
 
         vault = new MockAsyncVault(address(collateralToken), address(creditToken));
-
-        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
-        vault.__setPermissioned(predictedRedeemer, true);
 
         redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(groveBasin));
 

@@ -21,9 +21,6 @@ contract TotalAssetsWithRedemptionsTests is GroveBasinTestBase {
 
         vault = new MockAsyncVault(address(collateralToken), address(creditToken));
 
-        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
-        vault.__setPermissioned(predictedRedeemer, true);
-
         redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(groveBasin));
 
         vm.startPrank(owner);
