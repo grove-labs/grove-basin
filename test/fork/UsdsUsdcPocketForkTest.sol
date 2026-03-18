@@ -17,8 +17,9 @@ import { MockPSM }          from "test/mocks/MockPSM.sol";
 
 abstract contract UsdsUsdcPocketForkTestBase is Test {
 
-    address public owner   = makeAddr("owner");
-    address public manager = makeAddr("manager");
+    address public owner      = makeAddr("owner");
+    address public manager    = makeAddr("manager");
+    address public groveProxy = makeAddr("groveProxy");
 
     GroveBasin       public groveBasin;
     UsdsUsdcPocket   public pocket;
@@ -59,7 +60,8 @@ abstract contract UsdsUsdcPocketForkTestBase is Test {
             address(groveBasin),
             Ethereum.USDC,
             Ethereum.USDS,
-            address(mockPsm)
+            address(mockPsm),
+            groveProxy
         );
 
         vm.startPrank(owner);
@@ -162,7 +164,8 @@ contract UsdsUsdcPocketForkTest_SetPocket is UsdsUsdcPocketForkTestBase {
             address(groveBasin),
             Ethereum.USDC,
             Ethereum.USDS,
-            address(mockPsm)
+            address(mockPsm),
+            groveProxy
         );
 
         vm.prank(owner);

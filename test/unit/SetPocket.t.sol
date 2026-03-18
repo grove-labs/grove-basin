@@ -46,8 +46,8 @@ contract GroveBasinSetPocketFailureTests is GroveBasinTestBase {
         usds.mint(address(psm), 1_000_000_000e18);
         swapToken.mint(address(psm), 1_000_000_000e6);
 
-        UsdsUsdcPocket pocket1 = new UsdsUsdcPocket(address(groveBasin), address(swapToken), address(usds), address(psm));
-        UsdsUsdcPocket pocket2 = new UsdsUsdcPocket(address(groveBasin), address(swapToken), address(usds), address(psm));
+        UsdsUsdcPocket pocket1 = new UsdsUsdcPocket(address(groveBasin), address(swapToken), address(usds), address(psm), groveProxy);
+        UsdsUsdcPocket pocket2 = new UsdsUsdcPocket(address(groveBasin), address(swapToken), address(usds), address(psm), groveProxy);
 
         vm.prank(owner);
         groveBasin.setPocket(address(pocket1));
@@ -77,8 +77,8 @@ contract GroveBasinSetPocketSuccessTests is GroveBasinTestBase {
     function setUp() public override {
         super.setUp();
 
-        pocket1 = new UsdsUsdcPocket(address(groveBasin), address(swapToken), address(usds), address(psm));
-        pocket2 = new UsdsUsdcPocket(address(groveBasin), address(swapToken), address(usds), address(psm));
+        pocket1 = new UsdsUsdcPocket(address(groveBasin), address(swapToken), address(usds), address(psm), groveProxy);
+        pocket2 = new UsdsUsdcPocket(address(groveBasin), address(swapToken), address(usds), address(psm), groveProxy);
     }
 
     function test_setPocket_pocketIsGroveBasin() public {
@@ -150,7 +150,8 @@ contract GroveBasinSetPocketSuccessTests is GroveBasinTestBase {
 
 contract GroveBasinSetPocketYieldDeployedTests is Test {
 
-    address public owner = makeAddr("owner");
+    address public owner      = makeAddr("owner");
+    address public groveProxy = makeAddr("groveProxy");
 
     GroveBasin       public groveBasin;
     UsdsUsdcPocket   public pocket1;
@@ -206,14 +207,16 @@ contract GroveBasinSetPocketYieldDeployedTests is Test {
             address(groveBasin),
             address(usdc),
             address(usds),
-            address(psm)
+            address(psm),
+            groveProxy
         );
 
         pocket2 = new UsdsUsdcPocket(
             address(groveBasin),
             address(usdc),
             address(usds),
-            address(psm)
+            address(psm),
+            groveProxy
         );
 
         vm.startPrank(owner);

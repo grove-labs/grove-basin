@@ -51,13 +51,15 @@ contract PocketFactory {
         address groveBasin,
         address swapToken,
         address usds,
-        address psm
+        address psm,
+        address groveProxy
     ) external returns (address) {
         UsdsUsdcPocket pocket_ = new UsdsUsdcPocket(
             groveBasin,
             swapToken,
             usds,
-            psm
+            psm,
+            groveProxy
         );
 
         return address(pocket_);

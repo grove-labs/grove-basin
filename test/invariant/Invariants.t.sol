@@ -748,7 +748,7 @@ contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers_WithPocketSetti
 
         PocketFactory pocketFactory = new PocketFactory();
 
-        ownerHandler = new OwnerHandler(groveBasin, swapToken, usds, psm, pocketFactory);
+        ownerHandler = new OwnerHandler(groveBasin, swapToken, usds, psm, groveProxy, pocketFactory);
         targetContract(address(ownerHandler));
 
         bytes32 managerAdminRole = groveBasin.MANAGER_ADMIN_ROLE();

@@ -16,8 +16,9 @@ import { MockPSM }          from "test/mocks/MockPSM.sol";
 
 contract UsdsUsdcPocketTestBase is Test {
 
-    address public owner   = makeAddr("owner");
-    address public manager = makeAddr("manager");
+    address public owner      = makeAddr("owner");
+    address public manager    = makeAddr("manager");
+    address public groveProxy = makeAddr("groveProxy");
 
     GroveBasin     public groveBasin;
     UsdsUsdcPocket public pocket;
@@ -65,7 +66,8 @@ contract UsdsUsdcPocketTestBase is Test {
             address(groveBasin),
             address(usdc),
             address(usds),
-            address(psm)
+            address(psm),
+            groveProxy
         );
 
         vm.startPrank(owner);
@@ -89,32 +91,39 @@ contract UsdsUsdcPocketConstructorTests is UsdsUsdcPocketTestBase {
 
     function test_constructor_invalidBasin() public {
         vm.expectRevert("BasePocket/invalid-basin");
-        new UsdsUsdcPocket(address(0), address(usdc), address(usds), address(psm));
+        new UsdsUsdcPocket(address(0), address(usdc), address(usds), address(psm), groveProxy);
     }
 
     function test_constructor_invalidUsdc() public {
         vm.expectRevert("UsdsUsdcPocket/invalid-usdc");
-        new UsdsUsdcPocket(address(groveBasin), address(0), address(usds), address(psm));
+        new UsdsUsdcPocket(address(groveBasin), address(0), address(usds), address(psm), groveProxy);
     }
 
     function test_constructor_invalidUsds() public {
         vm.expectRevert("UsdsUsdcPocket/invalid-usds");
-        new UsdsUsdcPocket(address(groveBasin), address(usdc), address(0), address(psm));
+        new UsdsUsdcPocket(address(groveBasin), address(usdc), address(0), address(psm), groveProxy);
     }
 
     function test_constructor_invalidPsm() public {
         vm.expectRevert("UsdsUsdcPocket/invalid-psm");
-        new UsdsUsdcPocket(address(groveBasin), address(usdc), address(usds), address(0));
+        new UsdsUsdcPocket(address(groveBasin), address(usdc), address(usds), address(0), groveProxy);
+    }
+
+    function test_constructor_zeroGroveProxy() public {
+        UsdsUsdcPocket p = new UsdsUsdcPocket(address(groveBasin), address(usdc), address(usds), address(psm), address(0));
+        assertEq(p.groveProxy(), address(0));
     }
 
     function test_constructor_success() public view {
-        assertEq(pocket.basin(),         address(groveBasin));
-        assertEq(address(pocket.usdc()), address(usdc));
-        assertEq(address(pocket.usds()), address(usds));
+        assertEq(pocket.basin(),          address(groveBasin));
+        assertEq(address(pocket.usdc()),  address(usdc));
+        assertEq(address(pocket.usds()),  address(usds));
         assertEq(pocket.psm(),           address(psm));
+        assertEq(pocket.groveProxy(),    groveProxy);
 
         assertEq(usds.allowance(address(pocket), address(groveBasin)), type(uint256).max);
         assertEq(usdc.allowance(address(pocket), address(groveBasin)), type(uint256).max);
+        assertEq(usds.allowance(address(pocket), groveProxy),         type(uint256).max);
     }
 
 }
@@ -449,6 +458,24 @@ contract UsdsUsdcPocketEventTests is UsdsUsdcPocketTestBase {
         vm.expectEmit(address(pocket));
         emit IGroveBasinPocket.LiquidityDrawn(address(usdc), 500e6, 500e18);
         pocket.withdrawLiquidity(500e6, address(usdc));
+    }
+
+}
+
+/**********************************************************************************************/
+/*** Grove Proxy withdrawal tests                                                           ***/
+/**********************************************************************************************/
+
+contract UsdsUsdcPocketGroveProxyTests is UsdsUsdcPocketTestBase {
+
+    function test_groveProxy_canWithdrawUsds() public {
+        usds.mint(address(pocket), 1000e18);
+
+        vm.prank(groveProxy);
+        usds.transferFrom(address(pocket), groveProxy, 1000e18);
+
+        assertEq(usds.balanceOf(address(pocket)), 0);
+        assertEq(usds.balanceOf(groveProxy),      1000e18);
     }
 
 }

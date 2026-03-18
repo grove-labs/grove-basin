@@ -15,9 +15,10 @@ import { MockPSM }          from "test/mocks/MockPSM.sol";
 
 contract PocketDepositWithdrawTestBase is Test {
 
-    address public owner = makeAddr("owner");
-    address public user1 = makeAddr("user1");
-    address public user2 = makeAddr("user2");
+    address public owner      = makeAddr("owner");
+    address public user1      = makeAddr("user1");
+    address public user2      = makeAddr("user2");
+    address public groveProxy = makeAddr("groveProxy");
 
     GroveBasin     public groveBasin;
     UsdsUsdcPocket public pocket;
@@ -65,7 +66,8 @@ contract PocketDepositWithdrawTestBase is Test {
             address(groveBasin),
             address(usdc),
             address(usds),
-            address(psm)
+            address(psm),
+            groveProxy
         );
 
         vm.startPrank(owner);
@@ -320,8 +322,9 @@ contract BasinWithdrawThroughPocketTests is PocketDepositWithdrawTestBase {
 
 contract BasinUsdtCollateralPocketTests is Test {
 
-    address public owner = makeAddr("owner");
-    address public user1 = makeAddr("user1");
+    address public owner      = makeAddr("owner");
+    address public user1      = makeAddr("user1");
+    address public groveProxy = makeAddr("groveProxy");
 
     GroveBasin     public groveBasin;
     UsdsUsdcPocket public pocket;
@@ -371,7 +374,8 @@ contract BasinUsdtCollateralPocketTests is Test {
             address(groveBasin),
             address(usdc),
             address(usds),
-            address(psm)
+            address(psm),
+            groveProxy
         );
 
         vm.startPrank(owner);

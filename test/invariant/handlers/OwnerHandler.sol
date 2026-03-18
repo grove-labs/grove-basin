@@ -31,6 +31,8 @@ contract OwnerHandler is HandlerBase {
 
     MockPSM public psm;
 
+    address public groveProxy;
+
     PocketFactory public pocketFactory;
 
     uint256 public pocketNonce;
@@ -44,11 +46,13 @@ contract OwnerHandler is HandlerBase {
         MockERC20     swapToken_,
         MockERC20     usds_,
         MockPSM       psm_,
+        address       groveProxy_,
         PocketFactory pocketFactory_
     ) HandlerBase(groveBasin_) {
         swapToken     = swapToken_;
         usds          = usds_;
         psm           = psm_;
+        groveProxy    = groveProxy_;
         pocketFactory = pocketFactory_;
     }
 
@@ -116,7 +120,8 @@ contract OwnerHandler is HandlerBase {
             address(groveBasin),
             address(swapToken),
             address(usds),
-            address(psm)
+            address(psm),
+            groveProxy
         );
     }
 

@@ -25,8 +25,9 @@ import { SwapperHandler } from "test/invariant/handlers/SwapperHandler.sol";
 
 contract PocketInvariantTest is Test {
 
-    address public owner = makeAddr("owner");
-    address BURN_ADDRESS = address(0);
+    address public owner      = makeAddr("owner");
+    address public groveProxy = makeAddr("groveProxy");
+    address BURN_ADDRESS      = address(0);
 
     GroveBasin     public groveBasin;
     UsdsUsdcPocket public pocket;
@@ -79,7 +80,8 @@ contract PocketInvariantTest is Test {
             address(groveBasin),
             address(swapToken),
             address(usds),
-            address(psm)
+            address(psm),
+            groveProxy
         );
 
         vm.startPrank(owner);
