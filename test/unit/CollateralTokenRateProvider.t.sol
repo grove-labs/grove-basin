@@ -116,7 +116,7 @@ contract CollateralTokenRateProviderTests is GroveBasinTestBase {
 
         // Seed liquidity
         _deposit(address(collateralToken), address(this), 1000e18);
-        _deposit(address(creditToken), address(this), 1000e18);
+        _deposit(address(creditToken),     address(this), 1000e18);
 
         // Credit token rate is 1.25e27, so 1 credit token = $1.25
         // USDC is $0.995
@@ -136,7 +136,7 @@ contract CollateralTokenRateProviderTests is GroveBasinTestBase {
 
     function testFuzz_collateralTokenRateProvider(uint256 rate, uint256 amount) public {
         // Bound rate between $0.90 and $1.10 (realistic stablecoin range)
-        rate = bound(rate, 0.90e27, 1.10e27);
+        rate   = bound(rate, 0.90e27, 1.10e27);
         amount = bound(amount, 1e18, 1_000_000e18);
 
         mockCollateralTokenRateProvider.__setConversionRate(rate);
@@ -147,7 +147,7 @@ contract CollateralTokenRateProviderTests is GroveBasinTestBase {
         assertEq(groveBasin.totalAssets(), amount * rate / 1e27);
 
         // Convert to shares and back should be approximately equal
-        uint256 shares = groveBasin.shares(address(this));
+        uint256 shares     = groveBasin.shares(address(this));
         uint256 assetValue = groveBasin.convertToAssetValue(shares);
         assertApproxEqAbs(assetValue, amount * rate / 1e27, 1);
     }
@@ -166,7 +166,7 @@ contract CollateralTokenRateProviderTests is GroveBasinTestBase {
 
         // Seed liquidity with both tokens
         _deposit(address(collateralToken), address(this), 100_000e18);
-        _deposit(address(creditToken), address(this), 100_000e18);
+        _deposit(address(creditToken),     address(this), 100_000e18);
 
         // Calculate expected credit out
         // swapAmount * collateralRate / creditRate (1.25e27)
@@ -188,7 +188,7 @@ contract CollateralTokenRateProviderTests is GroveBasinTestBase {
 
         // Seed liquidity with both tokens
         _deposit(address(collateralToken), address(this), 100_000e18);
-        _deposit(address(creditToken), address(this), 100_000e18);
+        _deposit(address(creditToken),     address(this), 100_000e18);
 
         // Calculate expected collateral out
         // swapAmount * creditRate (1.25e27) / collateralRate
@@ -210,7 +210,7 @@ contract CollateralTokenRateProviderTests is GroveBasinTestBase {
 
         // Seed liquidity with both tokens
         _deposit(address(collateralToken), address(this), 100_000e18);
-        _deposit(address(creditToken), address(this), 100_000e18);
+        _deposit(address(creditToken),     address(this), 100_000e18);
 
         // Swap collateral -> credit
         uint256 creditOut = groveBasin.previewSwapExactIn(address(collateralToken), address(creditToken), swapAmount);
@@ -232,7 +232,7 @@ contract CollateralTokenRateProviderTests is GroveBasinTestBase {
 
         // Seed liquidity with very large amounts
         _deposit(address(collateralToken), address(this), 2_000_000_000e18);
-        _deposit(address(creditToken), address(this), 2_000_000_000e18);
+        _deposit(address(creditToken),     address(this), 2_000_000_000e18);
 
         // Calculate expected credit out
         // swapAmount * collateralRate / creditRate (1.25e27)
@@ -255,7 +255,7 @@ contract CollateralTokenRateProviderTests is GroveBasinTestBase {
 
         // Seed liquidity with very large amounts
         _deposit(address(collateralToken), address(this), 2_000_000_000e18);
-        _deposit(address(creditToken), address(this), 2_000_000_000e18);
+        _deposit(address(creditToken),     address(this), 2_000_000_000e18);
 
         // Calculate expected collateral out
         // swapAmount * creditRate (1.25e27) / collateralRate

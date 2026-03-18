@@ -64,9 +64,11 @@ abstract contract UsdsUsdcPocketForkTestBase is Test {
 
         vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
-        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(),       owner);
+        
         groveBasin.setMaxSwapSizeBounds(0, 10_000_000_000_000_000e18);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
+
         groveBasin.setPocket(address(pocket));
         vm.stopPrank();
     }
@@ -97,11 +99,11 @@ abstract contract UsdsUsdcPocketForkTestBase is Test {
 contract UsdsUsdcPocketForkTest_Deployment is UsdsUsdcPocketForkTestBase {
 
     function test_deployment() public view {
-        assertEq(pocket.basin(),      address(groveBasin));
-        assertEq(address(pocket.usdc()),  Ethereum.USDC);
-        assertEq(address(pocket.usds()),  Ethereum.USDS);
-        assertEq(pocket.psm(),       address(mockPsm));
-        assertEq(groveBasin.pocket(), address(pocket));
+        assertEq(pocket.basin(),         address(groveBasin));
+        assertEq(address(pocket.usdc()), Ethereum.USDC);
+        assertEq(address(pocket.usds()), Ethereum.USDS);
+        assertEq(pocket.psm(),           address(mockPsm));
+        assertEq(groveBasin.pocket(),    address(pocket));
     }
 
 }
@@ -237,7 +239,7 @@ contract UsdsUsdcPocketForkTest_SwapE2E is UsdsUsdcPocketForkTestBase {
         vm.stopPrank();
 
         assertEq(amountOut, 1000e6);
-        assertEq(IERC20(Ethereum.USDC).balanceOf(receiver), 1000e6);
+        assertEq(IERC20(Ethereum.USDC).balanceOf(receiver),        1000e6);
         assertLt(IERC20(Ethereum.USDS).balanceOf(address(pocket)), 100_000e18);
     }
 

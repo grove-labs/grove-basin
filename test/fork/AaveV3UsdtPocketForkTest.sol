@@ -3,10 +3,8 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 
-import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
-
+import { IERC20 }    from "erc20-helpers/interfaces/IERC20.sol";
 import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
-
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
 import { Ethereum } from "lib/grove-address-registry/src/Ethereum.sol";
@@ -69,7 +67,8 @@ abstract contract AaveV3UsdtPocketForkTestBase is Test {
 
         vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
-        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(),       owner);
+
         groveBasin.setMaxSwapSizeBounds(0, 10_000_000_000_000_000e18);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
         groveBasin.setPocket(address(pocket));
@@ -101,12 +100,12 @@ abstract contract AaveV3UsdtPocketForkTestBase is Test {
 
 contract AaveV3UsdtPocketForkTest_Deployment is AaveV3UsdtPocketForkTestBase {
 
-    function test_deployment() public view {
-        assertEq(pocket.basin(),      address(groveBasin));
-        assertEq(address(pocket.usdt()),  Ethereum.USDT);
-        assertEq(pocket.aaveV3Pool(), address(mockAaveV3Pool));
-        assertEq(groveBasin.pocket(), address(pocket));
-        assertEq(pocket.basin(), address(groveBasin));
+    function test_deployment() public {
+        assertEq(pocket.basin(),         address(groveBasin));
+        assertEq(address(pocket.usdt()), Ethereum.USDT);
+        assertEq(pocket.aaveV3Pool(),    address(mockAaveV3Pool));
+        assertEq(groveBasin.pocket(),    address(pocket));
+        assertEq(pocket.basin(),         address(groveBasin));
     }
 
 }

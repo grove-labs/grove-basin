@@ -399,18 +399,19 @@ contract GroveBasinSwapExactOutFuzzTests is GroveBasinTestBase {
 
         _deposit(address(collateralToken), lp0, _bound(_hash(depositSeed, "lp0-collateralToken"), 1, COLLATERAL_TOKEN_MAX));
 
-        _deposit(address(swapToken),  lp1, _bound(_hash(depositSeed, "lp1-swapToken"),  1, SWAP_TOKEN_MAX));
+        _deposit(address(swapToken),   lp1, _bound(_hash(depositSeed, "lp1-swapToken"),   1, SWAP_TOKEN_MAX));
         _deposit(address(creditToken), lp1, _bound(_hash(depositSeed, "lp1-creditToken"), 1, CREDIT_TOKEN_MAX));
 
-        _deposit(address(collateralToken),  lp2, _bound(_hash(depositSeed, "lp2-collateralToken"),  1, COLLATERAL_TOKEN_MAX));
-        _deposit(address(swapToken),  lp2, _bound(_hash(depositSeed, "lp2-swapToken"),  1, SWAP_TOKEN_MAX));
-        _deposit(address(creditToken), lp2, _bound(_hash(depositSeed, "lp2-creditToken"), 1, CREDIT_TOKEN_MAX));
+        _deposit(address(collateralToken), lp2, _bound(_hash(depositSeed, "lp2-collateralToken"), 1, COLLATERAL_TOKEN_MAX));
+        _deposit(address(swapToken),       lp2, _bound(_hash(depositSeed, "lp2-swapToken"),       1, SWAP_TOKEN_MAX));
+        _deposit(address(creditToken),     lp2, _bound(_hash(depositSeed, "lp2-creditToken"),     1, CREDIT_TOKEN_MAX));
 
         FuzzVars memory vars;
 
         vars.lp0StartingValue = groveBasin.convertToAssetValue(groveBasin.shares(lp0));
         vars.lp1StartingValue = groveBasin.convertToAssetValue(groveBasin.shares(lp1));
         vars.lp2StartingValue = groveBasin.convertToAssetValue(groveBasin.shares(lp2));
+
         vars.groveBasinStartingValue = groveBasin.totalAssets();
 
         vm.startPrank(swapper);
@@ -441,6 +442,7 @@ contract GroveBasinSwapExactOutFuzzTests is GroveBasinTestBase {
             vars.lp0CachedValue = groveBasin.convertToAssetValue(groveBasin.shares(lp0));
             vars.lp1CachedValue = groveBasin.convertToAssetValue(groveBasin.shares(lp1));
             vars.lp2CachedValue = groveBasin.convertToAssetValue(groveBasin.shares(lp2));
+
             vars.groveBasinCachedValue = groveBasin.totalAssets();
 
             assetIn.mint(swapper, amountIn);
@@ -451,26 +453,30 @@ contract GroveBasinSwapExactOutFuzzTests is GroveBasinTestBase {
             assertGe(groveBasin.convertToAssetValue(groveBasin.shares(lp0)), vars.lp0CachedValue);
             assertGe(groveBasin.convertToAssetValue(groveBasin.shares(lp1)), vars.lp1CachedValue);
             assertGe(groveBasin.convertToAssetValue(groveBasin.shares(lp2)), vars.lp2CachedValue);
-            assertGe(groveBasin.totalAssets(),                        vars.groveBasinCachedValue);
+
+            assertGe(groveBasin.totalAssets(), vars.groveBasinCachedValue);
 
             // Up to 2e12 rounding on each swap
             assertApproxEqAbs(groveBasin.convertToAssetValue(groveBasin.shares(lp0)), vars.lp0CachedValue, 2e12);
             assertApproxEqAbs(groveBasin.convertToAssetValue(groveBasin.shares(lp1)), vars.lp1CachedValue, 2e12);
             assertApproxEqAbs(groveBasin.convertToAssetValue(groveBasin.shares(lp2)), vars.lp2CachedValue, 2e12);
-            assertApproxEqAbs(groveBasin.totalAssets(),                        vars.groveBasinCachedValue, 2e12);
+
+            assertApproxEqAbs(groveBasin.totalAssets(), vars.groveBasinCachedValue, 2e12);
         }
 
         // Rounding is always in favour of the LPs
         assertGe(groveBasin.convertToAssetValue(groveBasin.shares(lp0)), vars.lp0StartingValue);
         assertGe(groveBasin.convertToAssetValue(groveBasin.shares(lp1)), vars.lp1StartingValue);
         assertGe(groveBasin.convertToAssetValue(groveBasin.shares(lp2)), vars.lp2StartingValue);
-        assertGe(groveBasin.totalAssets(),                        vars.groveBasinStartingValue);
+
+        assertGe(groveBasin.totalAssets(), vars.groveBasinStartingValue);
 
         // Up to 2e12 rounding on each swap, for 1000 swaps
         assertApproxEqAbs(groveBasin.convertToAssetValue(groveBasin.shares(lp0)), vars.lp0StartingValue, 2000e12);
         assertApproxEqAbs(groveBasin.convertToAssetValue(groveBasin.shares(lp1)), vars.lp1StartingValue, 2000e12);
         assertApproxEqAbs(groveBasin.convertToAssetValue(groveBasin.shares(lp2)), vars.lp2StartingValue, 2000e12);
-        assertApproxEqAbs(groveBasin.totalAssets(),                        vars.groveBasinStartingValue, 2000e12);
+
+        assertApproxEqAbs(groveBasin.totalAssets(), vars.groveBasinStartingValue, 2000e12);
     }
 
     function _hash(uint256 number_, string memory salt) internal pure returns (uint256 hash_) {

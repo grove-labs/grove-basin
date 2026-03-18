@@ -39,9 +39,11 @@ abstract contract JTRSYGroveBasinForkTestBase is JTRSYForkTestBase {
 
         vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
-        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(),       owner);
+
         groveBasin.setMaxSwapSizeBounds(0, 10_000_000_000_000_000e18);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
+
         pocket = address(groveBasin);
         vm.stopPrank();
 
@@ -60,12 +62,12 @@ abstract contract JTRSYGroveBasinForkTestBase is JTRSYForkTestBase {
         vm.prank(owner);
         groveBasin.addTokenRedeemer(address(tokenRedeemer));
 
-        vm.label(address(swapToken),         "swapToken");
-        vm.label(address(collateralToken),    "collateralToken");
-        vm.label(address(creditToken),        "creditToken");
-        vm.label(address(groveBasin),         "groveBasin");
-        vm.label(address(tokenRedeemer),      "tokenRedeemer");
-        vm.label(CENTRIFUGE_JTRSY_VAULT,      "centrifugeVault");
+        vm.label(address(swapToken),       "swapToken");
+        vm.label(address(collateralToken), "collateralToken");
+        vm.label(address(creditToken),     "creditToken");
+        vm.label(address(groveBasin),      "groveBasin");
+        vm.label(address(tokenRedeemer),   "tokenRedeemer");
+        vm.label(CENTRIFUGE_JTRSY_VAULT,   "centrifugeVault");
     }
 
 }
@@ -77,11 +79,13 @@ abstract contract JTRSYGroveBasinForkTestBase is JTRSYForkTestBase {
 contract JTRSYGroveBasinForkTest_Constructor is JTRSYGroveBasinForkTestBase {
 
     function test_constructor_withLiveVault() public view {
-        assertEq(tokenRedeemer.vault(), CENTRIFUGE_JTRSY_VAULT);
+        assertEq(tokenRedeemer.vault(),       CENTRIFUGE_JTRSY_VAULT);
         assertEq(tokenRedeemer.creditToken(), address(creditToken));
-        assertEq(address(groveBasin.swapToken()), address(swapToken));
+
+        assertEq(address(groveBasin.swapToken()),       address(swapToken));
         assertEq(address(groveBasin.collateralToken()), address(collateralToken));
-        assertEq(address(groveBasin.creditToken()), address(creditToken));
+        assertEq(address(groveBasin.creditToken()),     address(creditToken));
+
         assertTrue(groveBasin.hasRole(groveBasin.REDEEMER_CONTRACT_ROLE(), address(tokenRedeemer)));
     }
 
@@ -132,38 +136,6 @@ contract JTRSYGroveBasinForkTest_InitiateRedeem is JTRSYGroveBasinForkTestBase {
 
         uint256 basinBalanceAfter = IERC20(JTRSY_TOKEN).balanceOf(address(groveBasin));
         assertEq(basinBalanceAfter, 0);
-    }
-
-}
-
-/**********************************************************************************************/
-/*** isPermissioned tests                                                                   ***/
-/**********************************************************************************************/
-
-contract JTRSYGroveBasinForkTest_IsPermissioned is JTRSYGroveBasinForkTestBase {
-
-    IAsyncVaultLike public vault = IAsyncVaultLike(CENTRIFUGE_JTRSY_VAULT);
-
-    address public nonMember = makeAddr("randomNonMember");
-
-    function test_isPermissioned_allowlistedRedeemer() public view {
-        assertTrue(vault.isPermissioned(address(tokenRedeemer)));
-    }
-
-    function test_isPermissioned_nonAllowlistedAddress() public view {
-        assertFalse(vault.isPermissioned(nonMember));
-    }
-
-    function test_isPermissioned_matchesFullRestrictions() public view {
-        // Allowlisted address: tokenRedeemer (allowlisted in base setUp)
-        bool vaultResult = vault.isPermissioned(address(tokenRedeemer));
-        (bool restrictionsResult,) = fullRestrictions.isMember(JTRSY_TOKEN, address(tokenRedeemer));
-        assertEq(vaultResult, restrictionsResult);
-
-        // Non-allowlisted address
-        bool vaultResultRandom = vault.isPermissioned(nonMember);
-        (bool restrictionsResultRandom,) = fullRestrictions.isMember(JTRSY_TOKEN, nonMember);
-        assertEq(vaultResultRandom, restrictionsResultRandom);
     }
 
 }

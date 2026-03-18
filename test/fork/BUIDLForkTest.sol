@@ -140,7 +140,7 @@ abstract contract BUIDLForkTestBase is ForkTestBase {
 
 contract BUIDLForkTest_Deployment is BUIDLForkTestBase {
 
-    function test_deployment() public view {
+    function test_deployment() public {
         assertEq(address(groveBasin.swapToken()),       Ethereum.USDS);
         assertEq(address(groveBasin.collateralToken()), Ethereum.USDC);
         assertEq(address(groveBasin.creditToken()),     Ethereum.BUIDL);
@@ -347,8 +347,8 @@ contract BUIDLForkTest_SwapExactOut is BUIDLForkTestBase {
     function setUp() public override {
         super.setUp();
 
-        _deposit(Ethereum.USDS, makeAddr("lp1"), 100_000e18);
-        _deposit(Ethereum.USDC, makeAddr("lp2"), 100_000e6);
+        _deposit(Ethereum.USDS,  makeAddr("lp1"), 100_000e18);
+        _deposit(Ethereum.USDC,  makeAddr("lp2"), 100_000e6);
         _deposit(Ethereum.BUIDL, makeAddr("lp3"), 100_000e6);
     }
 
@@ -439,12 +439,12 @@ contract BUIDLForkTest_YieldDistribution is BUIDLForkTestBase {
     function test_yieldDistribution_increasesShareValue() public {
         _deposit(Ethereum.BUIDL, depositor, 10_000e6);
 
-        assertEq(groveBasin.shares(depositor), 10_000e18);
+        assertEq(groveBasin.shares(depositor),         10_000e18);
         assertEq(groveBasin.convertToAssetValue(1e18), 1e18);
 
         _simulateYieldDistribution(address(groveBasin), 10e6);
 
-        assertEq(groveBasin.shares(depositor), 10_000e18);
+        assertEq(groveBasin.shares(depositor),         10_000e18);
         // 1e18 * 10_010e18 / 10_000e18 = 1_001_000_000_000_000_000
         assertEq(groveBasin.convertToAssetValue(1e18), 1.001e18);
     }
@@ -462,7 +462,7 @@ contract BUIDLForkTest_YieldDistribution is BUIDLForkTestBase {
 
         assertEq(IERC20(Ethereum.BUIDL).balanceOf(receiver), depositAmount + yieldAmount);
         assertEq(groveBasin.shares(depositor), 0);
-        assertEq(groveBasin.totalShares(), 0);
+        assertEq(groveBasin.totalShares(),     0);
     }
 
     // Two equal depositors: each gets 10_000e18 shares, totalAssets rises by exactly 20e18
@@ -470,8 +470,8 @@ contract BUIDLForkTest_YieldDistribution is BUIDLForkTestBase {
         _deposit(Ethereum.BUIDL, depositor,  10_000e6);
         _deposit(Ethereum.BUIDL, depositor2, 10_000e6);
 
-        assertEq(groveBasin.totalAssets(), 20_000e18);
-        assertEq(groveBasin.shares(depositor), 10_000e18);
+        assertEq(groveBasin.totalAssets(),      20_000e18);
+        assertEq(groveBasin.shares(depositor),  10_000e18);
         assertEq(groveBasin.shares(depositor2), 10_000e18);
 
         _simulateYieldDistribution(address(groveBasin), 20e6);
@@ -491,7 +491,7 @@ contract BUIDLForkTest_YieldDistribution is BUIDLForkTestBase {
 
         _deposit(Ethereum.BUIDL, depositor2, 10_000e6);
 
-        assertEq(groveBasin.shares(depositor), 10_000e18);
+        assertEq(groveBasin.shares(depositor),  10_000e18);
         // 10_000e18 * 10_000e18 / 10_100e18 = 9900990099009900990099
         assertEq(groveBasin.shares(depositor2), 9_900990099009900990099);
     }

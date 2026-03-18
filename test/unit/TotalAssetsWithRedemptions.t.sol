@@ -67,7 +67,7 @@ contract TotalAssetsWithRedemptionsTests is GroveBasinTestBase {
 
         // 600e18 credit tokens still in basin = 750e18 value
         // 400e18 credit tokens pending = 500e18 value
-        assertEq(groveBasin.totalAssets(), 750e18);
+        assertEq(groveBasin.totalAssets(),                750e18);
         assertEq(groveBasin.totalAssetsWithRedemptions(), 1250e18);
     }
 
@@ -80,7 +80,7 @@ contract TotalAssetsWithRedemptionsTests is GroveBasinTestBase {
         assertEq(groveBasin.totalAssetsWithRedemptions(), 1250e18);
 
         // Complete the redemption - collateral tokens come back
-        collateralToken.mint(address(vault), 1000e18);
+        collateralToken.mint(address(vault),         1000e18);
         groveBasin.completeRedeem(address(redeemer), 1000e18);
 
         // creditTokenBalance decremented, collateral received
@@ -98,9 +98,9 @@ contract TotalAssetsWithRedemptionsTests is GroveBasinTestBase {
 
         // 1200e18 credit in basin = 1500e18 value
         // 800e18 credit pending = 1000e18 value
-        assertEq(groveBasin.totalAssets(), 1500e18);
+        assertEq(groveBasin.totalAssets(),                1500e18);
         assertEq(groveBasin.totalAssetsWithRedemptions(), 2500e18);
-        assertEq(groveBasin.creditTokenBalance(), 800e18);
+        assertEq(groveBasin.creditTokenBalance(),         800e18);
     }
 
     function test_totalAssetsWithRedemptions_conversionRateChange() public {
@@ -169,11 +169,11 @@ contract TotalAssetsWithRedemptionsTests is GroveBasinTestBase {
         uint256 redeemAmount,
         uint256 conversionRate
     ) public {
-        collateralAmount = _bound(collateralAmount, 0, COLLATERAL_TOKEN_MAX);
-        swapAmount       = _bound(swapAmount,       0, SWAP_TOKEN_MAX);
-        creditAmount     = _bound(creditAmount,     0, CREDIT_TOKEN_MAX);
+        collateralAmount = _bound(collateralAmount, 0,         COLLATERAL_TOKEN_MAX);
+        swapAmount       = _bound(swapAmount,       0,         SWAP_TOKEN_MAX);
+        creditAmount     = _bound(creditAmount,     0,         CREDIT_TOKEN_MAX);
         conversionRate   = _bound(conversionRate,   0.0001e27, 1000e27);
-        redeemAmount     = _bound(redeemAmount,     0, creditAmount);
+        redeemAmount     = _bound(redeemAmount,     0,         creditAmount);
 
         mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
@@ -193,7 +193,7 @@ contract TotalAssetsWithRedemptionsTests is GroveBasinTestBase {
         uint256 expectedWithRedemptions = expectedTotalAssets
             + (redeemAmount * conversionRate / 1e27);
 
-        assertEq(groveBasin.totalAssets(), expectedTotalAssets);
+        assertEq(groveBasin.totalAssets(),                expectedTotalAssets);
         assertEq(groveBasin.totalAssetsWithRedemptions(), expectedWithRedemptions);
     }
 

@@ -20,8 +20,8 @@ contract MorphoUsdtPocketTestBase is Test {
     address public owner   = makeAddr("owner");
     address public manager = makeAddr("manager");
 
-    GroveBasin          public groveBasin;
-    MorphoUsdtPocket    public pocket;
+    GroveBasin       public groveBasin;
+    MorphoUsdtPocket public pocket;
 
     MockERC20 public usdt;
     MockERC20 public collateralToken;
@@ -34,9 +34,9 @@ contract MorphoUsdtPocketTestBase is Test {
     MockERC4626Vault public vault;
 
     function setUp() public virtual {
-        usdt            = new MockERC20("USDT",       "USDT",       6);
-        collateralToken = new MockERC20("COLLATERAL",  "COL",        18);
-        creditToken     = new MockERC20("CREDIT",      "CREDIT",     18);
+        usdt            = new MockERC20("USDT",       "USDT",   6);
+        collateralToken = new MockERC20("COLLATERAL", "COL",    18);
+        creditToken     = new MockERC20("CREDIT",     "CREDIT", 18);
 
         swapTokenRateProvider       = new MockRateProvider();
         collateralTokenRateProvider = new MockRateProvider();
@@ -158,7 +158,7 @@ contract MorphoUsdtPocketDepositLiquidityTests is MorphoUsdtPocketTestBase {
         uint256 result = pocket.depositLiquidity(1000e6, address(usdt));
 
         assertEq(result, 1000e6);
-        assertEq(usdt.balanceOf(address(pocket)), 0);
+        assertEq(usdt.balanceOf(address(pocket)),  0);
         assertEq(vault.balanceOf(address(pocket)), 1000e6);
     }
 
@@ -201,7 +201,7 @@ contract MorphoUsdtPocketManagerTests is MorphoUsdtPocketTestBase {
         emit IGroveBasinPocket.LiquidityDeposited(address(usdt), 1000e6, 1000e6);
         pocket.depositLiquidity(1000e6, address(usdt));
 
-        assertEq(usdt.balanceOf(address(pocket)), 0);
+        assertEq(usdt.balanceOf(address(pocket)),  0);
         assertEq(vault.balanceOf(address(pocket)), 1000e6);
     }
 
@@ -215,7 +215,7 @@ contract MorphoUsdtPocketManagerTests is MorphoUsdtPocketTestBase {
         emit IGroveBasinPocket.LiquidityDrawn(address(usdt), 500e6, 500e6);
         pocket.withdrawLiquidity(500e6, address(usdt));
 
-        assertEq(usdt.balanceOf(address(pocket)), 500e6);
+        assertEq(usdt.balanceOf(address(pocket)),  500e6);
         assertEq(vault.balanceOf(address(pocket)), 500e6);
     }
 
@@ -287,13 +287,13 @@ contract MorphoUsdtPocketWithdrawLiquidityTests is MorphoUsdtPocketTestBase {
         vm.prank(address(groveBasin));
         pocket.depositLiquidity(1000e6, address(usdt));
 
-        assertEq(usdt.balanceOf(address(pocket)), 300e6);
+        assertEq(usdt.balanceOf(address(pocket)),  300e6);
         assertEq(vault.balanceOf(address(pocket)), 1000e6);
 
         vm.prank(address(groveBasin));
         pocket.withdrawLiquidity(500e6, address(usdt));
 
-        assertEq(usdt.balanceOf(address(pocket)), 500e6);
+        assertEq(usdt.balanceOf(address(pocket)),  500e6);
         assertEq(vault.balanceOf(address(pocket)), 800e6);
     }
 
@@ -302,13 +302,13 @@ contract MorphoUsdtPocketWithdrawLiquidityTests is MorphoUsdtPocketTestBase {
         vm.prank(address(groveBasin));
         pocket.depositLiquidity(1000e6, address(usdt));
 
-        assertEq(usdt.balanceOf(address(pocket)), 0);
+        assertEq(usdt.balanceOf(address(pocket)),  0);
         assertEq(vault.balanceOf(address(pocket)), 1000e6);
 
         vm.prank(address(groveBasin));
         pocket.withdrawLiquidity(500e6, address(usdt));
 
-        assertEq(usdt.balanceOf(address(pocket)), 500e6);
+        assertEq(usdt.balanceOf(address(pocket)),  500e6);
         assertEq(vault.balanceOf(address(pocket)), 500e6);
     }
 

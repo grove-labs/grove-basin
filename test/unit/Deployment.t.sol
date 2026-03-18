@@ -24,22 +24,23 @@ contract GroveBasinDeployTests is GroveBasinTestBase {
             address(creditTokenRateProvider)
         ));
 
-        assertTrue(newGroveBasin.hasRole(newGroveBasin.OWNER_ROLE(), owner));
+        assertTrue(newGroveBasin.hasRole(newGroveBasin.OWNER_ROLE(),              owner));
         assertTrue(newGroveBasin.hasRole(newGroveBasin.LIQUIDITY_PROVIDER_ROLE(), address(this)));
-        assertEq(newGroveBasin.OWNER_ROLE(), newGroveBasin.DEFAULT_ADMIN_ROLE());
         
-        assertEq(address(newGroveBasin.swapToken()),              address(swapToken));
+        assertEq(newGroveBasin.OWNER_ROLE(), newGroveBasin.DEFAULT_ADMIN_ROLE());
+
+        assertEq(address(newGroveBasin.swapToken()),                   address(swapToken));
         assertEq(address(newGroveBasin.collateralToken()),             address(collateralToken));
         assertEq(address(newGroveBasin.creditToken()),                 address(creditToken));
-        assertEq(address(newGroveBasin.swapTokenRateProvider()),  address(swapTokenRateProvider));
+        assertEq(address(newGroveBasin.swapTokenRateProvider()),       address(swapTokenRateProvider));
         assertEq(address(newGroveBasin.collateralTokenRateProvider()), address(collateralTokenRateProvider));
         assertEq(address(newGroveBasin.creditTokenRateProvider()),     address(creditTokenRateProvider));
 
-        assertEq(swapToken.balanceOf(address(this)),   0);
+        assertEq(swapToken.balanceOf(address(this)),          0);
         assertEq(swapToken.balanceOf(address(newGroveBasin)), 1e6);
 
-        assertEq(newGroveBasin.totalAssets(), 1e18);
-        assertEq(newGroveBasin.totalShares(), 1e18);
+        assertEq(newGroveBasin.totalAssets(),      1e18);
+        assertEq(newGroveBasin.totalShares(),      1e18);
         assertEq(newGroveBasin.shares(address(0)), 1e18);
     }
 

@@ -30,18 +30,18 @@ contract SwapperHandler is HandlerBase {
     uint256 public zeroBalanceCount;
 
     constructor(
-        GroveBasin      groveBasin_,
-        MockERC20 swapToken,
-        MockERC20 collateralToken,
-        MockERC20 creditToken,
-        uint256   swapperCount
+        GroveBasin groveBasin_,
+        MockERC20  swapToken,
+        MockERC20  collateralToken,
+        MockERC20  creditToken,
+        uint256    swapperCount
     ) HandlerBase(groveBasin_) {
         assets[0] = swapToken;
         assets[1] = collateralToken;
         assets[2] = creditToken;
 
-        swapTokenRateProvider = IRateProviderLike(groveBasin.swapTokenRateProvider());
-        creditTokenRateProvider    = IRateProviderLike(groveBasin.creditTokenRateProvider());
+        swapTokenRateProvider   = IRateProviderLike(groveBasin.swapTokenRateProvider());
+        creditTokenRateProvider = IRateProviderLike(groveBasin.creditTokenRateProvider());
 
         for (uint256 i = 0; i < swapperCount; i++) {
             swappers.push(makeAddr(string(abi.encodePacked("swapper-", vm.toString(i)))));

@@ -299,10 +299,10 @@ contract GetGroveBasinTotalValueTests is GroveBasinTestBase {
     )
         public
     {
-        collateralTokenAmount     = _bound(collateralTokenAmount,     0,         COLLATERAL_TOKEN_MAX);
-        swapTokenAmount     = _bound(swapTokenAmount,     0,         SWAP_TOKEN_MAX);
-        creditTokenAmount    = _bound(creditTokenAmount,    0,         CREDIT_TOKEN_MAX);
-        conversionRate = _bound(conversionRate, 0.0001e27, 1000e27);
+        collateralTokenAmount = _bound(collateralTokenAmount, 0,         COLLATERAL_TOKEN_MAX);
+        swapTokenAmount       = _bound(swapTokenAmount,       0,         SWAP_TOKEN_MAX);
+        creditTokenAmount     = _bound(creditTokenAmount,     0,         CREDIT_TOKEN_MAX);
+        conversionRate        = _bound(conversionRate,        0.0001e27, 1000e27);
 
         collateralToken.mint(address(groveBasin), collateralTokenAmount);
         swapToken.mint(address(pocket), swapTokenAmount);

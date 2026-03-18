@@ -19,8 +19,8 @@ contract UsdsUsdcPocketTestBase is Test {
     address public owner   = makeAddr("owner");
     address public manager = makeAddr("manager");
 
-    GroveBasin       public groveBasin;
-    UsdsUsdcPocket   public pocket;
+    GroveBasin     public groveBasin;
+    UsdsUsdcPocket public pocket;
 
     MockERC20 public usds;
     MockERC20 public usdc;
@@ -34,10 +34,10 @@ contract UsdsUsdcPocketTestBase is Test {
     MockPSM public psm;
 
     function setUp() public virtual {
-        usds            = new MockERC20("USDS",       "USDS",       18);
-        usdc            = new MockERC20("USDC",       "USDC",       6);
-        collateralToken = new MockERC20("COLLATERAL", "COL",        18);
-        creditToken     = new MockERC20("CREDIT",     "CREDIT",     18);
+        usds            = new MockERC20("USDS",       "USDS",   18);
+        usdc            = new MockERC20("USDC",       "USDC",   6);
+        collateralToken = new MockERC20("COLLATERAL", "COL",    18);
+        creditToken     = new MockERC20("CREDIT",     "CREDIT", 18);
 
         swapTokenRateProvider       = new MockRateProvider();
         collateralTokenRateProvider = new MockRateProvider();
@@ -70,8 +70,9 @@ contract UsdsUsdcPocketTestBase is Test {
 
         vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
-        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), owner);
-        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), manager);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(),       owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(),       manager);
+
         groveBasin.setMaxSwapSizeBounds(0, 10_000_000_000_000_000e18);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
         groveBasin.setPocket(address(pocket));
@@ -107,10 +108,10 @@ contract UsdsUsdcPocketConstructorTests is UsdsUsdcPocketTestBase {
     }
 
     function test_constructor_success() public view {
-        assertEq(pocket.basin(),      address(groveBasin));
-        assertEq(address(pocket.usdc()),  address(usdc));
-        assertEq(address(pocket.usds()),  address(usds));
-        assertEq(pocket.psm(),       address(psm));
+        assertEq(pocket.basin(),         address(groveBasin));
+        assertEq(address(pocket.usdc()), address(usdc));
+        assertEq(address(pocket.usds()), address(usds));
+        assertEq(pocket.psm(),           address(psm));
 
         assertEq(usds.allowance(address(pocket), address(groveBasin)), type(uint256).max);
         assertEq(usdc.allowance(address(pocket), address(groveBasin)), type(uint256).max);

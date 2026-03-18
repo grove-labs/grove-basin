@@ -66,9 +66,9 @@ contract GroveBasinEventTests is GroveBasinTestBase {
     }
 
     function test_withdraw_events() public {
-        _deposit(address(collateralToken),  sender, 100e18);
-        _deposit(address(swapToken), sender, 100e6);
-        _deposit(address(creditToken), sender, 100e18);
+        _deposit(address(collateralToken), sender, 100e18);
+        _deposit(address(swapToken),       sender, 100e6);
+        _deposit(address(creditToken),     sender, 100e18);
 
         vm.startPrank(sender);
 
@@ -92,12 +92,10 @@ contract GroveBasinEventTests is GroveBasinTestBase {
 
         vm.startPrank(sender);
 
-        _swapEventTest(address(collateralToken), address(creditToken), 100e18, 80e18, 1);
-
-        _swapEventTest(address(swapToken), address(creditToken), 100e6, 80e18,  2);
-
-        _swapEventTest(address(creditToken), address(collateralToken), 100e18, 125e18, 3);
-        _swapEventTest(address(creditToken), address(swapToken), 100e18, 125e6,  4);
+        _swapEventTest(address(collateralToken), address(creditToken),     100e18, 80e18,  1);
+        _swapEventTest(address(swapToken),       address(creditToken),     100e6,  80e18,  2);
+        _swapEventTest(address(creditToken),     address(collateralToken), 100e18, 125e18, 3);
+        _swapEventTest(address(creditToken),     address(swapToken),       100e18, 125e6,  4);
     }
 
     function _swapEventTest(

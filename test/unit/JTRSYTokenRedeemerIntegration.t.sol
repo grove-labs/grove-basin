@@ -7,9 +7,9 @@ import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
 
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
-import { GroveBasin }      from "src/GroveBasin.sol";
+import { GroveBasin }         from "src/GroveBasin.sol";
 import { JTRSYTokenRedeemer } from "src/JTRSYTokenRedeemer.sol";
-import { IGroveBasin }     from "src/interfaces/IGroveBasin.sol";
+import { IGroveBasin }        from "src/interfaces/IGroveBasin.sol";
 
 import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 import { MockAsyncVault }     from "test/mocks/MockAsyncVault.sol";
@@ -20,7 +20,7 @@ import { MockAsyncVault }     from "test/mocks/MockAsyncVault.sol";
 
 contract RedeemerRoleManagementTests is GroveBasinTestBase {
 
-    MockAsyncVault public vault;
+    MockAsyncVault     public vault;
     JTRSYTokenRedeemer public redeemer;
 
     function setUp() public override {
@@ -182,9 +182,10 @@ contract JTRSYTokenRedeemerInitiateRedeemIntegrationTests is GroveBasinTestBase 
         vm.prank(owner);
         groveBasin.initiateRedeem(address(redeemer), amount);
 
-        assertEq(vault.lastRequestRedeemShares(), amount);
+        assertEq(vault.lastRequestRedeemShares(),     amount);
         assertEq(vault.lastRequestRedeemController(), address(redeemer));
-        assertEq(vault.lastRequestRedeemOwner(), address(redeemer));
+        assertEq(vault.lastRequestRedeemOwner(),      address(redeemer));
+
         assertEq(creditToken.balanceOf(address(redeemer)), amount);
         assertEq(creditToken.balanceOf(address(groveBasin)), 9_000e18);
     }
@@ -253,6 +254,7 @@ contract JTRSYTokenRedeemerCompleteRedeemIntegrationTests is GroveBasinTestBase 
 
         assertEq(vault.lastRedeemShares(),   amount);
         assertEq(vault.lastRedeemReceiver(), address(redeemer));
+
         assertEq(collateralToken.balanceOf(address(groveBasin)), basinBalanceBefore + amount);
     }
 
@@ -295,6 +297,7 @@ contract JTRSYTokenRedeemerMultipleRedeemersTests is GroveBasinTestBase {
         vm.startPrank(owner);
         groveBasin.addTokenRedeemer(address(redeemer1));
         groveBasin.addTokenRedeemer(address(redeemer2));
+
         groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), owner);
         groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), address(this));
         vm.stopPrank();
@@ -372,6 +375,7 @@ contract JTRSYTokenRedeemerFullFlowTests is GroveBasinTestBase {
         assertEq(vault.lastRedeemShares(),     completeAmount);
         assertEq(vault.lastRedeemReceiver(),   address(redeemer));
         assertEq(vault.lastRedeemController(), address(redeemer));
+
         assertEq(collateralToken.balanceOf(address(groveBasin)), basinCollateralBefore + completeAmount);
     }
 

@@ -134,9 +134,9 @@ contract GroveBasinSetPocketSuccessTests is GroveBasinTestBase {
     }
 
     function test_setPocket_valueStaysConstant() public {
-        _deposit(address(swapToken),   owner, 1_000_000e6);
-        _deposit(address(collateralToken),  owner, 1_000_000e18);
-        _deposit(address(creditToken), owner, 800_000e18);
+        _deposit(address(swapToken),       owner, 1_000_000e6);
+        _deposit(address(collateralToken), owner, 1_000_000e18);
+        _deposit(address(creditToken),     owner, 800_000e18);
 
         assertEq(groveBasin.totalAssets(), 3_000_000e18);
 
@@ -218,9 +218,11 @@ contract GroveBasinSetPocketYieldDeployedTests is Test {
 
         vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
-        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(),       owner);
+
         groveBasin.setMaxSwapSizeBounds(0, 10_000_000_000_000_000e18);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
+
         groveBasin.setPocket(address(pocket1));
         vm.stopPrank();
     }
@@ -308,9 +310,9 @@ contract GroveBasinSetPocketUsdtWithdrawalTests is Test {
     address public owner = makeAddr("owner");
     address public admin = makeAddr("admin");
 
-    GroveBasin           public groveBasin;
-    AaveV3UsdtPocket     public pocket1;
-    AaveV3UsdtPocket     public pocket2;
+    GroveBasin       public groveBasin;
+    AaveV3UsdtPocket public pocket1;
+    AaveV3UsdtPocket public pocket2;
 
     MockERC20 public usdt;
     MockERC20 public aUsdt;
@@ -324,10 +326,10 @@ contract GroveBasinSetPocketUsdtWithdrawalTests is Test {
     MockAaveV3Pool public aaveV3Pool;
 
     function setUp() public {
-        usdt            = new MockERC20("USDT",       "USDT",       6);
-        aUsdt           = new MockERC20("aUSDT",      "aUSDT",      6);
-        collateralToken = new MockERC20("COLLATERAL", "COL",        18);
-        creditToken     = new MockERC20("CREDIT",     "CREDIT",     18);
+        usdt            = new MockERC20("USDT",       "USDT",   6);
+        aUsdt           = new MockERC20("aUSDT",      "aUSDT",  6);
+        collateralToken = new MockERC20("COLLATERAL", "COL",    18);
+        creditToken     = new MockERC20("CREDIT",     "CREDIT", 18);
 
         swapTokenRateProvider       = new MockRateProvider();
         collateralTokenRateProvider = new MockRateProvider();

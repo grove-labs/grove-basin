@@ -6,9 +6,8 @@ import "forge-std/Test.sol";
 import { SSRAuthOracle } from "lib/xchain-ssr-oracle/src/SSRAuthOracle.sol";
 import { ISSROracle }    from "lib/xchain-ssr-oracle/src/interfaces/ISSROracle.sol";
 
-import { GroveBasin } from "src/GroveBasin.sol";
-
-import { IGroveBasinPocket }       from "src/interfaces/IGroveBasinPocket.sol";
+import { GroveBasin }        from "src/GroveBasin.sol";
+import { IGroveBasinPocket } from "src/interfaces/IGroveBasinPocket.sol";
 import { IRateProviderLike } from "src/interfaces/IRateProviderLike.sol";
 
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
@@ -100,11 +99,11 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
     }
 
     function _checkInvariant_E() public view {
-        uint256 expectedSwapTokenInflows            = 0;
+        uint256 expectedSwapTokenInflows       = 0;
         uint256 expectedCollateralTokenInflows = 1e18;  // Seed amount
         uint256 expectedCreditTokenInflows     = 0;
 
-        uint256 expectedSwapTokenOutflows            = 0;
+        uint256 expectedSwapTokenOutflows       = 0;
         uint256 expectedCollateralTokenOutflows = 0;
         uint256 expectedCreditTokenOutflows     = 0;
 
@@ -112,25 +111,25 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
             address lp      = lpHandler.lps(i);
             address swapper = swapperHandler.swappers(i);
 
-            expectedSwapTokenInflows            += lpHandler.lpDeposits(lp, address(swapToken));
+            expectedSwapTokenInflows       += lpHandler.lpDeposits(lp, address(swapToken));
             expectedCollateralTokenInflows += lpHandler.lpDeposits(lp, address(collateralToken));
             expectedCreditTokenInflows     += lpHandler.lpDeposits(lp, address(creditToken));
 
-            expectedSwapTokenInflows            += swapperHandler.swapsIn(swapper, address(swapToken));
+            expectedSwapTokenInflows       += swapperHandler.swapsIn(swapper, address(swapToken));
             expectedCollateralTokenInflows += swapperHandler.swapsIn(swapper, address(collateralToken));
             expectedCreditTokenInflows     += swapperHandler.swapsIn(swapper, address(creditToken));
 
-            expectedSwapTokenOutflows            += lpHandler.lpWithdrawals(lp, address(swapToken));
+            expectedSwapTokenOutflows       += lpHandler.lpWithdrawals(lp, address(swapToken));
             expectedCollateralTokenOutflows += lpHandler.lpWithdrawals(lp, address(collateralToken));
             expectedCreditTokenOutflows     += lpHandler.lpWithdrawals(lp, address(creditToken));
 
-            expectedSwapTokenOutflows            += swapperHandler.swapsOut(swapper, address(swapToken));
+            expectedSwapTokenOutflows       += swapperHandler.swapsOut(swapper, address(swapToken));
             expectedCollateralTokenOutflows += swapperHandler.swapsOut(swapper, address(collateralToken));
             expectedCreditTokenOutflows     += swapperHandler.swapsOut(swapper, address(creditToken));
         }
 
         if (address(transferHandler) != address(0)) {
-            expectedSwapTokenInflows            += transferHandler.transfersIn(address(swapToken));
+            expectedSwapTokenInflows       += transferHandler.transfersIn(address(swapToken));
             expectedCollateralTokenInflows += transferHandler.transfersIn(address(collateralToken));
             expectedCreditTokenInflows     += transferHandler.transfersIn(address(creditToken));
         }
@@ -139,7 +138,8 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
         uint256 swapBalance = pocket_ == address(groveBasin)
             ? swapToken.balanceOf(address(groveBasin))
             : IGroveBasinPocket(pocket_).availableBalance(address(swapToken));
-        assertEq(swapBalance,                                    expectedSwapTokenInflows            - expectedSwapTokenOutflows);
+
+        assertEq(swapBalance,                                    expectedSwapTokenInflows       - expectedSwapTokenOutflows);
         assertEq(collateralToken.balanceOf(address(groveBasin)), expectedCollateralTokenInflows - expectedCollateralTokenOutflows);
         assertEq(creditToken.balanceOf(address(groveBasin)),     expectedCreditTokenInflows     - expectedCreditTokenOutflows);
     }
@@ -198,7 +198,7 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
 
     function _getLpTokenValue(address lp) internal view returns (uint256) {
         uint256 collateralTokenValue = collateralToken.balanceOf(lp) * collateralTokenRateProvider.getConversionRate() / 1e27; // 1e9 + 1e18
-        uint256 swapTokenValue  = swapToken.balanceOf(lp) * swapTokenRateProvider.getConversionRate() / 1e15; // 1e9 + 1e6
+        uint256 swapTokenValue       = swapToken.balanceOf(lp) * swapTokenRateProvider.getConversionRate() / 1e15; // 1e9 + 1e6
         uint256 creditTokenValue     = creditToken.balanceOf(lp) * creditTokenRateProvider.getConversionRate() / 1e27; // 1e9 + 1e18
 
         return collateralTokenValue + swapTokenValue + creditTokenValue;
@@ -207,13 +207,13 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
     function _getLpDepositsValue(address lp) internal view returns (uint256) {
         uint256 depositValue =
             lpHandler.lpDeposits(lp, address(collateralToken)) * collateralTokenRateProvider.getConversionRate() / 1e27 + // 1e9 + 1e18
-            lpHandler.lpDeposits(lp, address(swapToken)) * swapTokenRateProvider.getConversionRate() / 1e15 + // 1e9 + 1e6
-            lpHandler.lpDeposits(lp, address(creditToken)) * creditTokenRateProvider.getConversionRate() / 1e27; // 1e9 + 1e18
+            lpHandler.lpDeposits(lp, address(swapToken))       * swapTokenRateProvider.getConversionRate()       / 1e15 + // 1e9 + 1e6
+            lpHandler.lpDeposits(lp, address(creditToken))     * creditTokenRateProvider.getConversionRate()     / 1e27; // 1e9 + 1e18
 
         uint256 withdrawValue =
             lpHandler.lpWithdrawals(lp, address(collateralToken)) * collateralTokenRateProvider.getConversionRate() / 1e27 + // 1e9 + 1e18
-            lpHandler.lpWithdrawals(lp, address(swapToken)) * swapTokenRateProvider.getConversionRate() / 1e15 + // 1e9 + 1e6
-            lpHandler.lpWithdrawals(lp, address(creditToken)) * creditTokenRateProvider.getConversionRate() / 1e27; // 1e9 + 1e18
+            lpHandler.lpWithdrawals(lp, address(swapToken))       * swapTokenRateProvider.getConversionRate()       / 1e15 + // 1e9 + 1e6
+            lpHandler.lpWithdrawals(lp, address(creditToken))     * creditTokenRateProvider.getConversionRate()     / 1e27; // 1e9 + 1e18
 
         return withdrawValue > depositValue ? 0 : depositValue - withdrawValue;
     }
@@ -250,15 +250,15 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
 
         // Liquidity is unknown so withdraw all assets for all users to empty GroveBasin.
         _withdraw(address(collateralToken), lp0, type(uint256).max);
-        _withdraw(address(swapToken),            lp0, type(uint256).max);
+        _withdraw(address(swapToken),       lp0, type(uint256).max);
         _withdraw(address(creditToken),     lp0, type(uint256).max);
 
         _withdraw(address(collateralToken), lp1, type(uint256).max);
-        _withdraw(address(swapToken),            lp1, type(uint256).max);
+        _withdraw(address(swapToken),       lp1, type(uint256).max);
         _withdraw(address(creditToken),     lp1, type(uint256).max);
 
         _withdraw(address(collateralToken), lp2, type(uint256).max);
-        _withdraw(address(swapToken),            lp2, type(uint256).max);
+        _withdraw(address(swapToken),       lp2, type(uint256).max);
         _withdraw(address(creditToken),     lp2, type(uint256).max);
 
         // All funds are completely withdrawn.
@@ -308,7 +308,7 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
         // NOTE: Below logic is not realistic, shown to demonstrate precision.
 
         _withdraw(address(collateralToken), BURN_ADDRESS, type(uint256).max);
-        _withdraw(address(swapToken),            BURN_ADDRESS, type(uint256).max);
+        _withdraw(address(swapToken),       BURN_ADDRESS, type(uint256).max);
         _withdraw(address(creditToken),     BURN_ADDRESS, type(uint256).max);
 
         // When all funds are completely withdrawn, the sum of all funds withdrawn is equal to the

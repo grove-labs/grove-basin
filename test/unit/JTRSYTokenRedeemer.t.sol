@@ -59,9 +59,11 @@ contract JTRSYTokenRedeemerConstructorTests is Test {
 
     function _deployBasin(address collateralToken_, address creditToken_) internal returns (GroveBasin) {
         MockERC20 swapToken_ = new MockERC20("swapToken", "swapToken", 6);
+
         MockRateProvider swapRp       = new MockRateProvider();
         MockRateProvider collateralRp = new MockRateProvider();
         MockRateProvider creditRp     = new MockRateProvider();
+
         swapRp.__setConversionRate(1e27);
         collateralRp.__setConversionRate(1e27);
         creditRp.__setConversionRate(1e27);
@@ -86,7 +88,7 @@ contract JTRSYTokenRedeemerConstructorTests is Test {
 contract JTRSYTokenRedeemerSetUpTests is Test {
 
     function test_setUp_onlyBasin() public {
-        MockERC20 creditToken     = new MockERC20("creditToken", "creditToken", 18);
+        MockERC20 creditToken     = new MockERC20("creditToken",     "creditToken",     18);
         MockERC20 collateralToken = new MockERC20("collateralToken", "collateralToken", 18);
         MockAsyncVault vault      = new MockAsyncVault(address(collateralToken), address(creditToken));
 
@@ -105,7 +107,7 @@ contract JTRSYTokenRedeemerSetUpTests is Test {
     }
 
     function test_tearDown_onlyBasin() public {
-        MockERC20 creditToken     = new MockERC20("creditToken", "creditToken", 18);
+        MockERC20 creditToken     = new MockERC20("creditToken",     "creditToken",     18);
         MockERC20 collateralToken = new MockERC20("collateralToken", "collateralToken", 18);
         MockAsyncVault vault      = new MockAsyncVault(address(collateralToken), address(creditToken));
 
@@ -125,9 +127,11 @@ contract JTRSYTokenRedeemerSetUpTests is Test {
 
     function _deployBasin(address collateralToken_, address creditToken_) internal returns (GroveBasin) {
         MockERC20 swapToken = new MockERC20("swapToken", "swapToken", 6);
+
         MockRateProvider swapRp       = new MockRateProvider();
         MockRateProvider collateralRp = new MockRateProvider();
         MockRateProvider creditRp     = new MockRateProvider();
+
         swapRp.__setConversionRate(1e27);
         collateralRp.__setConversionRate(1e27);
         creditRp.__setConversionRate(1e27);
@@ -158,14 +162,16 @@ contract JTRSYTokenRedeemerInitiateRedeemTests is Test {
     address              public basin;
 
     function setUp() public {
-        creditToken     = new MockERC20("creditToken", "creditToken", 18);
+        creditToken     = new MockERC20("creditToken",     "creditToken",     18);
         collateralToken = new MockERC20("collateralToken", "collateralToken", 18);
         vault           = new MockAsyncVault(address(collateralToken), address(creditToken));
 
         MockERC20 swapToken = new MockERC20("swapToken", "swapToken", 6);
+
         MockRateProvider swapRp       = new MockRateProvider();
         MockRateProvider collateralRp = new MockRateProvider();
         MockRateProvider creditRp     = new MockRateProvider();
+
         swapRp.__setConversionRate(1e27);
         collateralRp.__setConversionRate(1e27);
         creditRp.__setConversionRate(1e27);
@@ -196,20 +202,20 @@ contract JTRSYTokenRedeemerInitiateRedeemTests is Test {
         vm.prank(basin);
         redeemer.initiateRedeem(amount);
 
-        assertEq(vault.lastRequestRedeemShares(),     amount);
-        assertEq(vault.lastRequestRedeemController(), address(redeemer));
-        assertEq(vault.lastRequestRedeemOwner(),      address(redeemer));
+        assertEq(vault.lastRequestRedeemShares(),          amount);
+        assertEq(vault.lastRequestRedeemController(),      address(redeemer));
+        assertEq(vault.lastRequestRedeemOwner(),           address(redeemer));
         assertEq(creditToken.balanceOf(address(redeemer)), amount);
     }
 
     function test_initiateRedeem_multipleAmounts() public {
         vm.startPrank(basin);
         redeemer.initiateRedeem(100e18);
-        assertEq(vault.lastRequestRedeemShares(), 100e18);
+        assertEq(vault.lastRequestRedeemShares(),          100e18);
         assertEq(creditToken.balanceOf(address(redeemer)), 100e18);
 
         redeemer.initiateRedeem(200e18);
-        assertEq(vault.lastRequestRedeemShares(), 200e18);
+        assertEq(vault.lastRequestRedeemShares(),          200e18);
         assertEq(creditToken.balanceOf(address(redeemer)), 300e18);
         vm.stopPrank();
     }
@@ -238,13 +244,15 @@ contract JTRSYTokenRedeemerCompleteRedeemTests is Test {
 
     function setUp() public {
         collateralToken = new MockERC20("collateralToken", "collateralToken", 18);
-        creditToken     = new MockERC20("creditToken", "creditToken", 18);
+        creditToken     = new MockERC20("creditToken",     "creditToken",     18);
         vault           = new MockAsyncVault(address(collateralToken), address(creditToken));
 
         MockERC20 swapToken = new MockERC20("swapToken", "swapToken", 6);
+
         MockRateProvider swapRp       = new MockRateProvider();
         MockRateProvider collateralRp = new MockRateProvider();
         MockRateProvider creditRp     = new MockRateProvider();
+
         swapRp.__setConversionRate(1e27);
         collateralRp.__setConversionRate(1e27);
         creditRp.__setConversionRate(1e27);
@@ -278,8 +286,9 @@ contract JTRSYTokenRedeemerCompleteRedeemTests is Test {
 
         uint256 callerBalanceAfter = collateralToken.balanceOf(basin);
 
-        assertEq(assets, creditTokenAmount);
+        assertEq(assets,                                   creditTokenAmount);
         assertEq(callerBalanceAfter - callerBalanceBefore, creditTokenAmount);
+
         assertEq(vault.lastRedeemShares(),     creditTokenAmount);
         assertEq(vault.lastRedeemReceiver(),   address(redeemer));
         assertEq(vault.lastRedeemController(), address(redeemer));

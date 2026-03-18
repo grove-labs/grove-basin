@@ -5,8 +5,9 @@ import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
 
 import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
 
-import { BasePocket }       from "src/pockets/BasePocket.sol";
-import { IAaveV3PoolLike }  from "src/interfaces/IAaveV3PoolLike.sol";
+import { BasePocket }        from "src/pockets/BasePocket.sol";
+import { IAaveV3PoolLike }   from "src/interfaces/IAaveV3PoolLike.sol";
+import { IGroveBasinPocket } from "src/interfaces/IGroveBasinPocket.sol";
 
 /**
  * @title  AaveV3UsdtPocket
@@ -27,6 +28,12 @@ contract AaveV3UsdtPocket is BasePocket {
 
     address public immutable aaveV3Pool;
 
+    /**
+     * @param basin_      Address of the GroveBasin contract.
+     * @param usdt_       USDT token address.
+     * @param aUsdt_      Aave aUSDT token address.
+     * @param aaveV3Pool_ Aave V3 pool address.
+     */
     constructor(
         address basin_,
         address usdt_,
@@ -44,6 +51,7 @@ contract AaveV3UsdtPocket is BasePocket {
         IERC20(usdt_).safeApprove(basin_, type(uint256).max);
     }
 
+    /// @inheritdoc IGroveBasinPocket
     function depositLiquidity(uint256 amount, address asset) external override onlyBasinOrManager returns (uint256) {
         if (amount == 0) return 0;
 
@@ -58,6 +66,7 @@ contract AaveV3UsdtPocket is BasePocket {
         return amount;
     }
 
+    /// @inheritdoc IGroveBasinPocket
     function withdrawLiquidity(uint256 amount, address asset) external override onlyBasinOrManager returns (uint256) {
         if (amount == 0) return 0;
 
@@ -86,6 +95,7 @@ contract AaveV3UsdtPocket is BasePocket {
         return amount;
     }
 
+    /// @inheritdoc IGroveBasinPocket
     function availableBalance(address asset) external view override returns (uint256) {
         if (asset == address(usdt)) {
             return usdt.balanceOf(address(this)) + aUsdt.balanceOf(address(this));

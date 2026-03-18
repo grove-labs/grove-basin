@@ -50,7 +50,7 @@ contract GroveBasinSetRateProviderSuccessTests is GroveBasinTestBase {
     event RateProviderSet(address indexed token, address indexed oldRateProvider, address indexed newRateProvider);
 
     function test_setRateProvider_swapToken() public {
-        address oldProvider = groveBasin.swapTokenRateProvider();
+        address oldProvider          = groveBasin.swapTokenRateProvider();
         MockRateProvider newProvider = new MockRateProvider();
         newProvider.__setConversionRate(1e27);
 
@@ -63,7 +63,7 @@ contract GroveBasinSetRateProviderSuccessTests is GroveBasinTestBase {
     }
 
     function test_setRateProvider_collateralToken() public {
-        address oldProvider = groveBasin.collateralTokenRateProvider();
+        address oldProvider          = groveBasin.collateralTokenRateProvider();
         MockRateProvider newProvider = new MockRateProvider();
         newProvider.__setConversionRate(1e27);
 
@@ -76,7 +76,7 @@ contract GroveBasinSetRateProviderSuccessTests is GroveBasinTestBase {
     }
 
     function test_setRateProvider_creditToken() public {
-        address oldProvider = groveBasin.creditTokenRateProvider();
+        address oldProvider       = groveBasin.creditTokenRateProvider();
         MockRateProvider newProvider = new MockRateProvider();
         newProvider.__setConversionRate(1.25e27);
 
