@@ -5,11 +5,9 @@ import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
 import { AaveV3UsdtPocket } from "src/pockets/AaveV3UsdtPocket.sol";
 import { MorphoUsdtPocket } from "src/pockets/MorphoUsdtPocket.sol";
-import { UsdsUsdcPocket }   from "src/pockets/UsdsUsdcPocket.sol";
 
 import { MockAaveV3Pool }   from "test/mocks/MockAaveV3Pool.sol";
 import { MockERC4626Vault } from "test/mocks/MockERC4626Vault.sol";
-import { MockPSM }          from "test/mocks/MockPSM.sol";
 
 contract PocketFactory {
 
@@ -42,24 +40,6 @@ contract PocketFactory {
             groveBasin,
             swapToken,
             address(vault)
-        );
-
-        return address(pocket_);
-    }
-
-    function createUsdsUsdcPocket(
-        address groveBasin,
-        address swapToken,
-        address usds,
-        address psm,
-        address groveProxy
-    ) external returns (address) {
-        UsdsUsdcPocket pocket_ = new UsdsUsdcPocket(
-            groveBasin,
-            swapToken,
-            usds,
-            psm,
-            groveProxy
         );
 
         return address(pocket_);

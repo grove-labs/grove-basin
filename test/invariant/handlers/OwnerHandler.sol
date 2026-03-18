@@ -7,8 +7,9 @@ import { IGroveBasinPocket } from "src/interfaces/IGroveBasinPocket.sol";
 
 import { MockPSM } from "test/mocks/MockPSM.sol";
 
-import { HandlerBase, GroveBasin } from "test/invariant/handlers/HandlerBase.sol";
-import { PocketFactory }           from "test/invariant/handlers/PocketFactory.sol";
+import { HandlerBase, GroveBasin }  from "test/invariant/handlers/HandlerBase.sol";
+import { PocketFactory }            from "test/invariant/handlers/PocketFactory.sol";
+import { UsdsUsdcPocketFactory }    from "test/invariant/handlers/UsdsUsdcPocketFactory.sol";
 
 contract OwnerHandler is HandlerBase {
 
@@ -33,7 +34,8 @@ contract OwnerHandler is HandlerBase {
 
     address public groveProxy;
 
-    PocketFactory public pocketFactory;
+    PocketFactory          public pocketFactory;
+    UsdsUsdcPocketFactory  public usdsUsdcPocketFactory;
 
     uint256 public pocketNonce;
 
@@ -42,18 +44,20 @@ contract OwnerHandler is HandlerBase {
     /**********************************************************************************************/
 
     constructor(
-        GroveBasin    groveBasin_,
-        MockERC20     swapToken_,
-        MockERC20     usds_,
-        MockPSM       psm_,
-        address       groveProxy_,
-        PocketFactory pocketFactory_
+        GroveBasin            groveBasin_,
+        MockERC20             swapToken_,
+        MockERC20             usds_,
+        MockPSM               psm_,
+        address               groveProxy_,
+        PocketFactory         pocketFactory_,
+        UsdsUsdcPocketFactory usdsUsdcPocketFactory_
     ) HandlerBase(groveBasin_) {
-        swapToken     = swapToken_;
-        usds          = usds_;
-        psm           = psm_;
-        groveProxy    = groveProxy_;
-        pocketFactory = pocketFactory_;
+        swapToken             = swapToken_;
+        usds                  = usds_;
+        psm                   = psm_;
+        groveProxy            = groveProxy_;
+        pocketFactory         = pocketFactory_;
+        usdsUsdcPocketFactory = usdsUsdcPocketFactory_;
     }
 
     /**********************************************************************************************/
@@ -116,7 +120,7 @@ contract OwnerHandler is HandlerBase {
     }
 
     function _createUsdsUsdcPocket() internal returns (address) {
-        return pocketFactory.createUsdsUsdcPocket(
+        return usdsUsdcPocketFactory.createUsdsUsdcPocket(
             address(groveBasin),
             address(swapToken),
             address(usds),
