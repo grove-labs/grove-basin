@@ -83,8 +83,8 @@ contract TotalAssetsWithRedemptionsTests is GroveBasinTestBase {
         collateralToken.mint(address(vault),         1000e18);
         groveBasin.completeRedeem(address(redeemer), 1000e18);
 
-        // creditTokenBalance decremented, collateral received
-        assertEq(groveBasin.creditTokenBalance(), 0);
+        // redeemedCreditTokenBalance decremented, collateral received
+        assertEq(groveBasin.redeemedCreditTokenBalance(), 0);
         assertEq(groveBasin.totalAssets(), groveBasin.totalAssetsWithRedemptions());
     }
 
@@ -100,7 +100,7 @@ contract TotalAssetsWithRedemptionsTests is GroveBasinTestBase {
         // 800e18 credit pending = 1000e18 value
         assertEq(groveBasin.totalAssets(),                1500e18);
         assertEq(groveBasin.totalAssetsWithRedemptions(), 2500e18);
-        assertEq(groveBasin.creditTokenBalance(),         800e18);
+        assertEq(groveBasin.redeemedCreditTokenBalance(), 800e18);
     }
 
     function test_totalAssetsWithRedemptions_conversionRateChange() public {
@@ -147,13 +147,13 @@ contract TotalAssetsWithRedemptionsTests is GroveBasinTestBase {
         vm.prank(owner);
         groveBasin.initiateRedeem(address(redeemer), 1000e18);
 
-        assertEq(groveBasin.creditTokenBalance(), 1000e18);
+        assertEq(groveBasin.redeemedCreditTokenBalance(), 1000e18);
 
         // Complete only 600e18
         collateralToken.mint(address(vault), 600e18);
         groveBasin.completeRedeem(address(redeemer), 600e18);
 
-        assertEq(groveBasin.creditTokenBalance(), 400e18);
+        assertEq(groveBasin.redeemedCreditTokenBalance(), 400e18);
 
         // totalAssets has 600e18 collateral from completed redeem
         assertEq(groveBasin.totalAssets(), 600e18);

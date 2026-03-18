@@ -375,11 +375,11 @@ interface IGroveBasin {
     function REDEEMER_CONTRACT_ROLE() external view returns (bytes32);
 
     /**
-     *  @dev    Returns the amount of credit tokens outstanding in pending redemptions.
+     *  @dev    Returns the amount of redeemed credit tokens outstanding in pending redemptions.
      *          Incremented on initiateRedeem and decremented on completeRedeem.
-     *  @return The amount of credit tokens in pending redemptions.
+     *  @return The amount of redeemed credit tokens in pending redemptions.
      */
-    function creditTokenBalance() external view returns (uint256);
+    function redeemedCreditTokenBalance() external view returns (uint256);
 
     /**
      *  @dev    Returns the current purchase fee in BPS. Applied when buying credit tokens.

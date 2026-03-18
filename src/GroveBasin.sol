@@ -74,7 +74,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     mapping(address user => uint256 shares) public override shares;
 
-    uint256 public override creditTokenBalance;
+    uint256 public override redeemedCreditTokenBalance;
 
     constructor(
         address owner_,
@@ -646,7 +646,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     /// @inheritdoc IGroveBasin
     function totalAssetsWithRedemptions() public view returns (uint256) {
-        return totalAssets() + _getCreditTokenValue(creditTokenBalance, false);
+        return totalAssets() + _getCreditTokenValue(redeemedCreditTokenBalance, false);
     }
 
     /**********************************************************************************************/
@@ -901,7 +901,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         ITokenRedeemer(redeemer).initiateRedeem(creditTokenAmount);
         creditToken.approve(redeemer, 0);
 
-        creditTokenBalance += creditTokenAmount;
+        redeemedCreditTokenBalance += creditTokenAmount;
         emit RedeemInitiated(redeemer, msg.sender, creditTokenAmount);
     }
 
@@ -909,7 +909,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function _completeRedeem(address redeemer, uint256 creditTokenAmount) internal {
         require(hasRole(REDEEMER_CONTRACT_ROLE, redeemer), "GroveBasin/invalid-redeemer");
 
-        creditTokenBalance = creditTokenAmount > creditTokenBalance ? 0 : creditTokenBalance - creditTokenAmount;
+        redeemedCreditTokenBalance = creditTokenAmount > redeemedCreditTokenBalance ? 0 : redeemedCreditTokenBalance - creditTokenAmount;
 
         emit RedeemCompleted(redeemer, msg.sender, creditTokenAmount);
         
