@@ -55,6 +55,21 @@ contract JTRSYTokenRedeemerConstructorTests is Test {
         new JTRSYTokenRedeemer(address(creditToken), address(vault), address(0));
     }
 
+    function test_constructor_creditTokenMismatch() public {
+        MockERC20 wrongCreditToken = new MockERC20("wrong", "wrong", 18);
+
+        vm.expectRevert("JTRSYTokenRedeemer/creditToken-mismatch");
+        new JTRSYTokenRedeemer(address(wrongCreditToken), address(vault), address(basin));
+    }
+
+    function test_constructor_collateralAssetMismatch() public {
+        MockERC20 otherCollateral = new MockERC20("other", "other", 18);
+        MockAsyncVault wrongVault = new MockAsyncVault(address(otherCollateral), address(creditToken));
+
+        vm.expectRevert("JTRSYTokenRedeemer/collateral-asset-mismatch");
+        new JTRSYTokenRedeemer(address(creditToken), address(wrongVault), address(basin));
+    }
+
     function _deployBasin(address collateralToken_, address creditToken_) internal returns (GroveBasin) {
         MockERC20 swapToken_ = new MockERC20("swapToken", "swapToken", 6);
 
