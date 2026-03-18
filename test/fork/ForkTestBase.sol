@@ -60,7 +60,7 @@ abstract contract ForkTestBase is Test {
 
         _postDeploy();
 
-        vm.label(address(swapToken),       "swapToken");
+        vm.label(address(swapToken),        "swapToken");
         vm.label(address(collateralToken),  "collateralToken");
         vm.label(address(creditToken),      "creditToken");
         vm.label(address(groveBasin),       "groveBasin");

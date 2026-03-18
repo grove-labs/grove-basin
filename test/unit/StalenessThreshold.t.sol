@@ -132,6 +132,7 @@ contract GroveBasinSetStalenessThresholdBoundsSuccessTests is GroveBasinTestBase
 
     function test_setStalenessThresholdBounds() public {
         vm.prank(owner);
+
         vm.expectEmit(address(groveBasin));
         emit StalenessThresholdBoundsSet(5 minutes, 48 hours, 1 minutes, 24 hours);
         groveBasin.setStalenessThresholdBounds(1 minutes, 24 hours);
@@ -145,6 +146,7 @@ contract GroveBasinSetStalenessThresholdBoundsSuccessTests is GroveBasinTestBase
         groveBasin.setStalenessThreshold(10 minutes);
 
         vm.prank(owner);
+
         vm.expectEmit(address(groveBasin));
         emit StalenessThresholdBoundsSet(5 minutes, 48 hours, 30 minutes, 24 hours);
         vm.expectEmit(address(groveBasin));
@@ -184,7 +186,7 @@ contract GroveBasinSetStalenessThresholdBoundsSuccessTests is GroveBasinTestBase
 
         assertEq(groveBasin.minStalenessThreshold(), 1 hours);
         assertEq(groveBasin.maxStalenessThreshold(), 1 hours);
-        assertEq(groveBasin.stalenessThreshold(), 1 hours);
+        assertEq(groveBasin.stalenessThreshold(),    1 hours);
     }
 
     function test_setStalenessThreshold_respectsNewBounds() public {
@@ -475,7 +477,7 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
 
         vm.startPrank(owner);
         harness.grantRole(harness.MANAGER_ADMIN_ROLE(), owner);
-        harness.grantRole(harness.MANAGER_ROLE(), manager);
+        harness.grantRole(harness.MANAGER_ROLE(),       manager);
         vm.stopPrank();
 
         vm.prank(manager);
@@ -498,7 +500,7 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
 
         vm.startPrank(owner);
         harness.grantRole(harness.MANAGER_ADMIN_ROLE(), owner);
-        harness.grantRole(harness.MANAGER_ROLE(), manager);
+        harness.grantRole(harness.MANAGER_ROLE(),    manager);
         vm.stopPrank();
 
         vm.prank(manager);

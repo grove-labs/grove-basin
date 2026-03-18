@@ -32,7 +32,7 @@ contract TransferHandler is HandlerBase {
 
     function transfer(uint256 assetSeed, string memory senderSeed, uint256 amount) external {
         // 1. Setup and bounds
-        MockERC20 asset = _getAsset(assetSeed);
+        MockERC20 asset  = _getAsset(assetSeed);
         address   sender = makeAddr(senderSeed);
 
         // 2. Cache starting state

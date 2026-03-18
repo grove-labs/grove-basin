@@ -26,13 +26,13 @@ contract GroveBasinConversionTestBase is GroveBasinTestBase {
     )
         internal returns (FuzzVars memory vars)
     {
-        vars.collateralTokenAmount  = _bound(collateralTokenAmount,  1, COLLATERAL_TOKEN_MAX);
-        vars.swapTokenAmount  = _bound(swapTokenAmount,  1, SWAP_TOKEN_MAX);
-        vars.creditTokenAmount = _bound(creditTokenAmount, 1, CREDIT_TOKEN_MAX);
+        vars.collateralTokenAmount  = _bound(collateralTokenAmount, 1, COLLATERAL_TOKEN_MAX);
+        vars.swapTokenAmount        = _bound(swapTokenAmount,       1, SWAP_TOKEN_MAX);
+        vars.creditTokenAmount      = _bound(creditTokenAmount,     1, CREDIT_TOKEN_MAX);
 
-        _deposit(address(collateralToken),  address(this), vars.collateralTokenAmount);
-        _deposit(address(swapToken),  address(this), vars.swapTokenAmount);
-        _deposit(address(creditToken), address(this), vars.creditTokenAmount);
+        _deposit(address(collateralToken), address(this), vars.collateralTokenAmount);
+        _deposit(address(swapToken),       address(this), vars.swapTokenAmount);
+        _deposit(address(creditToken),     address(this), vars.creditTokenAmount);
 
         vars.expectedShares =
             vars.collateralTokenAmount +
@@ -108,9 +108,9 @@ contract GroveBasinConvertToAssetValueTests is GroveBasinConversionTestBase {
     }
 
     function test_convertToAssetValue() public {
-        _deposit(address(collateralToken),  address(this), 100e18);
-        _deposit(address(swapToken),  address(this), 100e6);
-        _deposit(address(creditToken), address(this), 80e18);
+        _deposit(address(collateralToken), address(this), 100e18);
+        _deposit(address(swapToken),       address(this), 100e6);
+        _deposit(address(creditToken),     address(this), 80e18);
 
         assertEq(groveBasin.convertToAssetValue(1e18), 1e18);
 

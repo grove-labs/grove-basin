@@ -3,12 +3,9 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 
-import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
-
+import { IERC20 }    from "erc20-helpers/interfaces/IERC20.sol";
 import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
-
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
-
 import { Ethereum } from "lib/grove-address-registry/src/Ethereum.sol";
 
 import { GroveBasin }         from "src/GroveBasin.sol";
@@ -19,9 +16,9 @@ import { IGroveBasin }        from "src/interfaces/IGroveBasin.sol";
 import { IERC4626VaultLike }  from "src/interfaces/IERC4626VaultLike.sol";
 
 import { MockRateProvider }  from "test/mocks/MockRateProvider.sol";
-import { MockAaveV3Pool }   from "test/mocks/MockAaveV3Pool.sol";
-import { MockERC4626Vault } from "test/mocks/MockERC4626Vault.sol";
-import { MockPSM }          from "test/mocks/MockPSM.sol";
+import { MockAaveV3Pool }   from  "test/mocks/MockAaveV3Pool.sol";
+import { MockERC4626Vault } from  "test/mocks/MockERC4626Vault.sol";
+import { MockPSM }          from  "test/mocks/MockPSM.sol";
 
 /**********************************************************************************************/
 /*** Base for USDT basin transfer pocket tests                                              ***/
@@ -39,9 +36,8 @@ abstract contract TransferPocketForkTestBase is Test {
     MockRateProvider public swapTokenRateProvider;
     MockRateProvider public collateralTokenRateProvider;
     MockRateProvider public creditTokenRateProvider;
-
-    MockERC20      public mockAUsdt;
-    MockAaveV3Pool public mockAaveV3Pool;
+    MockERC20        public mockAUsdt;
+    MockAaveV3Pool   public mockAaveV3Pool;
     MockERC4626Vault public mockVault;
 
     function setUp() public virtual {
@@ -79,7 +75,8 @@ abstract contract TransferPocketForkTestBase is Test {
 
         vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
-        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(),      owner);
+
         groveBasin.setMaxSwapSizeBounds(0, 10_000_000_000_000_000e18);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
         vm.stopPrank();
@@ -973,9 +970,11 @@ abstract contract TransferPocketForkTestBase_USDC is Test {
 
         vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
-        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(),       owner);
+
         groveBasin.setMaxSwapSizeBounds(0, 10_000_000_000_000_000e18);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
+
         vm.stopPrank();
     }
 

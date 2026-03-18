@@ -61,7 +61,7 @@ contract ConstructorSeedDepositTests is GroveBasinTestBase {
 
         assertEq(newGroveBasin.totalShares(),      1e18);
         assertEq(newGroveBasin.shares(address(0)), 1e18);
-        assertEq(newGroveBasin.totalAssets(),       1e18);
+        assertEq(newGroveBasin.totalAssets(),      1e18);
 
         assertEq(swapToken.balanceOf(address(newGroveBasin)), 1e6);
         assertEq(swapToken.balanceOf(address(this)),          0);
@@ -108,9 +108,9 @@ contract ConstructorSeedDepositTests is GroveBasinTestBase {
         uint256 newShares = newGroveBasin.deposit(address(swapToken), address(this), 10e6);
 
         assertEq(newShares, 10e18);
-        assertEq(newGroveBasin.totalShares(),            11e18);
-        assertEq(newGroveBasin.shares(address(this)),    10e18);
-        assertEq(newGroveBasin.shares(address(0)),       1e18);
+        assertEq(newGroveBasin.totalShares(),         11e18);
+        assertEq(newGroveBasin.shares(address(this)), 10e18);
+        assertEq(newGroveBasin.shares(address(0)),    1e18);
     }
 
 }

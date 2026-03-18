@@ -73,7 +73,7 @@ contract ChronicleRateProviderTests is Test {
     }
 
     function test_getConversionRateWithAge_revertsWhenNotPoked() public {
-        MockChronicleOracle freshOracle = new MockChronicleOracle();
+        MockChronicleOracle freshOracle     = new MockChronicleOracle();
         ChronicleRateProvider freshProvider = new ChronicleRateProvider(address(freshOracle));
 
         vm.expectRevert("MockChronicleOracle/not-poked");

@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.24;
 
-import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
-
+import { IERC20 }    from "erc20-helpers/interfaces/IERC20.sol";
 import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
 
 import { BasePocket }        from "src/pockets/BasePocket.sol";
 import { IERC4626VaultLike } from "src/interfaces/IERC4626VaultLike.sol";
+import { IGroveBasinPocket } from "src/interfaces/IGroveBasinPocket.sol";
 
 /**
  * @title  MorphoUsdtPocket
@@ -23,13 +23,17 @@ import { IERC4626VaultLike } from "src/interfaces/IERC4626VaultLike.sol";
  *         ensures the yield strategy cannot be changed after deployment.
  */
 contract MorphoUsdtPocket is BasePocket {
-
     using SafeERC20 for IERC20;
 
     IERC20 public immutable usdt;
 
     address public immutable vault;
 
+    /**
+     * @param basin_ Address of the GroveBasin contract.
+     * @param usdt_  USDT token address.
+     * @param vault_ Morpho ERC-4626 vault address.
+     */
     constructor(
         address basin_,
         address usdt_,
@@ -44,6 +48,7 @@ contract MorphoUsdtPocket is BasePocket {
         IERC20(usdt_).safeApprove(basin_, type(uint256).max);
     }
 
+    /// @inheritdoc IGroveBasinPocket
     function depositLiquidity(uint256 amount, address asset) external override onlyBasinOrManager returns (uint256) {
         if (amount == 0) return 0;
 
@@ -57,6 +62,7 @@ contract MorphoUsdtPocket is BasePocket {
         return amount;
     }
 
+    /// @inheritdoc IGroveBasinPocket
     function withdrawLiquidity(uint256 amount, address asset) external override onlyBasinOrManager returns (uint256) {
         if (amount == 0) return 0;
 
@@ -77,6 +83,7 @@ contract MorphoUsdtPocket is BasePocket {
         return amount;
     }
 
+    /// @inheritdoc IGroveBasinPocket
     function availableBalance(address asset) external view override returns (uint256) {
         if (asset == address(usdt)) {
             return usdt.balanceOf(address(this))

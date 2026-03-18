@@ -139,9 +139,9 @@ contract GroveBasinPreviewWithdraw_SuccessFuzzTests is GroveBasinTestBase {
         _deposit(address(swapToken),  address(this), params.amount2);
         _deposit(address(creditToken), address(this), params.amount3);
 
-        ( uint256 shares1, uint256 assets1 ) = groveBasin.previewWithdraw(address(collateralToken),  params.previewAmount1);
-        ( uint256 shares2, uint256 assets2 ) = groveBasin.previewWithdraw(address(swapToken),  params.previewAmount2);
-        ( uint256 shares3, uint256 assets3 ) = groveBasin.previewWithdraw(address(creditToken), params.previewAmount3);
+        ( uint256 shares1, uint256 assets1 ) = groveBasin.previewWithdraw(address(collateralToken), params.previewAmount1);
+        ( uint256 shares2, uint256 assets2 ) = groveBasin.previewWithdraw(address(swapToken),       params.previewAmount2);
+        ( uint256 shares3, uint256 assets3 ) = groveBasin.previewWithdraw(address(creditToken),     params.previewAmount3);
 
         uint256 totalSharesMinted = params.amount1 + params.amount2 * 1e12 + params.amount3 * 1.25e27 / 1e27;
         uint256 totalValue        = totalSharesMinted;
@@ -161,9 +161,9 @@ contract GroveBasinPreviewWithdraw_SuccessFuzzTests is GroveBasinTestBase {
         // creditToken value accrual changes the value of shares in the GroveBasin
         totalValue = params.amount1 + params.amount2 * 1e12 + params.amount3 * params.conversionRate / 1e27;
 
-        ( shares1, assets1 ) = groveBasin.previewWithdraw(address(collateralToken),  params.previewAmount1);
-        ( shares2, assets2 ) = groveBasin.previewWithdraw(address(swapToken),  params.previewAmount2);
-        ( shares3, assets3 ) = groveBasin.previewWithdraw(address(creditToken), params.previewAmount3);
+        ( shares1, assets1 ) = groveBasin.previewWithdraw(address(collateralToken), params.previewAmount1);
+        ( shares2, assets2 ) = groveBasin.previewWithdraw(address(swapToken),       params.previewAmount2);
+        ( shares3, assets3 ) = groveBasin.previewWithdraw(address(creditToken),     params.previewAmount3);
 
         uint256 creditTokenConvertedAmount = params.previewAmount3 * params.conversionRate / 1e27;
 
@@ -171,7 +171,7 @@ contract GroveBasinPreviewWithdraw_SuccessFuzzTests is GroveBasinTestBase {
         // totalSharesMinted / totalValue is an integer amount that scales as the rate scales by orders of magnitude
         assertLe(shares1 - (params.previewAmount1        * totalSharesMinted / totalValue), 1);
         assertLe(shares2 - (params.previewAmount2 * 1e12 * totalSharesMinted / totalValue), 1);
-        assertLe(shares3 - (creditTokenConvertedAmount         * totalSharesMinted / totalValue), 3 + totalSharesMinted / totalValue);
+        assertLe(shares3 - (creditTokenConvertedAmount   * totalSharesMinted / totalValue), 3 + totalSharesMinted / totalValue);
 
         assertApproxEqAbs(assets1, params.previewAmount1, 1);
         assertApproxEqAbs(assets2, params.previewAmount2, 1);

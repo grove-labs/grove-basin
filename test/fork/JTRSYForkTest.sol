@@ -81,8 +81,8 @@ abstract contract JTRSYForkTestBase is ForkTestBase {
 
         // Find the packed storage slot by probing balanceOf
         IShareTokenLike token = IShareTokenLike(JTRSY_TOKEN);
-        bytes16 hookData = token.hookDataOf(to);
-        bytes32 slot = _findBalanceSlot(to);
+        bytes16 hookData      = token.hookDataOf(to);
+        bytes32 slot          = _findBalanceSlot(to);
 
         // Write combined hookData (upper 128 bits) + balance (lower 128 bits)
         bytes32 packed = bytes32(uint256(uint128(hookData)) << 128 | uint256(amount));
@@ -108,14 +108,14 @@ abstract contract JTRSYForkTestBase is ForkTestBase {
 
 contract JTRSYForkTest_Deployment is JTRSYForkTestBase {
 
-    function test_deployment() public view {
+    function test_deployment() public {
         assertEq(address(groveBasin.swapToken()),       Ethereum.USDS);
         assertEq(address(groveBasin.collateralToken()), Ethereum.USDC);
         assertEq(address(groveBasin.creditToken()),     JTRSY_TOKEN);
         assertEq(groveBasin.pocket(),                   pocket);
     }
 
-    function test_jtrsyAllowlist() public view {
+    function test_jtrsyAllowlist() public {
         (bool isMember,) = fullRestrictions.isMember(JTRSY_TOKEN, address(groveBasin));
         assertTrue(isMember);
     }
@@ -165,7 +165,7 @@ contract JTRSYForkTest_Deposit is JTRSYForkTestBase {
         uint256 sharesAfterThird = groveBasin.shares(depositor);
 
         assertGt(sharesAfterSecond, sharesAfterFirst);
-        assertGt(sharesAfterThird, sharesAfterSecond);
+        assertGt(sharesAfterThird,  sharesAfterSecond);
     }
 
 }

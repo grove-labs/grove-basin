@@ -37,7 +37,7 @@ interface IGroveBasin {
         uint256 newLowerBound,
         uint256 newUpperBound
     );
-    
+
     /**
      *  @dev   Emitted when the staleness threshold is updated.
      *  @param oldThreshold Previous staleness threshold in seconds.
@@ -438,7 +438,7 @@ interface IGroveBasin {
      *  @param  newRateProvider  Address of the new rate provider.
      */
     function setRateProvider(address token, address newRateProvider) external;
-    
+
     /**
      *  @dev   Sets or unsets a pause flag. Callable only by MANAGER_ROLE.
      *         Valid actions: "swapToCredit", "creditToSwap", "collateralToCredit",

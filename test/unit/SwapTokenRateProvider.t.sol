@@ -136,8 +136,8 @@ contract SwapTokenRateProviderTests is GroveBasinTestBase {
 
     function testFuzz_swapTokenRateProvider(uint256 rate, uint256 amount) public {
         // Bound rate between $0.90 and $1.10 (realistic stablecoin range)
-        rate = bound(rate, 0.90e27, 1.10e27);
-        amount = bound(amount, 1e6, 1_000_000e6);
+        rate   = bound(rate,   0.90e27, 1.10e27);
+        amount = bound(amount, 1e6,     1_000_000e6);
 
         mockSwapTokenRateProvider.__setConversionRate(rate);
 
@@ -158,14 +158,14 @@ contract SwapTokenRateProviderTests is GroveBasinTestBase {
 
     function testFuzz_swapSwapTokenForCredit(uint256 swapRate, uint256 swapAmount) public {
         // Bound swap rate between $0.90 and $1.10 (realistic stablecoin range)
-        swapRate = bound(swapRate, 0.90e27, 1.10e27);
+        swapRate   = bound(swapRate,   0.90e27, 1.10e27);
         // Bound swap amount to reasonable range
-        swapAmount = bound(swapAmount, 1e6, 10_000e6);
+        swapAmount = bound(swapAmount, 1e6,     10_000e6);
 
         mockSwapTokenRateProvider.__setConversionRate(swapRate);
 
         // Seed liquidity with both tokens
-        _deposit(address(swapToken), address(this), 100_000e6);
+        _deposit(address(swapToken),   address(this), 100_000e6);
         _deposit(address(creditToken), address(this), 100_000e18);
 
         // Calculate expected credit out
@@ -187,7 +187,7 @@ contract SwapTokenRateProviderTests is GroveBasinTestBase {
         mockSwapTokenRateProvider.__setConversionRate(swapRate);
 
         // Seed liquidity with both tokens
-        _deposit(address(swapToken), address(this), 100_000e6);
+        _deposit(address(swapToken),   address(this), 100_000e6);
         _deposit(address(creditToken), address(this), 100_000e18);
 
         // Calculate expected swap out
@@ -209,7 +209,7 @@ contract SwapTokenRateProviderTests is GroveBasinTestBase {
         mockSwapTokenRateProvider.__setConversionRate(swapRate);
 
         // Seed liquidity with both tokens
-        _deposit(address(swapToken), address(this), 100_000e6);
+        _deposit(address(swapToken),   address(this), 100_000e6);
         _deposit(address(creditToken), address(this), 100_000e18);
 
         // Swap swap token -> credit
@@ -231,7 +231,7 @@ contract SwapTokenRateProviderTests is GroveBasinTestBase {
         mockSwapTokenRateProvider.__setConversionRate(swapRate);
 
         // Seed liquidity with very large amounts
-        _deposit(address(swapToken), address(this), 2_000_000_000e6);
+        _deposit(address(swapToken),   address(this), 2_000_000_000e6);
         _deposit(address(creditToken), address(this), 2_000_000_000e18);
 
         // Calculate expected credit out
@@ -253,7 +253,7 @@ contract SwapTokenRateProviderTests is GroveBasinTestBase {
         mockSwapTokenRateProvider.__setConversionRate(swapRate);
 
         // Seed liquidity with very large amounts
-        _deposit(address(swapToken), address(this), 2_000_000_000e6);
+        _deposit(address(swapToken),   address(this), 2_000_000_000e6);
         _deposit(address(creditToken), address(this), 2_000_000_000e18);
 
         // Calculate expected swap out
@@ -275,7 +275,7 @@ contract SwapTokenRateProviderTests is GroveBasinTestBase {
         mockSwapTokenRateProvider.__setConversionRate(swapRate);
 
         // Seed liquidity with very large amounts
-        _deposit(address(swapToken), address(this), 2_000_000_000e6);
+        _deposit(address(swapToken),   address(this), 2_000_000_000e6);
         _deposit(address(creditToken), address(this), 2_000_000_000e18);
 
         // Swap swap token -> credit

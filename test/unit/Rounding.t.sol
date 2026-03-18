@@ -16,8 +16,8 @@ contract RoundingTests is GroveBasinTestBase {
 
         // Seed the GroveBasin with max liquidity so withdrawals can always be performed
         _deposit(address(collateralToken),  address(this), COLLATERAL_TOKEN_MAX);
-        _deposit(address(creditToken), address(this), CREDIT_TOKEN_MAX);
-        _deposit(address(swapToken),  address(this), SWAP_TOKEN_MAX);
+        _deposit(address(creditToken),      address(this), CREDIT_TOKEN_MAX);
+        _deposit(address(swapToken),        address(this), SWAP_TOKEN_MAX);
 
         // Set an exchange rate that will cause rounding
         mockCreditTokenRateProvider.__setConversionRate(1.25e27 * uint256(100) / 99);

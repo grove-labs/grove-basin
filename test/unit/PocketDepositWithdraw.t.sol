@@ -15,7 +15,7 @@ import { MockPSM }          from "test/mocks/MockPSM.sol";
 
 contract PocketDepositWithdrawTestBase is Test {
 
-    address public owner   = makeAddr("owner");
+    address public owner = makeAddr("owner");
     address public user1 = makeAddr("user1");
     address public user2 = makeAddr("user2");
 
@@ -70,9 +70,11 @@ contract PocketDepositWithdrawTestBase is Test {
 
         vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
-        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(),       owner);
+
         groveBasin.setMaxSwapSizeBounds(0, 10_000_000_000_000_000e18);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
+
         groveBasin.setPocket(address(pocket));
         vm.stopPrank();
     }
@@ -123,11 +125,11 @@ contract BasinDepositThroughPocketTests is PocketDepositWithdrawTestBase {
 
         // USDS went to pocket, stays as USDS
         assertEq(usds.balanceOf(user1),           0);
-        assertEq(usds.balanceOf(address(pocket)),  100e18);
+        assertEq(usds.balanceOf(address(pocket)), 100e18);
 
         assertEq(groveBasin.totalShares(), 100e18);
         assertEq(groveBasin.shares(user1), 100e18);
-        assertEq(groveBasin.totalAssets(),  100e18);
+        assertEq(groveBasin.totalAssets(), 100e18);
     }
 
     function test_deposit_usdc_staysInBasin() public {
@@ -147,12 +149,12 @@ contract BasinDepositThroughPocketTests is PocketDepositWithdrawTestBase {
 
         // USDC stays in basin, not sent to pocket
         assertEq(usdc.balanceOf(user1),               0);
-        assertEq(usdc.balanceOf(address(groveBasin)),  100e6);
-        assertEq(usdc.balanceOf(address(pocket)),      0);
+        assertEq(usdc.balanceOf(address(groveBasin)), 100e6);
+        assertEq(usdc.balanceOf(address(pocket)),     0);
 
         assertEq(groveBasin.totalShares(), 100e18);
         assertEq(groveBasin.shares(user1), 100e18);
-        assertEq(groveBasin.totalAssets(),  100e18);
+        assertEq(groveBasin.totalAssets(), 100e18);
     }
 
     function test_deposit_creditToken_goesToBasin() public {
@@ -170,15 +172,15 @@ contract BasinDepositThroughPocketTests is PocketDepositWithdrawTestBase {
 
         // Credit token stays in basin, not pocket
         assertEq(creditToken.balanceOf(address(groveBasin)), 100e18);
-        assertEq(creditToken.balanceOf(address(pocket)),      0);
+        assertEq(creditToken.balanceOf(address(pocket)),     0);
 
         assertEq(groveBasin.totalShares(), 125e18);
         assertEq(groveBasin.shares(user1), 125e18);
     }
 
     function test_deposit_multiAsset_totalAssetsCorrect() public {
-        _deposit(address(usds), user1, 100e18);
-        _deposit(address(usdc), user1, 50e6);
+        _deposit(address(usds),        user1, 100e18);
+        _deposit(address(usdc),        user1, 50e6);
         _deposit(address(creditToken), user1, 80e18);
 
         // 100 USDS + 50 USDC + 80 creditToken * 1.25 = 250
@@ -374,9 +376,11 @@ contract BasinUsdtCollateralPocketTests is Test {
 
         vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
-        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(),       owner);
+
         groveBasin.setMaxSwapSizeBounds(0, 10_000_000_000_000_000e18);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
+
         groveBasin.setPocket(address(pocket));
         vm.stopPrank();
     }
@@ -406,7 +410,7 @@ contract BasinUsdtCollateralPocketTests is Test {
 
         assertEq(groveBasin.totalShares(), 100e18);
         assertEq(groveBasin.shares(user1), 100e18);
-        assertEq(groveBasin.totalAssets(),  100e18);
+        assertEq(groveBasin.totalAssets(), 100e18);
     }
 
     function test_withdraw_usdt_fromBasin() public {

@@ -26,7 +26,7 @@ import { SwapperHandler } from "test/invariant/handlers/SwapperHandler.sol";
 contract PocketInvariantTest is Test {
 
     address public owner = makeAddr("owner");
-    address BURN_ADDRESS   = address(0);
+    address BURN_ADDRESS = address(0);
 
     GroveBasin     public groveBasin;
     UsdsUsdcPocket public pocket;
@@ -34,7 +34,6 @@ contract PocketInvariantTest is Test {
     MockERC20 public swapToken;
     MockERC20 public collateralToken;
     MockERC20 public creditToken;
-
     MockERC20 public usds;
 
     MockRateProvider public swapTokenRateProvider;
@@ -85,9 +84,11 @@ contract PocketInvariantTest is Test {
 
         vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
-        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(),       owner);
+
         groveBasin.setMaxSwapSizeBounds(0, 10_000_000_000_000_000e18);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
+
         groveBasin.setPocket(address(pocket));
         vm.stopPrank();
 
@@ -155,10 +156,10 @@ contract PocketInvariantTest is Test {
 contract AaveV3PocketInvariantTest is Test {
 
     address public owner = makeAddr("owner");
-    address BURN_ADDRESS   = address(0);
+    address BURN_ADDRESS = address(0);
 
-    GroveBasin         public groveBasin;
-    AaveV3UsdtPocket   public pocket;
+    GroveBasin       public groveBasin;
+    AaveV3UsdtPocket public pocket;
 
     MockERC20 public swapToken;
     MockERC20 public collateralToken;
@@ -214,9 +215,11 @@ contract AaveV3PocketInvariantTest is Test {
 
         vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
-        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(),       owner);
+
         groveBasin.setMaxSwapSizeBounds(0, 10_000_000_000_000_000e18);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
+
         groveBasin.setPocket(address(pocket));
         vm.stopPrank();
 
@@ -284,10 +287,10 @@ contract AaveV3PocketInvariantTest is Test {
 contract MorphoPocketInvariantTest is Test {
 
     address public owner = makeAddr("owner");
-    address BURN_ADDRESS   = address(0);
+    address BURN_ADDRESS = address(0);
 
-    GroveBasin        public groveBasin;
-    MorphoUsdtPocket  public pocket;
+    GroveBasin       public groveBasin;
+    MorphoUsdtPocket public pocket;
 
     MockERC20 public swapToken;
     MockERC20 public collateralToken;
@@ -335,9 +338,11 @@ contract MorphoPocketInvariantTest is Test {
 
         vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
-        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(),       owner);
+
         groveBasin.setMaxSwapSizeBounds(0, 10_000_000_000_000_000e18);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
+
         groveBasin.setPocket(address(pocket));
         vm.stopPrank();
 

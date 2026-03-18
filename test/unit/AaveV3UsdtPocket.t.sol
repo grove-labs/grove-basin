@@ -19,8 +19,8 @@ contract AaveV3UsdtPocketTestBase is Test {
     address public owner   = makeAddr("owner");
     address public manager = makeAddr("manager");
 
-    GroveBasin           public groveBasin;
-    AaveV3UsdtPocket     public pocket;
+    GroveBasin       public groveBasin;
+    AaveV3UsdtPocket public pocket;
 
     MockERC20 public usdt;
     MockERC20 public aUsdt;
@@ -34,10 +34,10 @@ contract AaveV3UsdtPocketTestBase is Test {
     MockAaveV3Pool public aaveV3Pool;
 
     function setUp() public virtual {
-        usdt            = new MockERC20("USDT",       "USDT",       6);
-        aUsdt           = new MockERC20("aUSDT",      "aUSDT",      6);
-        collateralToken = new MockERC20("COLLATERAL",  "COL",        18);
-        creditToken     = new MockERC20("CREDIT",      "CREDIT",     18);
+        usdt            = new MockERC20("USDT",       "USDT",    6);
+        aUsdt           = new MockERC20("aUSDT",      "aUSDT",   6);
+        collateralToken = new MockERC20("COLLATERAL", "COL",    18);
+        creditToken     = new MockERC20("CREDIT",     "CREDIT", 18);
 
         swapTokenRateProvider       = new MockRateProvider();
         collateralTokenRateProvider = new MockRateProvider();
@@ -71,8 +71,10 @@ contract AaveV3UsdtPocketTestBase is Test {
 
         vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
-        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), manager);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(),       manager);
+
         groveBasin.setMaxSwapSizeBounds(0, 10_000_000_000_000_000e18);
+
         groveBasin.setPocket(address(pocket));
         vm.stopPrank();
 
@@ -109,10 +111,10 @@ contract AaveV3UsdtPocketConstructorTests is AaveV3UsdtPocketTestBase {
     }
 
     function test_constructor_success() public view {
-        assertEq(pocket.basin(),      address(groveBasin));
+        assertEq(pocket.basin(),          address(groveBasin));
         assertEq(address(pocket.usdt()),  address(usdt));
         assertEq(address(pocket.aUsdt()), address(aUsdt));
-        assertEq(pocket.aaveV3Pool(), address(aaveV3Pool));
+        assertEq(pocket.aaveV3Pool(),     address(aaveV3Pool));
 
         assertEq(usdt.allowance(address(pocket), address(groveBasin)), type(uint256).max);
     }
@@ -319,13 +321,13 @@ contract AaveV3UsdtPocketDrawLiquidityTests is AaveV3UsdtPocketTestBase {
     }
 
     function test_withdrawLiquidity_partialBalanceWithdrawsRemainder() public {
-        usdt.mint(address(pocket), 300e6);
+        usdt.mint(address(pocket),  300e6);
         aUsdt.mint(address(pocket), 1000e6);
 
         vm.prank(address(groveBasin));
         pocket.withdrawLiquidity(500e6, address(usdt));
 
-        assertEq(usdt.balanceOf(address(pocket)), 500e6);
+        assertEq(usdt.balanceOf(address(pocket)),  500e6);
         assertEq(aUsdt.balanceOf(address(pocket)), 800e6);
     }
 
@@ -373,7 +375,7 @@ contract AaveV3UsdtPocketAvailableBalanceTests is AaveV3UsdtPocketTestBase {
     }
 
     function test_availableBalance_combined() public {
-        usdt.mint(address(pocket), 500e6);
+        usdt.mint(address(pocket),  500e6);
         aUsdt.mint(address(pocket), 1500e6);
         assertEq(pocket.availableBalance(address(usdt)), 2000e6);
     }

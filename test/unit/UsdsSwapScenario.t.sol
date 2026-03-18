@@ -65,9 +65,10 @@ contract UsdsSwapScenarioTestBase is Test {
         );
 
         vm.startPrank(owner);
-        groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), owner);
-        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(),      owner);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(),            owner);
         groveBasin.grantRole(groveBasin.LIQUIDITY_PROVIDER_ROLE(), grove);
+
         groveBasin.setMaxSwapSizeBounds(0, 10_000_000_000_000_000e18);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
         groveBasin.setPocket(address(pocket));
@@ -96,7 +97,7 @@ contract UsdsSwapScenarioTests is UsdsSwapScenarioTestBase {
 
         // User swaps 100 JTRSY -> USDC
         // 1 JTRSY = $1.25, 1 USDC = $1 => 100 JTRSY = 125 USDC
-        uint256 jtrsyAmountIn = 100e18;
+        uint256 jtrsyAmountIn   = 100e18;
         uint256 expectedUsdcOut = 125e6;
 
         jtrsy.mint(user, jtrsyAmountIn);
