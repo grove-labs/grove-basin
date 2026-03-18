@@ -16,7 +16,8 @@ import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 
 contract GroveBasinTestBase is Test {
 
-    address public owner  = makeAddr("owner");
+    address public owner          = makeAddr("owner");
+    address public groveProxy  = makeAddr("groveProxy");
     address public pocket;
 
     GroveBasin public groveBasin;
@@ -80,7 +81,8 @@ contract GroveBasinTestBase is Test {
             address(groveBasin),
             address(swapToken),
             address(usds),
-            address(psm)
+            address(psm),
+            groveProxy
         ));
 
         vm.startPrank(owner);

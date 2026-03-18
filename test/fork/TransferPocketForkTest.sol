@@ -28,8 +28,9 @@ abstract contract TransferPocketForkTestBase is Test {
 
     using SafeERC20 for IERC20;
 
-    address public owner = makeAddr("owner");
-    address public admin = makeAddr("admin");
+    address public owner      = makeAddr("owner");
+    address public admin      = makeAddr("admin");
+    address public groveProxy = makeAddr("groveProxy");
 
     GroveBasin public groveBasin;
 
@@ -931,8 +932,9 @@ abstract contract TransferPocketForkTestBase_USDC is Test {
 
     using SafeERC20 for IERC20;
 
-    address public owner = makeAddr("owner");
-    address public admin = makeAddr("admin");
+    address public owner      = makeAddr("owner");
+    address public admin      = makeAddr("admin");
+    address public groveProxy = makeAddr("groveProxy");
 
     GroveBasin public groveBasin;
 
@@ -987,7 +989,8 @@ abstract contract TransferPocketForkTestBase_USDC is Test {
             address(groveBasin),
             Ethereum.USDC,
             Ethereum.USDS,
-            address(mockPsm)
+            address(mockPsm),
+            groveProxy
         );
     }
 

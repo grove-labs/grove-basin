@@ -20,7 +20,8 @@ import { SwapperHandler }       from "test/invariant/handlers/SwapperHandler.sol
 import { TimeBasedRateHandler } from "test/invariant/handlers/TimeBasedRateHandler.sol";
 import { TransferHandler }      from "test/invariant/handlers/TransferHandler.sol";
 import { OwnerHandler }         from "test/invariant/handlers/OwnerHandler.sol";
-import { PocketFactory }        from "test/invariant/handlers/PocketFactory.sol";
+import { PocketFactory }         from "test/invariant/handlers/PocketFactory.sol";
+import { UsdsUsdcPocketFactory } from "test/invariant/handlers/UsdsUsdcPocketFactory.sol";
 import { MockSSRRateProvider }  from "test/mocks/MockSSRRateProvider.sol";
 
 abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
@@ -746,9 +747,10 @@ contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers_WithPocketSetti
         // NOTE: The GroveBasin is the pocket to start, so the test suite will start with it as the pocket
         //       and transfer it to other addresses.
 
-        PocketFactory pocketFactory = new PocketFactory();
+        PocketFactory pocketFactory                 = new PocketFactory();
+        UsdsUsdcPocketFactory usdsUsdcPocketFactory = new UsdsUsdcPocketFactory();
 
-        ownerHandler = new OwnerHandler(groveBasin, swapToken, usds, psm, pocketFactory);
+        ownerHandler = new OwnerHandler(groveBasin, swapToken, usds, psm, groveProxy, pocketFactory, usdsUsdcPocketFactory);
         targetContract(address(ownerHandler));
 
         bytes32 managerAdminRole = groveBasin.MANAGER_ADMIN_ROLE();

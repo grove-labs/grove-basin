@@ -38,7 +38,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         usds.mint(address(psm), type(uint128).max);
         swapToken.mint(address(psm), type(uint128).max);
 
-        UsdsUsdcPocket mockPocket = new UsdsUsdcPocket(address(groveBasin), address(swapToken), address(usds), address(psm));
+        UsdsUsdcPocket mockPocket = new UsdsUsdcPocket(address(groveBasin), address(swapToken), address(usds), address(psm), groveProxy);
 
         vm.prank(owner);
         groveBasin.setPocket(address(mockPocket));

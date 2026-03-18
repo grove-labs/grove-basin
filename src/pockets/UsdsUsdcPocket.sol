@@ -26,6 +26,7 @@ contract UsdsUsdcPocket is BasePocket {
     IERC20 public immutable usds;
 
     address public immutable psm;
+    address public immutable groveProxy;
 
     uint256 internal immutable _usdsPrecision;
     uint256 internal immutable _usdcPrecision;
@@ -40,21 +41,27 @@ contract UsdsUsdcPocket is BasePocket {
         address basin_,
         address usdc_,
         address usds_,
-        address psm_
+        address psm_,
+        address groveProxy_
     ) BasePocket(basin_) {
-        require(usdc_ != address(0), "UsdsUsdcPocket/invalid-usdc");
-        require(usds_ != address(0), "UsdsUsdcPocket/invalid-usds");
-        require(psm_  != address(0), "UsdsUsdcPocket/invalid-psm");
-
-        usdc = IERC20(usdc_);
-        usds = IERC20(usds_);
-        psm  = psm_;
+        require(usdc_       != address(0), "UsdsUsdcPocket/invalid-usdc");
+        require(usds_       != address(0), "UsdsUsdcPocket/invalid-usds");
+        require(psm_        != address(0), "UsdsUsdcPocket/invalid-psm");
+        usdc       = IERC20(usdc_);
+        usds       = IERC20(usds_);
+        psm        = psm_;
+        groveProxy = groveProxy_;
 
         _usdsPrecision = 10 ** IERC20(usds_).decimals();
         _usdcPrecision = 10 ** IERC20(usdc_).decimals();
 
         IERC20(usds_).safeApprove(basin_, type(uint256).max);
         IERC20(usdc_).safeApprove(basin_, type(uint256).max);
+
+        if (groveProxy_ != address(0)) {
+            // Allows Sky spells to withdraw USDS from this pocket
+            IERC20(usds_).safeApprove(groveProxy_, type(uint256).max);
+        }
     }
 
     /// @inheritdoc IGroveBasinPocket

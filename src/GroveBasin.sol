@@ -74,7 +74,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     mapping(address user => uint256 shares) public override shares;
 
-    uint256 public override creditTokenBalance;
+    uint256 public override redeemedCreditTokenBalance;
 
     constructor(
         address owner_,
@@ -380,12 +380,12 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     /// @inheritdoc IGroveBasin
     function calculatePurchaseFee(uint256 amount, bool roundUp) external view override returns (uint256) {
-        return _calculatePurchaseFee(amount, roundUp);
+        return _calculateFee(amount, purchaseFee, roundUp);
     }
 
     /// @inheritdoc IGroveBasin
     function calculateRedemptionFee(uint256 amount, bool roundUp) external view override returns (uint256) {
-        return _calculateRedemptionFee(amount, roundUp);
+        return _calculateFee(amount, redemptionFee, roundUp);
     }
 
     /**********************************************************************************************/
@@ -546,9 +546,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         // Assumes no stable-to-stable swap
         if (assetOut == address(creditToken)) {
-            amountOut -= _calculatePurchaseFee(amountOut, false);
+            amountOut -= _calculateFee(amountOut, purchaseFee, false);
         } else {
-            amountOut -= _calculateRedemptionFee(amountOut, false);
+            amountOut -= _calculateFee(amountOut, redemptionFee, false);
         }
     }
 
@@ -563,9 +563,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         // Assumes no stable-to-stable swap
         if (assetOut == address(creditToken)) {
-            amountIn += _calculatePurchaseFee(amountIn, true);
+            amountIn += _calculateFee(amountIn, purchaseFee, true);
         } else {
-            amountIn += _calculateRedemptionFee(amountIn, true);
+            amountIn += _calculateFee(amountIn, redemptionFee, true);
         }
     }
 
@@ -646,7 +646,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     /// @inheritdoc IGroveBasin
     function totalAssetsWithRedemptions() public view returns (uint256) {
-        return totalAssets() + _getCreditTokenValue(creditTokenBalance, false);
+        return totalAssets() + _getCreditTokenValue(redeemedCreditTokenBalance, false);
     }
 
     /**********************************************************************************************/
@@ -901,7 +901,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         ITokenRedeemer(redeemer).initiateRedeem(creditTokenAmount);
         creditToken.approve(redeemer, 0);
 
-        creditTokenBalance += creditTokenAmount;
+        redeemedCreditTokenBalance += creditTokenAmount;
         emit RedeemInitiated(redeemer, msg.sender, creditTokenAmount);
     }
 
@@ -909,23 +909,17 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function _completeRedeem(address redeemer, uint256 creditTokenAmount) internal {
         require(hasRole(REDEEMER_CONTRACT_ROLE, redeemer), "GroveBasin/invalid-redeemer");
 
-        creditTokenBalance = creditTokenAmount > creditTokenBalance ? 0 : creditTokenBalance - creditTokenAmount;
+        redeemedCreditTokenBalance = creditTokenAmount > redeemedCreditTokenBalance ? 0 : redeemedCreditTokenBalance - creditTokenAmount;
 
         emit RedeemCompleted(redeemer, msg.sender, creditTokenAmount);
         
         ITokenRedeemer(redeemer).completeRedeem(creditTokenAmount);
     }
 
-    /// @dev Calculates the purchase fee on `amount` in basis points.
-    function _calculatePurchaseFee(uint256 amount, bool roundUp) internal view returns (uint256) {
-        if (roundUp) return Math.ceilDiv(amount * purchaseFee, BPS);
-        return amount * purchaseFee / BPS;
-    }
-
-    /// @dev Calculates the redemption fee on `amount` in basis points.
-    function _calculateRedemptionFee(uint256 amount, bool roundUp) internal view returns (uint256) {
-        if (roundUp) return Math.ceilDiv(amount * redemptionFee, BPS);
-        return amount * redemptionFee / BPS;
+    /// @dev Calculates a fee on `amount` in basis points.
+    function _calculateFee(uint256 amount, uint256 fee, bool roundUp) internal pure returns (uint256) {
+        if (roundUp) return Math.ceilDiv(amount * fee, BPS);
+        return amount * fee / BPS;
     }
 
     /// @dev Sets the purchase fee, enforcing it is within [minFee, maxFee].

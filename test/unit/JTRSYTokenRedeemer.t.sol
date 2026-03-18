@@ -33,8 +33,6 @@ contract JTRSYTokenRedeemerConstructorTests is Test {
     }
 
     function test_constructor() public {
-        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
-        vault.__setPermissioned(predictedRedeemer, true);
         JTRSYTokenRedeemer redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(basin));
 
         assertEq(redeemer.creditToken(),    address(creditToken));
@@ -55,6 +53,21 @@ contract JTRSYTokenRedeemerConstructorTests is Test {
     function test_constructor_invalidBasin() public {
         vm.expectRevert("JTRSYTokenRedeemer/invalid-basin");
         new JTRSYTokenRedeemer(address(creditToken), address(vault), address(0));
+    }
+
+    function test_constructor_creditTokenMismatch() public {
+        MockERC20 wrongCreditToken = new MockERC20("wrong", "wrong", 18);
+
+        vm.expectRevert("JTRSYTokenRedeemer/creditToken-mismatch");
+        new JTRSYTokenRedeemer(address(wrongCreditToken), address(vault), address(basin));
+    }
+
+    function test_constructor_collateralAssetMismatch() public {
+        MockERC20 otherCollateral = new MockERC20("other", "other", 18);
+        MockAsyncVault wrongVault = new MockAsyncVault(address(otherCollateral), address(creditToken));
+
+        vm.expectRevert("JTRSYTokenRedeemer/collateral-asset-mismatch");
+        new JTRSYTokenRedeemer(address(creditToken), address(wrongVault), address(basin));
     }
 
     function _deployBasin(address collateralToken_, address creditToken_) internal returns (GroveBasin) {
@@ -94,9 +107,6 @@ contract JTRSYTokenRedeemerSetUpTests is Test {
 
         GroveBasin basin = _deployBasin(address(collateralToken), address(creditToken));
 
-        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
-        vault.__setPermissioned(predictedRedeemer, true);
-
         JTRSYTokenRedeemer redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(basin));
 
         address notBasin = makeAddr("notBasin");
@@ -112,9 +122,6 @@ contract JTRSYTokenRedeemerSetUpTests is Test {
         MockAsyncVault vault      = new MockAsyncVault(address(collateralToken), address(creditToken));
 
         GroveBasin basin = _deployBasin(address(collateralToken), address(creditToken));
-
-        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
-        vault.__setPermissioned(predictedRedeemer, true);
 
         JTRSYTokenRedeemer redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(basin));
 
@@ -186,9 +193,6 @@ contract JTRSYTokenRedeemerInitiateRedeemTests is Test {
             address(creditRp)
         ));
 
-        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
-        vault.__setPermissioned(predictedRedeemer, true);
-
         redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), basin);
 
         creditToken.mint(basin, 10_000e18);
@@ -218,6 +222,16 @@ contract JTRSYTokenRedeemerInitiateRedeemTests is Test {
         assertEq(vault.lastRequestRedeemShares(),          200e18);
         assertEq(creditToken.balanceOf(address(redeemer)), 300e18);
         vm.stopPrank();
+    }
+
+    function test_initiateRedeem_emitsEvent() public {
+        uint256 amount = 1000e18;
+
+        vm.expectEmit(address(redeemer));
+        emit ITokenRedeemer.RedeemInitiated(amount);
+
+        vm.prank(basin);
+        redeemer.initiateRedeem(amount);
     }
 
     function test_initiateRedeem_onlyBasin() public {
@@ -267,9 +281,6 @@ contract JTRSYTokenRedeemerCompleteRedeemTests is Test {
             address(creditRp)
         ));
 
-        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
-        vault.__setPermissioned(predictedRedeemer, true);
-
         redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), basin);
 
         // Fund vault with collateral so it can pay out on redeem
@@ -306,6 +317,16 @@ contract JTRSYTokenRedeemerCompleteRedeemTests is Test {
         vm.stopPrank();
 
         assertEq(balanceAfterSecond - balanceAfterFirst, 200e18);
+    }
+
+    function test_completeRedeem_emitsEvent() public {
+        uint256 creditTokenAmount = 1000e18;
+
+        vm.expectEmit(address(redeemer));
+        emit ITokenRedeemer.RedeemCompleted(creditTokenAmount, creditTokenAmount);
+
+        vm.prank(basin);
+        redeemer.completeRedeem(creditTokenAmount);
     }
 
     function test_completeRedeem_onlyBasin() public {

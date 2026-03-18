@@ -53,10 +53,6 @@ contract JTRSYTokenRedeemer is ITokenRedeemer {
             address(IGroveBasin(basin_).collateralToken()) == IAsyncVaultLike(vault_).asset(),
             "JTRSYTokenRedeemer/collateral-asset-mismatch"
         );
-        require(
-            IAsyncVaultLike(vault_).isPermissioned(address(this)),
-            "JTRSYTokenRedeemer/not-allowlisted"
-        );
 
         creditToken = creditToken_;
         vault       = vault_;
@@ -71,15 +67,17 @@ contract JTRSYTokenRedeemer is ITokenRedeemer {
 
     /// @inheritdoc ITokenRedeemer
     function initiateRedeem(uint256 creditTokenAmount) external override onlyBasin {
-        IERC20(creditToken).safeTransferFrom(msg.sender, address(this), creditTokenAmount);
+        IERC20(creditToken).safeTransferFrom(address(basin), address(this), creditTokenAmount);
         IERC20(creditToken).approve(vault, creditTokenAmount);
         IAsyncVaultLike(vault).requestRedeem(creditTokenAmount, address(this), address(this));
+        emit RedeemInitiated(creditTokenAmount);
     }
 
     /// @inheritdoc ITokenRedeemer
     function completeRedeem(uint256 creditTokenAmount) external override onlyBasin returns (uint256 assets) {
         assets = IAsyncVaultLike(vault).redeem(creditTokenAmount, address(this), address(this));
-        IERC20(IAsyncVaultLike(vault).asset()).safeTransfer(msg.sender, assets);
+        IERC20(IAsyncVaultLike(vault).asset()).safeTransfer(address(basin), assets);
+        emit RedeemCompleted(creditTokenAmount, assets);
     }
 
 }

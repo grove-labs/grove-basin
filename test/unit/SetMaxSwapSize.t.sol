@@ -36,6 +36,53 @@ contract GroveBasinSetMaxSwapSizeFailureTests is GroveBasinTestBase {
 
 }
 
+contract GroveBasinSetMaxSwapSizeBoundsFailureTests is GroveBasinTestBase {
+
+    function test_setMaxSwapSizeBounds_lowerBoundGreaterThanUpperBound() public {
+        vm.prank(owner);
+        vm.expectRevert("GroveBasin/min-gt-max-swap-size");
+        groveBasin.setMaxSwapSizeBounds(1_000_000e18, 100e18);
+    }
+
+}
+
+contract GroveBasinSetMaxSwapSizeBoundsClampTests is GroveBasinTestBase {
+
+    event MaxSwapSizeSet(uint256 oldMaxSwapSize, uint256 newMaxSwapSize);
+    event MaxSwapSizeBoundsSet(uint256 oldLowerBound, uint256 oldUpperBound, uint256 newLowerBound, uint256 newUpperBound);
+
+    function test_setMaxSwapSizeBounds_clampsMaxSwapSizeUp() public {
+        vm.prank(owner);
+        groveBasin.setMaxSwapSize(50e18);
+
+        assertEq(groveBasin.maxSwapSize(), 50e18);
+
+        vm.prank(owner);
+        vm.expectEmit(address(groveBasin));
+        emit MaxSwapSizeSet(50e18, 500e18);
+        groveBasin.setMaxSwapSizeBounds(500e18, 1_000_000e18);
+
+        assertEq(groveBasin.maxSwapSize(),           500e18);
+        assertEq(groveBasin.maxSwapSizeLowerBound(), 500e18);
+    }
+
+    function test_setMaxSwapSizeBounds_clampsMaxSwapSizeDown() public {
+        vm.prank(owner);
+        groveBasin.setMaxSwapSize(500e18);
+
+        assertEq(groveBasin.maxSwapSize(), 500e18);
+
+        vm.prank(owner);
+        vm.expectEmit(address(groveBasin));
+        emit MaxSwapSizeSet(500e18, 200e18);
+        groveBasin.setMaxSwapSizeBounds(0, 200e18);
+
+        assertEq(groveBasin.maxSwapSize(),          200e18);
+        assertEq(groveBasin.maxSwapSizeUpperBound(), 200e18);
+    }
+
+}
+
 contract GroveBasinSetMaxSwapSizeSuccessTests is GroveBasinTestBase {
 
     event MaxSwapSizeSet(uint256 oldMaxSwapSize, uint256 newMaxSwapSize);

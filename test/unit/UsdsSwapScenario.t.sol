@@ -13,8 +13,9 @@ import { MockPSM }          from "test/mocks/MockPSM.sol";
 
 contract UsdsSwapScenarioTestBase is Test {
 
-    address public owner = makeAddr("owner");
-    address public grove = makeAddr("grove");
+    address public owner      = makeAddr("owner");
+    address public grove      = makeAddr("grove");
+    address public groveProxy = makeAddr("groveProxy");
 
     GroveBasin     public groveBasin;
     UsdsUsdcPocket public pocket;
@@ -61,7 +62,8 @@ contract UsdsSwapScenarioTestBase is Test {
             address(groveBasin),
             address(usdc),
             address(usds),
-            address(psm)
+            address(psm),
+            groveProxy
         );
 
         vm.startPrank(owner);

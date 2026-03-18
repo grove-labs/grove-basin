@@ -28,9 +28,6 @@ contract RedeemerRoleManagementTests is GroveBasinTestBase {
 
         vault = new MockAsyncVault(address(collateralToken), address(creditToken));
 
-        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
-        vault.__setPermissioned(predictedRedeemer, true);
-
         redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(groveBasin));
     }
 
@@ -130,9 +127,6 @@ contract RedeemerRoleManagementTests is GroveBasinTestBase {
     function test_addMultipleRedeemers() public {
         MockAsyncVault vault2 = new MockAsyncVault(address(collateralToken), address(creditToken));
 
-        address predictedRedeemer2 = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
-        vault2.__setPermissioned(predictedRedeemer2, true);
-
         JTRSYTokenRedeemer redeemer2 = new JTRSYTokenRedeemer(address(creditToken), address(vault2), address(groveBasin));
 
         bytes32 redeemerRole = groveBasin.REDEEMER_CONTRACT_ROLE();
@@ -161,9 +155,6 @@ contract JTRSYTokenRedeemerInitiateRedeemIntegrationTests is GroveBasinTestBase 
         super.setUp();
 
         vault = new MockAsyncVault(address(collateralToken), address(creditToken));
-
-        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
-        vault.__setPermissioned(predictedRedeemer, true);
 
         redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(groveBasin));
 
@@ -231,9 +222,6 @@ contract JTRSYTokenRedeemerCompleteRedeemIntegrationTests is GroveBasinTestBase 
 
         vault = new MockAsyncVault(address(collateralToken), address(creditToken));
 
-        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
-        vault.__setPermissioned(predictedRedeemer, true);
-
         redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(groveBasin));
 
         vm.startPrank(owner);
@@ -286,12 +274,7 @@ contract JTRSYTokenRedeemerMultipleRedeemersTests is GroveBasinTestBase {
         vault1 = new MockAsyncVault(address(collateralToken), address(creditToken));
         vault2 = new MockAsyncVault(address(collateralToken), address(creditToken));
 
-        address predictedRedeemer1 = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
-        vault1.__setPermissioned(predictedRedeemer1, true);
         redeemer1 = new JTRSYTokenRedeemer(address(creditToken), address(vault1), address(groveBasin));
-
-        address predictedRedeemer2 = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
-        vault2.__setPermissioned(predictedRedeemer2, true);
         redeemer2 = new JTRSYTokenRedeemer(address(creditToken), address(vault2), address(groveBasin));
 
         vm.startPrank(owner);
@@ -340,9 +323,6 @@ contract JTRSYTokenRedeemerFullFlowTests is GroveBasinTestBase {
         super.setUp();
 
         vault = new MockAsyncVault(address(collateralToken), address(creditToken));
-
-        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
-        vault.__setPermissioned(predictedRedeemer, true);
 
         redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(groveBasin));
 
@@ -395,9 +375,6 @@ contract CreditTokenBalanceTrackingTests is GroveBasinTestBase {
 
         vault = new MockAsyncVault(address(collateralToken), address(creditToken));
 
-        address predictedRedeemer = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
-        vault.__setPermissioned(predictedRedeemer, true);
-
         redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(groveBasin));
 
         vm.startPrank(owner);
@@ -410,65 +387,65 @@ contract CreditTokenBalanceTrackingTests is GroveBasinTestBase {
         collateralToken.mint(address(vault), 100_000e18);
     }
 
-    function test_creditTokenBalance_initiallyZero() public view {
-        assertEq(groveBasin.creditTokenBalance(), 0);
+    function test_redeemedCreditTokenBalance_initiallyZero() public view {
+        assertEq(groveBasin.redeemedCreditTokenBalance(), 0);
     }
 
-    function test_creditTokenBalance_incrementsOnInitiate() public {
+    function test_redeemedCreditTokenBalance_incrementsOnInitiate() public {
         uint256 amount = 1000e18;
 
         vm.prank(owner);
         groveBasin.initiateRedeem(address(redeemer), amount);
 
-        assertEq(groveBasin.creditTokenBalance(), amount);
+        assertEq(groveBasin.redeemedCreditTokenBalance(), amount);
     }
 
-    function test_creditTokenBalance_decrementsOnComplete() public {
+    function test_redeemedCreditTokenBalance_decrementsOnComplete() public {
         uint256 initiateAmount = 1000e18;
         uint256 completeAmount = 400e18;
 
         vm.prank(owner);
         groveBasin.initiateRedeem(address(redeemer), initiateAmount);
-        assertEq(groveBasin.creditTokenBalance(), initiateAmount);
+        assertEq(groveBasin.redeemedCreditTokenBalance(), initiateAmount);
 
         groveBasin.completeRedeem(address(redeemer), completeAmount);
 
-        assertEq(groveBasin.creditTokenBalance(), initiateAmount - completeAmount);
+        assertEq(groveBasin.redeemedCreditTokenBalance(), initiateAmount - completeAmount);
     }
 
-    function test_creditTokenBalance_fullRedeemCycle() public {
+    function test_redeemedCreditTokenBalance_fullRedeemCycle() public {
         uint256 amount = 1000e18;
 
         vm.prank(owner);
         groveBasin.initiateRedeem(address(redeemer), amount);
-        assertEq(groveBasin.creditTokenBalance(), amount);
+        assertEq(groveBasin.redeemedCreditTokenBalance(), amount);
 
         groveBasin.completeRedeem(address(redeemer), amount);
 
-        assertEq(groveBasin.creditTokenBalance(), 0);
+        assertEq(groveBasin.redeemedCreditTokenBalance(), 0);
     }
 
-    function test_creditTokenBalance_underflowProtection() public {
+    function test_redeemedCreditTokenBalance_underflowProtection() public {
         uint256 amount = 1000e18;
 
         vm.prank(owner);
         groveBasin.initiateRedeem(address(redeemer), amount);
-        assertEq(groveBasin.creditTokenBalance(), amount);
+        assertEq(groveBasin.redeemedCreditTokenBalance(), amount);
 
         // Complete with more than was initiated
         groveBasin.completeRedeem(address(redeemer), amount + 500e18);
 
         // Should floor at 0 rather than underflow
-        assertEq(groveBasin.creditTokenBalance(), 0);
+        assertEq(groveBasin.redeemedCreditTokenBalance(), 0);
     }
 
-    function test_creditTokenBalance_multipleInitiates() public {
+    function test_redeemedCreditTokenBalance_multipleInitiates() public {
         vm.startPrank(owner);
         groveBasin.initiateRedeem(address(redeemer), 500e18);
-        assertEq(groveBasin.creditTokenBalance(), 500e18);
+        assertEq(groveBasin.redeemedCreditTokenBalance(), 500e18);
 
         groveBasin.initiateRedeem(address(redeemer), 500e18);
-        assertEq(groveBasin.creditTokenBalance(), 1000e18);
+        assertEq(groveBasin.redeemedCreditTokenBalance(), 1000e18);
         vm.stopPrank();
     }
 
