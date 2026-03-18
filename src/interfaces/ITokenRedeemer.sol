@@ -5,6 +5,27 @@ import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
 
 interface ITokenRedeemer {
 
+    /**********************************************************************************************/
+    /*** Events                                                                                 ***/
+    /**********************************************************************************************/
+
+    /**
+     *  @dev   Emitted when a redemption is initiated.
+     *  @param creditTokenAmount Amount of credit tokens sent to the vault for redemption.
+     */
+    event RedeemInitiated(uint256 creditTokenAmount);
+
+    /**
+     *  @dev   Emitted when a redemption is completed.
+     *  @param creditTokenAmount Amount of credit tokens that were redeemed.
+     *  @param assets            Amount of collateral assets received from the vault.
+     */
+    event RedeemCompleted(uint256 creditTokenAmount, uint256 assets);
+
+    /**********************************************************************************************/
+    /*** State variables and immutables                                                         ***/
+    /**********************************************************************************************/
+
     /**
      *  @dev    Returns the address of the credit token that this redeemer handles.
      *  @return The address of the credit token.

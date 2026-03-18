@@ -70,12 +70,14 @@ contract JTRSYTokenRedeemer is ITokenRedeemer {
         IERC20(creditToken).safeTransferFrom(address(basin), address(this), creditTokenAmount);
         IERC20(creditToken).approve(vault, creditTokenAmount);
         IAsyncVaultLike(vault).requestRedeem(creditTokenAmount, address(this), address(this));
+        emit RedeemInitiated(creditTokenAmount);
     }
 
     /// @inheritdoc ITokenRedeemer
     function completeRedeem(uint256 creditTokenAmount) external override onlyBasin returns (uint256 assets) {
         assets = IAsyncVaultLike(vault).redeem(creditTokenAmount, address(this), address(this));
         IERC20(IAsyncVaultLike(vault).asset()).safeTransfer(address(basin), assets);
+        emit RedeemCompleted(creditTokenAmount, assets);
     }
 
 }

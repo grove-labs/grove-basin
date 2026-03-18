@@ -209,6 +209,16 @@ contract JTRSYTokenRedeemerInitiateRedeemTests is Test {
         vm.stopPrank();
     }
 
+    function test_initiateRedeem_emitsEvent() public {
+        uint256 amount = 1000e18;
+
+        vm.expectEmit(address(redeemer));
+        emit ITokenRedeemer.RedeemInitiated(amount);
+
+        vm.prank(basin);
+        redeemer.initiateRedeem(amount);
+    }
+
     function test_initiateRedeem_onlyBasin() public {
         address notBasin = makeAddr("notBasin");
 
@@ -292,6 +302,16 @@ contract JTRSYTokenRedeemerCompleteRedeemTests is Test {
         vm.stopPrank();
 
         assertEq(balanceAfterSecond - balanceAfterFirst, 200e18);
+    }
+
+    function test_completeRedeem_emitsEvent() public {
+        uint256 creditTokenAmount = 1000e18;
+
+        vm.expectEmit(address(redeemer));
+        emit ITokenRedeemer.RedeemCompleted(creditTokenAmount, creditTokenAmount);
+
+        vm.prank(basin);
+        redeemer.completeRedeem(creditTokenAmount);
     }
 
     function test_completeRedeem_onlyBasin() public {
