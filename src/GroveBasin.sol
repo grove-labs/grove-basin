@@ -112,6 +112,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         _creditTokenPrecision     = 10 ** IERC20(creditToken_).decimals();
 
         // Necessary to ensure rounding works as expected
+        require(_creditTokenPrecision     <= 1e18, "GroveBasin/creditToken-precision-too-high");
         require(_swapTokenPrecision       <= 1e18, "GroveBasin/swapToken-precision-too-high");
         require(_collateralTokenPrecision <= 1e18, "GroveBasin/collateralToken-precision-too-high");
 
