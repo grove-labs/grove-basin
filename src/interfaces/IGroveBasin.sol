@@ -214,7 +214,6 @@ interface IGroveBasin {
 
     /**
      *  @dev    Returns the maximum value of a swap in 1e18 precision. Settable by the manager.
-     *          If set to zero, there is no limit on swap size.
      *  @return The maximum swap size in 1e18 precision.
      */
     function maxSwapSize() external view returns (uint256);
