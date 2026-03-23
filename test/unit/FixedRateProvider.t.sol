@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import { Test } from "forge-std/Test.sol";
 
-import { FixedRateProvider } from "src/oracles/FixedRateProvider.sol";
+import { FixedRateProvider } from "src/rate-providers/FixedRateProvider.sol";
 
 contract FixedRateProviderTests is Test {
 

@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import { Test } from "forge-std/Test.sol";
 
-import { ChronicleRateProvider } from "src/oracles/ChronicleRateProvider.sol";
+import { ChronicleRateProvider } from "src/rate-providers/ChronicleRateProvider.sol";
 import { MockChronicleOracle }   from "test/mocks/MockChronicleOracle.sol";
 
 contract ChronicleRateProviderTests is Test {
