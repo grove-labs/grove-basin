@@ -386,6 +386,50 @@ contract UsdsUsdcPocketDrawLiquidityTests is UsdsUsdcPocketTestBase {
 }
 
 /**********************************************************************************************/
+/*** Approval cleanup tests                                                                 ***/
+/**********************************************************************************************/
+
+contract UsdsUsdcPocketApprovalCleanupTests is UsdsUsdcPocketTestBase {
+
+    function test_depositLiquidity_usdc_clearsPsmApproval() public {
+        usdc.mint(address(pocket), 1000e6);
+
+        vm.prank(address(groveBasin));
+        pocket.depositLiquidity(1000e6, address(usdc));
+
+        assertEq(usdc.allowance(address(pocket), address(psm)), 0);
+    }
+
+    function test_depositLiquidity_usdc_doesNotLeaveUsdsPsmApproval() public {
+        usdc.mint(address(pocket), 1000e6);
+
+        vm.prank(address(groveBasin));
+        pocket.depositLiquidity(1000e6, address(usdc));
+
+        assertEq(usds.allowance(address(pocket), address(psm)), 0);
+    }
+
+    function test_withdrawLiquidity_usdc_clearsUsdsPsmApproval() public {
+        usds.mint(address(pocket), 1000e18);
+
+        vm.prank(address(groveBasin));
+        pocket.withdrawLiquidity(500e6, address(usdc));
+
+        assertEq(usds.allowance(address(pocket), address(psm)), 0);
+    }
+
+    function test_withdrawLiquidity_usdc_doesNotLeaveUsdcPsmApproval() public {
+        usds.mint(address(pocket), 1000e18);
+
+        vm.prank(address(groveBasin));
+        pocket.withdrawLiquidity(500e6, address(usdc));
+
+        assertEq(usdc.allowance(address(pocket), address(psm)), 0);
+    }
+
+}
+
+/**********************************************************************************************/
 /*** availableBalance tests                                                                 ***/
 /**********************************************************************************************/
 
