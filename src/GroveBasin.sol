@@ -202,12 +202,12 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         uint256 currentMaxSwapSize = maxSwapSize;
         if (currentMaxSwapSize < newLowerBound) {
-            maxSwapSize = newLowerBound;
-            emit MaxSwapSizeSet(currentMaxSwapSize, newLowerBound);
+            maxSwapSize = newLowerBound;    
         } else if (currentMaxSwapSize > newUpperBound) {
             maxSwapSize = newUpperBound;
-            emit MaxSwapSizeSet(currentMaxSwapSize, newUpperBound);
         }
+
+        emit MaxSwapSizeSet(currentMaxSwapSize, maxSwapSize);
     }
 
     /// @inheritdoc IGroveBasin
@@ -228,11 +228,11 @@ contract GroveBasin is IGroveBasin, AccessControl {
         uint256 threshold = stalenessThreshold;
         if (threshold < newMinThreshold) {
             stalenessThreshold = newMinThreshold;
-            emit StalenessThresholdSet(threshold, newMinThreshold);
         } else if (threshold > newMaxThreshold) {
             stalenessThreshold = newMaxThreshold;
-            emit StalenessThresholdSet(threshold, newMaxThreshold);
         }
+
+        emit StalenessThresholdSet(threshold, stalenessThreshold);
     }
 
     /// @inheritdoc IGroveBasin
