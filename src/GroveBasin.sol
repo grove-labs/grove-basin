@@ -26,7 +26,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     using SafeERC20 for IERC20;
 
-    uint256 public constant override BPS = 10_000;
+    uint256 public constant override BPS = 100_00;
 
     bytes32 public constant override OWNER_ROLE              = DEFAULT_ADMIN_ROLE;
     bytes32 public constant override MANAGER_ADMIN_ROLE      = keccak256("MANAGER_ADMIN_ROLE");
