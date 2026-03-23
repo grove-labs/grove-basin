@@ -74,7 +74,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     mapping(address user => uint256 shares) public override shares;
 
-    constructor(
+        constructor(
         address owner_,
         address swapToken_,
         address collateralToken_,
@@ -83,13 +83,21 @@ contract GroveBasin is IGroveBasin, AccessControl {
         address collateralTokenRateProvider_,
         address creditTokenRateProvider_
     ) {
-        require(owner_                       != address(0), "GroveBasin/invalid-owner");
-        require(swapToken_                   != address(0), "GroveBasin/invalid-swapToken");
-        require(collateralToken_             != address(0), "GroveBasin/invalid-collateralToken");
-        require(creditToken_                 != address(0), "GroveBasin/invalid-creditToken");
-        require(swapTokenRateProvider_       != address(0), "GroveBasin/invalid-swapTokenRateProvider");
-        require(collateralTokenRateProvider_ != address(0), "GroveBasin/invalid-collateralTokenRateProvider");
-        require(creditTokenRateProvider_     != address(0), "GroveBasin/invalid-creditTokenRateProvider");
+        // Setup Roles
+        require(owner_ != address(0), "GroveBasin/invalid-owner");
+
+        _grantRole(OWNER_ROLE,              owner_);
+        _grantRole(LIQUIDITY_PROVIDER_ROLE, msg.sender);
+
+        _setRoleAdmin(MANAGER_ROLE,            MANAGER_ADMIN_ROLE);
+        _setRoleAdmin(LIQUIDITY_PROVIDER_ROLE, MANAGER_ADMIN_ROLE);
+        _setRoleAdmin(REDEEMER_CONTRACT_ROLE,  MANAGER_ADMIN_ROLE);
+        _setRoleAdmin(REDEEMER_ROLE,           MANAGER_ADMIN_ROLE);
+
+        // Setup Tokens
+        require(swapToken_       != address(0), "GroveBasin/invalid-swapToken");
+        require(collateralToken_ != address(0), "GroveBasin/invalid-collateralToken");
+        require(creditToken_     != address(0), "GroveBasin/invalid-creditToken");
 
         require(swapToken_       != collateralToken_, "GroveBasin/swapToken-collateralToken-same");
         require(swapToken_       != creditToken_,     "GroveBasin/swapToken-creditToken-same");
@@ -99,10 +107,18 @@ contract GroveBasin is IGroveBasin, AccessControl {
         collateralToken = IERC20(collateralToken_);
         creditToken     = IERC20(creditToken_);
 
-        swapTokenRateProvider       = swapTokenRateProvider_;
-        collateralTokenRateProvider = collateralTokenRateProvider_;
-        creditTokenRateProvider     = creditTokenRateProvider_;
-        pocket                      = address(this);
+        _swapTokenPrecision       = 10 ** IERC20(swapToken_).decimals();
+        _collateralTokenPrecision = 10 ** IERC20(collateralToken_).decimals();
+        _creditTokenPrecision     = 10 ** IERC20(creditToken_).decimals();
+
+        // Necessary to ensure rounding works as expected
+        require(_swapTokenPrecision       <= 1e18, "GroveBasin/swapToken-precision-too-high");
+        require(_collateralTokenPrecision <= 1e18, "GroveBasin/collateralToken-precision-too-high");
+
+        // Setup Rate Providers
+        require(swapTokenRateProvider_       != address(0), "GroveBasin/invalid-swapTokenRateProvider");
+        require(collateralTokenRateProvider_ != address(0), "GroveBasin/invalid-collateralTokenRateProvider");
+        require(creditTokenRateProvider_     != address(0), "GroveBasin/invalid-creditTokenRateProvider");
 
         require(
             IRateProviderLike(swapTokenRateProvider_).getConversionRate() != 0,
@@ -119,28 +135,18 @@ contract GroveBasin is IGroveBasin, AccessControl {
             "GroveBasin/credit-rate-provider-returns-zero"
         );
 
-        _swapTokenPrecision       = 10 ** IERC20(swapToken_).decimals();
-        _collateralTokenPrecision = 10 ** IERC20(collateralToken_).decimals();
-        _creditTokenPrecision     = 10 ** IERC20(creditToken_).decimals();
+        swapTokenRateProvider       = swapTokenRateProvider_;
+        collateralTokenRateProvider = collateralTokenRateProvider_;
+        creditTokenRateProvider     = creditTokenRateProvider_;
 
+        // Set default values
+        pocket                = address(this);
         maxSwapSize           = 50_000_000e18;
         maxSwapSizeLowerBound = 0;
         maxSwapSizeUpperBound = 1_000_000_000e18;
         minStalenessThreshold = 5 minutes;
         maxStalenessThreshold = 48 hours;
         stalenessThreshold    = minStalenessThreshold;
-
-        _grantRole(OWNER_ROLE,              owner_);
-        _grantRole(LIQUIDITY_PROVIDER_ROLE, msg.sender);
-
-        _setRoleAdmin(MANAGER_ROLE,            MANAGER_ADMIN_ROLE);
-        _setRoleAdmin(LIQUIDITY_PROVIDER_ROLE, MANAGER_ADMIN_ROLE);
-        _setRoleAdmin(REDEEMER_CONTRACT_ROLE,  MANAGER_ADMIN_ROLE);
-        _setRoleAdmin(REDEEMER_ROLE,           MANAGER_ADMIN_ROLE);
-
-        // Necessary to ensure rounding works as expected
-        require(_swapTokenPrecision       <= 1e18, "GroveBasin/swapToken-precision-too-high");
-        require(_collateralTokenPrecision <= 1e18, "GroveBasin/collateralToken-precision-too-high");
     }
 
     /**********************************************************************************************/
