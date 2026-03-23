@@ -281,9 +281,9 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
         vm.prank(manager);
         groveBasin.setStalenessThreshold(1 hours);
 
-        collateralToken.mint(address(groveBasin), 1_000_000e18);
-        swapToken.mint(pocket, 1_000_000e6);
-        creditToken.mint(address(groveBasin), 1_000_000e18);
+        _deposit(address(collateralToken), makeAddr("seeder"), 1_000_000e18);
+        _deposit(address(swapToken),       makeAddr("seeder"), 1_000_000e6);
+        _deposit(address(creditToken),     makeAddr("seeder"), 1_000_000e18);
 
         _deposit(address(swapToken), swapper, 10_000e6);
     }

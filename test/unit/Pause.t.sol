@@ -21,9 +21,9 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         groveBasin.grantRole(groveBasin.MANAGER_ROLE(), manager);
         vm.stopPrank();
 
-        swapToken.mint(pocket, 1_000e6);
-        collateralToken.mint(address(groveBasin), 1_000e18);
-        creditToken.mint(address(groveBasin), 1_000e18);
+        _deposit(address(swapToken),       makeAddr("seeder"), 1_000e6);
+        _deposit(address(collateralToken), makeAddr("seeder"), 1_000e18);
+        _deposit(address(creditToken),     makeAddr("seeder"), 1_000e18);
     }
 
     /**********************************************************************************************/

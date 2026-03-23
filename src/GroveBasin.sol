@@ -466,6 +466,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         newShares = previewDeposit(asset, assetsToDeposit);
 
+        require(newShares > 0, "GroveBasin/no-new-shares");
+
         shares[receiver] += newShares;
         totalShares      += newShares;
 

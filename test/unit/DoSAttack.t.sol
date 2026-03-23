@@ -21,27 +21,23 @@ contract InflationAttackTests is GroveBasinTestBase {
         assertEq(groveBasin.shares(user1), 0);
         assertEq(groveBasin.shares(user2), 0);
 
-        _deposit(address(swapToken), address(user1), 1_000_000e6);
+        // The no-new-shares check prevents deposits from silently minting zero shares
+        // when totalAssets > 0 but totalShares == 0 (inflation attack vector).
+        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
+        vm.prank(owner);
+        groveBasin.grantRole(lpRole, user1);
 
-        // Since exchange rate is zero, convertToShares returns 1m * 0 / 100e6
-        // because totalValue is not zero so it enters that if statement.
-        // This results in the funds going in the pool with no way for the user
-        // to recover them.
-        assertEq(_pocketSwapBalance(), 1_000_100e6);
+        swapToken.mint(user1, 1_000_000e6);
+        vm.startPrank(user1);
+        swapToken.approve(address(groveBasin), 1_000_000e6);
+        vm.expectRevert("GroveBasin/no-new-shares");
+        groveBasin.deposit(address(swapToken), user1, 1_000_000e6);
+        vm.stopPrank();
 
+        // Pool state unchanged - attack is mitigated
+        assertEq(_pocketSwapBalance(), 100e6);
         assertEq(groveBasin.totalShares(), 0);
         assertEq(groveBasin.shares(user1), 0);
-        assertEq(groveBasin.shares(user2), 0);
-
-        // This issue is not related to the first deposit only because totalShares cannot
-        // get above zero.
-        _deposit(address(swapToken), address(user2), 1_000_000e6);
-
-        assertEq(_pocketSwapBalance(), 2_000_100e6);
-
-        assertEq(groveBasin.totalShares(), 0);
-        assertEq(groveBasin.shares(user1), 0);
-        assertEq(groveBasin.shares(user2), 0);
     }
 
 }
