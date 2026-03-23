@@ -281,10 +281,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
         emit PocketSet(pocket_, newPocket, amountToTransfer);
     }
 
-    /**********************************************************************************************/
-    /*** Owner functions                                                                        ***/
-    /**********************************************************************************************/
-
     /// @inheritdoc IGroveBasin
     function addTokenRedeemer(address redeemer) external override onlyRole(MANAGER_ADMIN_ROLE) {
         require(redeemer != address(0),                     "GroveBasin/invalid-redeemer");
@@ -308,6 +304,10 @@ contract GroveBasin is IGroveBasin, AccessControl {
         emit TokenRedeemerRemoved(redeemer);
     }
 
+    /**********************************************************************************************/
+    /*** Owner functions                                                                        ***/
+    /**********************************************************************************************/
+
     /// @inheritdoc IGroveBasin
     function setPurchaseFee(uint256 newPurchaseFee) external override onlyRole(OWNER_ROLE) {
         _setPurchaseFee(newPurchaseFee);
@@ -317,6 +317,10 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function setRedemptionFee(uint256 newRedemptionFee) external override onlyRole(OWNER_ROLE) {
         _setRedemptionFee(newRedemptionFee);
     }
+
+    /**********************************************************************************************/
+    /*** Redeemer functions                                                                        ***/
+    /**********************************************************************************************/
 
     /// @inheritdoc IGroveBasin
     function initiateRedeem(address redeemer, uint256 creditTokenAmount) external override onlyRole(REDEEMER_ROLE) {

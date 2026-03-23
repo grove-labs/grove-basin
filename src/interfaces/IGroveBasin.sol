@@ -409,21 +409,6 @@ interface IGroveBasin {
     /**********************************************************************************************/
 
     /**
-     *  @dev    Sets the maximum value of a swap in 1e18 precision. Must be within
-     *          [maxSwapSizeLowerBound, maxSwapSizeUpperBound]. Callable only by MANAGER_ROLE.
-     *  @param  newMaxSwapSize New max swap size in 1e18 precision.
-     */
-    function setMaxSwapSize(uint256 newMaxSwapSize) external;
-
-    /**
-     *  @dev   Sets the max swap size bounds. If the current max swap size is outside
-     *         the new bounds, it is clamped. Callable only by MANAGER_ADMIN_ROLE.
-     *  @param newLowerBound The new lower bound for max swap size in 1e18 precision.
-     *  @param newUpperBound The new upper bound for max swap size in 1e18 precision.
-     */
-    function setMaxSwapSizeBounds(uint256 newLowerBound, uint256 newUpperBound) external;
-
-    /**
      *  @dev    Sets whether credit token deposits are disabled. Callable only by MANAGER_ADMIN_ROLE.
      *  @param  disabled Whether to disable credit token deposits.
      */
@@ -439,25 +424,17 @@ interface IGroveBasin {
     function setRateProvider(address token, address newRateProvider) external;
 
     /**
-     *  @dev   Sets or unsets a pause flag. Callable only by MANAGER_ROLE.
-     *         Valid actions: "swapToCredit", "creditToSwap", "collateralToCredit",
-     *         "creditToCollateral", "deposits", "initiateRedeem".
-     *  @param action The action to pause/unpause.
-     *  @param paused Whether to pause the action.
+     *  @dev   Sets the max swap size bounds. If the current max swap size is outside
+     *         the new bounds, it is clamped. Callable only by MANAGER_ADMIN_ROLE.
+     *  @param newLowerBound The new lower bound for max swap size in 1e18 precision.
+     *  @param newUpperBound The new upper bound for max swap size in 1e18 precision.
      */
-    function setPaused(bytes32 action, bool paused) external;
-
-    /**
-     *  @dev   Sets the staleness threshold in seconds. Must be within
-     *         [minStalenessThreshold, maxStalenessThreshold]. Callable only by DEFAULT_ADMIN_ROLE.
-     *  @param newThreshold The new staleness threshold in seconds.
-     */
-    function setStalenessThreshold(uint256 newThreshold) external;
+    function setMaxSwapSizeBounds(uint256 newLowerBound, uint256 newUpperBound) external;
 
     /**
      *  @dev   Sets the staleness threshold bounds. The min must be > 0 and <= max.
      *         If the current staleness threshold is outside the new bounds, it is clamped.
-     *         Callable only by DEFAULT_ADMIN_ROLE.
+     *         Callable only by MANAGER_ADMIN_ROLE.
      *  @param newMinThreshold The new minimum staleness threshold in seconds.
      *  @param newMaxThreshold The new maximum staleness threshold in seconds.
      */
@@ -465,7 +442,7 @@ interface IGroveBasin {
 
     /**
      *  @dev    Sets the fee bounds for both purchase and redemption fees. Callable only by
-     *          governance (DEFAULT_ADMIN_ROLE). If current fees are outside the new bounds,
+     *          MANAGER_ADMIN_ROLE. If current fees are outside the new bounds,
      *          they are clamped to the nearest bound.
      *  @param  newMinFee New minimum fee in BPS.
      *  @param  newMaxFee New maximum fee in BPS.
@@ -476,7 +453,7 @@ interface IGroveBasin {
      *  @dev    Sets the address of the pocket, an address that holds custody of the swap token
      *          in the GroveBasin and can deploy it to yield-bearing strategies. This function will
      *          transfer the balance of the swap token in the GroveBasin to the new pocket.
-     *          Callable only by the owner.
+     *          Callable only by MANAGER_ADMIN_ROLE.
      *  @param  newPocket Address of the new pocket.
      */
     function setPocket(address newPocket) external;
@@ -496,7 +473,25 @@ interface IGroveBasin {
     function removeTokenRedeemer(address redeemer) external;
 
     /**********************************************************************************************/
-    /*** Owner functions (redeem)                                                               ***/
+    /*** Owner functions                                                                        ***/
+    /**********************************************************************************************/
+
+    /**
+     *  @dev    Sets the purchase fee applied when buying credit tokens. Callable only by
+     *          the OWNER_ROLE. Fee must be within [minFee, maxFee].
+     *  @param  newPurchaseFee New purchase fee in BPS.
+     */
+    function setPurchaseFee(uint256 newPurchaseFee) external;
+
+    /**
+     *  @dev    Sets the redemption fee applied when redeeming credit tokens. Callable only by
+     *          the OWNER_ROLE. Fee must be within [minFee, maxFee].
+     *  @param  newRedemptionFee New redemption fee in BPS.
+     */
+    function setRedemptionFee(uint256 newRedemptionFee) external;
+
+    /**********************************************************************************************/
+    /*** Redeemer functions                                                                     ***/
     /**********************************************************************************************/
 
     /**
@@ -516,22 +511,31 @@ interface IGroveBasin {
     function completeRedeem(address redeemer, uint256 creditTokenAmount) external;
 
     /**********************************************************************************************/
-    /*** Liquidity provider functions                                                           ***/
+    /*** Manager functions                                                                      ***/
     /**********************************************************************************************/
 
     /**
-     *  @dev    Sets the purchase fee applied when buying credit tokens. Callable only by
-     *          the OWNER_ROLE. Fee must be within [minFee, maxFee].
-     *  @param  newPurchaseFee New purchase fee in BPS.
+     *  @dev    Sets the maximum value of a swap in 1e18 precision. Must be within
+     *          [maxSwapSizeLowerBound, maxSwapSizeUpperBound]. Callable only by MANAGER_ROLE.
+     *  @param  newMaxSwapSize New max swap size in 1e18 precision.
      */
-    function setPurchaseFee(uint256 newPurchaseFee) external;
+    function setMaxSwapSize(uint256 newMaxSwapSize) external;
 
     /**
-     *  @dev    Sets the redemption fee applied when redeeming credit tokens. Callable only by
-     *          the OWNER_ROLE. Fee must be within [minFee, maxFee].
-     *  @param  newRedemptionFee New redemption fee in BPS.
+     *  @dev   Sets or unsets a pause flag. Callable only by MANAGER_ROLE.
+     *         Valid actions: "swapToCredit", "creditToSwap", "collateralToCredit",
+     *         "creditToCollateral", "deposits", "initiateRedeem".
+     *  @param action The action to pause/unpause.
+     *  @param paused Whether to pause the action.
      */
-    function setRedemptionFee(uint256 newRedemptionFee) external;
+    function setPaused(bytes32 action, bool paused) external;
+
+    /**
+     *  @dev   Sets the staleness threshold in seconds. Must be within
+     *         [minStalenessThreshold, maxStalenessThreshold]. Callable only by MANAGER_ROLE.
+     *  @param newThreshold The new staleness threshold in seconds.
+     */
+    function setStalenessThreshold(uint256 newThreshold) external;
 
     /**********************************************************************************************/
     /*** Fee calculation functions                                                              ***/
