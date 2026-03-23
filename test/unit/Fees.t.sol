@@ -756,7 +756,8 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
         vm.prank(owner);
         groveBasin.setPurchaseFee(fee);
 
-        uint256 rawAmountOut = amountIn * 1e27 / conversionRate * 1e12;
+        // Use precise calculation: amountIn * swapRate * creditPrecision / (creditRate * swapPrecision)
+        uint256 rawAmountOut = (amountIn * 1e27 * 1e18) / (conversionRate * 1e6);
         uint256 expectedAmountOut = rawAmountOut - rawAmountOut * fee / 10_000;
 
         uint256 amountOut = groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), amountIn);

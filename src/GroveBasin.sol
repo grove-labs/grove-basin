@@ -727,7 +727,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
         uint256 swapRate   = _getConversionRate(swapTokenRateProvider);
         uint256 creditRate = _getConversionRate(creditTokenRateProvider);
 
-        if (!roundUp) return amount * swapRate / creditRate * _creditTokenPrecision / _swapTokenPrecision;
+        if (!roundUp) {
+            return Math.mulDiv(amount, swapRate * _creditTokenPrecision, creditRate * _swapTokenPrecision);
+        }
 
         return Math.ceilDiv(
             Math.ceilDiv(amount * swapRate, creditRate) * _creditTokenPrecision,
@@ -742,7 +744,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
         uint256 swapRate   = _getConversionRate(swapTokenRateProvider);
         uint256 creditRate = _getConversionRate(creditTokenRateProvider);
 
-        if (!roundUp) return amount * creditRate / swapRate * _swapTokenPrecision / _creditTokenPrecision;
+        if (!roundUp) {
+            return Math.mulDiv(amount, creditRate * _swapTokenPrecision, swapRate * _creditTokenPrecision);
+        }
 
         return Math.ceilDiv(
             Math.ceilDiv(amount * creditRate, swapRate) * _swapTokenPrecision,
@@ -761,7 +765,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
         uint256 collateralRate = _getConversionRate(collateralTokenRateProvider);
         uint256 creditRate     = _getConversionRate(creditTokenRateProvider);
 
-        if (!roundUp) return amount * collateralRate / creditRate * _creditTokenPrecision / _collateralTokenPrecision;
+        if (!roundUp) {
+            return Math.mulDiv(amount, collateralRate * _creditTokenPrecision, creditRate * _collateralTokenPrecision);
+        }
 
         return Math.ceilDiv(
             Math.ceilDiv(amount * collateralRate, creditRate) * _creditTokenPrecision,
@@ -780,7 +786,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
         uint256 collateralRate = _getConversionRate(collateralTokenRateProvider);
         uint256 creditRate     = _getConversionRate(creditTokenRateProvider);
 
-        if (!roundUp) return amount * creditRate / collateralRate * _collateralTokenPrecision / _creditTokenPrecision;
+        if (!roundUp) {
+            return Math.mulDiv(amount, creditRate * _collateralTokenPrecision, collateralRate * _creditTokenPrecision);
+        }
 
         return Math.ceilDiv(
             Math.ceilDiv(amount * creditRate, collateralRate) * _collateralTokenPrecision,

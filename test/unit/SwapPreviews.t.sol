@@ -157,9 +157,9 @@ contract GroveBasinPreviewSwapExactIn_SwapTokenInTests is GroveBasinTestBase {
 
     function test_previewSwapExactIn_swapTokenToCreditToken() public view {
         // Demo rounding down
-        assertEq(groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), 1e6 - 1), 0.799999e18);
+        assertEq(groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), 1e6 - 1), 799999200000000000);
         assertEq(groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), 1e6),     0.8e18);
-        assertEq(groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), 1e6 + 1), 0.8e18);
+        assertEq(groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), 1e6 + 1), 800000800000000000);
 
         assertEq(groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), 1e6), 0.8e18);
         assertEq(groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), 2e6), 1.6e18);
@@ -172,7 +172,8 @@ contract GroveBasinPreviewSwapExactIn_SwapTokenInTests is GroveBasinTestBase {
 
         mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
-        uint256 amountOut = amountIn * 1e27 / conversionRate * 1e12;
+        // Use mulDiv for precise calculation: amount * swapRate * creditPrecision / (creditRate * swapPrecision)
+        uint256 amountOut = (amountIn * 1e27 * 1e18) / (conversionRate * 1e6);
 
         assertEq(groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), amountIn), amountOut);
     }
