@@ -50,7 +50,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
     address public override pocket;
 
     bool public override creditTokenDepositsDisabled;
-
     bool public override swapToCreditPaused;
     bool public override creditToSwapPaused;
     bool public override collateralToCreditPaused;
@@ -71,10 +70,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     uint256 public override minStalenessThreshold;
     uint256 public override maxStalenessThreshold;
+    uint256 public override redeemedCreditTokenBalance;
 
     mapping(address user => uint256 shares) public override shares;
-
-    uint256 public override redeemedCreditTokenBalance;
 
     constructor(
         address owner_,
