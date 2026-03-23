@@ -289,9 +289,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /// @inheritdoc IGroveBasin
     function addTokenRedeemer(address redeemer) external override onlyRole(MANAGER_ADMIN_ROLE) {
         require(redeemer != address(0),                     "GroveBasin/invalid-redeemer");
-        require(!hasRole(REDEEMER_CONTRACT_ROLE, redeemer), "GroveBasin/redeemer-already-added");
-
-        _grantRole(REDEEMER_CONTRACT_ROLE, redeemer);
+        require(_grantRole(REDEEMER_CONTRACT_ROLE, redeemer), "GroveBasin/redeemer-already-added");
 
         ITokenRedeemer(redeemer).setUp(address(this));
 
