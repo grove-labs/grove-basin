@@ -672,34 +672,32 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     /// @dev Returns the USD value of `amount` of swap tokens in 1e18 precision.
     function _getSwapTokenValue(uint256 amount) internal view returns (uint256) {
-        return amount
-            * _getConversionRate(swapTokenRateProvider)
-            / 1e9
-            / _swapTokenPrecision;
+        return Math.mulDiv(
+            amount * _getConversionRate(swapTokenRateProvider),
+            1e18,
+            IRateProviderLike(swapTokenRateProvider).getRatePrecision() * _swapTokenPrecision
+        );
     }
 
     /// @dev Returns the USD value of `amount` of collateral tokens in 1e18 precision.
     function _getCollateralTokenValue(uint256 amount) internal view returns (uint256) {
-        // amount * rate / 1e27 gives USD value, then scale to 1e18
-        // amount * rate / 1e9 / precision = amount * rate / (1e9 * precision)
-        return amount
-            * _getConversionRate(collateralTokenRateProvider)
-            / 1e9
-            / _collateralTokenPrecision;
+        return Math.mulDiv(
+            amount * _getConversionRate(collateralTokenRateProvider),
+            1e18,
+            IRateProviderLike(collateralTokenRateProvider).getRatePrecision() * _collateralTokenPrecision
+        );
     }
 
     /// @dev Returns the USD value of `amount` of credit tokens in 1e18 precision.
     function _getCreditTokenValue(uint256 amount, bool roundUp) internal view returns (uint256) {
-        uint256 rate = _getConversionRate(creditTokenRateProvider);
+        uint256 rate      = _getConversionRate(creditTokenRateProvider);
+        uint256 precision = IRateProviderLike(creditTokenRateProvider).getRatePrecision();
 
-        if (!roundUp) return amount
-            * rate
-            / 1e9
-            / _creditTokenPrecision;
-
-        return Math.ceilDiv(
-            Math.ceilDiv(amount * rate, 1e9),
-            _creditTokenPrecision
+        return Math.mulDiv(
+            amount * rate,
+            1e18,
+            precision * _creditTokenPrecision,
+            roundUp ? Math.Rounding.Ceil : Math.Rounding.Floor
         );
     }
 
