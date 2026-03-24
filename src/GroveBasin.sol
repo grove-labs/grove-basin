@@ -838,15 +838,14 @@ contract GroveBasin is IGroveBasin, AccessControl {
         if (!_hasPocket()) return;
 
         if (asset == address(swapToken)) {
-            try IGroveBasinPocket(pocket).withdrawLiquidity(amount, asset) {} catch {}
+            IGroveBasinPocket(pocket).withdrawLiquidity(amount, asset);
         } else if (asset == address(collateralToken)) {
             uint256 basinBalance = IERC20(asset).balanceOf(address(this));
 
             if (basinBalance < amount) {
                 uint256 deficit = amount - basinBalance;
-                try IGroveBasinPocket(pocket).withdrawLiquidity(deficit, asset) returns (uint256 drawn) {
-                    IERC20(asset).safeTransferFrom(pocket, address(this), drawn);
-                } catch {}
+                uint256 drawn = IGroveBasinPocket(pocket).withdrawLiquidity(deficit, asset);
+                IERC20(asset).safeTransferFrom(pocket, address(this), drawn);
             }
         }
     }
