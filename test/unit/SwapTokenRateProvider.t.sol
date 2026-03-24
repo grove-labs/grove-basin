@@ -168,9 +168,9 @@ contract SwapTokenRateProviderTests is GroveBasinTestBase {
         _deposit(address(swapToken),   address(this), 100_000e6);
         _deposit(address(creditToken), address(this), 100_000e18);
 
-        // Calculate expected credit out
-        // swapAmount * swapRate / creditRate * creditPrecision / swapPrecision
-        uint256 expectedCreditOut = swapAmount * swapRate / 1.25e27 * 1e18 / 1e6;
+        // Calculate expected credit out using precise calculation
+        // swapAmount * swapRate * creditPrecision / (creditRate * swapPrecision)
+        uint256 expectedCreditOut = (swapAmount * swapRate * 1e18) / (1.25e27 * 1e6);
 
         uint256 creditOut = groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), swapAmount);
 
@@ -234,9 +234,9 @@ contract SwapTokenRateProviderTests is GroveBasinTestBase {
         _deposit(address(swapToken),   address(this), 2_000_000_000e6);
         _deposit(address(creditToken), address(this), 2_000_000_000e18);
 
-        // Calculate expected credit out
-        // swapAmount * swapRate / creditRate * creditPrecision / swapPrecision
-        uint256 expectedCreditOut = swapAmount * swapRate / 1.25e27 * 1e18 / 1e6;
+        // Calculate expected credit out using precise calculation
+        // swapAmount * swapRate * creditPrecision / (creditRate * swapPrecision)
+        uint256 expectedCreditOut = (swapAmount * swapRate * 1e18) / (1.25e27 * 1e6);
 
         uint256 creditOut = groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), swapAmount);
 

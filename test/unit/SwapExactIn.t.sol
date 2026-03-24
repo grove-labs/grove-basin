@@ -124,7 +124,7 @@ contract GroveBasinSwapExactInFailureTests is GroveBasinTestBase {
 
         uint256 expectedAmountOut = groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), 125e6 + 2);
 
-        assertEq(expectedAmountOut, 100.000001e18);  // More than balance of creditToken
+        assertEq(expectedAmountOut, 100000001600000000000);  // More than balance of creditToken
 
         vm.expectRevert("SafeERC20/transfer-failed");
         groveBasin.swapExactIn(address(swapToken), address(creditToken), 125e6 + 2, 100e18, receiver, 0);
@@ -274,7 +274,8 @@ contract GroveBasinSwapExactInSwapTokenAssetInTests is GroveBasinSwapExactInSucc
 
         mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
-        uint256 amountOut = amountIn * 1e27 / conversionRate * 1e12;
+        // Use precise calculation: amountIn * swapRate * creditPrecision / (creditRate * swapPrecision)
+        uint256 amountOut = (amountIn * 1e27 * 1e18) / (conversionRate * 1e6);
 
         _swapExactInTest(swapToken, creditToken, amountIn, amountOut, fuzzSwapper, fuzzReceiver);
     }

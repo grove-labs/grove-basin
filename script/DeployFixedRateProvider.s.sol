@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Script.sol";
 
-import { FixedRateProvider } from "src/oracles/FixedRateProvider.sol";
+import { FixedRateProvider } from "src/rate-providers/FixedRateProvider.sol";
 
 /**
  * @title  DeployFixedRateProvider

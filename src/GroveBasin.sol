@@ -26,7 +26,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     using SafeERC20 for IERC20;
 
-    uint256 public constant override BPS = 10_000;
+    uint256 public constant override BPS = 100_00;
 
     bytes32 public constant override OWNER_ROLE              = DEFAULT_ADMIN_ROLE;
     bytes32 public constant override MANAGER_ADMIN_ROLE      = keccak256("MANAGER_ADMIN_ROLE");
@@ -50,7 +50,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
     address public override pocket;
 
     bool public override creditTokenDepositsDisabled;
-
     bool public override swapToCreditPaused;
     bool public override creditToSwapPaused;
     bool public override collateralToCreditPaused;
@@ -71,12 +70,11 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     uint256 public override minStalenessThreshold;
     uint256 public override maxStalenessThreshold;
+    uint256 public override redeemedCreditTokenBalance;
 
     mapping(address user => uint256 shares) public override shares;
 
-    uint256 public override redeemedCreditTokenBalance;
-
-    constructor(
+        constructor(
         address owner_,
         address swapToken_,
         address collateralToken_,
@@ -85,13 +83,21 @@ contract GroveBasin is IGroveBasin, AccessControl {
         address collateralTokenRateProvider_,
         address creditTokenRateProvider_
     ) {
-        require(owner_                       != address(0), "GroveBasin/invalid-owner");
-        require(swapToken_                   != address(0), "GroveBasin/invalid-swapToken");
-        require(collateralToken_             != address(0), "GroveBasin/invalid-collateralToken");
-        require(creditToken_                 != address(0), "GroveBasin/invalid-creditToken");
-        require(swapTokenRateProvider_       != address(0), "GroveBasin/invalid-swapTokenRateProvider");
-        require(collateralTokenRateProvider_ != address(0), "GroveBasin/invalid-collateralTokenRateProvider");
-        require(creditTokenRateProvider_     != address(0), "GroveBasin/invalid-creditTokenRateProvider");
+        // Setup Roles
+        require(owner_ != address(0), "GroveBasin/invalid-owner");
+
+        _grantRole(OWNER_ROLE,              owner_);
+        _grantRole(LIQUIDITY_PROVIDER_ROLE, msg.sender);
+
+        _setRoleAdmin(MANAGER_ROLE,            MANAGER_ADMIN_ROLE);
+        _setRoleAdmin(LIQUIDITY_PROVIDER_ROLE, MANAGER_ADMIN_ROLE);
+        _setRoleAdmin(REDEEMER_CONTRACT_ROLE,  MANAGER_ADMIN_ROLE);
+        _setRoleAdmin(REDEEMER_ROLE,           MANAGER_ADMIN_ROLE);
+
+        // Setup Tokens
+        require(swapToken_       != address(0), "GroveBasin/invalid-swapToken");
+        require(collateralToken_ != address(0), "GroveBasin/invalid-collateralToken");
+        require(creditToken_     != address(0), "GroveBasin/invalid-creditToken");
 
         require(swapToken_       != collateralToken_, "GroveBasin/swapToken-collateralToken-same");
         require(swapToken_       != creditToken_,     "GroveBasin/swapToken-creditToken-same");
@@ -101,10 +107,19 @@ contract GroveBasin is IGroveBasin, AccessControl {
         collateralToken = IERC20(collateralToken_);
         creditToken     = IERC20(creditToken_);
 
-        swapTokenRateProvider       = swapTokenRateProvider_;
-        collateralTokenRateProvider = collateralTokenRateProvider_;
-        creditTokenRateProvider     = creditTokenRateProvider_;
-        pocket                      = address(this);
+        _swapTokenPrecision       = 10 ** IERC20(swapToken_).decimals();
+        _collateralTokenPrecision = 10 ** IERC20(collateralToken_).decimals();
+        _creditTokenPrecision     = 10 ** IERC20(creditToken_).decimals();
+
+        // Necessary to ensure rounding works as expected
+        require(_creditTokenPrecision     <= 1e18, "GroveBasin/creditToken-precision-too-high");
+        require(_swapTokenPrecision       <= 1e18, "GroveBasin/swapToken-precision-too-high");
+        require(_collateralTokenPrecision <= 1e18, "GroveBasin/collateralToken-precision-too-high");
+
+        // Setup Rate Providers
+        require(swapTokenRateProvider_       != address(0), "GroveBasin/invalid-swapTokenRateProvider");
+        require(collateralTokenRateProvider_ != address(0), "GroveBasin/invalid-collateralTokenRateProvider");
+        require(creditTokenRateProvider_     != address(0), "GroveBasin/invalid-creditTokenRateProvider");
 
         require(
             IRateProviderLike(swapTokenRateProvider_).getConversionRate() != 0,
@@ -121,28 +136,18 @@ contract GroveBasin is IGroveBasin, AccessControl {
             "GroveBasin/credit-rate-provider-returns-zero"
         );
 
-        _swapTokenPrecision       = 10 ** IERC20(swapToken_).decimals();
-        _collateralTokenPrecision = 10 ** IERC20(collateralToken_).decimals();
-        _creditTokenPrecision     = 10 ** IERC20(creditToken_).decimals();
+        swapTokenRateProvider       = swapTokenRateProvider_;
+        collateralTokenRateProvider = collateralTokenRateProvider_;
+        creditTokenRateProvider     = creditTokenRateProvider_;
 
+        // Set default values
+        pocket                = address(this);
         maxSwapSize           = 50_000_000e18;
         maxSwapSizeLowerBound = 0;
         maxSwapSizeUpperBound = 1_000_000_000e18;
         minStalenessThreshold = 5 minutes;
         maxStalenessThreshold = 48 hours;
         stalenessThreshold    = minStalenessThreshold;
-
-        _grantRole(OWNER_ROLE,              owner_);
-        _grantRole(LIQUIDITY_PROVIDER_ROLE, msg.sender);
-
-        _setRoleAdmin(MANAGER_ROLE,            MANAGER_ADMIN_ROLE);
-        _setRoleAdmin(LIQUIDITY_PROVIDER_ROLE, MANAGER_ADMIN_ROLE);
-        _setRoleAdmin(REDEEMER_CONTRACT_ROLE,  MANAGER_ADMIN_ROLE);
-        _setRoleAdmin(REDEEMER_ROLE,           MANAGER_ADMIN_ROLE);
-
-        // Necessary to ensure rounding works as expected
-        require(_swapTokenPrecision       <= 1e18, "GroveBasin/swapToken-precision-too-high");
-        require(_collateralTokenPrecision <= 1e18, "GroveBasin/collateralToken-precision-too-high");
     }
 
     /**********************************************************************************************/
@@ -197,12 +202,12 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         uint256 currentMaxSwapSize = maxSwapSize;
         if (currentMaxSwapSize < newLowerBound) {
-            maxSwapSize = newLowerBound;
-            emit MaxSwapSizeSet(currentMaxSwapSize, newLowerBound);
+            maxSwapSize = newLowerBound;    
         } else if (currentMaxSwapSize > newUpperBound) {
             maxSwapSize = newUpperBound;
-            emit MaxSwapSizeSet(currentMaxSwapSize, newUpperBound);
         }
+
+        emit MaxSwapSizeSet(currentMaxSwapSize, maxSwapSize);
     }
 
     /// @inheritdoc IGroveBasin
@@ -223,11 +228,11 @@ contract GroveBasin is IGroveBasin, AccessControl {
         uint256 threshold = stalenessThreshold;
         if (threshold < newMinThreshold) {
             stalenessThreshold = newMinThreshold;
-            emit StalenessThresholdSet(threshold, newMinThreshold);
         } else if (threshold > newMaxThreshold) {
             stalenessThreshold = newMaxThreshold;
-            emit StalenessThresholdSet(threshold, newMaxThreshold);
         }
+
+        emit StalenessThresholdSet(threshold, stalenessThreshold);
     }
 
     /// @inheritdoc IGroveBasin
@@ -281,16 +286,10 @@ contract GroveBasin is IGroveBasin, AccessControl {
         emit PocketSet(pocket_, newPocket, amountToTransfer);
     }
 
-    /**********************************************************************************************/
-    /*** Owner functions                                                                        ***/
-    /**********************************************************************************************/
-
     /// @inheritdoc IGroveBasin
     function addTokenRedeemer(address redeemer) external override onlyRole(MANAGER_ADMIN_ROLE) {
         require(redeemer != address(0),                     "GroveBasin/invalid-redeemer");
-        require(!hasRole(REDEEMER_CONTRACT_ROLE, redeemer), "GroveBasin/redeemer-already-added");
-
-        _grantRole(REDEEMER_CONTRACT_ROLE, redeemer);
+        require(_grantRole(REDEEMER_CONTRACT_ROLE, redeemer), "GroveBasin/redeemer-already-added");
 
         ITokenRedeemer(redeemer).setUp(address(this));
 
@@ -308,6 +307,10 @@ contract GroveBasin is IGroveBasin, AccessControl {
         emit TokenRedeemerRemoved(redeemer);
     }
 
+    /**********************************************************************************************/
+    /*** Owner functions                                                                        ***/
+    /**********************************************************************************************/
+
     /// @inheritdoc IGroveBasin
     function setPurchaseFee(uint256 newPurchaseFee) external override onlyRole(OWNER_ROLE) {
         _setPurchaseFee(newPurchaseFee);
@@ -317,6 +320,10 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function setRedemptionFee(uint256 newRedemptionFee) external override onlyRole(OWNER_ROLE) {
         _setRedemptionFee(newRedemptionFee);
     }
+
+    /**********************************************************************************************/
+    /*** Redeemer functions                                                                        ***/
+    /**********************************************************************************************/
 
     /// @inheritdoc IGroveBasin
     function initiateRedeem(address redeemer, uint256 creditTokenAmount) external override onlyRole(REDEEMER_ROLE) {
@@ -458,6 +465,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
         require(assetsToDeposit != 0, "GroveBasin/invalid-amount");
 
         newShares = previewDeposit(asset, assetsToDeposit);
+
+        require(newShares > 0, "GroveBasin/no-new-shares");
 
         shares[receiver] += newShares;
         totalShares      += newShares;
@@ -663,34 +672,32 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     /// @dev Returns the USD value of `amount` of swap tokens in 1e18 precision.
     function _getSwapTokenValue(uint256 amount) internal view returns (uint256) {
-        return amount
-            * _getConversionRate(swapTokenRateProvider)
-            / 1e9
-            / _swapTokenPrecision;
+        return Math.mulDiv(
+            amount * _getConversionRate(swapTokenRateProvider),
+            1e18,
+            IRateProviderLike(swapTokenRateProvider).getRatePrecision() * _swapTokenPrecision
+        );
     }
 
     /// @dev Returns the USD value of `amount` of collateral tokens in 1e18 precision.
     function _getCollateralTokenValue(uint256 amount) internal view returns (uint256) {
-        // amount * rate / 1e27 gives USD value, then scale to 1e18
-        // amount * rate / 1e9 / precision = amount * rate / (1e9 * precision)
-        return amount
-            * _getConversionRate(collateralTokenRateProvider)
-            / 1e9
-            / _collateralTokenPrecision;
+        return Math.mulDiv(
+            amount * _getConversionRate(collateralTokenRateProvider),
+            1e18,
+            IRateProviderLike(collateralTokenRateProvider).getRatePrecision() * _collateralTokenPrecision
+        );
     }
 
     /// @dev Returns the USD value of `amount` of credit tokens in 1e18 precision.
     function _getCreditTokenValue(uint256 amount, bool roundUp) internal view returns (uint256) {
-        uint256 rate = _getConversionRate(creditTokenRateProvider);
+        uint256 rate      = _getConversionRate(creditTokenRateProvider);
+        uint256 precision = IRateProviderLike(creditTokenRateProvider).getRatePrecision();
 
-        if (!roundUp) return amount
-            * rate
-            / 1e9
-            / _creditTokenPrecision;
-
-        return Math.ceilDiv(
-            Math.ceilDiv(amount * rate, 1e9),
-            _creditTokenPrecision
+        return Math.mulDiv(
+            amount * rate,
+            1e18,
+            precision * _creditTokenPrecision,
+            roundUp ? Math.Rounding.Ceil : Math.Rounding.Floor
         );
     }
 
@@ -727,7 +734,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
         uint256 swapRate   = _getConversionRate(swapTokenRateProvider);
         uint256 creditRate = _getConversionRate(creditTokenRateProvider);
 
-        if (!roundUp) return amount * swapRate / creditRate * _creditTokenPrecision / _swapTokenPrecision;
+        if (!roundUp) {
+            return Math.mulDiv(amount, swapRate * _creditTokenPrecision, creditRate * _swapTokenPrecision);
+        }
 
         return Math.ceilDiv(
             Math.ceilDiv(amount * swapRate, creditRate) * _creditTokenPrecision,
@@ -742,7 +751,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
         uint256 swapRate   = _getConversionRate(swapTokenRateProvider);
         uint256 creditRate = _getConversionRate(creditTokenRateProvider);
 
-        if (!roundUp) return amount * creditRate / swapRate * _swapTokenPrecision / _creditTokenPrecision;
+        if (!roundUp) {
+            return Math.mulDiv(amount, creditRate * _swapTokenPrecision, swapRate * _creditTokenPrecision);
+        }
 
         return Math.ceilDiv(
             Math.ceilDiv(amount * creditRate, swapRate) * _swapTokenPrecision,
@@ -761,7 +772,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
         uint256 collateralRate = _getConversionRate(collateralTokenRateProvider);
         uint256 creditRate     = _getConversionRate(creditTokenRateProvider);
 
-        if (!roundUp) return amount * collateralRate / creditRate * _creditTokenPrecision / _collateralTokenPrecision;
+        if (!roundUp) {
+            return Math.mulDiv(amount, collateralRate * _creditTokenPrecision, creditRate * _collateralTokenPrecision);
+        }
 
         return Math.ceilDiv(
             Math.ceilDiv(amount * collateralRate, creditRate) * _creditTokenPrecision,
@@ -780,7 +793,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
         uint256 collateralRate = _getConversionRate(collateralTokenRateProvider);
         uint256 creditRate     = _getConversionRate(creditTokenRateProvider);
 
-        if (!roundUp) return amount * creditRate / collateralRate * _collateralTokenPrecision / _creditTokenPrecision;
+        if (!roundUp) {
+            return Math.mulDiv(amount, creditRate * _collateralTokenPrecision, collateralRate * _creditTokenPrecision);
+        }
 
         return Math.ceilDiv(
             Math.ceilDiv(amount * creditRate, collateralRate) * _collateralTokenPrecision,
@@ -821,15 +836,14 @@ contract GroveBasin is IGroveBasin, AccessControl {
         if (!_hasPocket()) return;
 
         if (asset == address(swapToken)) {
-            try IGroveBasinPocket(pocket).withdrawLiquidity(amount, asset) {} catch {}
+            IGroveBasinPocket(pocket).withdrawLiquidity(amount, asset);
         } else if (asset == address(collateralToken)) {
             uint256 basinBalance = IERC20(asset).balanceOf(address(this));
 
             if (basinBalance < amount) {
                 uint256 deficit = amount - basinBalance;
-                try IGroveBasinPocket(pocket).withdrawLiquidity(deficit, asset) returns (uint256 drawn) {
-                    IERC20(asset).safeTransferFrom(pocket, address(this), drawn);
-                } catch {}
+                uint256 drawn = IGroveBasinPocket(pocket).withdrawLiquidity(deficit, asset);
+                IERC20(asset).safeTransferFrom(pocket, address(this), drawn);
             }
         }
     }

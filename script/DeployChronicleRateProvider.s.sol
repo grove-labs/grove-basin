@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Script.sol";
 
-import { ChronicleRateProvider } from "src/oracles/ChronicleRateProvider.sol";
+import { ChronicleRateProvider } from "src/rate-providers/ChronicleRateProvider.sol";
 
 /**
  * @title  DeployChronicleRateProvider

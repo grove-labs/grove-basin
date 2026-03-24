@@ -92,6 +92,17 @@ contract GroveBasinConstructorTests is GroveBasinTestBase {
         new GroveBasin(owner, address(swapToken_), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider));
     }
 
+    function test_constructor_creditTokenDecimalsToHighBoundary() public {
+        MockERC20 creditToken_ = new MockERC20("creditToken", "creditToken", 19);
+
+        vm.expectRevert("GroveBasin/creditToken-precision-too-high");
+        new GroveBasin(owner, address(swapToken), address(collateralToken), address(creditToken_), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider));
+
+        creditToken_ = new MockERC20("creditToken", "creditToken", 18);
+
+        new GroveBasin(owner, address(swapToken), address(collateralToken), address(creditToken_), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider));
+    }
+
     function test_constructor_collateralTokenDecimalsToHighBoundary() public {
         MockERC20 collateralToken_ = new MockERC20("collateralToken", "collateralToken", 19);
 

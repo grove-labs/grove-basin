@@ -501,9 +501,9 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
         vm.prank(owner);
         groveBasin.setFeeBounds(0, 500);
 
-        swapToken.mint(pocket, 1_000_000e6);
-        collateralToken.mint(address(groveBasin), 1_000_000e18);
-        creditToken.mint(address(groveBasin), 1_000_000e18);
+        _deposit(address(swapToken),       makeAddr("seeder"), 1_000_000e6);
+        _deposit(address(collateralToken), makeAddr("seeder"), 1_000_000e18);
+        _deposit(address(creditToken),     makeAddr("seeder"), 1_000_000e18);
     }
 
     // --- Purchase fee (swap/collateral -> credit) ---
@@ -737,9 +737,9 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
         vm.prank(owner);
         groveBasin.setFeeBounds(0, 2000);  // Max 20% for fuzz range
 
-        collateralToken.mint(address(groveBasin), COLLATERAL_TOKEN_MAX * 100);
-        swapToken.mint(pocket, SWAP_TOKEN_MAX * 100);
-        creditToken.mint(address(groveBasin), CREDIT_TOKEN_MAX * 100);
+        _deposit(address(collateralToken), makeAddr("seeder"), COLLATERAL_TOKEN_MAX * 100);
+        _deposit(address(swapToken),       makeAddr("seeder"), SWAP_TOKEN_MAX * 100);
+        _deposit(address(creditToken),     makeAddr("seeder"), CREDIT_TOKEN_MAX * 100);
     }
 
     function testFuzz_swapExactIn_purchaseFee_swapToCreditToken(
@@ -756,7 +756,8 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
         vm.prank(owner);
         groveBasin.setPurchaseFee(fee);
 
-        uint256 rawAmountOut = amountIn * 1e27 / conversionRate * 1e12;
+        // Use precise calculation: amountIn * swapRate * creditPrecision / (creditRate * swapPrecision)
+        uint256 rawAmountOut = (amountIn * 1e27 * 1e18) / (conversionRate * 1e6);
         uint256 expectedAmountOut = rawAmountOut - rawAmountOut * fee / 10_000;
 
         uint256 amountOut = groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), amountIn);

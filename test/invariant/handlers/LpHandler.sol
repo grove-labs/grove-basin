@@ -60,6 +60,10 @@ contract LpHandler is HandlerBase {
         vm.prank(owner);
         groveBasin.grantRole(lpRole, lp);
 
+        // Skip deposits that would produce zero shares
+        uint256 previewShares = groveBasin.previewDeposit(address(asset), amount);
+        if (previewShares == 0) return;
+
         vm.startPrank(lp);
         asset.mint(lp, amount);
         asset.approve(address(groveBasin), amount);

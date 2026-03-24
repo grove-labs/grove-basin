@@ -133,6 +133,9 @@ contract RoundingTests is GroveBasinTestBase {
 
         mockCreditTokenRateProvider.__setConversionRate(rate1);
 
+        // Skip fuzz inputs where deposit would produce zero shares (guarded by no-new-shares)
+        vm.assume(groveBasin.previewDeposit(address(asset), amount1) > 0);
+
         _deposit(address(asset), address(user1), amount1);
 
         assertEq(asset.balanceOf(address(user1)), 0);
@@ -145,6 +148,9 @@ contract RoundingTests is GroveBasinTestBase {
         assertLe(asset.balanceOf(address(user1)), amount1);
 
         mockCreditTokenRateProvider.__setConversionRate(rate2);
+
+        // Skip fuzz inputs where deposit would produce zero shares (guarded by no-new-shares)
+        vm.assume(groveBasin.previewDeposit(address(asset), amount2) > 0);
 
         _deposit(address(asset), address(user2), amount2);
 

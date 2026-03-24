@@ -24,6 +24,26 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
         vm.stopPrank();
     }
 
+    function test_deposit_noNewShares() public {
+        // First deposit to establish shares
+        collateralToken.mint(user1, 1e18);
+        vm.startPrank(user1);
+        collateralToken.approve(address(groveBasin), 1e18);
+        groveBasin.deposit(address(collateralToken), user1, 1e18);
+        vm.stopPrank();
+
+        // Donate collateral directly to inflate totalAssets without minting shares
+        collateralToken.mint(address(groveBasin), 1e18);
+
+        // Deposit 1 wei of collateral: assetValue=1, shares = 1 * 1e18 / 2e18 = 0
+        collateralToken.mint(user1, 1);
+        vm.startPrank(user1);
+        collateralToken.approve(address(groveBasin), 1);
+        vm.expectRevert("GroveBasin/no-new-shares");
+        groveBasin.deposit(address(collateralToken), user1, 1);
+        vm.stopPrank();
+    }
+
     function test_deposit_zeroAmount() public {
         vm.prank(user1);
         vm.expectRevert("GroveBasin/invalid-amount");
@@ -457,6 +477,9 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
         assertEq(groveBasin.convertToAssetValue(groveBasin.shares(receiver2)), 0);
 
         assertApproxEqAbs(groveBasin.totalAssets(), receiver1NewValue, 1);
+
+        // Skip fuzz inputs where deposit would produce zero shares (guarded by no-new-shares)
+        vm.assume(groveBasin.previewDeposit(address(creditToken), creditTokenAmount2) > 0);
 
         newShares = groveBasin.deposit(address(creditToken), receiver2, creditTokenAmount2);
 

@@ -83,7 +83,7 @@ contract UsdsUsdcPocket is BasePocket {
                 0
             );
 
-            usds.safeApprove(psm, 0);
+            usdc.safeApprove(psm, 0);
 
             emit LiquidityDeposited(asset, amount, convertedAmount);
             return convertedAmount;
