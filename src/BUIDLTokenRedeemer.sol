@@ -1,0 +1,71 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+pragma solidity ^0.8.24;
+
+import { IERC20 }    from "erc20-helpers/interfaces/IERC20.sol";
+import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
+
+import { IGroveBasin }    from "src/interfaces/IGroveBasin.sol";
+import { ITokenRedeemer } from "src/interfaces/ITokenRedeemer.sol";
+
+contract BUIDLTokenRedeemer is ITokenRedeemer {
+
+    using SafeERC20 for IERC20;
+
+    /// @inheritdoc ITokenRedeemer
+    address public immutable override creditToken;
+
+    address public immutable collateralToken;
+
+    address public immutable redemptionAddress;
+
+    /// @inheritdoc ITokenRedeemer
+    IGroveBasin public immutable override basin;
+
+    modifier onlyBasin() {
+        require(msg.sender == address(basin), "BUIDLTokenRedeemer/only-basin");
+        _;
+    }
+
+    constructor(address creditToken_, address redemptionAddress_, address basin_) {
+        require(creditToken_       != address(0), "BUIDLTokenRedeemer/invalid-creditToken");
+        require(redemptionAddress_ != address(0), "BUIDLTokenRedeemer/invalid-redemptionAddress");
+        require(basin_             != address(0), "BUIDLTokenRedeemer/invalid-basin");
+
+        require(
+            address(IGroveBasin(basin_).creditToken()) == creditToken_,
+            "BUIDLTokenRedeemer/creditToken-mismatch"
+        );
+
+        creditToken       = creditToken_;
+        collateralToken   = address(IGroveBasin(basin_).collateralToken());
+        redemptionAddress = redemptionAddress_;
+        basin             = IGroveBasin(basin_);
+    }
+
+    /// @inheritdoc ITokenRedeemer
+    function vault() external view override returns (address) {
+        return redemptionAddress;
+    }
+
+    /// @inheritdoc ITokenRedeemer
+    function setUp(address) external override onlyBasin {}
+
+    /// @inheritdoc ITokenRedeemer
+    function tearDown(address) external override onlyBasin {}
+
+    /// @inheritdoc ITokenRedeemer
+    function initiateRedeem(uint256 creditTokenAmount) external override onlyBasin {
+        IERC20(creditToken).safeTransferFrom(address(basin), address(this), creditTokenAmount);
+        IERC20(creditToken).safeTransfer(redemptionAddress, creditTokenAmount);
+        emit RedeemInitiated(creditTokenAmount);
+    }
+
+    /// @inheritdoc ITokenRedeemer
+    function completeRedeem(uint256 creditTokenAmount) external override onlyBasin returns (uint256 assets) {
+        assets = IERC20(collateralToken).balanceOf(address(this));
+        if (assets > creditTokenAmount) assets = creditTokenAmount;
+        IERC20(collateralToken).safeTransfer(address(basin), assets);
+        emit RedeemCompleted(creditTokenAmount, assets);
+    }
+
+}
