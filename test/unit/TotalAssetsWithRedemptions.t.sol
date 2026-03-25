@@ -30,15 +30,18 @@ contract TotalAssetsWithRedemptionsTests is GroveBasinTestBase {
         vm.stopPrank();
     }
 
-    function test_totalAssetsWithRedemptions_noRedemptions() public {
+    function test_totalAssets_noRedemptions() public {
         collateralToken.mint(address(groveBasin), 1e18);
         swapToken.mint(address(pocket), 1e6);
         creditToken.mint(address(groveBasin), 1e18);
 
-        assertEq(groveBasin.totalAssetsWithRedemptions(), groveBasin.totalAssets());
+        uint256 totalAssets = groveBasin.totalAssets();
+
+        // 1e18 collateral + 1e18 swap (1e6 * 1e12) + 1.25e18 credit
+        assertEq(totalAssets, 3.25e18);
     }
 
-    function test_totalAssetsWithRedemptions_withPendingRedemption() public {
+    function test_totalAssets_withPendingRedemption() public {
         creditToken.mint(address(groveBasin), 1000e18);
 
         uint256 totalAssetsBefore = groveBasin.totalAssets();
@@ -49,43 +52,46 @@ contract TotalAssetsWithRedemptionsTests is GroveBasinTestBase {
         vm.prank(owner);
         groveBasin.initiateRedeem(address(redeemer), 1000e18);
 
-        // totalAssets drops because credit tokens left the basin
-        assertEq(groveBasin.totalAssets(), 0);
+        assertEq(groveBasin.redeemedCreditTokenBalance(), 1000e18);
 
-        // totalAssetsWithRedemptions includes the pending redemption value
-        assertEq(groveBasin.totalAssetsWithRedemptions(), 1250e18);
+        // totalAssets includes redeemed credit token value, credit tokens left the basin
+        // redeemedCreditTokenBalance (1000e18) * 1.25 rate = 1250e18
+        assertEq(groveBasin.totalAssets(), 1250e18);
     }
 
-    function test_totalAssetsWithRedemptions_partialRedemption() public {
+    function test_totalAssets_partialRedemption() public {
         creditToken.mint(address(groveBasin), 1000e18);
 
         vm.prank(owner);
         groveBasin.initiateRedeem(address(redeemer), 400e18);
 
-        // 600e18 credit tokens still in basin = 750e18 value
-        // 400e18 credit tokens pending = 500e18 value
-        assertEq(groveBasin.totalAssets(),                750e18);
-        assertEq(groveBasin.totalAssetsWithRedemptions(), 1250e18);
+        assertEq(groveBasin.redeemedCreditTokenBalance(), 400e18);
+
+        // 600e18 credit tokens still in basin + 400e18 redeemed = 1000e18 total credit
+        // 1000e18 * 1.25 = 1250e18
+        assertEq(groveBasin.totalAssets(), 1250e18);
     }
 
-    function test_totalAssetsWithRedemptions_afterCompleteRedeem() public {
+    function test_totalAssets_afterCompleteRedeem() public {
         creditToken.mint(address(groveBasin), 1000e18);
 
         vm.prank(owner);
         groveBasin.initiateRedeem(address(redeemer), 1000e18);
 
-        assertEq(groveBasin.totalAssetsWithRedemptions(), 1250e18);
+        assertEq(groveBasin.totalAssets(), 1250e18);
 
-        // Complete the redemption - collateral tokens come back
-        collateralToken.mint(address(vault),         1000e18);
-        groveBasin.completeRedeem(address(redeemer), 1000e18);
+        // Complete the redemption - vault returns 1000e18 collateral
+        collateralToken.mint(address(vault), 1000e18);
+        vault.__setMaxWithdraw(1000e18);
+        groveBasin.completeRedeem(address(redeemer), 1000e18, 1000e18);
 
-        // redeemedCreditTokenBalance decremented, collateral received
         assertEq(groveBasin.redeemedCreditTokenBalance(), 0);
-        assertEq(groveBasin.totalAssets(), groveBasin.totalAssetsWithRedemptions());
+
+        // totalAssets = 1000e18 actual collateral (at 1:1 rate)
+        assertEq(groveBasin.totalAssets(), 1000e18);
     }
 
-    function test_totalAssetsWithRedemptions_multipleInitiateRedeems() public {
+    function test_totalAssets_multipleInitiateRedeems() public {
         creditToken.mint(address(groveBasin), 2000e18);
 
         vm.startPrank(owner);
@@ -93,34 +99,32 @@ contract TotalAssetsWithRedemptionsTests is GroveBasinTestBase {
         groveBasin.initiateRedeem(address(redeemer), 300e18);
         vm.stopPrank();
 
-        // 1200e18 credit in basin = 1500e18 value
-        // 800e18 credit pending = 1000e18 value
-        assertEq(groveBasin.totalAssets(),                1500e18);
-        assertEq(groveBasin.totalAssetsWithRedemptions(), 2500e18);
         assertEq(groveBasin.redeemedCreditTokenBalance(), 800e18);
+
+        // 1200e18 credit in basin + 800e18 redeemed = 2000e18 total credit
+        // 2000e18 * 1.25 = 2500e18
+        assertEq(groveBasin.totalAssets(), 2500e18);
     }
 
-    function test_totalAssetsWithRedemptions_conversionRateChange() public {
+    function test_totalAssets_conversionRateChange() public {
         creditToken.mint(address(groveBasin), 1000e18);
 
         vm.prank(owner);
         groveBasin.initiateRedeem(address(redeemer), 1000e18);
 
-        // At rate 1.25: pending value = 1250e18
-        assertEq(groveBasin.totalAssetsWithRedemptions(), 1250e18);
+        assertEq(groveBasin.redeemedCreditTokenBalance(), 1000e18);
+        // 1000e18 * 1.25 = 1250e18
+        assertEq(groveBasin.totalAssets(), 1250e18);
 
-        // Rate increases to 1.5
+        // Credit rate changes DO affect redeemed credit token value
         mockCreditTokenRateProvider.__setConversionRate(1.5e27);
+        assertEq(groveBasin.totalAssets(), 1500e18);
 
-        assertEq(groveBasin.totalAssetsWithRedemptions(), 1500e18);
-
-        // Rate decreases to 0.8
-        mockCreditTokenRateProvider.__setConversionRate(0.8e27);
-
-        assertEq(groveBasin.totalAssetsWithRedemptions(), 800e18);
+        mockCreditTokenRateProvider.__setConversionRate(0.5e27);
+        assertEq(groveBasin.totalAssets(), 500e18);
     }
 
-    function test_totalAssetsWithRedemptions_withAllAssetTypes() public {
+    function test_totalAssets_withAllAssetTypes() public {
         collateralToken.mint(address(groveBasin), 100e18);
         swapToken.mint(address(pocket), 200e6);
         creditToken.mint(address(groveBasin), 1000e18);
@@ -131,14 +135,11 @@ contract TotalAssetsWithRedemptionsTests is GroveBasinTestBase {
         vm.prank(owner);
         groveBasin.initiateRedeem(address(redeemer), 400e18);
 
-        // totalAssets: 100e18 + 200e18 + 750e18 = 1050e18
-        assertEq(groveBasin.totalAssets(), 1050e18);
-
-        // totalAssetsWithRedemptions: 1050e18 + 500e18 = 1550e18
-        assertEq(groveBasin.totalAssetsWithRedemptions(), 1550e18);
+        // 100e18 collateral + 200e18 swap + (600e18 + 400e18 redeemed) * 1.25 = 1550e18
+        assertEq(groveBasin.totalAssets(), 1550e18);
     }
 
-    function test_totalAssetsWithRedemptions_partialComplete() public {
+    function test_totalAssets_partialComplete() public {
         creditToken.mint(address(groveBasin), 1000e18);
 
         vm.prank(owner);
@@ -146,20 +147,19 @@ contract TotalAssetsWithRedemptionsTests is GroveBasinTestBase {
 
         assertEq(groveBasin.redeemedCreditTokenBalance(), 1000e18);
 
-        // Complete only 600e18
+        // Complete 600e18 credit tokens worth -> vault returns 600e18 collateral
         collateralToken.mint(address(vault), 600e18);
-        groveBasin.completeRedeem(address(redeemer), 600e18);
+        vault.__setMaxWithdraw(600e18);
+        groveBasin.completeRedeem(address(redeemer), 600e18, 600e18);
 
+        // redeemedCreditTokenBalance = 1000e18 - 600e18 = 400e18
         assertEq(groveBasin.redeemedCreditTokenBalance(), 400e18);
 
-        // totalAssets has 600e18 collateral from completed redeem
-        assertEq(groveBasin.totalAssets(), 600e18);
-
-        // totalAssetsWithRedemptions: 600e18 + 400e18 * 1.25 = 1100e18
-        assertEq(groveBasin.totalAssetsWithRedemptions(), 1100e18);
+        // totalAssets = 600e18 collateral + 400e18 redeemed credit * 1.25 = 1100e18
+        assertEq(groveBasin.totalAssets(), 1100e18);
     }
 
-    function testFuzz_totalAssetsWithRedemptions(
+    function testFuzz_totalAssets(
         uint256 collateralAmount,
         uint256 swapAmount,
         uint256 creditAmount,
@@ -183,15 +183,12 @@ contract TotalAssetsWithRedemptionsTests is GroveBasinTestBase {
             groveBasin.initiateRedeem(address(redeemer), redeemAmount);
         }
 
+        // All credit tokens (in basin + redeemed) valued at credit rate
         uint256 expectedTotalAssets = collateralAmount
             + (swapAmount * 1e12)
-            + ((creditAmount - redeemAmount) * conversionRate / 1e27);
+            + (creditAmount * conversionRate / 1e27);
 
-        uint256 expectedWithRedemptions = expectedTotalAssets
-            + (redeemAmount * conversionRate / 1e27);
-
-        assertEq(groveBasin.totalAssets(),                expectedTotalAssets);
-        assertEq(groveBasin.totalAssetsWithRedemptions(), expectedWithRedemptions);
+        assertEq(groveBasin.totalAssets(), expectedTotalAssets);
     }
 
 }

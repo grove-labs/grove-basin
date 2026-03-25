@@ -292,29 +292,60 @@ contract JTRSYTokenRedeemerCompleteRedeemTests is Test {
     }
 
     function test_completeRedeem_sendsCollateralToCaller() public {
-        uint256 creditTokenAmount = 1000e18;
+        uint256 collateralTokenAmount = 1000e18;
+
+        vault.__setMaxWithdraw(collateralTokenAmount);
 
         uint256 callerBalanceBefore = collateralToken.balanceOf(basin);
 
         vm.prank(basin);
-        uint256 assets = redeemer.completeRedeem(creditTokenAmount);
+        uint256 assets = redeemer.completeRedeem(collateralTokenAmount);
 
         uint256 callerBalanceAfter = collateralToken.balanceOf(basin);
 
-        assertEq(assets,                                   creditTokenAmount);
-        assertEq(callerBalanceAfter - callerBalanceBefore, creditTokenAmount);
+        assertEq(assets,                                   collateralTokenAmount);
+        assertEq(callerBalanceAfter - callerBalanceBefore, collateralTokenAmount);
 
-        assertEq(vault.lastRedeemShares(),     creditTokenAmount);
-        assertEq(vault.lastRedeemReceiver(),   address(redeemer));
-        assertEq(vault.lastRedeemController(), address(redeemer));
+        assertEq(vault.lastWithdrawAssets(),     collateralTokenAmount);
+        assertEq(vault.lastWithdrawReceiver(),   address(redeemer));
+        assertEq(vault.lastWithdrawController(), address(redeemer));
+    }
+
+    function test_completeRedeem_usesMaxWithdrawWhenGreater() public {
+        uint256 collateralTokenAmount = 800e18;
+        uint256 maxWithdrawable       = 1000e18;
+
+        vault.__setMaxWithdraw(maxWithdrawable);
+
+        vm.prank(basin);
+        uint256 assets = redeemer.completeRedeem(collateralTokenAmount);
+
+        assertEq(assets, maxWithdrawable);
+        assertEq(vault.lastWithdrawAssets(), maxWithdrawable);
+    }
+
+    function test_completeRedeem_usesCollateralAmountWhenGreater() public {
+        uint256 collateralTokenAmount = 1200e18;
+        uint256 maxWithdrawable       = 1000e18;
+
+        vault.__setMaxWithdraw(maxWithdrawable);
+
+        vm.prank(basin);
+        uint256 assets = redeemer.completeRedeem(collateralTokenAmount);
+
+        assertEq(assets, collateralTokenAmount);
+        assertEq(vault.lastWithdrawAssets(), collateralTokenAmount);
     }
 
     function test_completeRedeem_multipleCompletes() public {
+        vault.__setMaxWithdraw(100e18);
+
         vm.startPrank(basin);
         redeemer.completeRedeem(100e18);
 
         uint256 balanceAfterFirst = collateralToken.balanceOf(basin);
 
+        vault.__setMaxWithdraw(200e18);
         redeemer.completeRedeem(200e18);
 
         uint256 balanceAfterSecond = collateralToken.balanceOf(basin);
@@ -324,13 +355,15 @@ contract JTRSYTokenRedeemerCompleteRedeemTests is Test {
     }
 
     function test_completeRedeem_emitsEvent() public {
-        uint256 creditTokenAmount = 1000e18;
+        uint256 collateralTokenAmount = 1000e18;
+
+        vault.__setMaxWithdraw(collateralTokenAmount);
 
         vm.expectEmit(address(redeemer));
-        emit ITokenRedeemer.RedeemCompleted(creditTokenAmount, creditTokenAmount);
+        emit ITokenRedeemer.RedeemCompleted(collateralTokenAmount);
 
         vm.prank(basin);
-        redeemer.completeRedeem(creditTokenAmount);
+        redeemer.completeRedeem(collateralTokenAmount);
     }
 
     function test_completeRedeem_onlyBasin() public {

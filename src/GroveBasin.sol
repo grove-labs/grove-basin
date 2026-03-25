@@ -327,8 +327,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     /// @inheritdoc IGroveBasin
-    function completeRedeem(address redeemer, uint256 creditTokenAmount) external override onlyRole(REDEEMER_ROLE) {
-        _completeRedeem(redeemer, creditTokenAmount);
+    function completeRedeem(address redeemer, uint256 creditTokenAmount, uint256 collateralTokenAmount) external override onlyRole(REDEEMER_ROLE) {
+        _completeRedeem(redeemer, creditTokenAmount, collateralTokenAmount);
     }
 
     /**********************************************************************************************/
@@ -687,13 +687,10 @@ contract GroveBasin is IGroveBasin, AccessControl {
                     _getAvailableBalance(collateralToken), false  // Round down
                 )
             +  _getCreditTokenValue(
-                    _getAvailableBalance(creditToken), false  // Round down
+                    _getAvailableBalance(address(creditToken))
+                        + redeemedCreditTokenBalance,
+                    false // Round down
                 );
-    }
-
-    /// @inheritdoc IGroveBasin
-    function totalAssetsWithRedemptions() public view returns (uint256) {
-        return totalAssets() + _getCreditTokenValue(redeemedCreditTokenBalance, false);
     }
 
     /**********************************************************************************************/
@@ -974,15 +971,17 @@ contract GroveBasin is IGroveBasin, AccessControl {
         emit RedeemInitiated(redeemer, msg.sender, creditTokenAmount);
     }
 
-    /// @dev Completes an async redemption, decreasing the tracked credit token balance.
-    function _completeRedeem(address redeemer, uint256 creditTokenAmount) internal {
+    /// @dev Completes an async redemption, decreasing the redeemed credit token balance.
+    function _completeRedeem(address redeemer, uint256 creditTokenAmount, uint256 collateralTokenAmount) internal {
         if (!hasRole(REDEEMER_CONTRACT_ROLE, redeemer)) revert InvalidRedeemer();
 
-        redeemedCreditTokenBalance = creditTokenAmount > redeemedCreditTokenBalance ? 0 : redeemedCreditTokenBalance - creditTokenAmount;
-
         emit RedeemCompleted(redeemer, msg.sender, creditTokenAmount);
-        
-        ITokenRedeemer(redeemer).completeRedeem(creditTokenAmount);
+
+        ITokenRedeemer(redeemer).completeRedeem(collateralTokenAmount);
+
+        redeemedCreditTokenBalance = creditTokenAmount > redeemedCreditTokenBalance
+            ? 0
+            : redeemedCreditTokenBalance - creditTokenAmount;
     }
 
     /// @dev Calculates a fee on `amount` in basis points.

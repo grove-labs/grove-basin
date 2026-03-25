@@ -236,12 +236,14 @@ contract JTRSYTokenRedeemerCompleteRedeemIntegrationTests is GroveBasinTestBase 
     function test_completeRedeem_withAddress() public {
         uint256 amount = 1000e18;
 
+        vault.__setMaxWithdraw(amount);
+
         uint256 basinBalanceBefore = collateralToken.balanceOf(address(groveBasin));
 
-        groveBasin.completeRedeem(address(redeemer), amount);
+        groveBasin.completeRedeem(address(redeemer), amount, amount);
 
-        assertEq(vault.lastRedeemShares(),   amount);
-        assertEq(vault.lastRedeemReceiver(), address(redeemer));
+        assertEq(vault.lastWithdrawAssets(),   amount);
+        assertEq(vault.lastWithdrawReceiver(), address(redeemer));
 
         assertEq(collateralToken.balanceOf(address(groveBasin)), basinBalanceBefore + amount);
     }
@@ -249,10 +251,12 @@ contract JTRSYTokenRedeemerCompleteRedeemIntegrationTests is GroveBasinTestBase 
     function test_completeRedeem_emitsEvent() public {
         uint256 amount = 1000e18;
 
+        vault.__setMaxWithdraw(amount);
+
         vm.expectEmit(true, true, false, true);
         emit IGroveBasin.RedeemCompleted(address(redeemer), address(this), amount);
 
-        groveBasin.completeRedeem(address(redeemer), amount);
+        groveBasin.completeRedeem(address(redeemer), amount, amount);
     }
 
 }
@@ -302,10 +306,12 @@ contract JTRSYTokenRedeemerMultipleRedeemersTests is GroveBasinTestBase {
     function test_completeRedeem_multipleRedeemers_withAddress() public {
         uint256 amount = 1000e18;
 
-        groveBasin.completeRedeem(address(redeemer2), amount);
+        vault2.__setMaxWithdraw(amount);
 
-        assertEq(vault2.lastRedeemShares(), amount);
-        assertEq(vault2.lastRedeemReceiver(), address(redeemer2));
+        groveBasin.completeRedeem(address(redeemer2), amount, amount);
+
+        assertEq(vault2.lastWithdrawAssets(), amount);
+        assertEq(vault2.lastWithdrawReceiver(), address(redeemer2));
     }
 
 }
@@ -349,12 +355,13 @@ contract JTRSYTokenRedeemerFullFlowTests is GroveBasinTestBase {
         assertEq(vault.lastRequestRedeemOwner(),      address(redeemer));
 
         // Complete redeem - redeemer receives collateral from vault, forwards to basin
+        vault.__setMaxWithdraw(completeAmount);
         uint256 basinCollateralBefore = collateralToken.balanceOf(address(groveBasin));
-        groveBasin.completeRedeem(address(redeemer), completeAmount);
+        groveBasin.completeRedeem(address(redeemer), completeAmount, completeAmount);
 
-        assertEq(vault.lastRedeemShares(),     completeAmount);
-        assertEq(vault.lastRedeemReceiver(),   address(redeemer));
-        assertEq(vault.lastRedeemController(), address(redeemer));
+        assertEq(vault.lastWithdrawAssets(),     completeAmount);
+        assertEq(vault.lastWithdrawReceiver(),   address(redeemer));
+        assertEq(vault.lastWithdrawController(), address(redeemer));
 
         assertEq(collateralToken.balanceOf(address(groveBasin)), basinCollateralBefore + completeAmount);
     }
@@ -404,11 +411,13 @@ contract CreditTokenBalanceTrackingTests is GroveBasinTestBase {
         uint256 initiateAmount = 1000e18;
         uint256 completeAmount = 400e18;
 
+        vault.__setMaxWithdraw(completeAmount);
+
         vm.prank(owner);
         groveBasin.initiateRedeem(address(redeemer), initiateAmount);
         assertEq(groveBasin.redeemedCreditTokenBalance(), initiateAmount);
 
-        groveBasin.completeRedeem(address(redeemer), completeAmount);
+        groveBasin.completeRedeem(address(redeemer), completeAmount, completeAmount);
 
         assertEq(groveBasin.redeemedCreditTokenBalance(), initiateAmount - completeAmount);
     }
@@ -416,11 +425,13 @@ contract CreditTokenBalanceTrackingTests is GroveBasinTestBase {
     function test_redeemedCreditTokenBalance_fullRedeemCycle() public {
         uint256 amount = 1000e18;
 
+        vault.__setMaxWithdraw(amount);
+
         vm.prank(owner);
         groveBasin.initiateRedeem(address(redeemer), amount);
         assertEq(groveBasin.redeemedCreditTokenBalance(), amount);
 
-        groveBasin.completeRedeem(address(redeemer), amount);
+        groveBasin.completeRedeem(address(redeemer), amount, amount);
 
         assertEq(groveBasin.redeemedCreditTokenBalance(), 0);
     }
@@ -428,14 +439,14 @@ contract CreditTokenBalanceTrackingTests is GroveBasinTestBase {
     function test_redeemedCreditTokenBalance_underflowProtection() public {
         uint256 amount = 1000e18;
 
+        vault.__setMaxWithdraw(amount + 500e18);
+
         vm.prank(owner);
         groveBasin.initiateRedeem(address(redeemer), amount);
         assertEq(groveBasin.redeemedCreditTokenBalance(), amount);
 
-        // Complete with more than was initiated
-        groveBasin.completeRedeem(address(redeemer), amount + 500e18);
+        groveBasin.completeRedeem(address(redeemer), amount + 500e18, amount + 500e18);
 
-        // Should floor at 0 rather than underflow
         assertEq(groveBasin.redeemedCreditTokenBalance(), 0);
     }
 

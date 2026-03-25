@@ -65,7 +65,7 @@ contract GroveBasinCompleteRedeemTests is GroveBasinTestBase {
             )
         );
         vm.prank(nonRedeemer);
-        groveBasin.completeRedeem(makeAddr("redeemer"), 1000e18);
+        groveBasin.completeRedeem(makeAddr("redeemer"), 1000e18, 1000e18);
     }
 
 }
@@ -83,7 +83,7 @@ contract GroveBasinCompleteRedeemInvalidRedeemerContractTests is GroveBasinTestB
 
         vm.prank(redeemer);
         vm.expectRevert(IGroveBasin.InvalidRedeemer.selector);
-        groveBasin.completeRedeem(invalidContract, 100e18);
+        groveBasin.completeRedeem(invalidContract, 100e18, 100e18);
     }
 
 }

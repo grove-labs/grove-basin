@@ -26,10 +26,9 @@ interface ITokenRedeemer {
 
     /**
      *  @dev   Emitted when a redemption is completed.
-     *  @param creditTokenAmount Amount of credit tokens that were redeemed.
-     *  @param assets            Amount of collateral assets received from the vault.
+     *  @param collateralTokenAmount Amount of collateral assets received from the vault.
      */
-    event RedeemCompleted(uint256 creditTokenAmount, uint256 assets);
+    event RedeemCompleted(uint256 collateralTokenAmount);
 
     /**********************************************************************************************/
     /*** State variables and immutables                                                         ***/
@@ -73,11 +72,13 @@ interface ITokenRedeemer {
     function initiateRedeem(uint256 creditTokenAmount) external;
 
     /**
-     *  @dev   Completes a redemption by calling redeem on the vault and transferring the
-     *         redeemed collateral assets back to the caller.
-     *  @param  creditTokenAmount Amount of credit tokens to complete redemption for.
-     *  @return assets            Amount of collateral assets sent back to the caller.
+     *  @dev   Completes a redemption by withdrawing collateral assets from the vault and
+     *         transferring them back to the caller. The actual amount transferred is the greater
+     *         of `collateralTokenAmount` and the maximum available collateral tokens in the
+     *         redeemer (e.g., maxWithdraw from the vault or the redeemer's collateral balance).
+     *  @param  collateralTokenAmount Amount of collateral assets the caller expects to receive.
+     *  @return collateralTokenReturned Amount of collateral assets sent back to the caller.
      */
-    function completeRedeem(uint256 creditTokenAmount) external returns (uint256 assets);
+    function completeRedeem(uint256 collateralTokenAmount) external returns (uint256 collateralTokenReturned);
 
 }

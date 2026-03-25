@@ -117,7 +117,7 @@ contract BUIDLTokenRedeemerForkTest_CompleteRedeem is BUIDLTokenRedeemerForkTest
         uint256 basinUsdcBefore = IERC20(Ethereum.USDC).balanceOf(address(groveBasin));
 
         vm.prank(owner);
-        groveBasin.completeRedeem(address(redeemer), redeemAmount);
+        groveBasin.completeRedeem(address(redeemer), redeemAmount, redeemAmount);
 
         assertEq(
             IERC20(Ethereum.USDC).balanceOf(address(groveBasin)),
@@ -143,7 +143,7 @@ contract BUIDLTokenRedeemerForkTest_CompleteRedeem is BUIDLTokenRedeemerForkTest
         uint256 basinUsdcBefore = IERC20(Ethereum.USDC).balanceOf(address(groveBasin));
 
         vm.prank(owner);
-        groveBasin.completeRedeem(address(redeemer), redeemAmount);
+        groveBasin.completeRedeem(address(redeemer), redeemAmount, redeemAmount);
 
         assertEq(
             IERC20(Ethereum.USDC).balanceOf(address(groveBasin)),
@@ -167,7 +167,7 @@ contract BUIDLTokenRedeemerForkTest_CompleteRedeem is BUIDLTokenRedeemerForkTest
         emit IGroveBasin.RedeemCompleted(address(redeemer), owner, redeemAmount);
 
         vm.prank(owner);
-        groveBasin.completeRedeem(address(redeemer), redeemAmount);
+        groveBasin.completeRedeem(address(redeemer), redeemAmount, redeemAmount);
     }
 
 }
@@ -198,7 +198,7 @@ contract BUIDLTokenRedeemerForkTest_FullFlow is BUIDLTokenRedeemerForkTestBase {
         uint256 basinUsdcBefore = IERC20(Ethereum.USDC).balanceOf(address(groveBasin));
 
         vm.prank(owner);
-        groveBasin.completeRedeem(address(redeemer), redeemAmount);
+        groveBasin.completeRedeem(address(redeemer), redeemAmount, redeemAmount);
 
         assertEq(groveBasin.redeemedCreditTokenBalance(), 0);
         assertEq(
@@ -225,7 +225,7 @@ contract BUIDLTokenRedeemerForkTest_FullFlow is BUIDLTokenRedeemerForkTestBase {
         deal(Ethereum.USDC, address(redeemer), 999e6);
 
         vm.prank(owner);
-        groveBasin.completeRedeem(address(redeemer), 1_000e6);
+        groveBasin.completeRedeem(address(redeemer), 1_000e6, 1_000e6);
 
         // redeemedCreditTokenBalance decrements by the creditTokenAmount param, not the assets
         assertEq(groveBasin.redeemedCreditTokenBalance(), 2_000e6);
@@ -234,7 +234,7 @@ contract BUIDLTokenRedeemerForkTest_FullFlow is BUIDLTokenRedeemerForkTestBase {
         deal(Ethereum.USDC, address(redeemer), 2_000e6);
 
         vm.prank(owner);
-        groveBasin.completeRedeem(address(redeemer), 2_000e6);
+        groveBasin.completeRedeem(address(redeemer), 2_000e6, 2_000e6);
 
         assertEq(groveBasin.redeemedCreditTokenBalance(), 0);
     }

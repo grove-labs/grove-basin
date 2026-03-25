@@ -13,6 +13,12 @@ interface IAsyncVaultLike {
     /// @notice Completes a redemption, returning the underlying assets for the given shares.
     function redeem(uint256 shares, address receiver, address controller) external returns (uint256 assets);
 
+    /// @notice Completes a withdrawal, burning shares and returning the underlying assets.
+    function withdraw(uint256 assets, address receiver, address controller) external returns (uint256 shares);
+
+    /// @notice Returns the maximum amount of assets that can be withdrawn by the controller.
+    function maxWithdraw(address controller) external view returns (uint256 maxAssets);
+
     /// @notice Returns the address of the underlying asset of the vault.
     function asset() external view returns (address);
 

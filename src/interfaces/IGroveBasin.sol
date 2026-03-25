@@ -430,9 +430,9 @@ interface IGroveBasin {
     function REDEEMER_CONTRACT_ROLE() external view returns (bytes32);
 
     /**
-     *  @dev    Returns the amount of redeemed credit tokens outstanding in pending redemptions.
-     *          Incremented on initiateRedeem and decremented on completeRedeem.
-     *  @return The amount of redeemed credit tokens in pending redemptions.
+     *  @dev    Returns the amount of credit tokens that have been sent for redemption but not yet
+     *          completed. Incremented on initiateRedeem and decremented on completeRedeem.
+     *  @return The credit token amount pending redemption.
      */
     function redeemedCreditTokenBalance() external view returns (uint256);
 
@@ -569,10 +569,11 @@ interface IGroveBasin {
     /**
      *  @dev    Completes a credit token redemption using a specific token redeemer.
      *          Callable only by the REDEEMER_ROLE.
-     *  @param  redeemer         Address of the token redeemer to use.
-     *  @param  creditTokenAmount Amount of credit tokens to complete redemption for.
+     *  @param  redeemer               Address of the token redeemer to use.
+     *  @param  creditTokenAmount      Amount of credit tokens to complete redemption for.
+     *  @param  collateralTokenAmount  Amount of collateral assets the caller expects to receive.
      */
-    function completeRedeem(address redeemer, uint256 creditTokenAmount) external;
+    function completeRedeem(address redeemer, uint256 creditTokenAmount, uint256 collateralTokenAmount) external;
 
     /**********************************************************************************************/
     /*** Manager functions                                                                      ***/
@@ -824,19 +825,9 @@ interface IGroveBasin {
 
     /**
      *  @dev View function that returns the total value of the balance of all assets currently held
-     *       by the GroveBasin, converted to swap token/collateral token terms denominated in 18
-     *       decimal precision. Does not include credit tokens in pending redemptions. Use
-     *       `totalAssetsWithRedemptions()` for a closer approximation of the basin's total value.
+     *       by the GroveBasin, including the estimated value of pending collateral from redemptions,
+     *       converted to swap token/collateral token terms denominated in 18 decimal precision.
      */
     function totalAssets() external view returns (uint256);
-
-    /**
-     *  @dev    View function that returns the total value of all assets in the GroveBasin including
-     *          the value of credit tokens in pending redemptions. The actual yield may be slightly
-     *          higher than reported because some credit tokens may appreciate in value during the
-     *          redemption period.
-     *  @return The total value including pending redemptions, in 18 decimal precision.
-     */
-    function totalAssetsWithRedemptions() external view returns (uint256);
 
 }
