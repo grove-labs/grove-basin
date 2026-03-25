@@ -394,20 +394,21 @@ contract CreditTokenBalanceTrackingTests is GroveBasinTestBase {
         collateralToken.mint(address(vault), 100_000e18);
     }
 
-    function test_redeemedCreditTokenBalance_initiallyZero() public view {
-        assertEq(groveBasin.redeemedCreditTokenBalance(), 0);
+    function test_pendingCollateralTokenBalance_initiallyZero() public view {
+        assertEq(groveBasin.pendingCollateralTokenBalance(), 0);
     }
 
-    function test_redeemedCreditTokenBalance_incrementsOnInitiate() public {
+    function test_pendingCollateralTokenBalance_incrementsOnInitiate() public {
         uint256 amount = 1000e18;
 
         vm.prank(owner);
         groveBasin.initiateRedeem(address(redeemer), amount);
 
-        assertEq(groveBasin.redeemedCreditTokenBalance(), amount);
+        // 1000e18 credit * 1.25 rate = 1250e18 collateral
+        assertEq(groveBasin.pendingCollateralTokenBalance(), 1250e18);
     }
 
-    function test_redeemedCreditTokenBalance_decrementsOnComplete() public {
+    function test_pendingCollateralTokenBalance_decrementsOnComplete() public {
         uint256 initiateAmount = 1000e18;
         uint256 completeAmount = 400e18;
 
@@ -415,48 +416,55 @@ contract CreditTokenBalanceTrackingTests is GroveBasinTestBase {
 
         vm.prank(owner);
         groveBasin.initiateRedeem(address(redeemer), initiateAmount);
-        assertEq(groveBasin.redeemedCreditTokenBalance(), initiateAmount);
+        assertEq(groveBasin.pendingCollateralTokenBalance(), 1250e18);
 
+        // vault returns 400e18 collateral
         groveBasin.completeRedeem(address(redeemer), completeAmount, completeAmount);
 
-        assertEq(groveBasin.redeemedCreditTokenBalance(), initiateAmount - completeAmount);
+        // 1250e18 - 400e18 received = 850e18
+        assertEq(groveBasin.pendingCollateralTokenBalance(), 850e18);
     }
 
-    function test_redeemedCreditTokenBalance_fullRedeemCycle() public {
+    function test_pendingCollateralTokenBalance_fullRedeemCycle() public {
         uint256 amount = 1000e18;
 
-        vault.__setMaxWithdraw(amount);
+        vault.__setMaxWithdraw(1250e18);
 
         vm.prank(owner);
         groveBasin.initiateRedeem(address(redeemer), amount);
-        assertEq(groveBasin.redeemedCreditTokenBalance(), amount);
+        assertEq(groveBasin.pendingCollateralTokenBalance(), 1250e18);
 
-        groveBasin.completeRedeem(address(redeemer), amount, amount);
+        // vault returns 1250e18 collateral (full collateral equivalent)
+        groveBasin.completeRedeem(address(redeemer), amount, 1250e18);
 
-        assertEq(groveBasin.redeemedCreditTokenBalance(), 0);
+        assertEq(groveBasin.pendingCollateralTokenBalance(), 0);
     }
 
-    function test_redeemedCreditTokenBalance_underflowProtection() public {
+    function test_pendingCollateralTokenBalance_underflowProtection() public {
         uint256 amount = 1000e18;
 
         vault.__setMaxWithdraw(amount + 500e18);
 
         vm.prank(owner);
         groveBasin.initiateRedeem(address(redeemer), amount);
-        assertEq(groveBasin.redeemedCreditTokenBalance(), amount);
+        assertEq(groveBasin.pendingCollateralTokenBalance(), 1250e18);
 
+        // Complete with more collateral received than pending
         groveBasin.completeRedeem(address(redeemer), amount + 500e18, amount + 500e18);
 
-        assertEq(groveBasin.redeemedCreditTokenBalance(), 0);
+        // Should floor at 0 rather than underflow
+        assertEq(groveBasin.pendingCollateralTokenBalance(), 0);
     }
 
-    function test_redeemedCreditTokenBalance_multipleInitiates() public {
+    function test_pendingCollateralTokenBalance_multipleInitiates() public {
         vm.startPrank(owner);
         groveBasin.initiateRedeem(address(redeemer), 500e18);
-        assertEq(groveBasin.redeemedCreditTokenBalance(), 500e18);
+        // 500 * 1.25 = 625e18
+        assertEq(groveBasin.pendingCollateralTokenBalance(), 625e18);
 
         groveBasin.initiateRedeem(address(redeemer), 500e18);
-        assertEq(groveBasin.redeemedCreditTokenBalance(), 1000e18);
+        // 625 + 625 = 1250e18
+        assertEq(groveBasin.pendingCollateralTokenBalance(), 1250e18);
         vm.stopPrank();
     }
 

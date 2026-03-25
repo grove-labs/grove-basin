@@ -71,7 +71,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     uint256 public override minStalenessThreshold;
     uint256 public override maxStalenessThreshold;
-    uint256 public override redeemedCreditTokenBalance;
+    uint256 public override pendingCollateralTokenBalance;
 
     address public override feeClaimer;
 
@@ -686,9 +686,11 @@ contract GroveBasin is IGroveBasin, AccessControl {
             +  _getCollateralTokenValue(
                     _getAvailableBalance(collateralToken), false  // Round down
                 )
+            +  _getCollateralTokenValue(
+                    pendingCollateralTokenBalance
+                )
             +  _getCreditTokenValue(
-                    _getAvailableBalance(address(creditToken))
-                        + redeemedCreditTokenBalance,
+                    _getAvailableBalance(address(creditToken)),
                     false // Round down
                 );
     }
@@ -967,21 +969,21 @@ contract GroveBasin is IGroveBasin, AccessControl {
         ITokenRedeemer(redeemer).initiateRedeem(creditTokenAmount);
         IERC20(creditToken).approve(redeemer, 0);
 
-        redeemedCreditTokenBalance += creditTokenAmount;
+        pendingCollateralTokenBalance += _convertCreditTokenToCollateral(creditTokenAmount, false);
         emit RedeemInitiated(redeemer, msg.sender, creditTokenAmount);
     }
 
-    /// @dev Completes an async redemption, decreasing the redeemed credit token balance.
+    /// @dev Completes an async redemption, decreasing the pending collateral token balance.
     function _completeRedeem(address redeemer, uint256 creditTokenAmount, uint256 collateralTokenAmount) internal {
         if (!hasRole(REDEEMER_CONTRACT_ROLE, redeemer)) revert InvalidRedeemer();
 
         emit RedeemCompleted(redeemer, msg.sender, creditTokenAmount);
 
-        ITokenRedeemer(redeemer).completeRedeem(collateralTokenAmount);
+        uint256 collateralReceived = ITokenRedeemer(redeemer).completeRedeem(collateralTokenAmount);
 
-        redeemedCreditTokenBalance = creditTokenAmount > redeemedCreditTokenBalance
+        pendingCollateralTokenBalance = collateralReceived > pendingCollateralTokenBalance
             ? 0
-            : redeemedCreditTokenBalance - creditTokenAmount;
+            : pendingCollateralTokenBalance - collateralReceived;
     }
 
     /// @dev Calculates a fee on `amount` in basis points.

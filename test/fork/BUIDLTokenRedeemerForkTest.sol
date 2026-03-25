@@ -78,7 +78,7 @@ contract BUIDLTokenRedeemerForkTest_InitiateRedeem is BUIDLTokenRedeemerForkTest
             IERC20(Ethereum.BUIDLI).balanceOf(Ethereum.BUIDLI_REDEEM),
             redemptionAddrBefore + redeemAmount
         );
-        assertEq(groveBasin.redeemedCreditTokenBalance(), redeemAmount);
+        assertEq(groveBasin.pendingCollateralTokenBalance(), redeemAmount);
     }
 
     function test_initiateRedeem_emitsEvent() public {
@@ -124,7 +124,7 @@ contract BUIDLTokenRedeemerForkTest_CompleteRedeem is BUIDLTokenRedeemerForkTest
             basinUsdcBefore + redeemAmount
         );
         assertEq(IERC20(Ethereum.USDC).balanceOf(address(redeemer)), 0);
-        assertEq(groveBasin.redeemedCreditTokenBalance(), 0);
+        assertEq(groveBasin.pendingCollateralTokenBalance(), 0);
     }
 
     function test_completeRedeem_partialFill() public {
@@ -188,7 +188,7 @@ contract BUIDLTokenRedeemerForkTest_FullFlow is BUIDLTokenRedeemerForkTestBase {
         vm.prank(owner);
         groveBasin.initiateRedeem(address(redeemer), redeemAmount);
 
-        assertEq(groveBasin.redeemedCreditTokenBalance(), redeemAmount);
+        assertEq(groveBasin.pendingCollateralTokenBalance(), redeemAmount);
         assertEq(IERC20(Ethereum.BUIDLI).balanceOf(address(groveBasin)), depositAmount - redeemAmount);
 
         // Simulate settlement
@@ -200,7 +200,7 @@ contract BUIDLTokenRedeemerForkTest_FullFlow is BUIDLTokenRedeemerForkTestBase {
         vm.prank(owner);
         groveBasin.completeRedeem(address(redeemer), redeemAmount, redeemAmount);
 
-        assertEq(groveBasin.redeemedCreditTokenBalance(), 0);
+        assertEq(groveBasin.pendingCollateralTokenBalance(), 0);
         assertEq(
             IERC20(Ethereum.USDC).balanceOf(address(groveBasin)),
             basinUsdcBefore + redeemAmount
@@ -214,12 +214,12 @@ contract BUIDLTokenRedeemerForkTest_FullFlow is BUIDLTokenRedeemerForkTestBase {
         // First redemption
         vm.prank(owner);
         groveBasin.initiateRedeem(address(redeemer), 1_000e6);
-        assertEq(groveBasin.redeemedCreditTokenBalance(), 1_000e6);
+        assertEq(groveBasin.pendingCollateralTokenBalance(), 1_000e6);
 
         // Second redemption
         vm.prank(owner);
         groveBasin.initiateRedeem(address(redeemer), 2_000e6);
-        assertEq(groveBasin.redeemedCreditTokenBalance(), 3_000e6);
+        assertEq(groveBasin.pendingCollateralTokenBalance(), 3_000e6);
 
         // Complete first (partial settlement)
         deal(Ethereum.USDC, address(redeemer), 999e6);
@@ -227,8 +227,8 @@ contract BUIDLTokenRedeemerForkTest_FullFlow is BUIDLTokenRedeemerForkTestBase {
         vm.prank(owner);
         groveBasin.completeRedeem(address(redeemer), 1_000e6, 1_000e6);
 
-        // redeemedCreditTokenBalance decrements by the creditTokenAmount param, not the assets
-        assertEq(groveBasin.redeemedCreditTokenBalance(), 2_000e6);
+        // pendingCollateralTokenBalance decrements by the actual collateral received
+        assertEq(groveBasin.pendingCollateralTokenBalance(), 2_001e6);
 
         // Complete second
         deal(Ethereum.USDC, address(redeemer), 2_000e6);
@@ -236,7 +236,7 @@ contract BUIDLTokenRedeemerForkTest_FullFlow is BUIDLTokenRedeemerForkTestBase {
         vm.prank(owner);
         groveBasin.completeRedeem(address(redeemer), 2_000e6, 2_000e6);
 
-        assertEq(groveBasin.redeemedCreditTokenBalance(), 0);
+        assertEq(groveBasin.pendingCollateralTokenBalance(), 0);
     }
 
 }

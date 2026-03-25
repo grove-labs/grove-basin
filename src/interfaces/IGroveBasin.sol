@@ -430,11 +430,12 @@ interface IGroveBasin {
     function REDEEMER_CONTRACT_ROLE() external view returns (bytes32);
 
     /**
-     *  @dev    Returns the amount of credit tokens that have been sent for redemption but not yet
-     *          completed. Incremented on initiateRedeem and decremented on completeRedeem.
-     *  @return The credit token amount pending redemption.
+     *  @dev    Returns the estimated amount of collateral tokens expected from pending redemptions.
+     *          Incremented on initiateRedeem (by converting credit tokens to collateral) and
+     *          decremented on completeRedeem (by actual collateral received).
+     *  @return The estimated collateral token amount from pending redemptions.
      */
-    function redeemedCreditTokenBalance() external view returns (uint256);
+    function pendingCollateralTokenBalance() external view returns (uint256);
 
     /**
      *  @dev    Returns the address that accrues fee shares on every swap. The fee claimer can

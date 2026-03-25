@@ -71,7 +71,7 @@ contract BUIDLTokenRedeemer is ITokenRedeemer {
 
     /// @inheritdoc ITokenRedeemer
     function completeRedeem(uint256 collateralTokenAmount) external override onlyBasin returns (uint256 collateralTokenReturned) {
-        collateralTokenReturned = Math.max(collateralTokenAmount, IERC20(collateralToken).balanceOf(address(this)));
+        collateralTokenReturned = Math.min(collateralTokenAmount, IERC20(collateralToken).balanceOf(address(this)));
         IERC20(collateralToken).safeTransfer(address(basin), collateralTokenReturned);
         emit RedeemCompleted(collateralTokenReturned);
     }
