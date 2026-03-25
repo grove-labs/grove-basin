@@ -47,13 +47,13 @@ abstract contract BUIDLForkTestBase is ForkTestBase {
 
     bytes internal originalComplianceCode;
 
-    function _initTokens() internal override {
+    function _initTokens() internal virtual override {
         swapToken       = IERC20(Ethereum.USDS);
         collateralToken = IERC20(Ethereum.USDC);
         creditToken     = IERC20(Ethereum.BUIDL);
     }
 
-    function _initRateProviders() internal override {
+    function _initRateProviders() internal virtual override {
         swapTokenRateProvider       = new MockRateProvider();
         collateralTokenRateProvider = new MockRateProvider();
         creditTokenRateProvider     = new MockRateProvider();
@@ -63,7 +63,7 @@ abstract contract BUIDLForkTestBase is ForkTestBase {
         creditTokenRateProvider.__setConversionRate(1e27);
     }
 
-    function _postDeploy() internal override {
+    function _postDeploy() internal virtual override {
         buidlMaster       = buidl.owner();
         complianceService = buidl.getDSService(buidl.COMPLIANCE_SERVICE());
         walletRegistrar   = buidl.getDSService(buidl.WALLET_REGISTRAR());
@@ -111,7 +111,7 @@ abstract contract BUIDLForkTestBase is ForkTestBase {
     /*** Helpers                                                                                ***/
     /**********************************************************************************************/
 
-    function _dealToken(address token, address to, uint256 amount) internal override {
+    function _dealToken(address token, address to, uint256 amount) internal virtual override {
         if (token == Ethereum.BUIDL) {
             _dealBUIDL(to, amount);
         } else {
