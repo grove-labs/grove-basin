@@ -3,6 +3,13 @@ pragma solidity ^0.8.24;
 
 import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
 
+struct RedeemRequest {
+    uint256 blockNumber;
+    address redeemer;
+    uint256 creditTokenAmount;
+    uint256 collateralTokenAmount;
+}
+
 interface ITokenRedeemer {
 
     /**********************************************************************************************/
@@ -72,13 +79,11 @@ interface ITokenRedeemer {
     function initiateRedeem(uint256 creditTokenAmount) external;
 
     /**
-     *  @dev   Completes a redemption by withdrawing collateral assets from the vault and
-     *         transferring them back to the caller. The actual amount transferred is the greater
-     *         of `collateralTokenAmount` and the maximum available collateral tokens in the
-     *         redeemer (e.g., maxWithdraw from the vault or the redeemer's collateral balance).
-     *  @param  collateralTokenAmount Amount of collateral assets the caller expects to receive.
+     *  @dev    Completes a redemption by withdrawing collateral assets from the vault and
+     *          transferring them back to the caller.
+     *  @param  request The RedeemRequest struct containing the redemption details.
      *  @return collateralTokenReturned Amount of collateral assets sent back to the caller.
      */
-    function completeRedeem(uint256 collateralTokenAmount) external returns (uint256 collateralTokenReturned);
+    function completeRedeem(RedeemRequest calldata request) external returns (uint256 collateralTokenReturned);
 
 }

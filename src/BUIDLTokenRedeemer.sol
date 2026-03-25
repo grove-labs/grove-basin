@@ -6,8 +6,8 @@ import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
 
 import { Math } from "openzeppelin-contracts/contracts/utils/math/Math.sol";
 
-import { IGroveBasin }    from "src/interfaces/IGroveBasin.sol";
-import { ITokenRedeemer } from "src/interfaces/ITokenRedeemer.sol";
+import { IGroveBasin }                 from "src/interfaces/IGroveBasin.sol";
+import { ITokenRedeemer, RedeemRequest } from "src/interfaces/ITokenRedeemer.sol";
 
 contract BUIDLTokenRedeemer is ITokenRedeemer {
 
@@ -70,8 +70,8 @@ contract BUIDLTokenRedeemer is ITokenRedeemer {
     }
 
     /// @inheritdoc ITokenRedeemer
-    function completeRedeem(uint256 collateralTokenAmount) external override onlyBasin returns (uint256 collateralTokenReturned) {
-        collateralTokenReturned = Math.min(collateralTokenAmount, IERC20(collateralToken).balanceOf(address(this)));
+    function completeRedeem(RedeemRequest calldata request) external override onlyBasin returns (uint256 collateralTokenReturned) {
+        collateralTokenReturned = Math.min(request.collateralTokenAmount, IERC20(collateralToken).balanceOf(address(this)));
         IERC20(collateralToken).safeTransfer(address(basin), collateralTokenReturned);
         emit RedeemCompleted(collateralTokenReturned);
     }

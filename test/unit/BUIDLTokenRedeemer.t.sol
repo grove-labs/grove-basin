@@ -9,7 +9,7 @@ import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
 import { GroveBasin }          from "src/GroveBasin.sol";
 import { BUIDLTokenRedeemer }  from "src/BUIDLTokenRedeemer.sol";
-import { ITokenRedeemer }      from "src/interfaces/ITokenRedeemer.sol";
+import { ITokenRedeemer, RedeemRequest } from "src/interfaces/ITokenRedeemer.sol";
 
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 
@@ -225,6 +225,15 @@ contract BUIDLTokenRedeemerCompleteRedeemTests is BUIDLTokenRedeemerTestBase {
         redeemer = new BUIDLTokenRedeemer(address(creditToken), redemptionAddress, basin);
     }
 
+    function _makeRequest(uint256 creditAmount, uint256 collateralAmount) internal view returns (RedeemRequest memory) {
+        return RedeemRequest({
+            blockNumber:           block.number,
+            redeemer:              address(redeemer),
+            creditTokenAmount:     creditAmount,
+            collateralTokenAmount: collateralAmount
+        });
+    }
+
     function test_completeRedeem_sendsCollateralToCaller() public {
         uint256 collateralTokenAmount = 1000e18;
 
@@ -232,8 +241,10 @@ contract BUIDLTokenRedeemerCompleteRedeemTests is BUIDLTokenRedeemerTestBase {
 
         uint256 callerBalanceBefore = collateralToken.balanceOf(basin);
 
+        RedeemRequest memory request = _makeRequest(1000e18, collateralTokenAmount);
+
         vm.prank(basin);
-        uint256 assets = redeemer.completeRedeem(collateralTokenAmount);
+        uint256 assets = redeemer.completeRedeem(request);
 
         uint256 callerBalanceAfter = collateralToken.balanceOf(basin);
 
@@ -247,8 +258,10 @@ contract BUIDLTokenRedeemerCompleteRedeemTests is BUIDLTokenRedeemerTestBase {
 
         collateralToken.mint(address(redeemer), redeemerBalance);
 
+        RedeemRequest memory request = _makeRequest(1000e18, collateralTokenAmount);
+
         vm.prank(basin);
-        uint256 assets = redeemer.completeRedeem(collateralTokenAmount);
+        uint256 assets = redeemer.completeRedeem(request);
 
         assertEq(assets, redeemerBalance);
     }
@@ -259,8 +272,10 @@ contract BUIDLTokenRedeemerCompleteRedeemTests is BUIDLTokenRedeemerTestBase {
 
         collateralToken.mint(address(redeemer), redeemerBalance);
 
+        RedeemRequest memory request = _makeRequest(500e18, collateralTokenAmount);
+
         vm.prank(basin);
-        uint256 assets = redeemer.completeRedeem(collateralTokenAmount);
+        uint256 assets = redeemer.completeRedeem(request);
 
         assertEq(assets, collateralTokenAmount);
     }
@@ -268,12 +283,15 @@ contract BUIDLTokenRedeemerCompleteRedeemTests is BUIDLTokenRedeemerTestBase {
     function test_completeRedeem_multipleCompletes() public {
         collateralToken.mint(address(redeemer), 1000e18);
 
+        RedeemRequest memory request1 = _makeRequest(400e18, 400e18);
+        RedeemRequest memory request2 = _makeRequest(300e18, 300e18);
+
         vm.startPrank(basin);
-        redeemer.completeRedeem(400e18);
+        redeemer.completeRedeem(request1);
 
         uint256 balanceAfterFirst = collateralToken.balanceOf(basin);
 
-        redeemer.completeRedeem(300e18);
+        redeemer.completeRedeem(request2);
 
         uint256 balanceAfterSecond = collateralToken.balanceOf(basin);
         vm.stopPrank();
@@ -287,19 +305,22 @@ contract BUIDLTokenRedeemerCompleteRedeemTests is BUIDLTokenRedeemerTestBase {
 
         collateralToken.mint(address(redeemer), collateralTokenAmount);
 
+        RedeemRequest memory request = _makeRequest(1000e18, collateralTokenAmount);
+
         vm.expectEmit(address(redeemer));
         emit ITokenRedeemer.RedeemCompleted(collateralTokenAmount);
 
         vm.prank(basin);
-        redeemer.completeRedeem(collateralTokenAmount);
+        redeemer.completeRedeem(request);
     }
 
     function test_completeRedeem_onlyBasin() public {
         address notBasin = makeAddr("notBasin");
+        RedeemRequest memory request = _makeRequest(1000e18, 1000e18);
 
         vm.prank(notBasin);
         vm.expectRevert(ITokenRedeemer.OnlyBasin.selector);
-        redeemer.completeRedeem(1000e18);
+        redeemer.completeRedeem(request);
     }
 
 }

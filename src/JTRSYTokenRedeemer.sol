@@ -6,9 +6,9 @@ import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
 
 import { Math } from "openzeppelin-contracts/contracts/utils/math/Math.sol";
 
-import { IAsyncVaultLike } from "src/interfaces/IAsyncVaultLike.sol";
-import { IGroveBasin }     from "src/interfaces/IGroveBasin.sol";
-import { ITokenRedeemer }  from "src/interfaces/ITokenRedeemer.sol";
+import { IAsyncVaultLike }              from "src/interfaces/IAsyncVaultLike.sol";
+import { IGroveBasin }                 from "src/interfaces/IGroveBasin.sol";
+import { ITokenRedeemer, RedeemRequest } from "src/interfaces/ITokenRedeemer.sol";
 
 /**
  * @title  JTRSYTokenRedeemer
@@ -81,9 +81,8 @@ contract JTRSYTokenRedeemer is ITokenRedeemer {
     }
 
     /// @inheritdoc ITokenRedeemer
-    function completeRedeem(uint256 collateralTokenAmount) external override onlyBasin returns (uint256 collateralTokenReturned) {
-        collateralTokenReturned = collateralTokenAmount;
-        IAsyncVaultLike(vault).withdraw(collateralTokenReturned, address(this), address(this));
+    function completeRedeem(RedeemRequest calldata request) external override onlyBasin returns (uint256 collateralTokenReturned) {
+        collateralTokenReturned = IAsyncVaultLike(vault).redeem(request.creditTokenAmount, address(this), address(this));
         IERC20(IAsyncVaultLike(vault).asset()).safeTransfer(address(basin), collateralTokenReturned);
         emit RedeemCompleted(collateralTokenReturned);
     }
