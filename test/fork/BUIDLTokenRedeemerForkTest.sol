@@ -236,7 +236,8 @@ contract BUIDLTokenRedeemerForkTest_FullFlow is BUIDLTokenRedeemerForkTestBase {
         vm.prank(owner);
         groveBasin.completeRedeem(address(redeemer), 2_000e6, 2_000e6);
 
-        assertEq(groveBasin.pendingCollateralTokenBalance(), 0);
+        // 1e6 remains from the first partial fill (999e6 received vs 1000e6 expected)
+        assertEq(groveBasin.pendingCollateralTokenBalance(), 1e6);
     }
 
 }
