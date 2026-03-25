@@ -332,32 +332,32 @@ interface IGroveBasin {
     /**
      *  @dev    Returns whether swap token to credit token swaps are paused.
      */
-    function swapToCreditPaused() external view returns (bool);
+    function pausedSwapToCredit() external view returns (bool);
 
     /**
      *  @dev    Returns whether credit token to swap token swaps are paused.
      */
-    function creditToSwapPaused() external view returns (bool);
+    function pausedCreditToSwap() external view returns (bool);
 
     /**
      *  @dev    Returns whether collateral token to credit token swaps are paused.
      */
-    function collateralToCreditPaused() external view returns (bool);
+    function pausedCollateralToCredit() external view returns (bool);
 
     /**
      *  @dev    Returns whether credit token to collateral token swaps are paused.
      */
-    function creditToCollateralPaused() external view returns (bool);
+    function pausedCreditToCollateral() external view returns (bool);
 
     /**
      *  @dev    Returns whether deposits are paused.
      */
-    function depositsPaused() external view returns (bool);
+    function pausedDeposits() external view returns (bool);
 
     /**
      *  @dev    Returns whether initiateRedeem is paused.
      */
-    function initiateRedeemPaused() external view returns (bool);
+    function pausedInitiateRedeem() external view returns (bool);
 
     /**
      *  @dev    Returns the role identifier for the redeemer role. Addresses with this role

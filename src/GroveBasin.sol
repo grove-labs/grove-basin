@@ -50,12 +50,12 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     address public override pocket;
 
     bool public override creditTokenDepositsDisabled;
-    bool public override swapToCreditPaused;
-    bool public override creditToSwapPaused;
-    bool public override collateralToCreditPaused;
-    bool public override creditToCollateralPaused;
-    bool public override depositsPaused;
-    bool public override initiateRedeemPaused;
+    bool public override pausedSwapToCredit;
+    bool public override pausedCreditToSwap;
+    bool public override pausedCollateralToCredit;
+    bool public override pausedCreditToCollateral;
+    bool public override pausedDeposits;
+    bool public override pausedInitiateRedeem;
 
     uint256 public override stalenessThreshold;
     uint256 public override totalShares;
@@ -352,12 +352,12 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     function setPaused(bytes32 action, bool paused)
         external override onlyRole(MANAGER_ROLE)
     {
-        if      (action == "swapToCredit")        swapToCreditPaused        = paused;
-        else if (action == "creditToSwap")        creditToSwapPaused        = paused;
-        else if (action == "collateralToCredit")  collateralToCreditPaused  = paused;
-        else if (action == "creditToCollateral")  creditToCollateralPaused  = paused;
-        else if (action == "deposits")            depositsPaused            = paused;
-        else if (action == "initiateRedeem")      initiateRedeemPaused      = paused;
+        if      (action == "swapToCredit")        pausedSwapToCredit        = paused;
+        else if (action == "creditToSwap")        pausedCreditToSwap        = paused;
+        else if (action == "collateralToCredit")  pausedCollateralToCredit  = paused;
+        else if (action == "creditToCollateral")  pausedCreditToCollateral  = paused;
+        else if (action == "deposits")            pausedDeposits            = paused;
+        else if (action == "initiateRedeem")      pausedInitiateRedeem      = paused;
         else                                      revert("GroveBasin/invalid-action");
 
         emit PausedSet(action, paused);
@@ -458,7 +458,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     function deposit(address asset, address receiver, uint256 assetsToDeposit)
         external override onlyRole(LIQUIDITY_PROVIDER_ROLE) returns (uint256 newShares)
     {
-        require(!depositsPaused,      "GroveBasin/deposits-paused");
+        require(!pausedDeposits,      "GroveBasin/deposits-paused");
         require(assetsToDeposit != 0, "GroveBasin/invalid-amount");
 
         newShares = previewDeposit(asset, assetsToDeposit);
@@ -869,13 +869,13 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     /// @dev Reverts if the swap direction from `assetIn` to `assetOut` is paused.
     function _checkSwapNotPaused(address assetIn, address assetOut) internal view {
         if (assetIn == address(swapToken) && assetOut == address(creditToken)) {
-            require(!swapToCreditPaused, "GroveBasin/swap-to-credit-paused");
+            require(!pausedSwapToCredit, "GroveBasin/swap-to-credit-paused");
         } else if (assetIn == address(creditToken) && assetOut == address(swapToken)) {
-            require(!creditToSwapPaused, "GroveBasin/credit-to-swap-paused");
+            require(!pausedCreditToSwap, "GroveBasin/credit-to-swap-paused");
         } else if (assetIn == address(collateralToken) && assetOut == address(creditToken)) {
-            require(!collateralToCreditPaused, "GroveBasin/collateral-to-credit-paused");
+            require(!pausedCollateralToCredit, "GroveBasin/collateral-to-credit-paused");
         } else if (assetIn == address(creditToken) && assetOut == address(collateralToken)) {
-            require(!creditToCollateralPaused, "GroveBasin/credit-to-collateral-paused");
+            require(!pausedCreditToCollateral, "GroveBasin/credit-to-collateral-paused");
         }
     }
 
@@ -905,7 +905,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
     /// @dev Approves and sends credit tokens to the redeemer to initiate an async redemption.
     function _initiateRedeem(address redeemer, uint256 creditTokenAmount) internal {
-        require(!initiateRedeemPaused,                     "GroveBasin/initiate-redeem-paused");
+        require(!pausedInitiateRedeem,                     "GroveBasin/initiate-redeem-paused");
         require(hasRole(REDEEMER_CONTRACT_ROLE, redeemer), "GroveBasin/invalid-redeemer");
 
         creditToken.approve(redeemer, creditTokenAmount);

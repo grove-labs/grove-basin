@@ -55,62 +55,62 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
     /**********************************************************************************************/
 
     function test_setPaused_swapToCredit() public {
-        assertEq(groveBasin.swapToCreditPaused(), false);
+        assertEq(groveBasin.pausedSwapToCredit(), false);
 
         vm.prank(manager);
         groveBasin.setPaused("swapToCredit", true);
 
-        assertEq(groveBasin.swapToCreditPaused(), true);
+        assertEq(groveBasin.pausedSwapToCredit(), true);
 
         vm.prank(manager);
         groveBasin.setPaused("swapToCredit", false);
 
-        assertEq(groveBasin.swapToCreditPaused(), false);
+        assertEq(groveBasin.pausedSwapToCredit(), false);
     }
 
     function test_setPaused_creditToSwap() public {
-        assertEq(groveBasin.creditToSwapPaused(), false);
+        assertEq(groveBasin.pausedCreditToSwap(), false);
 
         vm.prank(manager);
         groveBasin.setPaused("creditToSwap", true);
 
-        assertEq(groveBasin.creditToSwapPaused(), true);
+        assertEq(groveBasin.pausedCreditToSwap(), true);
     }
 
     function test_setPaused_collateralToCredit() public {
-        assertEq(groveBasin.collateralToCreditPaused(), false);
+        assertEq(groveBasin.pausedCollateralToCredit(), false);
 
         vm.prank(manager);
         groveBasin.setPaused("collateralToCredit", true);
 
-        assertEq(groveBasin.collateralToCreditPaused(), true);
+        assertEq(groveBasin.pausedCollateralToCredit(), true);
     }
 
     function test_setPaused_creditToCollateral() public {
-        assertEq(groveBasin.creditToCollateralPaused(), false);
+        assertEq(groveBasin.pausedCreditToCollateral(), false);
 
         vm.prank(manager);
         groveBasin.setPaused("creditToCollateral", true);
 
-        assertEq(groveBasin.creditToCollateralPaused(), true);
+        assertEq(groveBasin.pausedCreditToCollateral(), true);
     }
 
     function test_setPaused_deposits() public {
-        assertEq(groveBasin.depositsPaused(), false);
+        assertEq(groveBasin.pausedDeposits(), false);
 
         vm.prank(manager);
         groveBasin.setPaused("deposits", true);
 
-        assertEq(groveBasin.depositsPaused(), true);
+        assertEq(groveBasin.pausedDeposits(), true);
     }
 
     function test_setPaused_initiateRedeem() public {
-        assertEq(groveBasin.initiateRedeemPaused(), false);
+        assertEq(groveBasin.pausedInitiateRedeem(), false);
 
         vm.prank(manager);
         groveBasin.setPaused("initiateRedeem", true);
 
-        assertEq(groveBasin.initiateRedeemPaused(), true);
+        assertEq(groveBasin.pausedInitiateRedeem(), true);
     }
 
     /**********************************************************************************************/
@@ -129,7 +129,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
     /*** Swap pause enforcement tests                                                           ***/
     /**********************************************************************************************/
 
-    function test_swapExactIn_swapToCreditPaused() public {
+    function test_swapExactIn_pausedSwapToCredit() public {
         vm.prank(manager);
         groveBasin.setPaused("swapToCredit", true);
 
@@ -137,7 +137,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, receiver, 0);
     }
 
-    function test_swapExactOut_swapToCreditPaused() public {
+    function test_swapExactOut_pausedSwapToCredit() public {
         vm.prank(manager);
         groveBasin.setPaused("swapToCredit", true);
 
@@ -145,7 +145,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         groveBasin.swapExactOut(address(swapToken), address(creditToken), 80e18, type(uint256).max, receiver, 0);
     }
 
-    function test_swapExactIn_creditToSwapPaused() public {
+    function test_swapExactIn_pausedCreditToSwap() public {
         vm.prank(manager);
         groveBasin.setPaused("creditToSwap", true);
 
@@ -153,7 +153,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         groveBasin.swapExactIn(address(creditToken), address(swapToken), 100e18, 0, receiver, 0);
     }
 
-    function test_swapExactOut_creditToSwapPaused() public {
+    function test_swapExactOut_pausedCreditToSwap() public {
         vm.prank(manager);
         groveBasin.setPaused("creditToSwap", true);
 
@@ -161,7 +161,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         groveBasin.swapExactOut(address(creditToken), address(swapToken), 100e6, type(uint256).max, receiver, 0);
     }
 
-    function test_swapExactIn_collateralToCreditPaused() public {
+    function test_swapExactIn_pausedCollateralToCredit() public {
         vm.prank(manager);
         groveBasin.setPaused("collateralToCredit", true);
 
@@ -169,7 +169,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         groveBasin.swapExactIn(address(collateralToken), address(creditToken), 100e18, 0, receiver, 0);
     }
 
-    function test_swapExactOut_collateralToCreditPaused() public {
+    function test_swapExactOut_pausedCollateralToCredit() public {
         vm.prank(manager);
         groveBasin.setPaused("collateralToCredit", true);
 
@@ -177,7 +177,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         groveBasin.swapExactOut(address(collateralToken), address(creditToken), 80e18, type(uint256).max, receiver, 0);
     }
 
-    function test_swapExactIn_creditToCollateralPaused() public {
+    function test_swapExactIn_pausedCreditToCollateral() public {
         vm.prank(manager);
         groveBasin.setPaused("creditToCollateral", true);
 
@@ -185,7 +185,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         groveBasin.swapExactIn(address(creditToken), address(collateralToken), 100e18, 0, receiver, 0);
     }
 
-    function test_swapExactOut_creditToCollateralPaused() public {
+    function test_swapExactOut_pausedCreditToCollateral() public {
         vm.prank(manager);
         groveBasin.setPaused("creditToCollateral", true);
 
