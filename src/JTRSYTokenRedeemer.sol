@@ -82,7 +82,7 @@ contract JTRSYTokenRedeemer is ITokenRedeemer {
 
     /// @inheritdoc ITokenRedeemer
     function completeRedeem(uint256 collateralTokenAmount) external override onlyBasin returns (uint256 collateralTokenReturned) {
-        collateralTokenReturned = Math.min(collateralTokenAmount, IAsyncVaultLike(vault).maxWithdraw(address(this)));
+        collateralTokenReturned = collateralTokenAmount;
         IAsyncVaultLike(vault).withdraw(collateralTokenReturned, address(this), address(this));
         IERC20(IAsyncVaultLike(vault).asset()).safeTransfer(address(basin), collateralTokenReturned);
         emit RedeemCompleted(collateralTokenReturned);
