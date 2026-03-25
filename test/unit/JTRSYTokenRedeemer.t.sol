@@ -320,8 +320,8 @@ contract JTRSYTokenRedeemerCompleteRedeemTests is Test {
         vm.prank(basin);
         uint256 assets = redeemer.completeRedeem(collateralTokenAmount);
 
-        assertEq(assets, maxWithdrawable);
-        assertEq(vault.lastWithdrawAssets(), maxWithdrawable);
+        assertEq(assets, collateralTokenAmount);
+        assertEq(vault.lastWithdrawAssets(), collateralTokenAmount);
     }
 
     function test_completeRedeem_usesCollateralAmountWhenGreater() public {
@@ -333,8 +333,8 @@ contract JTRSYTokenRedeemerCompleteRedeemTests is Test {
         vm.prank(basin);
         uint256 assets = redeemer.completeRedeem(collateralTokenAmount);
 
-        assertEq(assets, collateralTokenAmount);
-        assertEq(vault.lastWithdrawAssets(), collateralTokenAmount);
+        assertEq(assets, maxWithdrawable);
+        assertEq(vault.lastWithdrawAssets(), maxWithdrawable);
     }
 
     function test_completeRedeem_multipleCompletes() public {
