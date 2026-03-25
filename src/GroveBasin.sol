@@ -556,32 +556,38 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     {
         if (_getAssetValue(assetIn, amountIn, false) > maxSwapSize) revert SwapSizeExceeded();
 
-        // Round down to get amountOut
         amountOut = _getSwapQuote(assetIn, assetOut, amountIn, false);
-
-        // Assumes no stable-to-stable swap
-        if (assetOut == creditToken) {
-            amountOut -= _calculateFee(amountOut, purchaseFee, false);
-        } else {
-            amountOut -= _calculateFee(amountOut, redemptionFee, false);
-        }
+        amountOut -= previewSwapExactInFee(assetOut, amountOut);
     }
 
     /// @inheritdoc IGroveBasin
     function previewSwapExactOut(address assetIn, address assetOut, uint256 amountOut)
         public view override returns (uint256 amountIn)
     {
-        // Round up to get amountIn
-        amountIn = _getSwapQuote(assetOut, assetIn, amountOut, true);
+        amountOut += previewSwapExactOutFee(assetOut, amountOut);
+        amountIn   = _getSwapQuote(assetOut, assetIn, amountOut, true);
 
         if (_getAssetValue(assetIn, amountIn, false) > maxSwapSize) revert SwapSizeExceeded();
-
-        // Assumes no stable-to-stable swap
+    }
+    
+    /// @dev Returns the fee that will be deducted from a gross output amount (ExactIn). Rounds down.
+    function previewSwapExactInFee(address assetOut, uint256 amountOut)
+        public view returns (uint256)
+    {
         if (assetOut == creditToken) {
-            amountIn += _calculateFee(amountIn, purchaseFee, true);
-        } else {
-            amountIn += _calculateFee(amountIn, redemptionFee, true);
+            return _calculateFee(amountOut, purchaseFee, false);
         }
+        return _calculateFee(amountOut, redemptionFee, false);
+    }
+
+    /// @dev Returns the fee that must be added to a net output amount to get the gross output (ExactOut). Rounds up.
+    function previewSwapExactOutFee(address assetOut, uint256 amountOut)
+        public view returns (uint256)
+    {
+        if (assetOut == creditToken) {
+            return _getGrossAmountFromNet(amountOut, purchaseFee) - amountOut;
+        }
+        return _getGrossAmountFromNet(amountOut, redemptionFee) - amountOut;
     }
 
     /**********************************************************************************************/
@@ -936,6 +942,13 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     function _calculateFee(uint256 amount, uint256 fee, bool roundUp) internal pure returns (uint256) {
         if (roundUp) return Math.ceilDiv(amount * fee, BPS);
         return amount * fee / BPS;
+    }
+
+    /// @dev Computes the gross amount before fee that yields `netAmount` after fee deduction.
+    ///      Inverse of: netAmount = grossAmount - grossAmount * fee / BPS
+    function _getGrossAmountFromNet(uint256 netAmount, uint256 fee) internal pure returns (uint256) {
+        if (fee == 0) return netAmount;
+        return Math.ceilDiv(netAmount * BPS, BPS - fee);
     }
 
     /// @dev Sets the purchase fee, enforcing it is within [minFee, maxFee].

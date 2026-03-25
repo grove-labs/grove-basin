@@ -73,6 +73,25 @@ contract DepositInitialTests is GroveBasinTestBase {
         vm.stopPrank();
     }
 
+    function test_depositInitial_noNewShares() public {
+        mockSwapTokenRateProvider.__setConversionRate(1);
+
+        GroveBasin zeroShareBasin = new GroveBasin(
+            owner, lp,
+            address(swapToken), address(collateralToken), address(creditToken),
+            address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider)
+        );
+
+        swapToken.mint(depositor, 1);
+        vm.startPrank(depositor);
+        swapToken.approve(address(zeroShareBasin), 1);
+        vm.expectRevert("GB/no-new-shares");
+        zeroShareBasin.depositInitial(address(swapToken), 1);
+        vm.stopPrank();
+
+        mockSwapTokenRateProvider.__setConversionRate(1e27);
+    }
+
     /**********************************************************************************************/
     /*** Success tests                                                                          ***/
     /**********************************************************************************************/
