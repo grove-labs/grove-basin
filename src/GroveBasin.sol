@@ -965,11 +965,11 @@ contract GroveBasin is IGroveBasin, AccessControl {
         if (pausedInitiateRedeem)                       revert InitiateRedeemPaused();
         if (!hasRole(REDEEMER_CONTRACT_ROLE, redeemer)) revert InvalidRedeemer();
 
+        pendingCollateralTokenBalance += _convertCreditTokenToCollateral(creditTokenAmount, false);
+
         IERC20(creditToken).approve(redeemer, creditTokenAmount);
         ITokenRedeemer(redeemer).initiateRedeem(creditTokenAmount);
         IERC20(creditToken).approve(redeemer, 0);
-
-        pendingCollateralTokenBalance += _convertCreditTokenToCollateral(creditTokenAmount, false);
         emit RedeemInitiated(redeemer, msg.sender, creditTokenAmount);
     }
 
@@ -977,13 +977,13 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function _completeRedeem(address redeemer, uint256 creditTokenAmount, uint256 collateralTokenAmount) internal {
         if (!hasRole(REDEEMER_CONTRACT_ROLE, redeemer)) revert InvalidRedeemer();
 
+        pendingCollateralTokenBalance = collateralTokenAmount > pendingCollateralTokenBalance
+            ? 0
+            : pendingCollateralTokenBalance - collateralTokenAmount;
+
         emit RedeemCompleted(redeemer, msg.sender, creditTokenAmount);
 
-        uint256 collateralReceived = ITokenRedeemer(redeemer).completeRedeem(collateralTokenAmount);
-
-        pendingCollateralTokenBalance = collateralReceived > pendingCollateralTokenBalance
-            ? 0
-            : pendingCollateralTokenBalance - collateralReceived;
+        ITokenRedeemer(redeemer).completeRedeem(collateralTokenAmount);
     }
 
     /// @dev Calculates a fee on `amount` in basis points.
