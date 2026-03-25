@@ -313,12 +313,12 @@ contract JTRSYForkTest_SwapExactIn is JTRSYForkTestBase {
     }
 
     function test_swapExactIn_invalidSwap_swapTokenToCollateralToken() public {
-        vm.expectRevert("GroveBasin/invalid-swap");
+        vm.expectRevert("GB/invalid-swap");
         groveBasin.swapExactIn(Ethereum.USDS, Ethereum.USDC, 100e18, 0, receiver, 0);
     }
 
     function test_swapExactIn_invalidSwap_collateralTokenToSwapToken() public {
-        vm.expectRevert("GroveBasin/invalid-swap");
+        vm.expectRevert("GB/invalid-swap");
         groveBasin.swapExactIn(Ethereum.USDC, Ethereum.USDS, 100e6, 0, receiver, 0);
     }
 

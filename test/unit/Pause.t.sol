@@ -45,7 +45,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
     }
 
     function test_setPaused_invalidAction() public {
-        vm.expectRevert("GroveBasin/invalid-action");
+        vm.expectRevert("GB/invalid-action");
         vm.prank(manager);
         groveBasin.setPaused("invalidAction", true);
     }
@@ -133,7 +133,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         vm.prank(manager);
         groveBasin.setPaused("swapToCredit", true);
 
-        vm.expectRevert("GroveBasin/swap-to-credit-paused");
+        vm.expectRevert("GB/route-paused");
         groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, receiver, 0);
     }
 
@@ -141,7 +141,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         vm.prank(manager);
         groveBasin.setPaused("swapToCredit", true);
 
-        vm.expectRevert("GroveBasin/swap-to-credit-paused");
+        vm.expectRevert("GB/route-paused");
         groveBasin.swapExactOut(address(swapToken), address(creditToken), 80e18, type(uint256).max, receiver, 0);
     }
 
@@ -149,7 +149,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         vm.prank(manager);
         groveBasin.setPaused("creditToSwap", true);
 
-        vm.expectRevert("GroveBasin/credit-to-swap-paused");
+        vm.expectRevert("GB/route-paused");
         groveBasin.swapExactIn(address(creditToken), address(swapToken), 100e18, 0, receiver, 0);
     }
 
@@ -157,7 +157,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         vm.prank(manager);
         groveBasin.setPaused("creditToSwap", true);
 
-        vm.expectRevert("GroveBasin/credit-to-swap-paused");
+        vm.expectRevert("GB/route-paused");
         groveBasin.swapExactOut(address(creditToken), address(swapToken), 100e6, type(uint256).max, receiver, 0);
     }
 
@@ -165,7 +165,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         vm.prank(manager);
         groveBasin.setPaused("collateralToCredit", true);
 
-        vm.expectRevert("GroveBasin/collateral-to-credit-paused");
+        vm.expectRevert("GB/route-paused");
         groveBasin.swapExactIn(address(collateralToken), address(creditToken), 100e18, 0, receiver, 0);
     }
 
@@ -173,7 +173,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         vm.prank(manager);
         groveBasin.setPaused("collateralToCredit", true);
 
-        vm.expectRevert("GroveBasin/collateral-to-credit-paused");
+        vm.expectRevert("GB/route-paused");
         groveBasin.swapExactOut(address(collateralToken), address(creditToken), 80e18, type(uint256).max, receiver, 0);
     }
 
@@ -181,7 +181,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         vm.prank(manager);
         groveBasin.setPaused("creditToCollateral", true);
 
-        vm.expectRevert("GroveBasin/credit-to-collateral-paused");
+        vm.expectRevert("GB/route-paused");
         groveBasin.swapExactIn(address(creditToken), address(collateralToken), 100e18, 0, receiver, 0);
     }
 
@@ -189,7 +189,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         vm.prank(manager);
         groveBasin.setPaused("creditToCollateral", true);
 
-        vm.expectRevert("GroveBasin/credit-to-collateral-paused");
+        vm.expectRevert("GB/route-paused");
         groveBasin.swapExactOut(address(creditToken), address(collateralToken), 100e18, type(uint256).max, receiver, 0);
     }
 
@@ -229,7 +229,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         vm.startPrank(user);
         swapToken.approve(address(groveBasin), 100e6);
 
-        vm.expectRevert("GroveBasin/deposits-paused");
+        vm.expectRevert("GB/deposits-paused");
         groveBasin.deposit(address(swapToken), user, 100e6);
         vm.stopPrank();
     }
@@ -269,7 +269,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         groveBasin.grantRole(redeemerRole, redeemer);
 
         vm.prank(redeemer);
-        vm.expectRevert("GroveBasin/initiate-redeem-paused");
+        vm.expectRevert("GB/initiate-redeem-paused");
         groveBasin.initiateRedeem(makeAddr("redeemerContract"), 100e18);
     }
 

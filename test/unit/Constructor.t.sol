@@ -19,72 +19,72 @@ contract GroveBasinConstructorTests is GroveBasinTestBase {
     }
 
     function test_constructor_invalidSwapToken() public {
-        vm.expectRevert("GroveBasin/invalid-swapToken");
+        vm.expectRevert("GB/no-zero-tokens");
         new GroveBasin(owner, address(0), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider));
     }
 
     function test_constructor_invalidCollateralToken() public {
-        vm.expectRevert("GroveBasin/invalid-collateralToken");
+        vm.expectRevert("GB/no-zero-tokens");
         new GroveBasin(owner, address(swapToken), address(0), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider));
     }
 
     function test_constructor_invalidCreditToken() public {
-        vm.expectRevert("GroveBasin/invalid-creditToken");
+        vm.expectRevert("GB/no-zero-tokens");
         new GroveBasin(owner, address(swapToken), address(collateralToken), address(0), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider));
     }
 
     function test_constructor_invalidSwapTokenRateProvider() public {
-        vm.expectRevert("GroveBasin/invalid-swapTokenRateProvider");
+        vm.expectRevert("GB/no-zero-rps");
         new GroveBasin(owner, address(swapToken), address(collateralToken), address(creditToken), address(0), address(collateralTokenRateProvider), address(creditTokenRateProvider));
     }
 
     function test_constructor_invalidCollateralTokenRateProvider() public {
-        vm.expectRevert("GroveBasin/invalid-collateralTokenRateProvider");
+        vm.expectRevert("GB/no-zero-rps");
         new GroveBasin(owner, address(swapToken), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(0), address(creditTokenRateProvider));
     }
 
     function test_constructor_invalidCreditTokenRateProvider() public {
-        vm.expectRevert("GroveBasin/invalid-creditTokenRateProvider");
+        vm.expectRevert("GB/no-zero-rps");
         new GroveBasin(owner, address(swapToken), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(0));
     }
 
     function test_constructor_swapTokenCollateralTokenMatch() public {
-        vm.expectRevert("GroveBasin/swapToken-collateralToken-same");
+        vm.expectRevert("GB/tokens-must-be-unique");
         new GroveBasin(owner, address(swapToken), address(swapToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider));
     }
 
     function test_constructor_swapTokenCreditTokenMatch() public {
-        vm.expectRevert("GroveBasin/swapToken-creditToken-same");
+        vm.expectRevert("GB/tokens-must-be-unique");
         new GroveBasin(owner, address(swapToken), address(collateralToken), address(swapToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider));
     }
 
     function test_constructor_collateralTokenCreditTokenMatch() public {
-        vm.expectRevert("GroveBasin/collateralToken-creditToken-same");
+        vm.expectRevert("GB/tokens-must-be-unique");
         new GroveBasin(owner, address(swapToken), address(collateralToken), address(collateralToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider));
     }
 
     function test_constructor_swapTokenRateProviderZero() public {
         MockRateProvider(address(swapTokenRateProvider)).__setConversionRate(0);
-        vm.expectRevert("GroveBasin/swap-rate-provider-returns-zero");
+        vm.expectRevert("GB/rp-returns-zero");
         new GroveBasin(owner, address(swapToken), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider));
     }
 
     function test_constructor_collateralTokenRateProviderZero() public {
         MockRateProvider(address(collateralTokenRateProvider)).__setConversionRate(0);
-        vm.expectRevert("GroveBasin/collateral-rate-provider-returns-zero");
+        vm.expectRevert("GB/rp-returns-zero");
         new GroveBasin(owner, address(swapToken), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider));
     }
 
     function test_constructor_creditTokenRateProviderZero() public {
         MockRateProvider(address(creditTokenRateProvider)).__setConversionRate(0);
-        vm.expectRevert("GroveBasin/credit-rate-provider-returns-zero");
+        vm.expectRevert("GB/rp-returns-zero");
         new GroveBasin(owner, address(swapToken), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider));
     }
 
     function test_constructor_swapTokenDecimalsToHighBoundary() public {
         MockERC20 swapToken_ = new MockERC20("swapToken", "swapToken", 19);
 
-        vm.expectRevert("GroveBasin/swapToken-precision-too-high");
+        vm.expectRevert("GB/precision-too-high");
         new GroveBasin(owner, address(swapToken_), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider));
 
         swapToken_ = new MockERC20("swapToken", "swapToken", 18);
@@ -95,7 +95,7 @@ contract GroveBasinConstructorTests is GroveBasinTestBase {
     function test_constructor_creditTokenDecimalsToHighBoundary() public {
         MockERC20 creditToken_ = new MockERC20("creditToken", "creditToken", 19);
 
-        vm.expectRevert("GroveBasin/creditToken-precision-too-high");
+        vm.expectRevert("GB/precision-too-high");
         new GroveBasin(owner, address(swapToken), address(collateralToken), address(creditToken_), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider));
 
         creditToken_ = new MockERC20("creditToken", "creditToken", 18);
@@ -106,7 +106,7 @@ contract GroveBasinConstructorTests is GroveBasinTestBase {
     function test_constructor_collateralTokenDecimalsToHighBoundary() public {
         MockERC20 collateralToken_ = new MockERC20("collateralToken", "collateralToken", 19);
 
-        vm.expectRevert("GroveBasin/collateralToken-precision-too-high");
+        vm.expectRevert("GB/precision-too-high");
         new GroveBasin(owner, address(swapToken), address(collateralToken_), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider));
 
         collateralToken_ = new MockERC20("collateralToken", "collateralToken", 18);

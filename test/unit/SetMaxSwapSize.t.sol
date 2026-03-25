@@ -21,7 +21,7 @@ contract GroveBasinSetMaxSwapSizeFailureTests is GroveBasinTestBase {
         groveBasin.setMaxSwapSizeBounds(100e18, 1_000_000e18);
 
         vm.prank(owner);
-        vm.expectRevert("GroveBasin/swap-size-out-of-bounds");
+        vm.expectRevert("GB/swap-size-oob");
         groveBasin.setMaxSwapSize(50e18);
     }
 
@@ -30,7 +30,7 @@ contract GroveBasinSetMaxSwapSizeFailureTests is GroveBasinTestBase {
         groveBasin.setMaxSwapSizeBounds(100e18, 1_000_000e18);
 
         vm.prank(owner);
-        vm.expectRevert("GroveBasin/swap-size-out-of-bounds");
+        vm.expectRevert("GB/swap-size-oob");
         groveBasin.setMaxSwapSize(2_000_000e18);
     }
 
@@ -40,7 +40,7 @@ contract GroveBasinSetMaxSwapSizeBoundsFailureTests is GroveBasinTestBase {
 
     function test_setMaxSwapSizeBounds_lowerBoundGreaterThanUpperBound() public {
         vm.prank(owner);
-        vm.expectRevert("GroveBasin/min-gt-max-swap-size");
+        vm.expectRevert("GB/min-gt-max-swap-size");
         groveBasin.setMaxSwapSizeBounds(1_000_000e18, 100e18);
     }
 

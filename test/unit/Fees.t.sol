@@ -31,13 +31,13 @@ contract GroveBasinSetFeeBoundsFailureTests is GroveBasinTestBase {
 
     function test_setFeeBounds_minGtMax() public {
         vm.prank(owner);
-        vm.expectRevert("GroveBasin/min-fee-gt-max-fee");
+        vm.expectRevert("GB/min-fee-gt-max-fee");
         groveBasin.setFeeBounds(200, 100);
     }
 
     function test_setFeeBounds_maxGtBps() public {
         vm.prank(owner);
-        vm.expectRevert("GroveBasin/max-fee-gte-bps");
+        vm.expectRevert("GB/max-fee-gte-bps");
         groveBasin.setFeeBounds(0, 10_001);
     }
 
@@ -227,7 +227,7 @@ contract GroveBasinSetPurchaseFeeFailureTests is GroveBasinTestBase {
 
     function test_setPurchaseFee_aboveMax() public {
         vm.prank(owner);
-        vm.expectRevert("GroveBasin/purchase-fee-out-of-bounds");
+        vm.expectRevert("GB/purchase-fee-oob");
         groveBasin.setPurchaseFee(501);
     }
 
@@ -239,7 +239,7 @@ contract GroveBasinSetPurchaseFeeFailureTests is GroveBasinTestBase {
         vm.stopPrank();
 
         vm.prank(owner);
-        vm.expectRevert("GroveBasin/purchase-fee-out-of-bounds");
+        vm.expectRevert("GB/purchase-fee-oob");
         groveBasin.setPurchaseFee(49);
     }
 
@@ -335,7 +335,7 @@ contract GroveBasinSetRedemptionFeeFailureTests is GroveBasinTestBase {
 
     function test_setRedemptionFee_aboveMax() public {
         vm.prank(owner);
-        vm.expectRevert("GroveBasin/redemption-fee-out-of-bounds");
+        vm.expectRevert("GB/redemption-fee-oob");
         groveBasin.setRedemptionFee(501);
     }
 
@@ -347,7 +347,7 @@ contract GroveBasinSetRedemptionFeeFailureTests is GroveBasinTestBase {
         vm.stopPrank();
 
         vm.prank(owner);
-        vm.expectRevert("GroveBasin/redemption-fee-out-of-bounds");
+        vm.expectRevert("GB/redemption-fee-oob");
         groveBasin.setRedemptionFee(49);
     }
 

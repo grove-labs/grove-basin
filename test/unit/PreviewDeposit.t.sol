@@ -8,7 +8,7 @@ import { MockRateProvider, GroveBasinTestBase } from "test/GroveBasinTestBase.so
 contract GroveBasinPreviewDeposit_FailureTests is GroveBasinTestBase {
 
     function test_previewDeposit_invalidAsset() public {
-        vm.expectRevert("GroveBasin/invalid-asset-for-value");
+        vm.expectRevert("GB/invalid-asset");
         groveBasin.previewDeposit(makeAddr("other-token"), 1);
     }
 

@@ -30,7 +30,7 @@ contract InflationAttackTests is GroveBasinTestBase {
         swapToken.mint(user1, 1_000_000e6);
         vm.startPrank(user1);
         swapToken.approve(address(groveBasin), 1_000_000e6);
-        vm.expectRevert("GroveBasin/no-new-shares");
+        vm.expectRevert("GB/no-new-shares");
         groveBasin.deposit(address(swapToken), user1, 1_000_000e6);
         vm.stopPrank();
 

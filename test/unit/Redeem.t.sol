@@ -45,7 +45,7 @@ contract GroveBasinInitiateRedeemInvalidRedeemerContractTests is GroveBasinTestB
         groveBasin.grantRole(redeemerRole, redeemer);
 
         vm.prank(redeemer);
-        vm.expectRevert("GroveBasin/invalid-redeemer");
+        vm.expectRevert("GB/invalid-redeemer");
         groveBasin.initiateRedeem(invalidContract, 100e18);
     }
 
@@ -81,7 +81,7 @@ contract GroveBasinCompleteRedeemInvalidRedeemerContractTests is GroveBasinTestB
         groveBasin.grantRole(redeemerRole, redeemer);
 
         vm.prank(redeemer);
-        vm.expectRevert("GroveBasin/invalid-redeemer");
+        vm.expectRevert("GB/invalid-redeemer");
         groveBasin.completeRedeem(invalidContract, 100e18);
     }
 

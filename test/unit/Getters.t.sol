@@ -215,7 +215,7 @@ contract GroveBasinHarnessTests is GroveBasinTestBase {
     }
 
     function test_getAssetValue_zeroAddress() public {
-        vm.expectRevert("GroveBasin/invalid-asset-for-value");
+        vm.expectRevert("GB/invalid-asset");
         groveBasinHarness.getAssetValue(address(0), 1, false);
     }
 
