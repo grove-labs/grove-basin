@@ -159,7 +159,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
     /// @inheritdoc IGroveBasin
     function setRateProvider(address token, address newRateProvider) external override onlyRole(MANAGER_ADMIN_ROLE) {
-        if (newRateProvider == address(0)) revert InvalidRateProvider();
+        if (newRateProvider == address(0))                               revert InvalidRateProvider();
         if (IRateProviderLike(newRateProvider).getConversionRate() == 0) revert RateProviderReturnsZero();
 
         address oldRateProvider;
@@ -208,7 +208,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     function setStalenessThresholdBounds(uint256 newMinThreshold, uint256 newMaxThreshold)
         external override onlyRole(MANAGER_ADMIN_ROLE)
     {
-        if (newMinThreshold == 0) revert MinThresholdZero();
+        if (newMinThreshold == 0)              revert MinThresholdZero();
         if (newMinThreshold > newMaxThreshold) revert InvalidThresholdBounds();
 
         uint256 oldMinThreshold = minStalenessThreshold;
@@ -232,7 +232,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     /// @inheritdoc IGroveBasin
     function setFeeBounds(uint256 newMinFee, uint256 newMaxFee) external override onlyRole(MANAGER_ADMIN_ROLE) {
         if (newMinFee > newMaxFee) revert MinFeeGreaterThanMaxFee();
-        if (newMaxFee > BPS) revert MaxFeeExceedsBps();
+        if (newMaxFee > BPS)       revert MaxFeeExceedsBps();
 
         uint256 oldMinFee = minFee;
         uint256 oldMaxFee = maxFee;
@@ -280,7 +280,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
     /// @inheritdoc IGroveBasin
     function addTokenRedeemer(address redeemer) external override onlyRole(MANAGER_ADMIN_ROLE) {
-        if (redeemer == address(0)) revert InvalidRedeemer();
+        if (redeemer == address(0))                        revert InvalidRedeemer();
         if (!_grantRole(REDEEMER_CONTRACT_ROLE, redeemer)) revert RedeemerAlreadyAdded();
 
         ITokenRedeemer(redeemer).setUp(address(this));
@@ -398,7 +398,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     )
         external override returns (uint256 amountOut)
     {
-        if (amountIn == 0) revert ZeroAmountIn();
+        if (amountIn == 0)          revert ZeroAmountIn();
         if (receiver == address(0)) revert ZeroReceiver();
 
         _checkSwapNotPaused(assetIn, assetOut);
@@ -425,7 +425,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     )
         external override returns (uint256 amountIn)
     {
-        if (amountOut == 0) revert ZeroAmountOut();
+        if (amountOut == 0)         revert ZeroAmountOut();
         if (receiver == address(0)) revert ZeroReceiver();
 
         _checkSwapNotPaused(assetIn, assetOut);
@@ -449,7 +449,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     function depositInitial(address asset, uint256 assetsToDeposit)
         external override returns (uint256 newShares)
     {
-        if (totalShares != 0) revert AlreadySeeded();
+        if (totalShares != 0)     revert AlreadySeeded();
         if (assetsToDeposit == 0) revert ZeroAmount();
 
         newShares = previewDeposit(asset, assetsToDeposit);
@@ -469,8 +469,8 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     function deposit(address asset, address receiver, uint256 assetsToDeposit)
         external override returns (uint256 newShares)
     {
-        if (pausedDeposits) revert DepositsPaused();
-        if (assetsToDeposit == 0) revert ZeroAmount();
+        if (pausedDeposits)                  revert DepositsPaused();
+        if (assetsToDeposit == 0)            revert ZeroAmount();
         if (msg.sender != liquidityProvider) revert NotLiquidityProvider();
 
         newShares = previewDeposit(asset, assetsToDeposit);
@@ -910,7 +910,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
     /// @dev Approves and sends credit tokens to the redeemer to initiate an async redemption.
     function _initiateRedeem(address redeemer, uint256 creditTokenAmount) internal {
-        if (pausedInitiateRedeem) revert InitiateRedeemPaused();
+        if (pausedInitiateRedeem)                       revert InitiateRedeemPaused();
         if (!hasRole(REDEEMER_CONTRACT_ROLE, redeemer)) revert InvalidRedeemer();
 
         IERC20(creditToken).approve(redeemer, creditTokenAmount);

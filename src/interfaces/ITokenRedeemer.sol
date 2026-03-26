@@ -10,6 +10,9 @@ interface ITokenRedeemer {
     /**********************************************************************************************/
 
     error OnlyBasin();
+    error InvalidCreditToken();
+    error InvalidBasin();
+    error CreditTokenMismatch();
 
     /**********************************************************************************************/
     /*** Events                                                                                 ***/

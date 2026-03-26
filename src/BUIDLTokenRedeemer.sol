@@ -15,10 +15,7 @@ contract BUIDLTokenRedeemer is ITokenRedeemer {
     /*** Errors                                                                                 ***/
     /**********************************************************************************************/
 
-    error InvalidCreditToken();
     error InvalidRedemptionAddress();
-    error InvalidBasin();
-    error CreditTokenMismatch();
 
     /**********************************************************************************************/
     /*** State variables and immutables                                                         ***/

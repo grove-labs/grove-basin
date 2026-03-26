@@ -24,10 +24,7 @@ contract JTRSYTokenRedeemer is ITokenRedeemer {
     /*** Errors                                                                                 ***/
     /**********************************************************************************************/
 
-    error InvalidCreditToken();
     error InvalidVault();
-    error InvalidBasin();
-    error CreditTokenMismatch();
     error CollateralAssetMismatch();
 
     /**********************************************************************************************/
@@ -59,7 +56,7 @@ contract JTRSYTokenRedeemer is ITokenRedeemer {
         if (vault_       == address(0)) revert InvalidVault();
         if (basin_       == address(0)) revert InvalidBasin();
 
-        if (IGroveBasin(basin_).creditToken() != creditToken_) revert CreditTokenMismatch();
+        if (IGroveBasin(basin_).creditToken() != creditToken_)                        revert CreditTokenMismatch();
         if (IGroveBasin(basin_).collateralToken() != IAsyncVaultLike(vault_).asset()) revert CollateralAssetMismatch();
 
         creditToken = creditToken_;

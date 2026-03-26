@@ -44,7 +44,7 @@ contract BUIDLTokenRedeemerConstructorTests is Test {
     }
 
     function test_constructor_invalidCreditToken() public {
-        vm.expectRevert(BUIDLTokenRedeemer.InvalidCreditToken.selector);
+        vm.expectRevert(ITokenRedeemer.InvalidCreditToken.selector);
         new BUIDLTokenRedeemer(address(0), redemptionAddress, address(basin));
     }
 
@@ -54,14 +54,14 @@ contract BUIDLTokenRedeemerConstructorTests is Test {
     }
 
     function test_constructor_invalidBasin() public {
-        vm.expectRevert(BUIDLTokenRedeemer.InvalidBasin.selector);
+        vm.expectRevert(ITokenRedeemer.InvalidBasin.selector);
         new BUIDLTokenRedeemer(address(creditToken), redemptionAddress, address(0));
     }
 
     function test_constructor_creditTokenMismatch() public {
         MockERC20 wrongCreditToken = new MockERC20("wrong", "wrong", 18);
 
-        vm.expectRevert(BUIDLTokenRedeemer.CreditTokenMismatch.selector);
+        vm.expectRevert(ITokenRedeemer.CreditTokenMismatch.selector);
         new BUIDLTokenRedeemer(address(wrongCreditToken), redemptionAddress, address(basin));
     }
 
