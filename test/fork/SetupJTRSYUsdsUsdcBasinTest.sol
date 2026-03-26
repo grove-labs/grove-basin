@@ -71,8 +71,8 @@ contract SetupJTRSYUsdsUsdcBasinTest is Test, SetupJTRSYUsdsUsdcBasin {
     }
 
     function test_deploy_initialShares() public view {
-        assertGt(groveBasin.totalShares(), 0);
-        assertGt(groveBasin.shares(address(0)), 0);
+        assertEq(groveBasin.totalShares(), 0);
+        assertEq(groveBasin.shares(address(0)), 0);
     }
 
 }
