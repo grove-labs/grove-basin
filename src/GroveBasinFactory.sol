@@ -1,9 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.24;
 
+import { IERC20 }    from "erc20-helpers/interfaces/IERC20.sol";
+import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
+
 import { GroveBasin } from "src/GroveBasin.sol";
 
 contract GroveBasinFactory {
+
+    using SafeERC20 for IERC20;
 
     event GroveBasinDeployed(
         address indexed groveBasin,
@@ -25,6 +30,10 @@ contract GroveBasinFactory {
     )
         external returns (address groveBasin)
     {
+        uint256 seedAmount = 10 ** IERC20(swapToken).decimals();
+
+        IERC20(swapToken).transferFrom(msg.sender, address(this), seedAmount);
+
         groveBasin = address(new GroveBasin(
             owner,
             liquidityProvider,
@@ -35,6 +44,9 @@ contract GroveBasinFactory {
             collateralTokenRateProvider,
             creditTokenRateProvider
         ));
+
+        IERC20(swapToken).approve(groveBasin, seedAmount);
+        GroveBasin(groveBasin).depositInitial(swapToken, address(0), seedAmount);
 
         emit GroveBasinDeployed(groveBasin, owner, swapToken, collateralToken, creditToken);
     }

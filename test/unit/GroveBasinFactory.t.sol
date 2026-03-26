@@ -12,13 +12,22 @@ contract GroveBasinFactoryTests is GroveBasinTestBase {
 
     GroveBasinFactory public factory;
 
+    uint256 public seedAmount;
+
     function setUp() public override {
         super.setUp();
-        factory = new GroveBasinFactory();
+        factory    = new GroveBasinFactory();
+        seedAmount = 10 ** swapToken.decimals();  // 1e6
     }
 
-    function test_deploy() public {
-        address newBasin = factory.deploy(
+    function _mintAndApprove() internal {
+        swapToken.mint(address(this), seedAmount);
+        swapToken.approve(address(factory), seedAmount);
+    }
+
+    function _deploy() internal returns (address) {
+        _mintAndApprove();
+        return factory.deploy(
             owner,
             lp,
             address(swapToken),
@@ -28,6 +37,10 @@ contract GroveBasinFactoryTests is GroveBasinTestBase {
             address(collateralTokenRateProvider),
             address(creditTokenRateProvider)
         );
+    }
+
+    function test_deploy() public {
+        address newBasin = _deploy();
 
         GroveBasin basin = GroveBasin(newBasin);
 
@@ -41,14 +54,16 @@ contract GroveBasinFactoryTests is GroveBasinTestBase {
         assertEq(address(basin.collateralTokenRateProvider()), address(collateralTokenRateProvider));
         assertEq(address(basin.creditTokenRateProvider()),     address(creditTokenRateProvider));
 
-        assertEq(basin.totalShares(),      0);
-        assertEq(basin.shares(address(0)), 0);
-        assertEq(basin.totalAssets(),       0);
+        assertEq(basin.totalShares(), 1e18);
+        assertEq(basin.shares(lp),    1e18);
 
-        assertEq(swapToken.balanceOf(newBasin), 0);
+        assertEq(swapToken.balanceOf(newBasin),         seedAmount);
+        assertEq(swapToken.balanceOf(address(factory)), 0);
     }
 
     function test_deploy_emitsEvent() public {
+        _mintAndApprove();
+
         vm.expectEmit(false, true, false, true);
         emit GroveBasinFactory.GroveBasinDeployed(
             address(0),
@@ -70,20 +85,12 @@ contract GroveBasinFactoryTests is GroveBasinTestBase {
         );
     }
 
-    function test_deploy_noSharesAfterDeploy() public {
-        address newBasin = factory.deploy(
-            owner,
-            lp,
-            address(swapToken),
-            address(collateralToken),
-            address(creditToken),
-            address(swapTokenRateProvider),
-            address(collateralTokenRateProvider),
-            address(creditTokenRateProvider)
-        );
+    function test_deploy_sharesGoToLp() public {
+        address newBasin = _deploy();
 
         GroveBasin basin = GroveBasin(newBasin);
 
+        assertEq(basin.shares(lp),               1e18);
         assertEq(basin.shares(address(0)),        0);
         assertEq(basin.shares(address(this)),     0);
         assertEq(basin.shares(address(factory)),  0);
@@ -91,16 +98,7 @@ contract GroveBasinFactoryTests is GroveBasinTestBase {
     }
 
     function test_deploy_liquidityProviderIsSet() public {
-        address newBasin = factory.deploy(
-            owner,
-            lp,
-            address(swapToken),
-            address(collateralToken),
-            address(creditToken),
-            address(swapTokenRateProvider),
-            address(collateralTokenRateProvider),
-            address(creditTokenRateProvider)
-        );
+        address newBasin = _deploy();
 
         GroveBasin basin = GroveBasin(newBasin);
 
@@ -108,32 +106,15 @@ contract GroveBasinFactoryTests is GroveBasinTestBase {
     }
 
     function test_deploy_multipleDeployments() public {
-        address basin1 = factory.deploy(
-            owner,
-            lp,
-            address(swapToken),
-            address(collateralToken),
-            address(creditToken),
-            address(swapTokenRateProvider),
-            address(collateralTokenRateProvider),
-            address(creditTokenRateProvider)
-        );
-
-        address basin2 = factory.deploy(
-            owner,
-            lp,
-            address(swapToken),
-            address(collateralToken),
-            address(creditToken),
-            address(swapTokenRateProvider),
-            address(collateralTokenRateProvider),
-            address(creditTokenRateProvider)
-        );
+        address basin1 = _deploy();
+        address basin2 = _deploy();
 
         assertTrue(basin1 != basin2);
 
-        assertEq(GroveBasin(basin1).totalShares(), 0);
-        assertEq(GroveBasin(basin2).totalShares(), 0);
+        assertEq(GroveBasin(basin1).totalShares(), 1e18);
+        assertEq(GroveBasin(basin2).totalShares(), 1e18);
+        assertEq(GroveBasin(basin1).shares(lp),    1e18);
+        assertEq(GroveBasin(basin2).shares(lp),    1e18);
     }
 
 }

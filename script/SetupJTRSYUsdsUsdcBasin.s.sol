@@ -30,7 +30,7 @@ contract SetupJTRSYUsdsUsdcBasin is Script {
     }
 
     function deploy() public returns (address groveBasin, address pocket_, address redeemer_) {
-        require(IERC20(Ethereum.USDS).balanceOf(msg.sender) >= 1e6, "insufficient-usds-balance");
+        require(IERC20(Ethereum.USDS).balanceOf(msg.sender) >= 1e18, "insufficient-usds-balance");
 
         groveBasin = GroveBasinDeploy.deploy({
             owner                       : msg.sender,

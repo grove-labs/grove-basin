@@ -70,8 +70,9 @@ contract SetupJTRSYMorphoUsdtBasinTest is Test, SetupJTRSYMorphoUsdtBasin {
     }
 
     function test_deploy_initialShares() public view {
-        assertEq(groveBasin.totalShares(), 0);
-        assertEq(groveBasin.shares(address(0)), 0);
+        assertEq(groveBasin.totalShares(),              1e18);
+        assertEq(groveBasin.shares(Ethereum.ALM_PROXY), 1e18);
+        assertEq(groveBasin.shares(address(0)),          0);
     }
 
 }

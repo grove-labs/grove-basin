@@ -17,6 +17,8 @@ contract GroveBasinDeployForkTest is Test {
     address public owner = makeAddr("owner");
     address public lp    = makeAddr("liquidityProvider");
 
+    uint256 public seedAmount;
+
     MockRateProvider public swapTokenRateProvider;
     MockRateProvider public collateralTokenRateProvider;
     MockRateProvider public creditTokenRateProvider;
@@ -31,9 +33,13 @@ contract GroveBasinDeployForkTest is Test {
         swapTokenRateProvider.__setConversionRate(1e27);
         collateralTokenRateProvider.__setConversionRate(1e27);
         creditTokenRateProvider.__setConversionRate(1e27);
+
+        seedAmount = 10 ** IERC20(Ethereum.USDT).decimals();  // 1e6
     }
 
     function test_deploy_withActualUSDT() public {
+        deal(Ethereum.USDT, address(this), seedAmount);
+
         address groveBasinAddress = GroveBasinDeploy.deploy(
             owner,
             lp,
@@ -53,11 +59,16 @@ contract GroveBasinDeployForkTest is Test {
         assertEq(groveBasin.collateralToken(), Ethereum.USDC);
         assertEq(groveBasin.creditToken(),     Ethereum.USDS);
         assertEq(groveBasin.liquidityProvider(),        lp);
-        assertEq(groveBasin.totalAssets(),              0);
-        assertEq(groveBasin.totalShares(),              0);
+
+        assertEq(groveBasin.totalShares(), 1e18);
+        assertEq(groveBasin.shares(lp),    1e18);
+
+        assertEq(IERC20(Ethereum.USDT).balanceOf(groveBasinAddress), seedAmount);
     }
 
     function test_deploy_multipleDeployments() public {
+        deal(Ethereum.USDT, address(this), seedAmount);
+
         address groveBasin1 = GroveBasinDeploy.deploy(
             owner,
             lp,
@@ -77,6 +88,8 @@ contract GroveBasinDeployForkTest is Test {
         collateralTokenRateProvider2.__setConversionRate(1e27);
         creditTokenRateProvider2.__setConversionRate(1e27);
 
+        deal(Ethereum.USDT, address(this), seedAmount);
+
         address groveBasin2 = GroveBasinDeploy.deploy(
             owner,
             lp,
@@ -89,12 +102,12 @@ contract GroveBasinDeployForkTest is Test {
         );
 
         assertTrue(groveBasin1 != groveBasin2);
-        assertEq(GroveBasin(groveBasin1).totalAssets(), 0);
-        assertEq(GroveBasin(groveBasin2).totalAssets(), 0);
+        assertEq(GroveBasin(groveBasin1).totalShares(), 1e18);
+        assertEq(GroveBasin(groveBasin2).totalShares(), 1e18);
     }
 
-    function test_deploy_noTokensTransferred() public {
-        deal(Ethereum.USDT, address(this), 10e6);
+    function test_deploy_seedTokensTransferred() public {
+        deal(Ethereum.USDT, address(this), seedAmount);
 
         uint256 balanceBefore = IERC20(Ethereum.USDT).balanceOf(address(this));
 
@@ -109,8 +122,8 @@ contract GroveBasinDeployForkTest is Test {
             address(creditTokenRateProvider)
         );
 
-        assertEq(IERC20(Ethereum.USDT).balanceOf(address(this)),    balanceBefore);
-        assertEq(IERC20(Ethereum.USDT).balanceOf(groveBasinAddress), 0);
+        assertEq(IERC20(Ethereum.USDT).balanceOf(address(this)),    balanceBefore - seedAmount);
+        assertEq(IERC20(Ethereum.USDT).balanceOf(groveBasinAddress), seedAmount);
     }
 
 }

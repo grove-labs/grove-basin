@@ -459,6 +459,26 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     /**********************************************************************************************/
 
     /// @inheritdoc IGroveBasin
+    function depositInitial(address asset, address receiver, uint256 assetsToDeposit)
+        external override returns (uint256 newShares)
+    {
+        require(totalShares == 0,     "GB/already-seeded");
+        require(assetsToDeposit != 0, "GB/invalid-amount");
+
+        newShares = previewDeposit(asset, assetsToDeposit);
+
+        require(newShares > 0, "GB/no-new-shares");
+
+        shares[liquidityProvider] += newShares;
+        totalShares               += newShares;
+
+        _pullAsset(asset, assetsToDeposit);
+        _depositLiquidityInPocket(assetsToDeposit, asset);
+
+        emit Deposit(asset, msg.sender, liquidityProvider, assetsToDeposit, newShares);
+    }
+
+    /// @inheritdoc IGroveBasin
     function deposit(address asset, address receiver, uint256 assetsToDeposit)
         external override returns (uint256 newShares)
     {
