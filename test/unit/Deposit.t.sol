@@ -3,7 +3,8 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 
-import { GroveBasin } from "src/GroveBasin.sol";
+import { GroveBasin }  from "src/GroveBasin.sol";
+import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
 
 import { MockRateProvider, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
@@ -22,7 +23,7 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
         collateralToken.mint(address(this), 100e18);
         collateralToken.approve(address(freshBasin), 100e18);
 
-        vm.expectRevert("GB/not-lp");
+        vm.expectRevert(IGroveBasin.NotLiquidityProvider.selector);
         freshBasin.deposit(address(collateralToken), address(this), 100e18);
     }
 
@@ -37,7 +38,7 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
         swapToken.mint(address(this), tooMuch);
         swapToken.approve(address(freshBasin), tooMuch);
 
-        vm.expectRevert("GB/not-lp");
+        vm.expectRevert(IGroveBasin.NotLiquidityProvider.selector);
         freshBasin.deposit(address(swapToken), address(this), tooMuch);
     }
 
@@ -58,21 +59,21 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
         collateralToken.mint(lp, 1);
         vm.startPrank(lp);
         collateralToken.approve(address(groveBasin), 1);
-        vm.expectRevert("GB/no-new-shares");
+        vm.expectRevert(IGroveBasin.NoNewShares.selector);
         groveBasin.deposit(address(collateralToken), lp, 1);
         vm.stopPrank();
     }
 
     function test_deposit_zeroAmount() public {
         vm.prank(lp);
-        vm.expectRevert("GB/zero-amount");
+        vm.expectRevert(IGroveBasin.ZeroAmount.selector);
         groveBasin.deposit(address(swapToken), lp, 0);
     }
 
     function test_deposit_invalidAsset() public {
         // NOTE: This reverts in _getAssetValue
         vm.prank(lp);
-        vm.expectRevert("GB/invalid-asset");
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
         groveBasin.deposit(makeAddr("new-asset"), lp, 100e6);
     }
 

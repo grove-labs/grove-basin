@@ -23,7 +23,7 @@ contract ChronicleRateProviderTests is Test {
     }
 
     function test_constructor_revert_zeroOracle() public {
-        vm.expectRevert("ChronicleRateProvider/zero-oracle");
+        vm.expectRevert(ChronicleRateProvider.ZeroOracle.selector);
         new ChronicleRateProvider(address(0));
     }
 

@@ -3,7 +3,8 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 
-import { GroveBasin } from "src/GroveBasin.sol";
+import { GroveBasin }  from "src/GroveBasin.sol";
+import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
 
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
@@ -22,12 +23,12 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
     function test_withdraw_zeroAmount() public {
         _deposit(address(swapToken), user1, 100e6);
 
-        vm.expectRevert("GB/zero-amount");
+        vm.expectRevert(IGroveBasin.ZeroAmount.selector);
         groveBasin.withdraw(address(swapToken), receiver1, 0);
     }
 
     function test_withdraw_notSwapTokenOrCollateralToken() public {
-        vm.expectRevert("GB/invalid-asset");
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
         groveBasin.withdraw(makeAddr("new-asset"), receiver1, 100e6);
     }
 

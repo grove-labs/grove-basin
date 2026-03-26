@@ -93,22 +93,22 @@ contract AaveV3UsdtPocketTestBase is Test {
 contract AaveV3UsdtPocketConstructorTests is AaveV3UsdtPocketTestBase {
 
     function test_constructor_invalidBasin() public {
-        vm.expectRevert("BasePocket/invalid-basin");
+        vm.expectRevert(IGroveBasinPocket.InvalidBasin.selector);
         new AaveV3UsdtPocket(address(0), address(usdt), address(aUsdt), address(aaveV3Pool));
     }
 
     function test_constructor_invalidUsdt() public {
-        vm.expectRevert("AaveV3UsdtPocket/invalid-usdt");
+        vm.expectRevert(AaveV3UsdtPocket.InvalidUsdt.selector);
         new AaveV3UsdtPocket(address(groveBasin), address(0), address(aUsdt), address(aaveV3Pool));
     }
 
     function test_constructor_invalidAUsdt() public {
-        vm.expectRevert("AaveV3UsdtPocket/invalid-aUsdt");
+        vm.expectRevert(AaveV3UsdtPocket.InvalidAUsdt.selector);
         new AaveV3UsdtPocket(address(groveBasin), address(usdt), address(0), address(aaveV3Pool));
     }
 
     function test_constructor_invalidAaveV3Pool() public {
-        vm.expectRevert("AaveV3UsdtPocket/invalid-aaveV3Pool");
+        vm.expectRevert(AaveV3UsdtPocket.InvalidAaveV3Pool.selector);
         new AaveV3UsdtPocket(address(groveBasin), address(usdt), address(aUsdt), address(0));
     }
 
@@ -130,12 +130,12 @@ contract AaveV3UsdtPocketConstructorTests is AaveV3UsdtPocketTestBase {
 contract AaveV3UsdtPocketAccessControlTests is AaveV3UsdtPocketTestBase {
 
     function test_depositLiquidity_notAuthorized() public {
-        vm.expectRevert("BasePocket/not-authorized");
+        vm.expectRevert(IGroveBasinPocket.NotAuthorized.selector);
         pocket.depositLiquidity(100e6, address(usdt));
     }
 
     function test_withdrawLiquidity_notAuthorized() public {
-        vm.expectRevert("BasePocket/not-authorized");
+        vm.expectRevert(IGroveBasinPocket.NotAuthorized.selector);
         pocket.withdrawLiquidity(100e6, address(usdt));
     }
 
@@ -197,7 +197,7 @@ contract AaveV3UsdtPocketRoleManagementTests is AaveV3UsdtPocketTestBase {
         vm.stopPrank();
 
         vm.prank(manager);
-        vm.expectRevert("BasePocket/not-authorized");
+        vm.expectRevert(IGroveBasinPocket.NotAuthorized.selector);
         pocket.depositLiquidity(100e6, address(usdt));
     }
 
@@ -207,7 +207,7 @@ contract AaveV3UsdtPocketRoleManagementTests is AaveV3UsdtPocketTestBase {
         vm.stopPrank();
 
         vm.prank(manager);
-        vm.expectRevert("BasePocket/not-authorized");
+        vm.expectRevert(IGroveBasinPocket.NotAuthorized.selector);
         pocket.withdrawLiquidity(100e6, address(usdt));
     }
 
@@ -296,7 +296,7 @@ contract AaveV3UsdtPocketDepositLiquidityTests is AaveV3UsdtPocketTestBase {
 
     function test_depositLiquidity_invalidAsset() public {
         vm.prank(address(groveBasin));
-        vm.expectRevert("AaveV3UsdtPocket/invalid-asset");
+        vm.expectRevert(IGroveBasinPocket.InvalidAsset.selector);
         pocket.depositLiquidity(100e6, address(collateralToken));
     }
 
@@ -354,7 +354,7 @@ contract AaveV3UsdtPocketDrawLiquidityTests is AaveV3UsdtPocketTestBase {
 
     function test_withdrawLiquidity_invalidAsset() public {
         vm.prank(address(groveBasin));
-        vm.expectRevert("AaveV3UsdtPocket/invalid-asset");
+        vm.expectRevert(IGroveBasinPocket.InvalidAsset.selector);
         pocket.withdrawLiquidity(100e6, address(collateralToken));
     }
 

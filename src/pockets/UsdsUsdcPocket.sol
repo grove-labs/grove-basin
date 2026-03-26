@@ -22,6 +22,10 @@ contract UsdsUsdcPocket is BasePocket {
 
     using SafeERC20 for IERC20;
 
+    error InvalidUsdc();
+    error InvalidUsds();
+    error InvalidPsm();
+
     IERC20 public immutable usdc;
     IERC20 public immutable usds;
 
@@ -44,9 +48,9 @@ contract UsdsUsdcPocket is BasePocket {
         address psm_,
         address groveProxy_
     ) BasePocket(basin_) {
-        require(usdc_       != address(0), "UsdsUsdcPocket/invalid-usdc");
-        require(usds_       != address(0), "UsdsUsdcPocket/invalid-usds");
-        require(psm_        != address(0), "UsdsUsdcPocket/invalid-psm");
+        if (usdc_       == address(0)) revert InvalidUsdc();
+        if (usds_       == address(0)) revert InvalidUsds();
+        if (psm_        == address(0)) revert InvalidPsm();
         usdc       = IERC20(usdc_);
         usds       = IERC20(usds_);
         psm        = psm_;

@@ -40,18 +40,18 @@ contract DepositInitialTests is GroveBasinTestBase {
         swapToken.mint(depositor, 100e6);
         vm.startPrank(depositor);
         swapToken.approve(address(freshBasin), 100e6);
-        vm.expectRevert("GB/already-seeded");
+        vm.expectRevert(IGroveBasin.AlreadySeeded.selector);
         freshBasin.depositInitial(address(swapToken), 100e6);
         vm.stopPrank();
     }
 
     function test_depositInitial_zeroAmount() public {
-        vm.expectRevert("GB/zero-amount");
+        vm.expectRevert(IGroveBasin.ZeroAmount.selector);
         freshBasin.depositInitial(address(swapToken), 0);
     }
 
     function test_depositInitial_invalidAsset() public {
-        vm.expectRevert("GB/invalid-asset");
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
         freshBasin.depositInitial(makeAddr("bad-asset"), 100e6);
     }
 

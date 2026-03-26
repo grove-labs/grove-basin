@@ -22,17 +22,13 @@ abstract contract BasePocket is IGroveBasinPocket {
 
     /// @dev Restricts access to the basin contract or addresses holding MANAGER_ROLE in the basin.
     modifier onlyBasinOrManager() {
-        require(
-            msg.sender == address(_basin)
-                || IAccessControl(address(_basin)).hasRole(_basin.MANAGER_ROLE(), msg.sender),
-            "BasePocket/not-authorized"
-        );
+        if (msg.sender != address(_basin) && !IAccessControl(address(_basin)).hasRole(_basin.MANAGER_ROLE(), msg.sender)) revert NotAuthorized();
         _;
     }
 
     /// @param basin_ Address of the GroveBasin contract.
     constructor(address basin_) {
-        require(basin_ != address(0), "BasePocket/invalid-basin");
+        if (basin_ == address(0)) revert InvalidBasin();
         _basin = IGroveBasin(basin_);
     }
 

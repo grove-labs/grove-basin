@@ -4,6 +4,50 @@ pragma solidity ^0.8.24;
 interface IGroveBasin {
 
     /**********************************************************************************************/
+    /*** Custom errors                                                                          ***/
+    /**********************************************************************************************/
+
+    error InvalidLiquidityProvider();
+    error ZeroTokenAddress();
+    error DuplicateTokens();
+    error PrecisionTooHigh();
+    error ZeroRateProviderAddress();
+    error RateProviderReturnsZero();
+    error InvalidRateProvider();
+    error InvalidToken();
+    error InvalidSwapSizeBounds();
+    error MinThresholdZero();
+    error InvalidThresholdBounds();
+    error MinFeeGreaterThanMaxFee();
+    error MaxFeeExceedsBps();
+    error InvalidPocket();
+    error InvalidRedeemer();
+    error RedeemerAlreadyAdded();
+    error SwapSizeOutOfBounds();
+    error InvalidAction();
+    error ThresholdOutOfBounds();
+    error SameThreshold();
+    error ZeroAmountIn();
+    error ZeroReceiver();
+    error AmountOutTooLow();
+    error ZeroAmountOut();
+    error AmountInTooHigh();
+    error AlreadySeeded();
+    error ZeroAmount();
+    error NoNewShares();
+    error DepositsPaused();
+    error NotLiquidityProvider();
+    error CreditDepositsDisabled();
+    error SwapSizeExceeded();
+    error InvalidAsset();
+    error InvalidSwap();
+    error StaleRate();
+    error RoutePaused();
+    error InitiateRedeemPaused();
+    error PurchaseFeeOutOfBounds();
+    error RedemptionFeeOutOfBounds();
+
+    /**********************************************************************************************/
     /*** Events                                                                                 ***/
     /**********************************************************************************************/
 

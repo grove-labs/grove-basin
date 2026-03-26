@@ -44,24 +44,24 @@ contract BUIDLTokenRedeemerConstructorTests is Test {
     }
 
     function test_constructor_invalidCreditToken() public {
-        vm.expectRevert("BUIDLTokenRedeemer/invalid-creditToken");
+        vm.expectRevert(ITokenRedeemer.InvalidCreditToken.selector);
         new BUIDLTokenRedeemer(address(0), redemptionAddress, address(basin));
     }
 
     function test_constructor_invalidRedemptionAddress() public {
-        vm.expectRevert("BUIDLTokenRedeemer/invalid-redemptionAddress");
+        vm.expectRevert(BUIDLTokenRedeemer.InvalidRedemptionAddress.selector);
         new BUIDLTokenRedeemer(address(creditToken), address(0), address(basin));
     }
 
     function test_constructor_invalidBasin() public {
-        vm.expectRevert("BUIDLTokenRedeemer/invalid-basin");
+        vm.expectRevert(ITokenRedeemer.InvalidBasin.selector);
         new BUIDLTokenRedeemer(address(creditToken), redemptionAddress, address(0));
     }
 
     function test_constructor_creditTokenMismatch() public {
         MockERC20 wrongCreditToken = new MockERC20("wrong", "wrong", 18);
 
-        vm.expectRevert("BUIDLTokenRedeemer/creditToken-mismatch");
+        vm.expectRevert(ITokenRedeemer.CreditTokenMismatch.selector);
         new BUIDLTokenRedeemer(address(wrongCreditToken), redemptionAddress, address(basin));
     }
 
@@ -116,7 +116,7 @@ contract BUIDLTokenRedeemerSetUpTests is Test {
         address notBasin = makeAddr("notBasin");
 
         vm.prank(notBasin);
-        vm.expectRevert("BUIDLTokenRedeemer/only-basin");
+        vm.expectRevert(ITokenRedeemer.OnlyBasin.selector);
         redeemer.setUp(address(basin));
     }
 
@@ -129,7 +129,7 @@ contract BUIDLTokenRedeemerSetUpTests is Test {
         address notBasin = makeAddr("notBasin");
 
         vm.prank(notBasin);
-        vm.expectRevert("BUIDLTokenRedeemer/only-basin");
+        vm.expectRevert(ITokenRedeemer.OnlyBasin.selector);
         redeemer.tearDown(address(basin));
     }
 
@@ -245,7 +245,7 @@ contract BUIDLTokenRedeemerInitiateRedeemTests is Test {
         address notBasin = makeAddr("notBasin");
 
         vm.prank(notBasin);
-        vm.expectRevert("BUIDLTokenRedeemer/only-basin");
+        vm.expectRevert(ITokenRedeemer.OnlyBasin.selector);
         redeemer.initiateRedeem(1000e18);
     }
 
@@ -347,7 +347,7 @@ contract BUIDLTokenRedeemerCompleteRedeemTests is Test {
         address notBasin = makeAddr("notBasin");
 
         vm.prank(notBasin);
-        vm.expectRevert("BUIDLTokenRedeemer/only-basin");
+        vm.expectRevert(ITokenRedeemer.OnlyBasin.selector);
         redeemer.completeRedeem(1000e18);
     }
 

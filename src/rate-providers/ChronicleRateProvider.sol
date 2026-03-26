@@ -11,6 +11,8 @@ import { IChronicleOracleLike } from "../interfaces/IChronicleOracleLike.sol";
  */
 contract ChronicleRateProvider is IRateProviderLike {
 
+    error ZeroOracle();
+
     /// @notice Precision of the returned rate (1e27).
     uint256 public constant RATE_PRECISION = 1e27;
 
@@ -22,7 +24,7 @@ contract ChronicleRateProvider is IRateProviderLike {
 
     /// @param oracle_ Address of the Chronicle oracle (must be non-zero).
     constructor(address oracle_) {
-        require(oracle_ != address(0), "ChronicleRateProvider/zero-oracle");
+        if (oracle_ == address(0)) revert ZeroOracle();
         oracle = oracle_;
     }
 

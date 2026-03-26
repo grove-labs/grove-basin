@@ -89,17 +89,17 @@ contract MorphoUsdtPocketTestBase is Test {
 contract MorphoUsdtPocketConstructorTests is MorphoUsdtPocketTestBase {
 
     function test_constructor_invalidBasin() public {
-        vm.expectRevert("BasePocket/invalid-basin");
+        vm.expectRevert(IGroveBasinPocket.InvalidBasin.selector);
         new MorphoUsdtPocket(address(0), address(usdt), address(vault));
     }
 
     function test_constructor_invalidUsdt() public {
-        vm.expectRevert("MorphoUsdtPocket/invalid-usdt");
+        vm.expectRevert(MorphoUsdtPocket.InvalidUsdt.selector);
         new MorphoUsdtPocket(address(groveBasin), address(0), address(vault));
     }
 
     function test_constructor_invalidVault() public {
-        vm.expectRevert("MorphoUsdtPocket/invalid-vault");
+        vm.expectRevert(MorphoUsdtPocket.InvalidVault.selector);
         new MorphoUsdtPocket(address(groveBasin), address(usdt), address(0));
     }
 
@@ -124,12 +124,12 @@ contract MorphoUsdtPocketConstructorTests is MorphoUsdtPocketTestBase {
 contract MorphoUsdtPocketAccessControlTests is MorphoUsdtPocketTestBase {
 
     function test_depositLiquidity_notAuthorized() public {
-        vm.expectRevert("BasePocket/not-authorized");
+        vm.expectRevert(IGroveBasinPocket.NotAuthorized.selector);
         pocket.depositLiquidity(100e6, address(usdt));
     }
 
     function test_withdrawLiquidity_notAuthorized() public {
-        vm.expectRevert("BasePocket/not-authorized");
+        vm.expectRevert(IGroveBasinPocket.NotAuthorized.selector);
         pocket.withdrawLiquidity(100e6, address(usdt));
     }
 
@@ -149,7 +149,7 @@ contract MorphoUsdtPocketDepositLiquidityTests is MorphoUsdtPocketTestBase {
 
     function test_depositLiquidity_invalidAsset() public {
         vm.prank(address(groveBasin));
-        vm.expectRevert("MorphoUsdtPocket/invalid-asset");
+        vm.expectRevert(IGroveBasinPocket.InvalidAsset.selector);
         pocket.depositLiquidity(100e6, address(collateralToken));
     }
 
@@ -263,7 +263,7 @@ contract MorphoUsdtPocketWithdrawLiquidityTests is MorphoUsdtPocketTestBase {
 
     function test_withdrawLiquidity_invalidAsset() public {
         vm.prank(address(groveBasin));
-        vm.expectRevert("MorphoUsdtPocket/invalid-asset");
+        vm.expectRevert(IGroveBasinPocket.InvalidAsset.selector);
         pocket.withdrawLiquidity(100e6, address(collateralToken));
     }
 
@@ -393,7 +393,7 @@ contract MorphoUsdtPocketRoleManagementTests is MorphoUsdtPocketTestBase {
         vm.stopPrank();
 
         vm.prank(manager);
-        vm.expectRevert("BasePocket/not-authorized");
+        vm.expectRevert(IGroveBasinPocket.NotAuthorized.selector);
         pocket.depositLiquidity(100e6, address(usdt));
     }
 
@@ -403,7 +403,7 @@ contract MorphoUsdtPocketRoleManagementTests is MorphoUsdtPocketTestBase {
         vm.stopPrank();
 
         vm.prank(manager);
-        vm.expectRevert("BasePocket/not-authorized");
+        vm.expectRevert(IGroveBasinPocket.NotAuthorized.selector);
         pocket.withdrawLiquidity(100e6, address(usdt));
     }
 

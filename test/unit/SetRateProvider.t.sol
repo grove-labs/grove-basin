@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.24;
 
+import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
+
 import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 import { MockRateProvider }  from "test/mocks/MockRateProvider.sol";
 
@@ -22,7 +24,7 @@ contract GroveBasinSetRateProviderFailureTests is GroveBasinTestBase {
 
     function test_setRateProvider_invalidRateProvider() public {
         vm.prank(owner);
-        vm.expectRevert("GB/invalid-rp");
+        vm.expectRevert(IGroveBasin.InvalidRateProvider.selector);
         groveBasin.setRateProvider(address(swapToken), address(0));
     }
 
@@ -30,7 +32,7 @@ contract GroveBasinSetRateProviderFailureTests is GroveBasinTestBase {
         address newProvider = address(new MockRateProvider());
 
         vm.prank(owner);
-        vm.expectRevert("GB/rp-returns-zero");
+        vm.expectRevert(IGroveBasin.RateProviderReturnsZero.selector);
         groveBasin.setRateProvider(address(swapToken), newProvider);
     }
 
@@ -39,7 +41,7 @@ contract GroveBasinSetRateProviderFailureTests is GroveBasinTestBase {
         MockRateProvider(newProvider).__setConversionRate(1e27);
 
         vm.prank(owner);
-        vm.expectRevert("GB/invalid-token");
+        vm.expectRevert(IGroveBasin.InvalidToken.selector);
         groveBasin.setRateProvider(makeAddr("random"), newProvider);
     }
 

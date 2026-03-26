@@ -92,22 +92,22 @@ contract UsdsUsdcPocketTestBase is Test {
 contract UsdsUsdcPocketConstructorTests is UsdsUsdcPocketTestBase {
 
     function test_constructor_invalidBasin() public {
-        vm.expectRevert("BasePocket/invalid-basin");
+        vm.expectRevert(IGroveBasinPocket.InvalidBasin.selector);
         new UsdsUsdcPocket(address(0), address(usdc), address(usds), address(psm), groveProxy);
     }
 
     function test_constructor_invalidUsdc() public {
-        vm.expectRevert("UsdsUsdcPocket/invalid-usdc");
+        vm.expectRevert(UsdsUsdcPocket.InvalidUsdc.selector);
         new UsdsUsdcPocket(address(groveBasin), address(0), address(usds), address(psm), groveProxy);
     }
 
     function test_constructor_invalidUsds() public {
-        vm.expectRevert("UsdsUsdcPocket/invalid-usds");
+        vm.expectRevert(UsdsUsdcPocket.InvalidUsds.selector);
         new UsdsUsdcPocket(address(groveBasin), address(usdc), address(0), address(psm), groveProxy);
     }
 
     function test_constructor_invalidPsm() public {
-        vm.expectRevert("UsdsUsdcPocket/invalid-psm");
+        vm.expectRevert(UsdsUsdcPocket.InvalidPsm.selector);
         new UsdsUsdcPocket(address(groveBasin), address(usdc), address(usds), address(0), groveProxy);
     }
 
@@ -137,12 +137,12 @@ contract UsdsUsdcPocketConstructorTests is UsdsUsdcPocketTestBase {
 contract UsdsUsdcPocketAccessControlTests is UsdsUsdcPocketTestBase {
 
     function test_depositLiquidity_notAuthorized() public {
-        vm.expectRevert("BasePocket/not-authorized");
+        vm.expectRevert(IGroveBasinPocket.NotAuthorized.selector);
         pocket.depositLiquidity(100e6, address(usdc));
     }
 
     function test_withdrawLiquidity_notAuthorized() public {
-        vm.expectRevert("BasePocket/not-authorized");
+        vm.expectRevert(IGroveBasinPocket.NotAuthorized.selector);
         pocket.withdrawLiquidity(100e6, address(usdc));
     }
 
@@ -215,7 +215,7 @@ contract UsdsUsdcPocketRoleManagementTests is UsdsUsdcPocketTestBase {
         vm.stopPrank();
 
         vm.prank(manager);
-        vm.expectRevert("BasePocket/not-authorized");
+        vm.expectRevert(IGroveBasinPocket.NotAuthorized.selector);
         pocket.depositLiquidity(100e6, address(usdc));
     }
 
@@ -225,7 +225,7 @@ contract UsdsUsdcPocketRoleManagementTests is UsdsUsdcPocketTestBase {
         vm.stopPrank();
 
         vm.prank(manager);
-        vm.expectRevert("BasePocket/not-authorized");
+        vm.expectRevert(IGroveBasinPocket.NotAuthorized.selector);
         pocket.withdrawLiquidity(100e6, address(usdc));
     }
 

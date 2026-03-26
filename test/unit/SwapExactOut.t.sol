@@ -3,7 +3,8 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 
-import { GroveBasin } from "src/GroveBasin.sol";
+import { GroveBasin }  from "src/GroveBasin.sol";
+import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
 
 import { MockERC20, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
@@ -21,47 +22,47 @@ contract GroveBasinSwapExactOutFailureTests is GroveBasinTestBase {
     }
 
     function test_swapExactOut_amountZero() public {
-        vm.expectRevert("GB/zero-amountOut");
+        vm.expectRevert(IGroveBasin.ZeroAmountOut.selector);
         groveBasin.swapExactOut(address(swapToken), address(creditToken), 0, 0, receiver, 0);
     }
 
     function test_swapExactOut_receiverZero() public {
-        vm.expectRevert("GB/zero-receiver");
+        vm.expectRevert(IGroveBasin.ZeroReceiver.selector);
         groveBasin.swapExactOut(address(swapToken), address(creditToken), 100e6, 80e18, address(0), 0);
     }
 
     function test_swapExactOut_invalid_assetIn() public {
-        vm.expectRevert("GB/invalid-asset");
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
         groveBasin.swapExactOut(makeAddr("other-token"), address(creditToken), 100e6, 80e18, receiver, 0);
     }
 
     function test_swapExactOut_invalid_assetOut() public {
-        vm.expectRevert("GB/invalid-asset");
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
         groveBasin.swapExactOut(address(swapToken), makeAddr("other-token"), 100e6, 80e18, receiver, 0);
     }
 
     function test_swapExactOut_bothSwapToken() public {
-        vm.expectRevert("GB/invalid-asset");
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
         groveBasin.swapExactOut(address(swapToken), address(swapToken), 100e6, 80e18, receiver, 0);
     }
 
     function test_swapExactOut_bothCollateralToken() public {
-        vm.expectRevert("GB/invalid-asset");
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
         groveBasin.swapExactOut(address(collateralToken), address(collateralToken), 100e6, 80e18, receiver, 0);
     }
 
     function test_swapExactOut_bothCreditToken() public {
-        vm.expectRevert("GB/invalid-asset");
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
         groveBasin.swapExactOut(address(creditToken), address(creditToken), 100e6, 80e18, receiver, 0);
     }
 
     function test_swapExactOut_collateralTokenToSwapToken() public {
-        vm.expectRevert("GB/invalid-swap");
+        vm.expectRevert(IGroveBasin.InvalidSwap.selector);
         groveBasin.swapExactOut(address(collateralToken), address(swapToken), 100e6, 100e18, receiver, 0);
     }
 
     function test_swapExactOut_swapTokenToCollateralToken() public {
-        vm.expectRevert("GB/invalid-swap");
+        vm.expectRevert(IGroveBasin.InvalidSwap.selector);
         groveBasin.swapExactOut(address(swapToken), address(collateralToken), 100e18, 100e6, receiver, 0);
     }
 
@@ -76,7 +77,7 @@ contract GroveBasinSwapExactOutFailureTests is GroveBasinTestBase {
 
         assertEq(expectedAmountIn, 100e6);
 
-        vm.expectRevert("GB/amountIn-too-high");
+        vm.expectRevert(IGroveBasin.AmountInTooHigh.selector);
         groveBasin.swapExactOut(address(swapToken), address(creditToken), 80e18, 100e6 - 1, receiver, 0);
 
         groveBasin.swapExactOut(address(swapToken), address(creditToken), 80e18, 100e6, receiver, 0);
@@ -197,7 +198,7 @@ contract GroveBasinSwapExactOutSuccessTestsBase is GroveBasinTestBase {
 contract GroveBasinSwapExactOutCollateralTokenAssetInTests is GroveBasinSwapExactOutSuccessTestsBase {
 
     function test_swapExactOut_collateralTokenToSwapToken_reverts() public {
-        vm.expectRevert("GB/invalid-swap");
+        vm.expectRevert(IGroveBasin.InvalidSwap.selector);
         groveBasin.swapExactOut(address(collateralToken), address(swapToken), 100e6, 100e18, swapper, 0);
     }
 
@@ -243,7 +244,7 @@ contract GroveBasinSwapExactOutCollateralTokenAssetInTests is GroveBasinSwapExac
 contract GroveBasinSwapExactOutSwapTokenAssetInTests is GroveBasinSwapExactOutSuccessTestsBase {
 
     function test_swapExactOut_swapTokenToCollateralToken_reverts() public {
-        vm.expectRevert("GB/invalid-swap");
+        vm.expectRevert(IGroveBasin.InvalidSwap.selector);
         groveBasin.swapExactOut(address(swapToken), address(collateralToken), 100e18, 100e6, swapper, 0);
     }
 

@@ -23,6 +23,10 @@ contract AaveV3UsdtPocket is BasePocket {
 
     using SafeERC20 for IERC20;
 
+    error InvalidUsdt();
+    error InvalidAUsdt();
+    error InvalidAaveV3Pool();
+
     IERC20 public immutable usdt;
     IERC20 public immutable aUsdt;
 
@@ -40,9 +44,9 @@ contract AaveV3UsdtPocket is BasePocket {
         address aUsdt_,
         address aaveV3Pool_
     ) BasePocket(basin_) {
-        require(usdt_       != address(0), "AaveV3UsdtPocket/invalid-usdt");
-        require(aUsdt_      != address(0), "AaveV3UsdtPocket/invalid-aUsdt");
-        require(aaveV3Pool_ != address(0), "AaveV3UsdtPocket/invalid-aaveV3Pool");
+        if (usdt_       == address(0)) revert InvalidUsdt();
+        if (aUsdt_      == address(0)) revert InvalidAUsdt();
+        if (aaveV3Pool_ == address(0)) revert InvalidAaveV3Pool();
 
         usdt       = IERC20(usdt_);
         aUsdt      = IERC20(aUsdt_);
@@ -55,7 +59,7 @@ contract AaveV3UsdtPocket is BasePocket {
     function depositLiquidity(uint256 amount, address asset) external override onlyBasinOrManager returns (uint256) {
         if (amount == 0) return 0;
 
-        require(asset == address(usdt), "AaveV3UsdtPocket/invalid-asset");
+        if (asset != address(usdt)) revert InvalidAsset();
 
         emit LiquidityDeposited(asset, amount, amount);
 
@@ -70,7 +74,7 @@ contract AaveV3UsdtPocket is BasePocket {
     function withdrawLiquidity(uint256 amount, address asset) external override onlyBasinOrManager returns (uint256) {
         if (amount == 0) return 0;
 
-        require(asset == address(usdt), "AaveV3UsdtPocket/invalid-asset");
+        if (asset != address(usdt)) revert InvalidAsset();
 
         uint256 balance = usdt.balanceOf(address(this));
 

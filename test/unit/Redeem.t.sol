@@ -3,7 +3,8 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 
-import { GroveBasin } from "src/GroveBasin.sol";
+import { GroveBasin }  from "src/GroveBasin.sol";
+import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
 
 import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
@@ -45,7 +46,7 @@ contract GroveBasinInitiateRedeemInvalidRedeemerContractTests is GroveBasinTestB
         groveBasin.grantRole(redeemerRole, redeemer);
 
         vm.prank(redeemer);
-        vm.expectRevert("GB/invalid-redeemer");
+        vm.expectRevert(IGroveBasin.InvalidRedeemer.selector);
         groveBasin.initiateRedeem(invalidContract, 100e18);
     }
 
@@ -81,7 +82,7 @@ contract GroveBasinCompleteRedeemInvalidRedeemerContractTests is GroveBasinTestB
         groveBasin.grantRole(redeemerRole, redeemer);
 
         vm.prank(redeemer);
-        vm.expectRevert("GB/invalid-redeemer");
+        vm.expectRevert(IGroveBasin.InvalidRedeemer.selector);
         groveBasin.completeRedeem(invalidContract, 100e18);
     }
 

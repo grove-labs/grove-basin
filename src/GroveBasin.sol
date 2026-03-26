@@ -85,21 +85,19 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
         address collateralTokenRateProvider_,
         address creditTokenRateProvider_
     ) AccessControlDefaultAdminRules(0, owner_) {
-        require(liquidityProvider_ != address(0), "GB/invalid-lp");
+        if (liquidityProvider_ == address(0)) revert InvalidLiquidityProvider();
 
-        require(
-            swapToken_       != address(0) &&
-            collateralToken_ != address(0) &&
-            creditToken_     != address(0),
-            "GB/no-zero-tokens"
-        );
+        if (
+            swapToken_       == address(0) ||
+            collateralToken_ == address(0) ||
+            creditToken_     == address(0)
+        ) revert ZeroTokenAddress();
 
-        require(
-            swapToken_       != collateralToken_ &&
-            swapToken_       != creditToken_     &&
-            collateralToken_ != creditToken_,
-            "GB/tokens-must-be-unique"
-        );
+        if (
+            swapToken_       == collateralToken_ ||
+            swapToken_       == creditToken_     ||
+            collateralToken_ == creditToken_
+        ) revert DuplicateTokens();
 
         liquidityProvider = liquidityProvider_;
 
@@ -112,27 +110,24 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
         _creditTokenPrecision     = 10 ** IERC20(creditToken_).decimals();
 
         // Necessary to ensure rounding works as expected
-        require(
-            _creditTokenPrecision     <= 1e18 &&
-            _swapTokenPrecision       <= 1e18 &&
-            _collateralTokenPrecision <= 1e18,
-            "GB/precision-too-high"
-        );
+        if (
+            _creditTokenPrecision     > 1e18 ||
+            _swapTokenPrecision       > 1e18 ||
+            _collateralTokenPrecision > 1e18
+        ) revert PrecisionTooHigh();
 
         // Setup Rate Providers
-        require(
-            swapTokenRateProvider_       != address(0) &&
-            collateralTokenRateProvider_ != address(0) &&
-            creditTokenRateProvider_     != address(0), 
-            "GB/no-zero-rps"
-        );
+        if (
+            swapTokenRateProvider_       == address(0) ||
+            collateralTokenRateProvider_ == address(0) ||
+            creditTokenRateProvider_     == address(0)
+        ) revert ZeroRateProviderAddress();
 
-        require(
-            IRateProviderLike(swapTokenRateProvider_).getConversionRate()       != 0 &&
-            IRateProviderLike(collateralTokenRateProvider_).getConversionRate() != 0 &&
-            IRateProviderLike(creditTokenRateProvider_).getConversionRate()     != 0,
-            "GB/rp-returns-zero"
-        );
+        if (
+            IRateProviderLike(swapTokenRateProvider_).getConversionRate()       == 0 ||
+            IRateProviderLike(collateralTokenRateProvider_).getConversionRate() == 0 ||
+            IRateProviderLike(creditTokenRateProvider_).getConversionRate()     == 0
+        ) revert RateProviderReturnsZero();
 
         swapTokenRateProvider       = swapTokenRateProvider_;
         collateralTokenRateProvider = collateralTokenRateProvider_;
@@ -164,11 +159,8 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
     /// @inheritdoc IGroveBasin
     function setRateProvider(address token, address newRateProvider) external override onlyRole(MANAGER_ADMIN_ROLE) {
-        require(newRateProvider != address(0), "GB/invalid-rp");
-        require(
-            IRateProviderLike(newRateProvider).getConversionRate() != 0,
-            "GB/rp-returns-zero"
-        );
+        if (newRateProvider == address(0))                               revert InvalidRateProvider();
+        if (IRateProviderLike(newRateProvider).getConversionRate() == 0) revert RateProviderReturnsZero();
 
         address oldRateProvider;
 
@@ -182,7 +174,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
             oldRateProvider             = creditTokenRateProvider;
             creditTokenRateProvider     = newRateProvider;
         } else {
-            revert("GB/invalid-token");
+            revert InvalidToken();
         }
 
         emit RateProviderSet(token, oldRateProvider, newRateProvider);
@@ -192,7 +184,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     function setMaxSwapSizeBounds(uint256 newLowerBound, uint256 newUpperBound)
         external override onlyRole(MANAGER_ADMIN_ROLE)
     {
-        require(newLowerBound <= newUpperBound, "GB/min-gt-max-swap-size");
+        if (newLowerBound > newUpperBound) revert InvalidSwapSizeBounds();
 
         uint256 oldLowerBound = maxSwapSizeLowerBound;
         uint256 oldUpperBound = maxSwapSizeUpperBound;
@@ -216,8 +208,8 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     function setStalenessThresholdBounds(uint256 newMinThreshold, uint256 newMaxThreshold)
         external override onlyRole(MANAGER_ADMIN_ROLE)
     {
-        require(newMinThreshold != 0,               "GB/min-threshold-zero");
-        require(newMinThreshold <= newMaxThreshold, "GB/min-gt-max-threshold");
+        if (newMinThreshold == 0)              revert MinThresholdZero();
+        if (newMinThreshold > newMaxThreshold) revert InvalidThresholdBounds();
 
         uint256 oldMinThreshold = minStalenessThreshold;
         uint256 oldMaxThreshold = maxStalenessThreshold;
@@ -239,8 +231,8 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
     /// @inheritdoc IGroveBasin
     function setFeeBounds(uint256 newMinFee, uint256 newMaxFee) external override onlyRole(MANAGER_ADMIN_ROLE) {
-        require(newMinFee <= newMaxFee, "GB/min-fee-gt-max-fee");
-        require(newMaxFee <= BPS,       "GB/max-fee-gte-bps");
+        if (newMinFee > newMaxFee) revert MinFeeGreaterThanMaxFee();
+        if (newMaxFee > BPS)       revert MaxFeeExceedsBps();
 
         uint256 oldMinFee = minFee;
         uint256 oldMaxFee = maxFee;
@@ -269,11 +261,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     function setPocket(address newPocket) external override onlyRole(MANAGER_ADMIN_ROLE) {
         address pocket_ = pocket;
 
-        require(
-            newPocket != address(0) && 
-            newPocket != pocket_, 
-            "GB/invalid-pocket"
-        );
+        if (newPocket == address(0) || newPocket == pocket_) revert InvalidPocket();
 
         _withdrawLiquidityInPocket(_getAvailableBalance(swapToken), swapToken);
 
@@ -292,8 +280,8 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
     /// @inheritdoc IGroveBasin
     function addTokenRedeemer(address redeemer) external override onlyRole(MANAGER_ADMIN_ROLE) {
-        require(redeemer != address(0),                       "GB/invalid-redeemer");
-        require(_grantRole(REDEEMER_CONTRACT_ROLE, redeemer), "GB/redeemer-already-added");
+        if (redeemer == address(0))                        revert InvalidRedeemer();
+        if (!_grantRole(REDEEMER_CONTRACT_ROLE, redeemer)) revert RedeemerAlreadyAdded();
 
         ITokenRedeemer(redeemer).setUp(address(this));
 
@@ -302,7 +290,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
     /// @inheritdoc IGroveBasin
     function removeTokenRedeemer(address redeemer) external override onlyRole(MANAGER_ADMIN_ROLE) {
-        require(hasRole(REDEEMER_CONTRACT_ROLE, redeemer), "GB/invalid-redeemer");
+        if (!hasRole(REDEEMER_CONTRACT_ROLE, redeemer)) revert InvalidRedeemer();
 
         try ITokenRedeemer(redeemer).tearDown(address(this)) {} catch {}
 
@@ -345,10 +333,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
     /// @inheritdoc IGroveBasin
     function setMaxSwapSize(uint256 newMaxSwapSize) external override onlyRole(MANAGER_ROLE) {
-        require(
-            newMaxSwapSize >= maxSwapSizeLowerBound && newMaxSwapSize <= maxSwapSizeUpperBound,
-            "GB/swap-size-oob"
-        );
+        if (newMaxSwapSize < maxSwapSizeLowerBound || newMaxSwapSize > maxSwapSizeUpperBound) revert SwapSizeOutOfBounds();
 
         uint256 oldMaxSwapSize = maxSwapSize;
         maxSwapSize            = newMaxSwapSize;
@@ -365,7 +350,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
         else if (action == "creditToCollateral")  pausedCreditToCollateral  = paused;
         else if (action == "deposits")            pausedDeposits            = paused;
         else if (action == "initiateRedeem")      pausedInitiateRedeem      = paused;
-        else                                      revert("GB/invalid-action");
+        else                                      revert InvalidAction();
 
         emit PausedSet(action, paused);
     }
@@ -374,11 +359,11 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     function setStalenessThreshold(uint256 newThreshold)
         external override onlyRole(MANAGER_ROLE)
     {
-        require(newThreshold >= minStalenessThreshold && newThreshold <= maxStalenessThreshold, "GB/threshold-oob");
+        if (newThreshold < minStalenessThreshold || newThreshold > maxStalenessThreshold) revert ThresholdOutOfBounds();
 
         uint256 oldThreshold = stalenessThreshold;
 
-        require(newThreshold != oldThreshold, "GB/same-threshold");
+        if (newThreshold == oldThreshold) revert SameThreshold();
 
         stalenessThreshold = newThreshold;
         emit StalenessThresholdSet(oldThreshold, newThreshold);
@@ -413,14 +398,14 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     )
         external override returns (uint256 amountOut)
     {
-        require(amountIn != 0,          "GB/zero-amountIn");
-        require(receiver != address(0), "GB/zero-receiver");
+        if (amountIn == 0)          revert ZeroAmountIn();
+        if (receiver == address(0)) revert ZeroReceiver();
 
         _checkSwapNotPaused(assetIn, assetOut);
 
         amountOut = previewSwapExactIn(assetIn, assetOut, amountIn);
 
-        require(amountOut >= minAmountOut, "GB/amountOut-too-low");
+        if (amountOut < minAmountOut) revert AmountOutTooLow();
 
         _withdrawLiquidityInPocket(amountOut, assetOut);
         _pullAsset(assetIn, amountIn);
@@ -440,14 +425,14 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     )
         external override returns (uint256 amountIn)
     {
-        require(amountOut != 0,         "GB/zero-amountOut");
-        require(receiver != address(0), "GB/zero-receiver");
+        if (amountOut == 0)         revert ZeroAmountOut();
+        if (receiver == address(0)) revert ZeroReceiver();
 
         _checkSwapNotPaused(assetIn, assetOut);
 
         amountIn = previewSwapExactOut(assetIn, assetOut, amountOut);
 
-        require(amountIn <= maxAmountIn, "GB/amountIn-too-high");
+        if (amountIn > maxAmountIn) revert AmountInTooHigh();
 
         _withdrawLiquidityInPocket(amountOut, assetOut);
         _pullAsset(assetIn, amountIn);
@@ -464,12 +449,12 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     function depositInitial(address asset, uint256 assetsToDeposit)
         external override returns (uint256 newShares)
     {
-        require(totalShares == 0,     "GB/already-seeded");
-        require(assetsToDeposit != 0, "GB/zero-amount");
+        if (totalShares != 0)     revert AlreadySeeded();
+        if (assetsToDeposit == 0) revert ZeroAmount();
 
         newShares = previewDeposit(asset, assetsToDeposit);
 
-        require(newShares > 0, "GB/no-new-shares");
+        if (newShares == 0) revert NoNewShares();
 
         shares[address(0)] += newShares;
         totalShares        += newShares;
@@ -484,13 +469,13 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     function deposit(address asset, address receiver, uint256 assetsToDeposit)
         external override returns (uint256 newShares)
     {
-        require(!pausedDeposits,                 "GB/deposits-paused");
-        require(assetsToDeposit != 0,            "GB/zero-amount");
-        require(msg.sender == liquidityProvider, "GB/not-lp");
+        if (pausedDeposits)                  revert DepositsPaused();
+        if (assetsToDeposit == 0)            revert ZeroAmount();
+        if (msg.sender != liquidityProvider) revert NotLiquidityProvider();
 
         newShares = previewDeposit(asset, assetsToDeposit);
 
-        require(newShares > 0, "GB/no-new-shares");
+        if (newShares == 0) revert NoNewShares();
 
         shares[receiver] += newShares;
         totalShares      += newShares;
@@ -505,7 +490,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     function withdraw(address asset, address receiver, uint256 maxAssetsToWithdraw)
         external override returns (uint256 assetsWithdrawn)
     {
-        require(maxAssetsToWithdraw != 0, "GB/zero-amount");
+        if (maxAssetsToWithdraw == 0) revert ZeroAmount();
 
         uint256 sharesToBurn;
 
@@ -531,10 +516,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     function previewDeposit(address asset, uint256 assetsToDeposit)
         public view override returns (uint256)
     {
-        require(
-            !(asset == creditToken && creditTokenDepositsDisabled),
-            "GB/credit-deposits-disabled"
-        );
+        if (asset == creditToken && creditTokenDepositsDisabled) revert CreditDepositsDisabled();
 
         // Convert amount to 1e18 precision denominated in value of USD then convert to shares.
         // NOTE: Don't need to check valid asset here since `_getAssetValue` will revert if invalid
@@ -572,7 +554,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     function previewSwapExactIn(address assetIn, address assetOut, uint256 amountIn)
         public view override returns (uint256 amountOut)
     {
-        require(_getAssetValue(assetIn, amountIn, false) <= maxSwapSize, "GB/over-swap-size");
+        if (_getAssetValue(assetIn, amountIn, false) > maxSwapSize) revert SwapSizeExceeded();
 
         // Round down to get amountOut
         amountOut = _getSwapQuote(assetIn, assetOut, amountIn, false);
@@ -592,7 +574,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
         // Round up to get amountIn
         amountIn = _getSwapQuote(assetOut, assetIn, amountOut, true);
 
-        require(_getAssetValue(assetIn, amountIn, false) <= maxSwapSize, "GB/over-swap-size");
+        if (_getAssetValue(assetIn, amountIn, false) > maxSwapSize) revert SwapSizeExceeded();
 
         // Assumes no stable-to-stable swap
         if (assetOut == creditToken) {
@@ -690,7 +672,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
         if      (asset == swapToken)       return _getSwapTokenValue(amount);
         else if (asset == collateralToken) return _getCollateralTokenValue(amount);
         else if (asset == creditToken)     return _getCreditTokenValue(amount, roundUp);
-        else                               revert("GB/invalid-asset");
+        else                               revert InvalidAsset();
     }
 
     /// @dev Returns the USD value of `amount` of swap tokens in 1e18 precision.
@@ -733,12 +715,12 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
         internal view returns (uint256 quoteAmount)
     {
         if (asset == swapToken) {
-            if      (quoteAsset == collateralToken) revert("GB/invalid-swap");
+            if      (quoteAsset == collateralToken) revert InvalidSwap();
             else if (quoteAsset == creditToken)     return _convertSwapToCreditToken(amount, roundUp);
         }
 
         else if (asset == collateralToken) {
-            if      (quoteAsset == swapToken)      revert("GB/invalid-swap");
+            if      (quoteAsset == swapToken)      revert InvalidSwap();
             else if (quoteAsset == creditToken)    return _convertCollateralToCreditToken(amount, roundUp);
         }
 
@@ -747,7 +729,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
             else if (quoteAsset == collateralToken) return _convertCreditTokenToCollateral(amount, roundUp);
         }
 
-        revert("GB/invalid-asset");
+        revert InvalidAsset();
     }
 
     /// @dev Converts swap token amount to equivalent credit token amount.
@@ -844,10 +826,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
         uint256 lastUpdated;
         (rate, lastUpdated) = IRateProviderLike(rateProvider).getConversionRateWithAge();
 
-        require(
-            block.timestamp - lastUpdated <= stalenessThreshold,
-            "GB/stale-rate"
-        );
+        if (block.timestamp - lastUpdated > stalenessThreshold) revert StaleRate();
     }
 
     /**
@@ -895,19 +874,19 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     /// @dev Reverts if the swap direction from `assetIn` to `assetOut` is paused.
     function _checkSwapNotPaused(address assetIn, address assetOut) internal view {
         if (assetIn == swapToken && assetOut == creditToken) {
-            require(!pausedSwapToCredit, "GB/route-paused");
+            if (pausedSwapToCredit) revert RoutePaused();
         } else if (assetIn == creditToken && assetOut == swapToken) {
-            require(!pausedCreditToSwap, "GB/route-paused");
+            if (pausedCreditToSwap) revert RoutePaused();
         } else if (assetIn == collateralToken && assetOut == creditToken) {
-            require(!pausedCollateralToCredit, "GB/route-paused");
+            if (pausedCollateralToCredit) revert RoutePaused();
         } else if (assetIn == creditToken && assetOut == collateralToken) {
-            require(!pausedCreditToCollateral, "GB/route-paused");
+            if (pausedCreditToCollateral) revert RoutePaused();
         }
     }
 
     /// @dev Reverts if `asset` is not one of the three supported tokens.
     function _requireValidAsset(address asset) internal view {
-        require(asset == swapToken || asset == collateralToken || asset == creditToken, "GB/invalid-asset");
+        if (asset != swapToken && asset != collateralToken && asset != creditToken) revert InvalidAsset();
     }
 
     /// @dev Returns the address holding custody of `asset` (pocket for swap tokens, Basin otherwise).
@@ -931,8 +910,8 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
     /// @dev Approves and sends credit tokens to the redeemer to initiate an async redemption.
     function _initiateRedeem(address redeemer, uint256 creditTokenAmount) internal {
-        require(!pausedInitiateRedeem,                     "GB/initiate-redeem-paused");
-        require(hasRole(REDEEMER_CONTRACT_ROLE, redeemer), "GB/invalid-redeemer");
+        if (pausedInitiateRedeem)                       revert InitiateRedeemPaused();
+        if (!hasRole(REDEEMER_CONTRACT_ROLE, redeemer)) revert InvalidRedeemer();
 
         IERC20(creditToken).approve(redeemer, creditTokenAmount);
         ITokenRedeemer(redeemer).initiateRedeem(creditTokenAmount);
@@ -944,7 +923,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
     /// @dev Completes an async redemption, decreasing the tracked credit token balance.
     function _completeRedeem(address redeemer, uint256 creditTokenAmount) internal {
-        require(hasRole(REDEEMER_CONTRACT_ROLE, redeemer), "GB/invalid-redeemer");
+        if (!hasRole(REDEEMER_CONTRACT_ROLE, redeemer)) revert InvalidRedeemer();
 
         redeemedCreditTokenBalance = creditTokenAmount > redeemedCreditTokenBalance ? 0 : redeemedCreditTokenBalance - creditTokenAmount;
 
@@ -961,7 +940,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
     /// @dev Sets the purchase fee, enforcing it is within [minFee, maxFee].
     function _setPurchaseFee(uint256 newPurchaseFee) internal {
-        require(newPurchaseFee >= minFee && newPurchaseFee <= maxFee, "GB/purchase-fee-oob");
+        if (newPurchaseFee < minFee || newPurchaseFee > maxFee) revert PurchaseFeeOutOfBounds();
 
         uint256 oldPurchaseFee = purchaseFee;
         purchaseFee = newPurchaseFee;
@@ -971,7 +950,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
     /// @dev Sets the redemption fee, enforcing it is within [minFee, maxFee].
     function _setRedemptionFee(uint256 newRedemptionFee) internal {
-        require(newRedemptionFee >= minFee && newRedemptionFee <= maxFee, "GB/redemption-fee-oob");
+        if (newRedemptionFee < minFee || newRedemptionFee > maxFee) revert RedemptionFeeOutOfBounds();
 
         uint256 oldRedemptionFee = redemptionFee;
         redemptionFee = newRedemptionFee;

@@ -3,6 +3,8 @@ pragma solidity ^0.8.24;
 
 import { Math } from "openzeppelin-contracts/contracts/utils/math/Math.sol";
 
+import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
+
 import { MockERC20, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
 /**********************************************************************************************/
@@ -31,13 +33,13 @@ contract GroveBasinSetFeeBoundsFailureTests is GroveBasinTestBase {
 
     function test_setFeeBounds_minGtMax() public {
         vm.prank(owner);
-        vm.expectRevert("GB/min-fee-gt-max-fee");
+        vm.expectRevert(IGroveBasin.MinFeeGreaterThanMaxFee.selector);
         groveBasin.setFeeBounds(200, 100);
     }
 
     function test_setFeeBounds_maxGtBps() public {
         vm.prank(owner);
-        vm.expectRevert("GB/max-fee-gte-bps");
+        vm.expectRevert(IGroveBasin.MaxFeeExceedsBps.selector);
         groveBasin.setFeeBounds(0, 10_001);
     }
 
@@ -227,7 +229,7 @@ contract GroveBasinSetPurchaseFeeFailureTests is GroveBasinTestBase {
 
     function test_setPurchaseFee_aboveMax() public {
         vm.prank(owner);
-        vm.expectRevert("GB/purchase-fee-oob");
+        vm.expectRevert(IGroveBasin.PurchaseFeeOutOfBounds.selector);
         groveBasin.setPurchaseFee(501);
     }
 
@@ -239,7 +241,7 @@ contract GroveBasinSetPurchaseFeeFailureTests is GroveBasinTestBase {
         vm.stopPrank();
 
         vm.prank(owner);
-        vm.expectRevert("GB/purchase-fee-oob");
+        vm.expectRevert(IGroveBasin.PurchaseFeeOutOfBounds.selector);
         groveBasin.setPurchaseFee(49);
     }
 
@@ -335,7 +337,7 @@ contract GroveBasinSetRedemptionFeeFailureTests is GroveBasinTestBase {
 
     function test_setRedemptionFee_aboveMax() public {
         vm.prank(owner);
-        vm.expectRevert("GB/redemption-fee-oob");
+        vm.expectRevert(IGroveBasin.RedemptionFeeOutOfBounds.selector);
         groveBasin.setRedemptionFee(501);
     }
 
@@ -347,7 +349,7 @@ contract GroveBasinSetRedemptionFeeFailureTests is GroveBasinTestBase {
         vm.stopPrank();
 
         vm.prank(owner);
-        vm.expectRevert("GB/redemption-fee-oob");
+        vm.expectRevert(IGroveBasin.RedemptionFeeOutOfBounds.selector);
         groveBasin.setRedemptionFee(49);
     }
 

@@ -5,7 +5,8 @@ import "forge-std/Test.sol";
 
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
-import { GroveBasin }       from "src/GroveBasin.sol";
+import { GroveBasin }  from "src/GroveBasin.sol";
+import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
 import { UsdsUsdcPocket }   from "src/pockets/UsdsUsdcPocket.sol";
 import { AaveV3UsdtPocket } from "src/pockets/AaveV3UsdtPocket.sol";
 
@@ -29,13 +30,13 @@ contract GroveBasinSetPocketFailureTests is GroveBasinTestBase {
 
     function test_setPocket_invalidPocket() public {
         vm.prank(owner);
-        vm.expectRevert("GB/invalid-pocket");
+        vm.expectRevert(IGroveBasin.InvalidPocket.selector);
         groveBasin.setPocket(address(0));
     }
 
     function test_setPocket_samePocket() public {
         vm.prank(owner);
-        vm.expectRevert("GB/invalid-pocket");
+        vm.expectRevert(IGroveBasin.InvalidPocket.selector);
         groveBasin.setPocket(pocket);
     }
 

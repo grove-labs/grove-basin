@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.24;
 
+import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
+
 import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
 contract GroveBasinSetMaxSwapSizeFailureTests is GroveBasinTestBase {
@@ -21,7 +23,7 @@ contract GroveBasinSetMaxSwapSizeFailureTests is GroveBasinTestBase {
         groveBasin.setMaxSwapSizeBounds(100e18, 1_000_000e18);
 
         vm.prank(owner);
-        vm.expectRevert("GB/swap-size-oob");
+        vm.expectRevert(IGroveBasin.SwapSizeOutOfBounds.selector);
         groveBasin.setMaxSwapSize(50e18);
     }
 
@@ -30,7 +32,7 @@ contract GroveBasinSetMaxSwapSizeFailureTests is GroveBasinTestBase {
         groveBasin.setMaxSwapSizeBounds(100e18, 1_000_000e18);
 
         vm.prank(owner);
-        vm.expectRevert("GB/swap-size-oob");
+        vm.expectRevert(IGroveBasin.SwapSizeOutOfBounds.selector);
         groveBasin.setMaxSwapSize(2_000_000e18);
     }
 
@@ -40,7 +42,7 @@ contract GroveBasinSetMaxSwapSizeBoundsFailureTests is GroveBasinTestBase {
 
     function test_setMaxSwapSizeBounds_lowerBoundGreaterThanUpperBound() public {
         vm.prank(owner);
-        vm.expectRevert("GB/min-gt-max-swap-size");
+        vm.expectRevert(IGroveBasin.InvalidSwapSizeBounds.selector);
         groveBasin.setMaxSwapSizeBounds(1_000_000e18, 100e18);
     }
 
