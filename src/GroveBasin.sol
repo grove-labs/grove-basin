@@ -646,7 +646,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     /// @inheritdoc IGroveBasin
     function convertToShares(uint256 assetValue) public view override returns (uint256) {
         uint256 totalAssets_ = totalAssets();
-        if (totalShares != 0 && totalAssets_ != 0) {
+        if (totalAssets_ != 0) {
             return assetValue * totalShares / totalAssets_;
         }
         return assetValue;
