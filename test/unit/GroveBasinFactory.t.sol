@@ -18,8 +18,10 @@ contract GroveBasinFactoryTests is GroveBasinTestBase {
     }
 
     function test_deploy() public {
-        deal(address(swapToken), address(this), 1e6);
-        swapToken.approve(address(factory), 1e6);
+        uint256 seedAmount = 10 ** swapToken.decimals();
+
+        deal(address(swapToken), address(this), seedAmount);
+        swapToken.approve(address(factory), seedAmount);
 
         address newBasin = factory.deploy(
             owner,
@@ -46,14 +48,16 @@ contract GroveBasinFactoryTests is GroveBasinTestBase {
         assertEq(basin.shares(address(0)), 1e18);
         assertEq(basin.totalAssets(),       1e18);
 
-        assertEq(swapToken.balanceOf(newBasin),         1e6);
+        assertEq(swapToken.balanceOf(newBasin),         seedAmount);
         assertEq(swapToken.balanceOf(address(this)),    0);
         assertEq(swapToken.balanceOf(address(factory)), 0);
     }
 
     function test_deploy_emitsEvent() public {
-        deal(address(swapToken), address(this), 1e6);
-        swapToken.approve(address(factory), 1e6);
+        uint256 seedAmount = 10 ** swapToken.decimals();
+
+        deal(address(swapToken), address(this), seedAmount);
+        swapToken.approve(address(factory), seedAmount);
 
         vm.expectEmit(false, true, false, true);
         emit GroveBasinFactory.GroveBasinDeployed(
@@ -76,7 +80,9 @@ contract GroveBasinFactoryTests is GroveBasinTestBase {
     }
 
     function test_deploy_insufficientSwapTokenBalance() public {
-        swapToken.approve(address(factory), 1e6);
+        uint256 seedAmount = 10 ** swapToken.decimals();
+
+        swapToken.approve(address(factory), seedAmount);
 
         vm.expectRevert();
         factory.deploy(
@@ -91,7 +97,9 @@ contract GroveBasinFactoryTests is GroveBasinTestBase {
     }
 
     function test_deploy_noApproval() public {
-        deal(address(swapToken), address(this), 1e6);
+        uint256 seedAmount = 10 ** swapToken.decimals();
+
+        deal(address(swapToken), address(this), seedAmount);
 
         vm.expectRevert();
         factory.deploy(
@@ -106,8 +114,10 @@ contract GroveBasinFactoryTests is GroveBasinTestBase {
     }
 
     function test_deploy_seedSharesPermanentlyLocked() public {
-        deal(address(swapToken), address(this), 1e6);
-        swapToken.approve(address(factory), 1e6);
+        uint256 seedAmount = 10 ** swapToken.decimals();
+
+        deal(address(swapToken), address(this), seedAmount);
+        swapToken.approve(address(factory), seedAmount);
 
         address newBasin = factory.deploy(
             owner,
@@ -128,8 +138,10 @@ contract GroveBasinFactoryTests is GroveBasinTestBase {
     }
 
     function test_deploy_callerDoesNotRetainLpRole() public {
-        deal(address(swapToken), address(this), 1e6);
-        swapToken.approve(address(factory), 1e6);
+        uint256 seedAmount = 10 ** swapToken.decimals();
+
+        deal(address(swapToken), address(this), seedAmount);
+        swapToken.approve(address(factory), seedAmount);
 
         address newBasin = factory.deploy(
             owner,
@@ -149,8 +161,10 @@ contract GroveBasinFactoryTests is GroveBasinTestBase {
     }
 
     function test_deploy_multipleDeployments() public {
-        deal(address(swapToken), address(this), 2e6);
-        swapToken.approve(address(factory), 2e6);
+        uint256 seedAmount = 10 ** swapToken.decimals();
+
+        deal(address(swapToken), address(this), seedAmount * 2);
+        swapToken.approve(address(factory), seedAmount * 2);
 
         address basin1 = factory.deploy(
             owner,

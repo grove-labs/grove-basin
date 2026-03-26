@@ -47,7 +47,7 @@ contract GroveBasinConversionTestBase is GroveBasinTestBase {
 contract GroveBasinConvertToAssetsTests is GroveBasinTestBase {
 
     function test_convertToAssets_invalidAsset() public {
-        vm.expectRevert("GroveBasin/invalid-asset");
+        vm.expectRevert("GB/invalid-asset");
         groveBasin.convertToAssets(makeAddr("new-asset"), 100);
     }
 
@@ -338,7 +338,7 @@ contract GroveBasinConvertToSharesTests is GroveBasinConversionTestBase {
 contract GroveBasinConvertToSharesFailureTests is GroveBasinTestBase {
 
     function test_convertToShares_invalidAsset() public {
-        vm.expectRevert("GroveBasin/invalid-asset");
+        vm.expectRevert("GB/invalid-asset");
         groveBasin.convertToShares(makeAddr("new-asset"), 100);
     }
 

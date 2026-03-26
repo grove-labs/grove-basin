@@ -37,7 +37,7 @@ contract GroveBasinSetStalenessThresholdFailureTests is GroveBasinTestBase {
 
     function test_setStalenessThreshold_zero() public {
         vm.prank(manager);
-        vm.expectRevert("GroveBasin/threshold-too-low");
+        vm.expectRevert("GB/threshold-oob");
         groveBasin.setStalenessThreshold(0);
     }
 
@@ -46,25 +46,25 @@ contract GroveBasinSetStalenessThresholdFailureTests is GroveBasinTestBase {
         groveBasin.setStalenessThreshold(1 hours);
 
         vm.prank(manager);
-        vm.expectRevert("GroveBasin/same-staleness-threshold");
+        vm.expectRevert("GB/same-threshold");
         groveBasin.setStalenessThreshold(1 hours);
     }
 
     function test_setStalenessThreshold_tooLow() public {
         vm.prank(manager);
-        vm.expectRevert("GroveBasin/threshold-too-low");
+        vm.expectRevert("GB/threshold-oob");
         groveBasin.setStalenessThreshold(5 minutes - 1);
     }
 
     function test_setStalenessThreshold_tooHigh() public {
         vm.prank(manager);
-        vm.expectRevert("GroveBasin/threshold-too-high");
+        vm.expectRevert("GB/threshold-oob");
         groveBasin.setStalenessThreshold(48 hours + 1);
     }
 
     function test_setStalenessThreshold_minimumBoundary() public {
         vm.prank(manager);
-        vm.expectRevert("GroveBasin/threshold-too-low");
+        vm.expectRevert("GB/threshold-oob");
         groveBasin.setStalenessThreshold(1);
 
         vm.prank(manager);
@@ -94,13 +94,13 @@ contract GroveBasinSetStalenessThresholdBoundsFailureTests is GroveBasinTestBase
 
     function test_setStalenessThresholdBounds_minZero() public {
         vm.prank(owner);
-        vm.expectRevert("GroveBasin/min-threshold-zero");
+        vm.expectRevert("GB/min-threshold-zero");
         groveBasin.setStalenessThresholdBounds(0, 24 hours);
     }
 
     function test_setStalenessThresholdBounds_minGtMax() public {
         vm.prank(owner);
-        vm.expectRevert("GroveBasin/min-gt-max-threshold");
+        vm.expectRevert("GB/min-gt-max-threshold");
         groveBasin.setStalenessThresholdBounds(2 hours, 1 hours);
     }
 
@@ -202,7 +202,7 @@ contract GroveBasinSetStalenessThresholdBoundsSuccessTests is GroveBasinTestBase
         assertEq(groveBasin.stalenessThreshold(), 24 hours);
 
         vm.prank(manager);
-        vm.expectRevert("GroveBasin/threshold-too-high");
+        vm.expectRevert("GB/threshold-oob");
         groveBasin.setStalenessThreshold(24 hours + 1);
     }
 
@@ -249,7 +249,7 @@ contract GroveBasinSetStalenessThresholdSuccessTests is GroveBasinTestBase {
         groveBasin.setStalenessThreshold(1 hours);
 
         vm.prank(manager);
-        vm.expectRevert("GroveBasin/threshold-too-low");
+        vm.expectRevert("GB/threshold-oob");
         groveBasin.setStalenessThreshold(0);
     }
 
@@ -309,7 +309,7 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
 
         mockSwapTokenRateProvider.__setLastUpdated(1);
 
-        vm.expectRevert("GroveBasin/stale-rate");
+        vm.expectRevert("GB/stale-rate");
         freshBasin.totalAssets();
     }
 
@@ -320,21 +320,21 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
     function test_totalAssets_staleSwapRate() public {
         mockSwapTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours - 1);
 
-        vm.expectRevert("GroveBasin/stale-rate");
+        vm.expectRevert("GB/stale-rate");
         groveBasin.totalAssets();
     }
 
     function test_totalAssets_staleCollateralRate() public {
         mockCollateralTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours - 1);
 
-        vm.expectRevert("GroveBasin/stale-rate");
+        vm.expectRevert("GB/stale-rate");
         groveBasin.totalAssets();
     }
 
     function test_totalAssets_staleCreditRate() public {
         mockCreditTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours - 1);
 
-        vm.expectRevert("GroveBasin/stale-rate");
+        vm.expectRevert("GB/stale-rate");
         groveBasin.totalAssets();
     }
 
@@ -353,7 +353,7 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
 
         mockSwapTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours - 1);
 
-        vm.expectRevert("GroveBasin/stale-rate");
+        vm.expectRevert("GB/stale-rate");
         groveBasin.totalAssets();
     }
 
@@ -368,7 +368,7 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
         vm.startPrank(swapper);
         swapToken.approve(address(groveBasin), 100e6);
 
-        vm.expectRevert("GroveBasin/stale-rate");
+        vm.expectRevert("GB/stale-rate");
         groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, receiver, 0);
     }
 
@@ -379,7 +379,7 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
         vm.startPrank(swapper);
         swapToken.approve(address(groveBasin), 200e6);
 
-        vm.expectRevert("GroveBasin/stale-rate");
+        vm.expectRevert("GB/stale-rate");
         groveBasin.swapExactOut(address(swapToken), address(creditToken), 80e18, 200e6, receiver, 0);
     }
 
@@ -394,7 +394,7 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
         vm.startPrank(swapper);
         creditToken.approve(address(groveBasin), 100e18);
 
-        vm.expectRevert("GroveBasin/stale-rate");
+        vm.expectRevert("GB/stale-rate");
         groveBasin.deposit(address(creditToken), swapper, 100e18);
     }
 
@@ -406,7 +406,7 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
         mockSwapTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours - 1);
 
         vm.prank(swapper);
-        vm.expectRevert("GroveBasin/stale-rate");
+        vm.expectRevert("GB/stale-rate");
         groveBasin.withdraw(address(swapToken), swapper, 100e6);
     }
 
@@ -417,28 +417,28 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
     function test_previewSwapExactIn_staleRate() public {
         mockSwapTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours - 1);
 
-        vm.expectRevert("GroveBasin/stale-rate");
+        vm.expectRevert("GB/stale-rate");
         groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), 100e6);
     }
 
     function test_previewSwapExactOut_staleRate() public {
         mockSwapTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours - 1);
 
-        vm.expectRevert("GroveBasin/stale-rate");
+        vm.expectRevert("GB/stale-rate");
         groveBasin.previewSwapExactOut(address(swapToken), address(creditToken), 80e18);
     }
 
     function test_previewDeposit_staleRate() public {
         mockCollateralTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours - 1);
 
-        vm.expectRevert("GroveBasin/stale-rate");
+        vm.expectRevert("GB/stale-rate");
         groveBasin.previewDeposit(address(collateralToken), 100e18);
     }
 
     function test_previewWithdraw_staleRate() public {
         mockCreditTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours - 1);
 
-        vm.expectRevert("GroveBasin/stale-rate");
+        vm.expectRevert("GB/stale-rate");
         groveBasin.previewWithdraw(address(creditToken), 100e18);
     }
 
@@ -449,14 +449,14 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
     function test_convertToAssets_staleRate() public {
         mockSwapTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours - 1);
 
-        vm.expectRevert("GroveBasin/stale-rate");
+        vm.expectRevert("GB/stale-rate");
         groveBasin.convertToAssets(address(swapToken), 100e18);
     }
 
     function test_convertToShares_asset_staleRate() public {
         mockCollateralTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours - 1);
 
-        vm.expectRevert("GroveBasin/stale-rate");
+        vm.expectRevert("GB/stale-rate");
         groveBasin.convertToShares(address(collateralToken), 100e18);
     }
 
@@ -508,7 +508,7 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
 
         mockSwapTokenRateProvider.__setLastUpdated(block.timestamp - 2 hours);
 
-        vm.expectRevert("GroveBasin/stale-rate");
+        vm.expectRevert("GB/stale-rate");
         harness.getConversionRate(address(swapTokenRateProvider));
     }
 
@@ -525,7 +525,7 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
 
         mockSwapTokenRateProvider.__setLastUpdated(1);
 
-        vm.expectRevert("GroveBasin/stale-rate");
+        vm.expectRevert("GB/stale-rate");
         harness.getConversionRate(address(swapTokenRateProvider));
     }
 
@@ -547,7 +547,7 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
         mockCreditTokenRateProvider.__setLastUpdated(block.timestamp);
 
         if (age > threshold) {
-            vm.expectRevert("GroveBasin/stale-rate");
+            vm.expectRevert("GB/stale-rate");
             groveBasin.totalAssets();
         } else {
             assertGt(groveBasin.totalAssets(), 0);

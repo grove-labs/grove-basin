@@ -50,7 +50,7 @@ contract RedeemerRoleManagementTests is GroveBasinTestBase {
 
     function test_addTokenRedeemer_invalidZeroAddress() public {
         vm.prank(owner);
-        vm.expectRevert("GroveBasin/invalid-redeemer");
+        vm.expectRevert("GB/invalid-redeemer");
         groveBasin.addTokenRedeemer(address(0));
     }
 
@@ -58,7 +58,7 @@ contract RedeemerRoleManagementTests is GroveBasinTestBase {
         vm.startPrank(owner);
         groveBasin.addTokenRedeemer(address(redeemer));
 
-        vm.expectRevert("GroveBasin/redeemer-already-added");
+        vm.expectRevert("GB/redeemer-already-added");
         groveBasin.addTokenRedeemer(address(redeemer));
         vm.stopPrank();
     }
@@ -87,7 +87,7 @@ contract RedeemerRoleManagementTests is GroveBasinTestBase {
 
     function test_removeTokenRedeemer_notAdded() public {
         vm.prank(owner);
-        vm.expectRevert("GroveBasin/invalid-redeemer");
+        vm.expectRevert("GB/invalid-redeemer");
         groveBasin.removeTokenRedeemer(address(redeemer));
     }
 

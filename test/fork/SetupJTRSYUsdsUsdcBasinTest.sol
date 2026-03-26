@@ -22,7 +22,7 @@ contract SetupJTRSYUsdsUsdcBasinTest is Test, SetupJTRSYUsdsUsdcBasin {
         _mockRateProvider(USDS_USDC_CHRONICLE_RATE_PROVIDER, 1e27);
         _mockRateProvider(JTRSY_CHRONICLE_RATE_PROVIDER,     1.05e27);
 
-        deal(Ethereum.USDS, address(this), 1e6);
+        deal(Ethereum.USDS, address(this), 1e18);
 
         (address groveBasin_, address pocket_, address redeemer_) = this.deploy();
 

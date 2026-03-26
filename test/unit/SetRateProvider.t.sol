@@ -22,7 +22,7 @@ contract GroveBasinSetRateProviderFailureTests is GroveBasinTestBase {
 
     function test_setRateProvider_invalidRateProvider() public {
         vm.prank(owner);
-        vm.expectRevert("GroveBasin/invalid-rate-provider");
+        vm.expectRevert("GB/invalid-rp");
         groveBasin.setRateProvider(address(swapToken), address(0));
     }
 
@@ -30,7 +30,7 @@ contract GroveBasinSetRateProviderFailureTests is GroveBasinTestBase {
         address newProvider = address(new MockRateProvider());
 
         vm.prank(owner);
-        vm.expectRevert("GroveBasin/rate-provider-returns-zero");
+        vm.expectRevert("GB/rp-returns-zero");
         groveBasin.setRateProvider(address(swapToken), newProvider);
     }
 
@@ -39,7 +39,7 @@ contract GroveBasinSetRateProviderFailureTests is GroveBasinTestBase {
         MockRateProvider(newProvider).__setConversionRate(1e27);
 
         vm.prank(owner);
-        vm.expectRevert("GroveBasin/invalid-token");
+        vm.expectRevert("GB/invalid-token");
         groveBasin.setRateProvider(makeAddr("random"), newProvider);
     }
 

@@ -39,21 +39,21 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
         collateralToken.mint(user1, 1);
         vm.startPrank(user1);
         collateralToken.approve(address(groveBasin), 1);
-        vm.expectRevert("GroveBasin/no-new-shares");
+        vm.expectRevert("GB/no-new-shares");
         groveBasin.deposit(address(collateralToken), user1, 1);
         vm.stopPrank();
     }
 
     function test_deposit_zeroAmount() public {
         vm.prank(user1);
-        vm.expectRevert("GroveBasin/invalid-amount");
+        vm.expectRevert("GB/invalid-amount");
         groveBasin.deposit(address(swapToken), user1, 0);
     }
 
     function test_deposit_invalidAsset() public {
         // NOTE: This reverts in _getAssetValue
         vm.prank(user1);
-        vm.expectRevert("GroveBasin/invalid-asset-for-value");
+        vm.expectRevert("GB/invalid-asset");
         groveBasin.deposit(makeAddr("new-asset"), user1, 100e6);
     }
 

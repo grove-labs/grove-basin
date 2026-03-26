@@ -86,7 +86,7 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         vm.startPrank(lp);
         creditToken.approve(address(groveBasin), 100e18);
 
-        vm.expectRevert("GroveBasin/creditToken-deposits-disabled");
+        vm.expectRevert("GB/creditToken-deposits-disabled");
         groveBasin.deposit(address(creditToken), lp, 100e18);
         vm.stopPrank();
     }
@@ -95,7 +95,7 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         vm.prank(owner);
         groveBasin.setCreditTokenDepositsDisabled(true);
 
-        vm.expectRevert("GroveBasin/creditToken-deposits-disabled");
+        vm.expectRevert("GB/creditToken-deposits-disabled");
         groveBasin.previewDeposit(address(creditToken), 100e18);
     }
 
