@@ -236,14 +236,14 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         vm.prank(user1);
         uint256 amount = groveBasin.withdraw(address(swapToken), receiver1, 125e6);
 
-        assertEq(amount, 100e6);  // Capped at pocket balance
+        assertEq(amount, 100e6);
 
         assertEq(swapToken.balanceOf(user1),     0);
         assertEq(swapToken.balanceOf(receiver1), 100e6);
         assertEq(_pocketSwapBalance(),           0);
 
-        assertEq(groveBasin.totalShares(), 125e18);  // Burns $100 of shares, 225-100=125
-        assertEq(groveBasin.shares(user1), 125e18);  // 225 - 100
+        assertEq(groveBasin.totalShares(), 125e18);  // Only burns $100 of shares
+        assertEq(groveBasin.shares(user1), 125e18);
     }
 
     function test_withdraw_amountHigherThanUserShares() public {
@@ -267,9 +267,9 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
 
         assertEq(swapToken.balanceOf(user2),     0);
         assertEq(swapToken.balanceOf(receiver2), 200e6);  // Gets highest amount possible
-        assertEq(_pocketSwapBalance(),           100e6);  // 300 - 200
+        assertEq(_pocketSwapBalance(),           100e6);
 
-        assertEq(groveBasin.totalShares(), 225e18);  // 425 - 200
+        assertEq(groveBasin.totalShares(), 225e18);
         assertEq(groveBasin.shares(user2), 0);  // Burns the users full amount of shares
     }
 
@@ -494,8 +494,12 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
 
         mockCreditTokenRateProvider.__setConversionRate(1.5e27);
 
-        // Total shares (225e18) / totalAssets (250e18)
-        assertEq(groveBasin.convertToShares(1e18), uint256(225e18) / 250);
+        // Total shares / (100 USDC + 150 creditToken value)
+        uint256 expectedConversionRate = 225 * 1e18 / 250;
+
+        assertEq(expectedConversionRate, 0.9e18);
+
+        assertEq(groveBasin.convertToShares(1e18), 0.9e18);
 
         assertEq(swapToken.balanceOf(user1),  0);
         assertEq(_pocketSwapBalance(), 100e6);
@@ -508,7 +512,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         vm.prank(user1);
         uint256 amount = groveBasin.withdraw(address(swapToken), user1, type(uint256).max);
 
-        assertEq(amount, 100e6);  // Drains full pocket (user shares cover it)
+        assertEq(amount, 100e6);
 
         assertEq(swapToken.balanceOf(user1),  100e6);
         assertEq(_pocketSwapBalance(), 0);
@@ -517,23 +521,17 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         assertEq(creditToken.balanceOf(user2),        0);
         assertEq(creditToken.balanceOf(address(groveBasin)), 100e18);
 
-        // sharesToBurn = ceil(100e18 * 225e18 / 250e18)
-        uint256 sharesToBurnForSwap = (uint256(100e18) * 225e18 + 250e18 - 1) / 250e18;
-        uint256 user1RemainingShares = 100e18 - sharesToBurnForSwap;
-        uint256 totalSharesAfterSwap = 225e18 - sharesToBurnForSwap;
-
-        assertEq(groveBasin.totalShares(), totalSharesAfterSwap);
-        assertEq(groveBasin.shares(user1), user1RemainingShares);
+        assertEq(groveBasin.totalShares(), 135e18);
+        assertEq(groveBasin.shares(user1), 10e18);  // Burn 90 shares to get 100 USDC
         assertEq(groveBasin.shares(user2), 125e18);
 
         vm.prank(user1);
         amount = groveBasin.withdraw(address(creditToken), user1, type(uint256).max);
 
-        // After swap withdrawal, totalAssets = 150e18 (only credit remains)
-        // user1 gets: user1RemainingShares * totalAssets / totalShares * 1e27 / conversionRate
-        uint256 user1CreditToken = user1RemainingShares * 150e18 / totalSharesAfterSwap * 1e27 / 1.5e27;
+        uint256 user1CreditToken = uint256(10e18) * 1e18 / 0.9e18 * 1e27 / 1.5e27;
 
-        assertEq(amount, user1CreditToken);
+        assertEq(amount,     user1CreditToken);
+        assertEq(user1CreditToken, 7.407407407407407407e18);
 
         assertEq(creditToken.balanceOf(user1),               user1CreditToken);
         assertEq(creditToken.balanceOf(user2),               0);
@@ -546,27 +544,27 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         vm.prank(user2);
         amount = groveBasin.withdraw(address(creditToken), user2, type(uint256).max);
 
-        uint256 user2CreditToken = amount;
-
-        assertApproxEqAbs(user2CreditToken, 100e18 - user1CreditToken, 1);
+        assertEq(amount, 100e18 - user1CreditToken - 1);  // Remaining funds in GroveBasin (rounding)
 
         assertEq(creditToken.balanceOf(user1),               user1CreditToken);
-        assertEq(creditToken.balanceOf(user2),               user2CreditToken);
-        assertEq(creditToken.balanceOf(address(groveBasin)), 100e18 - user1CreditToken - user2CreditToken);
+        assertEq(creditToken.balanceOf(user2),               100e18 - user1CreditToken - 1);  // Rounding
+        assertEq(creditToken.balanceOf(address(groveBasin)), 1);                               // Rounding
 
         assertEq(groveBasin.totalShares(), 0);
         assertEq(groveBasin.shares(user1), 0);
         assertEq(groveBasin.shares(user2), 0);
 
         uint256 user1ResultingValue = swapToken.balanceOf(user1) * 1e12 + creditToken.balanceOf(user1) * 150/100;
-        uint256 user2ResultingValue = creditToken.balanceOf(user2) * 150/100;
+        uint256 user2ResultingValue = creditToken.balanceOf(user2) * 150/100;  // Use 1.5 conversion rate
 
-        // Both users' value gains should be approximately proportional
-        assertApproxEqRel(
-            (user1ResultingValue - 100e18) * 1e18 / 100e18,
-            (user2ResultingValue - 125e18) * 1e18 / 125e18,
-            0.01e18
-        );
+        assertEq(user1ResultingValue, 111.111111111111111110e18);
+        assertEq(user2ResultingValue, 138.888888888888888888e18);
+
+        assertEq(user1ResultingValue + user2ResultingValue, 249.999999999999999998e18);
+
+        // Value gains are the same for both users
+        assertEq((user1ResultingValue - 100e18) * 1e18 / 100e18, 0.111111111111111111e18);
+        assertEq((user2ResultingValue - 125e18) * 1e18 / 125e18, 0.111111111111111111e18);
     }
 
     function testFuzz_withdraw_changeConversionRate(

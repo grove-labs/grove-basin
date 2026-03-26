@@ -87,12 +87,12 @@ contract DepositInitialTests is GroveBasinTestBase {
         vm.stopPrank();
 
         assertEq(newShares, 100e18);
-        assertEq(freshBasin.shares(lp),     100e18);
-        assertEq(freshBasin.shares(anyone), 0);
+        assertEq(freshBasin.shares(anyone), 100e18);
+        assertEq(freshBasin.shares(lp),     0);
         assertEq(freshBasin.totalShares(),  100e18);
     }
 
-    function test_depositInitial_receiverIgnored() public {
+    function test_depositInitial_sharesToReceiver() public {
         address receiver = makeAddr("receiver");
 
         swapToken.mint(depositor, 100e6);
@@ -101,8 +101,9 @@ contract DepositInitialTests is GroveBasinTestBase {
         freshBasin.depositInitial(address(swapToken), receiver, 100e6);
         vm.stopPrank();
 
-        assertEq(freshBasin.shares(lp),       100e18);
-        assertEq(freshBasin.shares(receiver), 0);
+        assertEq(freshBasin.shares(receiver),  100e18);
+        assertEq(freshBasin.shares(lp),        0);
+        assertEq(freshBasin.shares(depositor), 0);
     }
 
     function test_depositInitial_swapToken() public {
@@ -123,8 +124,8 @@ contract DepositInitialTests is GroveBasinTestBase {
         assertEq(swapToken.balanceOf(address(freshBasin)), 100e6);
 
         assertEq(freshBasin.totalShares(),     100e18);
-        assertEq(freshBasin.shares(lp),        100e18);
-        assertEq(freshBasin.shares(depositor), 0);
+        assertEq(freshBasin.shares(depositor), 100e18);
+        assertEq(freshBasin.shares(lp),        0);
     }
 
     function test_depositInitial_collateralToken() public {
@@ -141,8 +142,8 @@ contract DepositInitialTests is GroveBasinTestBase {
         assertEq(collateralToken.balanceOf(address(freshBasin)), 100e18);
 
         assertEq(freshBasin.totalShares(),     100e18);
-        assertEq(freshBasin.shares(lp),        100e18);
-        assertEq(freshBasin.shares(depositor), 0);
+        assertEq(freshBasin.shares(depositor), 100e18);
+        assertEq(freshBasin.shares(lp),        0);
     }
 
     function test_depositInitial_creditToken() public {
@@ -160,8 +161,8 @@ contract DepositInitialTests is GroveBasinTestBase {
         assertEq(creditToken.balanceOf(address(freshBasin)), 100e18);
 
         assertEq(freshBasin.totalShares(),     125e18);
-        assertEq(freshBasin.shares(lp),        125e18);
-        assertEq(freshBasin.shares(depositor), 0);
+        assertEq(freshBasin.shares(depositor), 125e18);
+        assertEq(freshBasin.shares(lp),        0);
     }
 
     function test_depositInitial_event() public {
@@ -171,7 +172,7 @@ contract DepositInitialTests is GroveBasinTestBase {
         swapToken.approve(address(freshBasin), 100e6);
 
         vm.expectEmit(address(freshBasin));
-        emit IGroveBasin.Deposit(address(swapToken), depositor, lp, 100e6, 100e18);
+        emit IGroveBasin.Deposit(address(swapToken), depositor, depositor, 100e6, 100e18);
         freshBasin.depositInitial(address(swapToken), depositor, 100e6);
         vm.stopPrank();
     }
@@ -183,8 +184,9 @@ contract DepositInitialTests is GroveBasinTestBase {
         freshBasin.depositInitial(address(swapToken), depositor, 10e6);
         vm.stopPrank();
 
-        assertEq(freshBasin.totalShares(), 10e18);
-        assertEq(freshBasin.shares(lp),    10e18);
+        assertEq(freshBasin.totalShares(),     10e18);
+        assertEq(freshBasin.shares(depositor), 10e18);
+        assertEq(freshBasin.shares(lp),        0);
 
         // LP can still use regular deposit
         swapToken.mint(lp, 90e6);
@@ -194,8 +196,9 @@ contract DepositInitialTests is GroveBasinTestBase {
         vm.stopPrank();
 
         assertEq(newShares, 90e18);
-        assertEq(freshBasin.totalShares(), 100e18);
-        assertEq(freshBasin.shares(lp),    100e18);
+        assertEq(freshBasin.totalShares(),     100e18);
+        assertEq(freshBasin.shares(depositor), 10e18);
+        assertEq(freshBasin.shares(lp),        90e18);
     }
 
     /**********************************************************************************************/
@@ -212,8 +215,8 @@ contract DepositInitialTests is GroveBasinTestBase {
         vm.stopPrank();
 
         assertEq(newShares, amount * 1e12);
-        assertEq(freshBasin.totalShares(), amount * 1e12);
-        assertEq(freshBasin.shares(lp),    amount * 1e12);
+        assertEq(freshBasin.totalShares(),     amount * 1e12);
+        assertEq(freshBasin.shares(depositor), amount * 1e12);
     }
 
     function testFuzz_depositInitial_collateralToken(uint256 amount) public {
@@ -226,8 +229,8 @@ contract DepositInitialTests is GroveBasinTestBase {
         vm.stopPrank();
 
         assertEq(newShares, amount);
-        assertEq(freshBasin.totalShares(), amount);
-        assertEq(freshBasin.shares(lp),    amount);
+        assertEq(freshBasin.totalShares(),     amount);
+        assertEq(freshBasin.shares(depositor), amount);
     }
 
     function testFuzz_depositInitial_creditToken(uint256 amount) public {
@@ -240,8 +243,8 @@ contract DepositInitialTests is GroveBasinTestBase {
         vm.stopPrank();
 
         assertEq(newShares, amount * 125 / 100);
-        assertEq(freshBasin.totalShares(), amount * 125 / 100);
-        assertEq(freshBasin.shares(lp),    amount * 125 / 100);
+        assertEq(freshBasin.totalShares(),     amount * 125 / 100);
+        assertEq(freshBasin.shares(depositor), amount * 125 / 100);
     }
 
     /**********************************************************************************************/
@@ -262,9 +265,10 @@ contract DepositInitialTests is GroveBasinTestBase {
             address(creditTokenRateProvider)
         );
 
-        assertEq(GroveBasin(newBasin).totalShares(), 1e18);
-        assertEq(GroveBasin(newBasin).shares(lp),    1e18);
-        assertEq(swapToken.balanceOf(newBasin),       1e6);
+        assertEq(GroveBasin(newBasin).totalShares(),      1e18);
+        assertEq(GroveBasin(newBasin).shares(address(0)), 1e18);
+        assertEq(GroveBasin(newBasin).shares(lp),         0);
+        assertEq(swapToken.balanceOf(newBasin),            1e6);
     }
 
 }

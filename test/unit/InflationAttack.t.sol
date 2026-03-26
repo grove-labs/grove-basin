@@ -55,33 +55,29 @@ contract InflationAttackTests is GroveBasinTestBase {
         vm.prank(frontRunner);
         swapToken.transfer(pocket, 10_000_000e6);
 
-        // With only 1 share, the front runner's share is now worth the entire pool
-        uint256 frontRunnerShareValue = groveBasin.convertToAssetValue(1);
-        assertGt(frontRunnerShareValue, 0);
+        // Highly inflated exchange rate
+        assertEq(groveBasin.convertToAssetValue(1), 10_000_000e18 + 1);
 
-        // Step 3: First depositor deposits 20M USDC
+        // Step 3: First depositor deposits 20 million USDC, only gets one share because rounding
+        //         error gives them 1 instead of 2 shares, worth 15m USDC
+
         _deposit(address(swapToken), firstDepositor, 20_000_000e6);
 
-        // First depositor gets shares based on the inflated pool
-        uint256 firstDepositorShares = groveBasin.shares(firstDepositor);
-        assertGt(firstDepositorShares, 0);
+        assertEq(groveBasin.shares(firstDepositor), 1);
+
+        // 1 share = 30 million USDC / 2 shares = 15 million USDC
+        assertEq(groveBasin.convertToAssetValue(1), 15_000_000e18);
 
         // Step 4: Both users withdraw the max amount of funds they can
+
         _withdraw(address(swapToken), firstDepositor, type(uint256).max);
         _withdraw(address(swapToken), frontRunner,    type(uint256).max);
 
-        // Without a seed deposit to dilute the attacker, the inflation attack is
-        // partially effective. The first depositor loses value to the front runner.
-        // This is mitigated when the deployer makes a sufficiently large initial deposit.
-        uint256 firstDepositorBalance = swapToken.balanceOf(firstDepositor);
-        uint256 frontRunnerBalance    = swapToken.balanceOf(frontRunner);
+        assertEq(_pocketSwapBalance(), 0);
 
-        // Both get a share of the pool
-        assertGt(firstDepositorBalance, 0);
-        assertGt(frontRunnerBalance,    0);
-
-        // Total withdrawn equals total in pool
-        assertEq(firstDepositorBalance + frontRunnerBalance, 30_000_000e6);
+        // Front runner profits 5m USDC, first depositor loses 5m USDC
+        assertEq(swapToken.balanceOf(firstDepositor), 15_000_000e6);
+        assertEq(swapToken.balanceOf(frontRunner),    15_000_000e6);
     }
 
     function _runInflationAttack_mitigatedByDeployerTest() internal {
@@ -96,33 +92,29 @@ contract InflationAttackTests is GroveBasinTestBase {
         vm.prank(frontRunner);
         swapToken.transfer(pocket, 10_000_000e6);
 
-        // Value is transferred to existing holders (deployer)
-        uint256 frontRunnerShareValue = groveBasin.convertToAssetValue(1);
-        assertLt(frontRunnerShareValue, 1e18);  // Less than $1
+        // Still inflated, but all value is transferred to existing holder, deployer
+        assertEq(groveBasin.convertToAssetValue(1), 0.00000000001e18);
 
-        // Step 3: First depositor deposits 20M USDC - gets accurate shares
+        // Step 3: First depositor deposits 20 million USDC, this time rounding is not an issue
+        //         so value reflected is much more accurate
+
         _deposit(address(swapToken), firstDepositor, 20_000_000e6);
 
-        // First depositor gets meaningful shares
-        assertGt(groveBasin.shares(firstDepositor), 1e18);
+        assertEq(groveBasin.shares(firstDepositor), 1.999999800000020001e18);
 
         // Higher amount of initial shares means lower rounding error
-        uint256 firstDepositorValue = groveBasin.convertToAssetValue(groveBasin.shares(firstDepositor));
-        assertApproxEqRel(firstDepositorValue, 20_000_000e18, 0.0001e18); // Within 0.01%
+        assertEq(groveBasin.convertToAssetValue(1.999999800000020001e18), 19_999_999.999999999996673334e18);
 
-        // Step 4: All users withdraw
+        // Step 4: Both users withdraw the max amount of funds they can
+
         _withdraw(address(swapToken), firstDepositor, type(uint256).max);
         _withdraw(address(swapToken), frontRunner,    type(uint256).max);
         _withdraw(address(swapToken), deployer,       type(uint256).max);
 
-        // Front runner loses all donated funds to deployer
-        assertEq(swapToken.balanceOf(frontRunner), 0);
-
-        // First depositor gets almost all their money back
-        assertApproxEqRel(swapToken.balanceOf(firstDepositor), 20_000_000e6, 0.0001e18);
-
-        // Deployer captures a portion of the front runner's donated funds
-        assertGt(swapToken.balanceOf(deployer), 0);
+        // Front runner loses full 10m USDC to the deployer that had all shares at the beginning, first depositor loses nothing (1e-6 USDC)
+        assertEq(swapToken.balanceOf(firstDepositor), 19_999_999.999999e6);
+        assertEq(swapToken.balanceOf(frontRunner),    0);
+        assertEq(swapToken.balanceOf(deployer),       10_000_000.000001e6);
     }
 
 }

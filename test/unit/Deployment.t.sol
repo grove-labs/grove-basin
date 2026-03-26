@@ -41,8 +41,7 @@ contract GroveBasinDeployTests is GroveBasinTestBase {
         assertEq(swapToken.balanceOf(address(newGroveBasin)), seedAmount);
 
         assertEq(newGroveBasin.totalShares(),      1e18);
-        assertEq(newGroveBasin.shares(lp),         1e18);
-        assertEq(newGroveBasin.shares(address(0)), 0);
+        assertEq(newGroveBasin.shares(address(0)), 1e18);
     }
 
 }

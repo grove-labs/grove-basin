@@ -596,14 +596,23 @@ contract GroveBasinConvertToSharesWithSwapTokenTests is GroveBasinConversionTest
         uint256 newValue
             = vars.collateralTokenAmount + vars.swapTokenAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
 
-        uint256 totalSharesAll = vars.expectedShares;
-        uint256 totalAssetsAll = newValue;
+        // Larger rounding error because of 1e6 precision
+        assertApproxEqAbs(
+            groveBasin.convertToShares(address(swapToken), newValue / 1e12),
+            vars.expectedShares,
+            1e12
+        );
+
+        // Make sure that rounding error here is always against the user
+        assertLe(
+            groveBasin.convertToShares(address(swapToken), newValue / 1e12),
+            vars.expectedShares
+        );
 
         // This is the exact calculation of what is happening
-        uint256 exactShares = (newValue / 1e12 * 1e12) * totalSharesAll / totalAssetsAll;
         assertEq(
             groveBasin.convertToShares(address(swapToken), newValue / 1e12),
-            exactShares
+            (newValue / 1e12 * 1e12) * vars.expectedShares / newValue
         );
 
         // Value change is only from creditToken exchange rate increasing
@@ -644,14 +653,23 @@ contract GroveBasinConvertToSharesWithSwapTokenTests is GroveBasinConversionTest
         uint256 newValue
             = vars.collateralTokenAmount + vars.swapTokenAmount * 1e12 + vars.creditTokenAmount * conversionRate / 1e27;
 
-        uint256 totalSharesAll = vars.expectedShares;
-        uint256 totalAssetsAll = newValue;
+        // Rounding scales with difference between expectedShares and newValue
+        assertApproxEqAbs(
+            groveBasin.convertToShares(address(swapToken), newValue / 1e12),
+            vars.expectedShares,
+            1e12 + initialValue * 1e18 / newValue
+        );
+
+        // Make sure that rounding error here is always against the user
+        assertLe(
+            groveBasin.convertToShares(address(swapToken), newValue / 1e12),
+            vars.expectedShares
+        );
 
         // This is the exact calculation of what is happening
-        uint256 exactShares = (newValue / 1e12 * 1e12) * totalSharesAll / totalAssetsAll;
         assertEq(
             groveBasin.convertToShares(address(swapToken), newValue / 1e12),
-            exactShares
+            (newValue / 1e12 * 1e12) * vars.expectedShares / newValue
         );
 
         // Value change is only from creditToken exchange rate decreasing
@@ -767,13 +785,23 @@ contract GroveBasinConvertToSharesWithCreditTokenTests is GroveBasinConversionTe
 
         uint256 newCreditTokenValue = newValue * 1e27 / conversionRate;
 
-        uint256 totalSharesAll = vars.expectedShares;
-        uint256 totalAssetsAll = newValue;
+        // Depositing derived creditToken amount yields the same amount of shares (approx)
+        assertApproxEqAbs(
+            groveBasin.convertToShares(address(creditToken), newCreditTokenValue),
+            vars.expectedShares,
+            1000
+        );
+
+        // Make sure that rounding error here is always against the user
+        assertLe(
+            groveBasin.convertToShares(address(creditToken), newCreditTokenValue),
+            vars.expectedShares
+        );
 
         // This is the exact calculation of what is happening
         assertEq(
             groveBasin.convertToShares(address(creditToken), newCreditTokenValue),
-            (newCreditTokenValue * conversionRate / 1e27) * totalSharesAll / totalAssetsAll
+            (newCreditTokenValue * conversionRate / 1e27) * vars.expectedShares / newValue
         );
 
         // Value change is only from creditToken exchange rate increasing
@@ -821,13 +849,23 @@ contract GroveBasinConvertToSharesWithCreditTokenTests is GroveBasinConversionTe
 
         uint256 newCreditTokenValue = newValue * 1e27 / conversionRate;
 
-        uint256 totalSharesAll = vars.expectedShares;
-        uint256 totalAssetsAll = newValue;
+        // Depositing derived creditToken amount yields the same amount of shares (approx)
+        assertApproxEqAbs(
+            groveBasin.convertToShares(address(creditToken), newCreditTokenValue),
+            vars.expectedShares,
+            2000
+        );
+
+        // Make sure that rounding error here is always against the user
+        assertLe(
+            groveBasin.convertToShares(address(creditToken), newCreditTokenValue),
+            vars.expectedShares
+        );
 
         // This is the exact calculation of what is happening
         assertEq(
             groveBasin.convertToShares(address(creditToken), newCreditTokenValue),
-            (newCreditTokenValue * conversionRate / 1e27) * totalSharesAll / totalAssetsAll
+            (newCreditTokenValue * conversionRate / 1e27) * vars.expectedShares / newValue
         );
 
         // Value change is only from creditToken exchange rate decreasing

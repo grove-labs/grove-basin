@@ -82,9 +82,9 @@ contract GroveBasinPreviewDeposit_SuccessTests is GroveBasinTestBase {
         // $3 of value deposited, 3e18 shares minted.
         // creditToken portion becomes worth $1.60, full pool worth $3.60
         // previewDeposit = value * totalShares / totalAssets = value * 3e18 / 3.6e18
-        assertEq(groveBasin.previewDeposit(address(collateralToken),  1e18), uint256(1e18)          * 3e18 / 3.6e18);
-        assertEq(groveBasin.previewDeposit(address(swapToken),        1e6),  uint256(1e6) * 1e12    * 3e18 / 3.6e18);
-        assertEq(groveBasin.previewDeposit(address(creditToken),      1e18), (uint256(1e18) * 2e27 / 1e27) * 3e18 / 3.6e18);
+        assertEq(groveBasin.previewDeposit(address(collateralToken),  1e18), uint256(1e18)        * 3e18 / 3.6e18);
+        assertEq(groveBasin.previewDeposit(address(swapToken),        1e6),  uint256(1e6)  * 1e12 * 3e18 / 3.6e18);
+        assertEq(groveBasin.previewDeposit(address(creditToken),      1e18), uint256(1e18) * 2    * 3e18 / 3.6e18);
     }
 
     function testFuzz_previewDeposit_afterDepositsAndExchangeRateIncrease(

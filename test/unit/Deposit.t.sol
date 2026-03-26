@@ -378,6 +378,9 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
         assertEq(creditToken.balanceOf(lp),               100e18);
         assertEq(creditToken.balanceOf(address(groveBasin)), 100e18);
 
+        assertEq(groveBasin.convertToAssetValue(groveBasin.shares(receiver1)), 250e18);
+        assertEq(groveBasin.convertToAssetValue(groveBasin.shares(receiver2)), 0);
+
         assertEq(groveBasin.totalAssets(), 250e18);
 
         newShares = groveBasin.deposit(address(creditToken), receiver2, 100e18);
@@ -395,6 +398,12 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
         assertEq(groveBasin.shares(lp),        0);
         assertEq(groveBasin.shares(receiver1), 225e18);
         assertEq(groveBasin.shares(receiver2), expectedShares);
+
+        // Receiver 1 earned $25 on 225, Receiver 2 has earned nothing
+        assertEq(groveBasin.convertToAssetValue(groveBasin.shares(receiver1)), 250e18);
+        assertEq(groveBasin.convertToAssetValue(groveBasin.shares(receiver2)), 150e18);
+
+        assertEq(groveBasin.totalAssets(), 400e18);
     }
 
     function testFuzz_deposit_multiDeposit_changeConversionRate(
@@ -476,8 +485,16 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
         assertEq(groveBasin.shares(lp), 0);
 
         assertApproxEqAbs(groveBasin.totalShares(),     receiver1Shares + receiver2Shares, 2);
-        assertApproxEqAbs(groveBasin.shares(receiver1), receiver1Shares,                          2);
-        assertApproxEqAbs(groveBasin.shares(receiver2), receiver2Shares,                          2);
+        assertApproxEqAbs(groveBasin.shares(receiver1), receiver1Shares,                   2);
+        assertApproxEqAbs(groveBasin.shares(receiver2), receiver2Shares,                   2);
+
+        uint256 receiver2NewValue = creditTokenAmount2 * newRate / 1e27;
+
+        // Rate change of up to 1000x introduces errors
+        assertApproxEqAbs(groveBasin.convertToAssetValue(groveBasin.shares(receiver1)), totalValue,                     1000);
+        assertApproxEqAbs(groveBasin.convertToAssetValue(groveBasin.shares(receiver2)), receiver2NewValue,              1000);
+
+        assertApproxEqAbs(groveBasin.totalAssets(), totalValue + receiver2NewValue, 1000);
     }
 
 }

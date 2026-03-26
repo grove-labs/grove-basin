@@ -14,13 +14,13 @@ contract SwapTokenRateProviderTests is GroveBasinTestBase {
         // Deposit 100 USDT (6 decimals)
         _deposit(address(swapToken), address(this), 100e6);
 
-        // Value should be $100 (100 deposited, in 18 decimal precision)
+        // Value should be $100 (100e18 in 18 decimal precision)
         assertEq(groveBasin.totalAssets(), 100e18);
 
         // Deposit 100 credit token ($125 worth at 18 decimals, since credit token rate is 1.25e27)
         _deposit(address(creditToken), address(this), 100e18);
 
-        // Total should be $225 (100 from swap token + 125 from credit)
+        // Total should be $225 (100 from swapToken + 125 from credit)
         assertEq(groveBasin.totalAssets(), 225e18);
 
         // Swapping USDT to credit: 10 USDT ($10) should get 8 credit tokens ($10 / $1.25)
@@ -36,7 +36,7 @@ contract SwapTokenRateProviderTests is GroveBasinTestBase {
         // Deposit 100 USDT
         _deposit(address(swapToken), address(this), 100e6);
 
-        // Value should be $101 (100 tokens * 1.01)
+        // Value should be $101 (100 * 1.01 = 101e18)
         assertEq(groveBasin.totalAssets(), 101e18);
 
         // Deposit 100 credit token ($125 worth)
@@ -57,7 +57,7 @@ contract SwapTokenRateProviderTests is GroveBasinTestBase {
         // Deposit 100 USDT
         _deposit(address(swapToken), address(this), 100e6);
 
-        // Value should be $99 (100 tokens * 0.99)
+        // Value should be $99 (100 * 0.99 = 99e18)
         assertEq(groveBasin.totalAssets(), 99e18);
 
         // Deposit 100 credit token ($125 worth)
@@ -92,7 +92,7 @@ contract SwapTokenRateProviderTests is GroveBasinTestBase {
         // Price increases to $1.10
         mockSwapTokenRateProvider.__setConversionRate(1.10e27);
 
-        // Total assets should now be $110 (100 tokens * 1.10)
+        // Total assets should now be $110
         assertEq(groveBasin.totalAssets(), 110e18);
 
         // User1's share value increased

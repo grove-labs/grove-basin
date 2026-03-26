@@ -117,9 +117,12 @@ contract BasinDepositThroughPocketTests is PocketDepositWithdrawTestBase {
         assertEq(newShares, 100e18);
 
         // USDS went to pocket, stays as USDS
-        assertEq(usds.balanceOf(lp), 0);
+        assertEq(usds.balanceOf(lp),              0);
+        assertEq(usds.balanceOf(address(pocket)), 100e18);
 
-        assertEq(groveBasin.shares(lp), 100e18);
+        assertEq(groveBasin.totalShares(), 100e18);
+        assertEq(groveBasin.shares(lp),    100e18);
+        assertEq(groveBasin.totalAssets(), 100e18);
     }
 
     function test_deposit_usdc_staysInBasin() public {
@@ -134,11 +137,13 @@ contract BasinDepositThroughPocketTests is PocketDepositWithdrawTestBase {
         assertEq(newShares, 100e18);
 
         // USDC stays in basin, not sent to pocket
-        assertEq(usdc.balanceOf(lp),               0);
+        assertEq(usdc.balanceOf(lp),              0);
         assertEq(usdc.balanceOf(address(groveBasin)), 100e6);
         assertEq(usdc.balanceOf(address(pocket)),     0);
 
-        assertEq(groveBasin.shares(lp), 100e18);
+        assertEq(groveBasin.totalShares(), 100e18);
+        assertEq(groveBasin.shares(lp),    100e18);
+        assertEq(groveBasin.totalAssets(), 100e18);
     }
 
     function test_deposit_creditToken_goesToBasin() public {
@@ -156,7 +161,8 @@ contract BasinDepositThroughPocketTests is PocketDepositWithdrawTestBase {
         assertEq(creditToken.balanceOf(address(groveBasin)), 100e18);
         assertEq(creditToken.balanceOf(address(pocket)),     0);
 
-        assertEq(groveBasin.shares(lp), 125e18);
+        assertEq(groveBasin.totalShares(), 125e18);
+        assertEq(groveBasin.shares(lp),    125e18);
     }
 
     function test_deposit_multiAsset_totalAssetsCorrect() public {
@@ -179,14 +185,17 @@ contract BasinWithdrawThroughPocketTests is PocketDepositWithdrawTestBase {
     function test_withdraw_usds_drawsFromPocket() public {
         _deposit(address(usds), user1, 100e18);
 
-        assertEq(usds.balanceOf(user1), 0);
+        assertEq(usds.balanceOf(address(pocket)), 100e18);
+        assertEq(usds.balanceOf(user1),           0);
 
         vm.prank(user1);
         uint256 amount = groveBasin.withdraw(address(usds), user1, 100e18);
 
         assertEq(amount, 100e18);
-        assertEq(usds.balanceOf(user1), 100e18);
+        assertEq(usds.balanceOf(user1),           100e18);
+        assertEq(usds.balanceOf(address(pocket)), 0);
 
+        assertEq(groveBasin.totalShares(), 0);
         assertEq(groveBasin.shares(user1), 0);
     }
 
@@ -199,9 +208,10 @@ contract BasinWithdrawThroughPocketTests is PocketDepositWithdrawTestBase {
         vm.prank(user1);
         uint256 amount = groveBasin.withdraw(address(usdc), user1, 100e6);
 
-        assertEq(amount, 100e6);
+        assertEq(amount,                100e6);
         assertEq(usdc.balanceOf(user1), 100e6);
 
+        assertEq(groveBasin.totalShares(), 0);
         assertEq(groveBasin.shares(user1), 0);
     }
 
@@ -217,6 +227,7 @@ contract BasinWithdrawThroughPocketTests is PocketDepositWithdrawTestBase {
         assertEq(creditToken.balanceOf(user1),               80e18);
         assertEq(creditToken.balanceOf(address(groveBasin)), 0);
 
+        assertEq(groveBasin.totalShares(), 0);
         assertEq(groveBasin.shares(user1), 0);
     }
 
@@ -227,8 +238,10 @@ contract BasinWithdrawThroughPocketTests is PocketDepositWithdrawTestBase {
         uint256 amount = groveBasin.withdraw(address(usds), user1, 50e18);
 
         assertEq(amount, 50e18);
-        assertEq(usds.balanceOf(user1), 50e18);
+        assertEq(usds.balanceOf(user1),           50e18);
+        assertEq(usds.balanceOf(address(pocket)), 50e18);
 
+        assertEq(groveBasin.totalShares(), 50e18);
         assertEq(groveBasin.shares(user1), 50e18);
     }
 
@@ -263,15 +276,18 @@ contract BasinWithdrawThroughPocketTests is PocketDepositWithdrawTestBase {
         _deposit(address(usds), user1, 200e18);
         _deposit(address(usdc), user2, 100e6);
 
-        // Pocket holds USDS (swapToken), basin holds USDC (collateral)
+        // Pocket holds 200 USDS (swapToken), basin holds 100 USDC (collateral)
+        assertEq(usds.balanceOf(address(pocket)),     200e18);
         assertEq(usdc.balanceOf(address(groveBasin)), 100e6);
+        assertEq(groveBasin.totalShares(),            300e18);
 
         // User1 withdraws USDS from pocket
         vm.prank(user1);
         uint256 amount1 = groveBasin.withdraw(address(usds), user1, 200e18);
 
         assertEq(amount1, 200e18);
-        assertEq(usds.balanceOf(user1), 200e18);
+        assertEq(usds.balanceOf(user1),           200e18);
+        assertEq(usds.balanceOf(address(pocket)), 0);
 
         // User2 withdraws USDC from basin
         vm.prank(user2);
@@ -279,6 +295,8 @@ contract BasinWithdrawThroughPocketTests is PocketDepositWithdrawTestBase {
 
         assertEq(amount2, 100e6);
         assertEq(usdc.balanceOf(user2), 100e6);
+
+        assertEq(groveBasin.totalShares(), 0);
     }
 
 }
@@ -374,7 +392,9 @@ contract BasinUsdtCollateralPocketTests is Test {
         assertEq(usdt.balanceOf(lp),               0);
         assertEq(usdt.balanceOf(address(groveBasin)),  100e6);
 
-        assertEq(groveBasin.shares(lp), 100e18);
+        assertEq(groveBasin.totalShares(), 100e18);
+        assertEq(groveBasin.shares(lp),    100e18);
+        assertEq(groveBasin.totalAssets(), 100e18);
     }
 
     function test_withdraw_usdt_fromBasin() public {
@@ -394,7 +414,8 @@ contract BasinUsdtCollateralPocketTests is Test {
         assertEq(amount, 100e6);
         assertEq(usdt.balanceOf(lp), 100e6);
 
-        assertEq(groveBasin.shares(lp), 0);
+        assertEq(groveBasin.totalShares(), 0);
+        assertEq(groveBasin.shares(lp),    0);
     }
 
     function test_deposit_usdc_thenWithdraw_usdc() public {
@@ -415,7 +436,8 @@ contract BasinUsdtCollateralPocketTests is Test {
         assertEq(amount, 100e6);
         assertEq(usdc.balanceOf(lp), 100e6);
 
-        assertEq(groveBasin.shares(lp), 0);
+        assertEq(groveBasin.totalShares(), 0);
+        assertEq(groveBasin.shares(lp),    0);
     }
 
 }
