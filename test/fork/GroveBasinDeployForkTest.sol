@@ -60,8 +60,8 @@ contract GroveBasinDeployForkTest is Test {
         assertEq(groveBasin.creditToken(),     Ethereum.USDS);
         assertEq(groveBasin.liquidityProvider(),        lp);
 
-        assertEq(groveBasin.totalShares(), 1e18);
-        assertEq(groveBasin.shares(lp),    1e18);
+        assertEq(groveBasin.totalShares(),      1e18);
+        assertEq(groveBasin.shares(address(0)), 1e18);
 
         assertEq(IERC20(Ethereum.USDT).balanceOf(groveBasinAddress), seedAmount);
     }
