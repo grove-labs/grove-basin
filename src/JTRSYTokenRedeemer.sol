@@ -20,6 +20,20 @@ contract JTRSYTokenRedeemer is ITokenRedeemer {
 
     using SafeERC20 for IERC20;
 
+    /**********************************************************************************************/
+    /*** Errors                                                                                 ***/
+    /**********************************************************************************************/
+
+    error InvalidCreditToken();
+    error InvalidVault();
+    error InvalidBasin();
+    error CreditTokenMismatch();
+    error CollateralAssetMismatch();
+
+    /**********************************************************************************************/
+    /*** State variables and immutables                                                         ***/
+    /**********************************************************************************************/
+
     /// @inheritdoc ITokenRedeemer
     address public immutable override creditToken;
 
@@ -31,7 +45,7 @@ contract JTRSYTokenRedeemer is ITokenRedeemer {
 
     /// @dev Restricts access to the basin contract.
     modifier onlyBasin() {
-        require(msg.sender == address(basin), "JTRSYTokenRedeemer/only-basin");
+        if (msg.sender != address(basin)) revert OnlyBasin();
         _;
     }
 
@@ -41,18 +55,12 @@ contract JTRSYTokenRedeemer is ITokenRedeemer {
      * @param basin_       Address of the GroveBasin contract.
      */
     constructor(address creditToken_, address vault_, address basin_) {
-        require(creditToken_ != address(0), "JTRSYTokenRedeemer/invalid-creditToken");
-        require(vault_       != address(0), "JTRSYTokenRedeemer/invalid-vault");
-        require(basin_       != address(0), "JTRSYTokenRedeemer/invalid-basin");
+        if (creditToken_ == address(0)) revert InvalidCreditToken();
+        if (vault_       == address(0)) revert InvalidVault();
+        if (basin_       == address(0)) revert InvalidBasin();
 
-        require(
-            IGroveBasin(basin_).creditToken() == creditToken_,
-            "JTRSYTokenRedeemer/creditToken-mismatch"
-        );
-        require(
-            IGroveBasin(basin_).collateralToken() == IAsyncVaultLike(vault_).asset(),
-            "JTRSYTokenRedeemer/collateral-asset-mismatch"
-        );
+        if (IGroveBasin(basin_).creditToken() != creditToken_) revert CreditTokenMismatch();
+        if (IGroveBasin(basin_).collateralToken() != IAsyncVaultLike(vault_).asset()) revert CollateralAssetMismatch();
 
         creditToken = creditToken_;
         vault       = vault_;

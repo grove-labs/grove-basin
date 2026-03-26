@@ -3,6 +3,8 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 
+import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
+
 import { MockRateProvider, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
 import { GroveBasinHarness } from "test/unit/harnesses/GroveBasinHarness.sol";
@@ -216,7 +218,7 @@ contract GroveBasinHarnessTests is GroveBasinTestBase {
     }
 
     function test_getAssetValue_zeroAddress() public {
-        vm.expectRevert("GB/invalid-asset");
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
         groveBasinHarness.getAssetValue(address(0), 1, false);
     }
 

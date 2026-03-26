@@ -41,24 +41,24 @@ contract JTRSYTokenRedeemerConstructorTests is Test {
     }
 
     function test_constructor_invalidCreditToken() public {
-        vm.expectRevert("JTRSYTokenRedeemer/invalid-creditToken");
+        vm.expectRevert(JTRSYTokenRedeemer.InvalidCreditToken.selector);
         new JTRSYTokenRedeemer(address(0), address(vault), address(basin));
     }
 
     function test_constructor_invalidVault() public {
-        vm.expectRevert("JTRSYTokenRedeemer/invalid-vault");
+        vm.expectRevert(JTRSYTokenRedeemer.InvalidVault.selector);
         new JTRSYTokenRedeemer(address(creditToken), address(0), address(basin));
     }
 
     function test_constructor_invalidBasin() public {
-        vm.expectRevert("JTRSYTokenRedeemer/invalid-basin");
+        vm.expectRevert(JTRSYTokenRedeemer.InvalidBasin.selector);
         new JTRSYTokenRedeemer(address(creditToken), address(vault), address(0));
     }
 
     function test_constructor_creditTokenMismatch() public {
         MockERC20 wrongCreditToken = new MockERC20("wrong", "wrong", 18);
 
-        vm.expectRevert("JTRSYTokenRedeemer/creditToken-mismatch");
+        vm.expectRevert(JTRSYTokenRedeemer.CreditTokenMismatch.selector);
         new JTRSYTokenRedeemer(address(wrongCreditToken), address(vault), address(basin));
     }
 
@@ -66,7 +66,7 @@ contract JTRSYTokenRedeemerConstructorTests is Test {
         MockERC20 otherCollateral = new MockERC20("other", "other", 18);
         MockAsyncVault wrongVault = new MockAsyncVault(address(otherCollateral), address(creditToken));
 
-        vm.expectRevert("JTRSYTokenRedeemer/collateral-asset-mismatch");
+        vm.expectRevert(JTRSYTokenRedeemer.CollateralAssetMismatch.selector);
         new JTRSYTokenRedeemer(address(creditToken), address(wrongVault), address(basin));
     }
 
@@ -113,7 +113,7 @@ contract JTRSYTokenRedeemerSetUpTests is Test {
         address notBasin = makeAddr("notBasin");
 
         vm.prank(notBasin);
-        vm.expectRevert("JTRSYTokenRedeemer/only-basin");
+        vm.expectRevert(ITokenRedeemer.OnlyBasin.selector);
         redeemer.setUp(address(basin));
     }
 
@@ -129,7 +129,7 @@ contract JTRSYTokenRedeemerSetUpTests is Test {
         address notBasin = makeAddr("notBasin");
 
         vm.prank(notBasin);
-        vm.expectRevert("JTRSYTokenRedeemer/only-basin");
+        vm.expectRevert(ITokenRedeemer.OnlyBasin.selector);
         redeemer.tearDown(address(basin));
     }
 
@@ -241,7 +241,7 @@ contract JTRSYTokenRedeemerInitiateRedeemTests is Test {
         address notBasin = makeAddr("notBasin");
 
         vm.prank(notBasin);
-        vm.expectRevert("JTRSYTokenRedeemer/only-basin");
+        vm.expectRevert(ITokenRedeemer.OnlyBasin.selector);
         redeemer.initiateRedeem(1000e18);
     }
 
@@ -337,7 +337,7 @@ contract JTRSYTokenRedeemerCompleteRedeemTests is Test {
         address notBasin = makeAddr("notBasin");
 
         vm.prank(notBasin);
-        vm.expectRevert("JTRSYTokenRedeemer/only-basin");
+        vm.expectRevert(ITokenRedeemer.OnlyBasin.selector);
         redeemer.completeRedeem(1000e18);
     }
 

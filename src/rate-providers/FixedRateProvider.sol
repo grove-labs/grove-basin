@@ -10,6 +10,8 @@ import { IRateProviderLike } from "../interfaces/IRateProviderLike.sol";
  */
 contract FixedRateProvider is IRateProviderLike {
 
+    error ZeroRate();
+
     /// @notice Precision of the returned rate (1e27).
     uint256 public constant RATE_PRECISION = 1e27;
 
@@ -18,7 +20,7 @@ contract FixedRateProvider is IRateProviderLike {
 
     /// @param rate_ The fixed conversion rate to use (must be non-zero).
     constructor(uint256 rate_) {
-        require(rate_ != 0, "FixedRateProvider/zero-rate");
+        if (rate_ == 0) revert ZeroRate();
         rate = rate_;
     }
 

@@ -3,6 +3,10 @@ pragma solidity ^0.8.24;
 
 interface IGroveBasinPocket {
 
+    error NotAuthorized();
+    error InvalidBasin();
+    error InvalidAsset();
+
     /**
      *  @dev   Emitted when liquidity is withdrawn from the pocket.
      *  @param asset           Address of the asset withdrawn.

@@ -18,7 +18,7 @@ contract FixedRateProviderTests is Test {
     }
 
     function test_constructor_revert_zeroRate() public {
-        vm.expectRevert("FixedRateProvider/zero-rate");
+        vm.expectRevert(FixedRateProvider.ZeroRate.selector);
         new FixedRateProvider(0);
     }
 

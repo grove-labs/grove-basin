@@ -5,6 +5,7 @@ import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
 
 import { Ethereum } from "lib/grove-address-registry/src/Ethereum.sol";
 
+import { IGroveBasin }      from "src/interfaces/IGroveBasin.sol";
 import { ForkTestBase }     from "test/fork/ForkTestBase.sol";
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 
@@ -313,12 +314,12 @@ contract JTRSYForkTest_SwapExactIn is JTRSYForkTestBase {
     }
 
     function test_swapExactIn_invalidSwap_swapTokenToCollateralToken() public {
-        vm.expectRevert("GB/invalid-swap");
+        vm.expectRevert(IGroveBasin.InvalidSwap.selector);
         groveBasin.swapExactIn(Ethereum.USDS, Ethereum.USDC, 100e18, 0, receiver, 0);
     }
 
     function test_swapExactIn_invalidSwap_collateralTokenToSwapToken() public {
-        vm.expectRevert("GB/invalid-swap");
+        vm.expectRevert(IGroveBasin.InvalidSwap.selector);
         groveBasin.swapExactIn(Ethereum.USDC, Ethereum.USDS, 100e6, 0, receiver, 0);
     }
 

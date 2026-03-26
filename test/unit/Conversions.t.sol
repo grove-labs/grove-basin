@@ -3,7 +3,8 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 
-import { GroveBasin } from "src/GroveBasin.sol";
+import { GroveBasin }  from "src/GroveBasin.sol";
+import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
 
 import { MockRateProvider, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
@@ -47,7 +48,7 @@ contract GroveBasinConversionTestBase is GroveBasinTestBase {
 contract GroveBasinConvertToAssetsTests is GroveBasinTestBase {
 
     function test_convertToAssets_invalidAsset() public {
-        vm.expectRevert("GB/invalid-asset");
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
         groveBasin.convertToAssets(makeAddr("new-asset"), 100);
     }
 
@@ -362,7 +363,7 @@ contract GroveBasinConvertToSharesTests is GroveBasinConversionTestBase {
 contract GroveBasinConvertToSharesFailureTests is GroveBasinTestBase {
 
     function test_convertToShares_invalidAsset() public {
-        vm.expectRevert("GB/invalid-asset");
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
         groveBasin.convertToShares(makeAddr("new-asset"), 100);
     }
 

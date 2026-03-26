@@ -3,42 +3,44 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 
+import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
+
 import { MockRateProvider, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
 contract GroveBasinPreviewSwapExactIn_FailureTests is GroveBasinTestBase {
 
     function test_previewSwapExactIn_invalidAssetIn() public {
-        vm.expectRevert("GB/invalid-asset");
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
         groveBasin.previewSwapExactIn(makeAddr("other-token"), address(swapToken), 1);
     }
 
     function test_previewSwapExactIn_invalidAssetOut() public {
-        vm.expectRevert("GB/invalid-asset");
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
         groveBasin.previewSwapExactIn(address(swapToken), makeAddr("other-token"), 1);
     }
 
     function test_previewSwapExactIn_bothSwapToken() public {
-        vm.expectRevert("GB/invalid-asset");
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
         groveBasin.previewSwapExactIn(address(swapToken), address(swapToken), 1);
     }
 
     function test_previewSwapExactIn_bothCollateralToken() public {
-        vm.expectRevert("GB/invalid-asset");
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
         groveBasin.previewSwapExactIn(address(collateralToken), address(collateralToken), 1);
     }
 
     function test_previewSwapExactIn_bothCreditToken() public {
-        vm.expectRevert("GB/invalid-asset");
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
         groveBasin.previewSwapExactIn(address(creditToken), address(creditToken), 1);
     }
 
     function test_previewSwapExactIn_collateralTokenToSwapToken() public {
-        vm.expectRevert("GB/invalid-swap");
+        vm.expectRevert(IGroveBasin.InvalidSwap.selector);
         groveBasin.previewSwapExactIn(address(collateralToken), address(swapToken), 1);
     }
 
     function test_previewSwapExactIn_swapTokenToCollateralToken() public {
-        vm.expectRevert("GB/invalid-swap");
+        vm.expectRevert(IGroveBasin.InvalidSwap.selector);
         groveBasin.previewSwapExactIn(address(swapToken), address(collateralToken), 1);
     }
 
@@ -47,37 +49,37 @@ contract GroveBasinPreviewSwapExactIn_FailureTests is GroveBasinTestBase {
 contract GroveBasinPreviewSwapExactOut_FailureTests is GroveBasinTestBase {
 
     function test_previewSwapExactIn_invalidAssetIn() public {
-        vm.expectRevert("GB/invalid-asset");
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
         groveBasin.previewSwapExactOut(makeAddr("other-token"), address(swapToken), 1);
     }
 
     function test_previewSwapExactOut_invalidAssetOut() public {
-        vm.expectRevert("GB/invalid-asset");
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
         groveBasin.previewSwapExactOut(address(swapToken), makeAddr("other-token"), 1);
     }
 
     function test_previewSwapExactOut_bothSwapToken() public {
-        vm.expectRevert("GB/invalid-asset");
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
         groveBasin.previewSwapExactOut(address(collateralToken), address(collateralToken), 1);
     }
 
     function test_previewSwapExactOut_bothCollateralToken() public {
-        vm.expectRevert("GB/invalid-asset");
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
         groveBasin.previewSwapExactOut(address(swapToken), address(swapToken), 1);
     }
 
     function test_previewSwapExactOut_bothCreditToken() public {
-        vm.expectRevert("GB/invalid-asset");
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
         groveBasin.previewSwapExactOut(address(creditToken), address(creditToken), 1);
     }
 
     function test_previewSwapExactOut_collateralTokenToSwapToken() public {
-        vm.expectRevert("GB/invalid-swap");
+        vm.expectRevert(IGroveBasin.InvalidSwap.selector);
         groveBasin.previewSwapExactOut(address(collateralToken), address(swapToken), 1);
     }
 
     function test_previewSwapExactOut_swapTokenToCollateralToken() public {
-        vm.expectRevert("GB/invalid-swap");
+        vm.expectRevert(IGroveBasin.InvalidSwap.selector);
         groveBasin.previewSwapExactOut(address(swapToken), address(collateralToken), 1);
     }
 
@@ -86,7 +88,7 @@ contract GroveBasinPreviewSwapExactOut_FailureTests is GroveBasinTestBase {
 contract GroveBasinPreviewSwapExactIn_CollateralTokenAssetInTests is GroveBasinTestBase {
 
     function test_previewSwapExactIn_collateralTokenToSwapToken_reverts() public {
-        vm.expectRevert("GB/invalid-swap");
+        vm.expectRevert(IGroveBasin.InvalidSwap.selector);
         groveBasin.previewSwapExactIn(address(collateralToken), address(swapToken), 1e18);
     }
 
@@ -117,7 +119,7 @@ contract GroveBasinPreviewSwapExactIn_CollateralTokenAssetInTests is GroveBasinT
 contract GroveBasinPreviewSwapExactOut_CollateralTokenAssetInTests is GroveBasinTestBase {
 
     function test_previewSwapExactOut_collateralTokenToSwapToken_reverts() public {
-        vm.expectRevert("GB/invalid-swap");
+        vm.expectRevert(IGroveBasin.InvalidSwap.selector);
         groveBasin.previewSwapExactOut(address(collateralToken), address(swapToken), 1e6);
     }
 
@@ -151,7 +153,7 @@ contract GroveBasinPreviewSwapExactOut_CollateralTokenAssetInTests is GroveBasin
 contract GroveBasinPreviewSwapExactIn_SwapTokenInTests is GroveBasinTestBase {
 
     function test_previewSwapExactIn_swapTokenToCollateralToken_reverts() public {
-        vm.expectRevert("GB/invalid-swap");
+        vm.expectRevert(IGroveBasin.InvalidSwap.selector);
         groveBasin.previewSwapExactIn(address(swapToken), address(collateralToken), 1e6);
     }
 
@@ -183,7 +185,7 @@ contract GroveBasinPreviewSwapExactIn_SwapTokenInTests is GroveBasinTestBase {
 contract GroveBasinPreviewSwapExactOut_SwapTokenInTests is GroveBasinTestBase {
 
     function test_previewSwapExactOut_swapTokenToCollateralToken_reverts() public {
-        vm.expectRevert("GB/invalid-swap");
+        vm.expectRevert(IGroveBasin.InvalidSwap.selector);
         groveBasin.previewSwapExactOut(address(swapToken), address(collateralToken), 1e18);
     }
 

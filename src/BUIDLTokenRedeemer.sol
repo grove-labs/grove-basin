@@ -11,6 +11,19 @@ contract BUIDLTokenRedeemer is ITokenRedeemer {
 
     using SafeERC20 for IERC20;
 
+    /**********************************************************************************************/
+    /*** Errors                                                                                 ***/
+    /**********************************************************************************************/
+
+    error InvalidCreditToken();
+    error InvalidRedemptionAddress();
+    error InvalidBasin();
+    error CreditTokenMismatch();
+
+    /**********************************************************************************************/
+    /*** State variables and immutables                                                         ***/
+    /**********************************************************************************************/
+
     /// @inheritdoc ITokenRedeemer
     address public immutable override creditToken;
 
@@ -22,19 +35,16 @@ contract BUIDLTokenRedeemer is ITokenRedeemer {
     IGroveBasin public immutable override basin;
 
     modifier onlyBasin() {
-        require(msg.sender == address(basin), "BUIDLTokenRedeemer/only-basin");
+        if (msg.sender != address(basin)) revert OnlyBasin();
         _;
     }
 
     constructor(address creditToken_, address redemptionAddress_, address basin_) {
-        require(creditToken_       != address(0), "BUIDLTokenRedeemer/invalid-creditToken");
-        require(redemptionAddress_ != address(0), "BUIDLTokenRedeemer/invalid-redemptionAddress");
-        require(basin_             != address(0), "BUIDLTokenRedeemer/invalid-basin");
+        if (creditToken_       == address(0)) revert InvalidCreditToken();
+        if (redemptionAddress_ == address(0)) revert InvalidRedemptionAddress();
+        if (basin_             == address(0)) revert InvalidBasin();
 
-        require(
-            IGroveBasin(basin_).creditToken() == creditToken_,
-            "BUIDLTokenRedeemer/creditToken-mismatch"
-        );
+        if (IGroveBasin(basin_).creditToken() != creditToken_) revert CreditTokenMismatch();
 
         creditToken       = creditToken_;
         collateralToken   = IGroveBasin(basin_).collateralToken();

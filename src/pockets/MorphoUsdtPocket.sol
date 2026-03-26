@@ -25,6 +25,9 @@ import { IGroveBasinPocket } from "src/interfaces/IGroveBasinPocket.sol";
 contract MorphoUsdtPocket is BasePocket {
     using SafeERC20 for IERC20;
 
+    error InvalidUsdt();
+    error InvalidVault();
+
     IERC20 public immutable usdt;
 
     address public immutable vault;
@@ -39,8 +42,8 @@ contract MorphoUsdtPocket is BasePocket {
         address usdt_,
         address vault_
     ) BasePocket(basin_) {
-        require(usdt_  != address(0), "MorphoUsdtPocket/invalid-usdt");
-        require(vault_ != address(0), "MorphoUsdtPocket/invalid-vault");
+        if (usdt_  == address(0)) revert InvalidUsdt();
+        if (vault_ == address(0)) revert InvalidVault();
 
         usdt  = IERC20(usdt_);
         vault = vault_;
@@ -52,7 +55,7 @@ contract MorphoUsdtPocket is BasePocket {
     function depositLiquidity(uint256 amount, address asset) external override onlyBasinOrManager returns (uint256) {
         if (amount == 0) return 0;
 
-        require(asset == address(usdt), "MorphoUsdtPocket/invalid-asset");
+        if (asset != address(usdt)) revert InvalidAsset();
 
         usdt.safeApprove(vault, 0);
         usdt.safeApprove(vault, amount);
@@ -66,7 +69,7 @@ contract MorphoUsdtPocket is BasePocket {
     function withdrawLiquidity(uint256 amount, address asset) external override onlyBasinOrManager returns (uint256) {
         if (amount == 0) return 0;
 
-        require(asset == address(usdt), "MorphoUsdtPocket/invalid-asset");
+        if (asset != address(usdt)) revert InvalidAsset();
 
         uint256 balance = usdt.balanceOf(address(this));
 

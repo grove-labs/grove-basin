@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.24;
 
+import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
+
 import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
 contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
@@ -16,7 +18,7 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         vm.startPrank(notLp);
         collateralToken.approve(address(groveBasin), 100e18);
 
-        vm.expectRevert("GB/not-lp");
+        vm.expectRevert(IGroveBasin.NotLiquidityProvider.selector);
         groveBasin.deposit(address(collateralToken), notLp, 100e18);
         vm.stopPrank();
     }
@@ -70,7 +72,7 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         vm.startPrank(lp);
         creditToken.approve(address(groveBasin), 100e18);
 
-        vm.expectRevert("GB/credit-deposits-disabled");
+        vm.expectRevert(IGroveBasin.CreditDepositsDisabled.selector);
         groveBasin.deposit(address(creditToken), lp, 100e18);
         vm.stopPrank();
     }
@@ -79,7 +81,7 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         vm.prank(owner);
         groveBasin.setCreditTokenDepositsDisabled(true);
 
-        vm.expectRevert("GB/credit-deposits-disabled");
+        vm.expectRevert(IGroveBasin.CreditDepositsDisabled.selector);
         groveBasin.previewDeposit(address(creditToken), 100e18);
     }
 

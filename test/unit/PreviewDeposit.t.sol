@@ -3,12 +3,14 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 
+import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
+
 import { MockRateProvider, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
 contract GroveBasinPreviewDeposit_FailureTests is GroveBasinTestBase {
 
     function test_previewDeposit_invalidAsset() public {
-        vm.expectRevert("GB/invalid-asset");
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
         groveBasin.previewDeposit(makeAddr("other-token"), 1);
     }
 
