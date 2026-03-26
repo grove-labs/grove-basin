@@ -16,10 +16,10 @@ contract InflationAttackTests is GroveBasinTestBase {
         swapToken.mint(seeder, 1e6);
         vm.startPrank(seeder);
         swapToken.approve(address(groveBasin), 1e6);
-        groveBasin.depositInitial(address(swapToken), seeder, 1e6);
+        groveBasin.depositInitial(address(swapToken), 1e6);
         vm.stopPrank();
 
-        uint256 seederShares = groveBasin.shares(seeder);
+        uint256 seederShares = groveBasin.shares(address(0));
         assertGt(seederShares, 0);
 
         // Attack pool by sending funds after the initial deposit.

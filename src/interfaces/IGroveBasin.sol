@@ -608,16 +608,13 @@ interface IGroveBasin {
 
     /**
      *  @dev    Makes the initial seed deposit into the GroveBasin. Callable by anyone, but only
-     *          once (when totalShares == 0). Shares are minted to the liquidity provider. Must be
+     *          once (when totalShares == 0). Shares are minted to the zero address. Must be
      *          one of the supported assets in order to succeed.
      *  @param  asset           Address of the ERC-20 asset to deposit.
-     *  @param  receiver        Address of the receiver of the resulting shares from the deposit.
-     *                          This parameter is ignored; shares are always minted to the
-     *                          liquidity provider.
      *  @param  assetsToDeposit Amount of the asset to deposit into the GroveBasin.
-     *  @return newShares       Number of shares minted to the liquidity provider.
+     *  @return newShares       Number of shares minted to the zero address.
      */
-    function depositInitial(address asset, address receiver, uint256 assetsToDeposit)
+    function depositInitial(address asset, uint256 assetsToDeposit)
         external returns (uint256 newShares);
 
     /**

@@ -46,7 +46,7 @@ contract GroveBasinFactory {
         ));
 
         IERC20(swapToken).approve(groveBasin, seedAmount);
-        GroveBasin(groveBasin).depositInitial(swapToken, address(0), seedAmount);
+        GroveBasin(groveBasin).depositInitial(swapToken, seedAmount);
 
         emit GroveBasinDeployed(groveBasin, owner, swapToken, collateralToken, creditToken);
     }
