@@ -35,7 +35,7 @@ contract GroveBasinSetPocketFailureTests is GroveBasinTestBase {
 
     function test_setPocket_samePocket() public {
         vm.prank(owner);
-        vm.expectRevert("GB/same-pocket");
+        vm.expectRevert("GB/invalid-pocket");
         groveBasin.setPocket(pocket);
     }
 

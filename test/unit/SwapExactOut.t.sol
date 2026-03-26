@@ -21,12 +21,12 @@ contract GroveBasinSwapExactOutFailureTests is GroveBasinTestBase {
     }
 
     function test_swapExactOut_amountZero() public {
-        vm.expectRevert("GB/invalid-amountOut");
+        vm.expectRevert("GB/zero-amountOut");
         groveBasin.swapExactOut(address(swapToken), address(creditToken), 0, 0, receiver, 0);
     }
 
     function test_swapExactOut_receiverZero() public {
-        vm.expectRevert("GB/invalid-receiver");
+        vm.expectRevert("GB/zero-receiver");
         groveBasin.swapExactOut(address(swapToken), address(creditToken), 100e6, 80e18, address(0), 0);
     }
 

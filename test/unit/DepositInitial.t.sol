@@ -46,7 +46,7 @@ contract DepositInitialTests is GroveBasinTestBase {
     }
 
     function test_depositInitial_zeroAmount() public {
-        vm.expectRevert("GB/invalid-amount");
+        vm.expectRevert("GB/zero-amount");
         freshBasin.depositInitial(address(swapToken), address(this), 0);
     }
 

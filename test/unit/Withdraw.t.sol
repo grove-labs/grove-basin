@@ -22,7 +22,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
     function test_withdraw_zeroAmount() public {
         _deposit(address(swapToken), user1, 100e6);
 
-        vm.expectRevert("GB/invalid-amount");
+        vm.expectRevert("GB/zero-amount");
         groveBasin.withdraw(address(swapToken), receiver1, 0);
     }
 

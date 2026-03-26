@@ -65,7 +65,7 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
 
     function test_deposit_zeroAmount() public {
         vm.prank(lp);
-        vm.expectRevert("GB/invalid-amount");
+        vm.expectRevert("GB/zero-amount");
         groveBasin.deposit(address(swapToken), lp, 0);
     }
 

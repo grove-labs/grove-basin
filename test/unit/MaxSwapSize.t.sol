@@ -29,7 +29,7 @@ contract GroveBasinMaxSwapSizeSwapExactInTests is GroveBasinTestBase {
         vm.startPrank(swapper);
         swapToken.approve(address(groveBasin), 101e6);
 
-        vm.expectRevert("GB/swap-size-exceeded");
+        vm.expectRevert("GB/over-swap-size");
         groveBasin.swapExactIn(address(swapToken), address(creditToken), 101e6, 0, receiver, 0);
     }
 
@@ -57,7 +57,7 @@ contract GroveBasinMaxSwapSizeSwapExactInTests is GroveBasinTestBase {
         vm.startPrank(swapper);
         collateralToken.approve(address(groveBasin), 101e18);
 
-        vm.expectRevert("GB/swap-size-exceeded");
+        vm.expectRevert("GB/over-swap-size");
         groveBasin.swapExactIn(address(collateralToken), address(creditToken), 101e18, 0, receiver, 0);
     }
 
@@ -77,7 +77,7 @@ contract GroveBasinMaxSwapSizeSwapExactInTests is GroveBasinTestBase {
         vm.startPrank(swapper);
         creditToken.approve(address(groveBasin), 81e18);
 
-        vm.expectRevert("GB/swap-size-exceeded");
+        vm.expectRevert("GB/over-swap-size");
         groveBasin.swapExactIn(address(creditToken), address(swapToken), 81e18, 0, receiver, 0);
     }
 
@@ -97,7 +97,7 @@ contract GroveBasinMaxSwapSizeSwapExactInTests is GroveBasinTestBase {
         vm.startPrank(swapper);
         creditToken.approve(address(groveBasin), 81e18);
 
-        vm.expectRevert("GB/swap-size-exceeded");
+        vm.expectRevert("GB/over-swap-size");
         groveBasin.swapExactIn(address(creditToken), address(collateralToken), 81e18, 0, receiver, 0);
     }
 
@@ -110,7 +110,7 @@ contract GroveBasinMaxSwapSizeSwapExactInTests is GroveBasinTestBase {
         vm.startPrank(swapper);
         swapToken.approve(address(groveBasin), 1e6);
 
-        vm.expectRevert("GB/swap-size-exceeded");
+        vm.expectRevert("GB/over-swap-size");
         groveBasin.swapExactIn(address(swapToken), address(creditToken), 1e6, 0, receiver, 0);
     }
 
@@ -150,7 +150,7 @@ contract GroveBasinMaxSwapSizeSwapExactOutTests is GroveBasinTestBase {
     function test_swapExactOut_swapTokenToCreditToken_exceedsMaxSwapSize() public {
         // amountIn of 101e6 swap token = 101e18 value > 100e18 max
         // Preview also reverts since check is in _getSwapQuote
-        vm.expectRevert("GB/swap-size-exceeded");
+        vm.expectRevert("GB/over-swap-size");
         groveBasin.previewSwapExactOut(address(swapToken), address(creditToken), 80.8e18);
     }
 
@@ -171,7 +171,7 @@ contract GroveBasinMaxSwapSizeSwapExactOutTests is GroveBasinTestBase {
     function test_swapExactOut_creditTokenToSwapToken_exceedsMaxSwapSize() public {
         // 81e18 credit * 1.25 = 101.25e18 value > 100e18 max
         // Preview also reverts since check is in _getSwapQuote
-        vm.expectRevert("GB/swap-size-exceeded");
+        vm.expectRevert("GB/over-swap-size");
         groveBasin.previewSwapExactOut(address(creditToken), address(swapToken), 101e6);
     }
 
@@ -193,7 +193,7 @@ contract GroveBasinMaxSwapSizeSwapExactOutTests is GroveBasinTestBase {
         vm.prank(owner);
         groveBasin.setMaxSwapSize(0);
 
-        vm.expectRevert("GB/swap-size-exceeded");
+        vm.expectRevert("GB/over-swap-size");
         groveBasin.previewSwapExactOut(address(swapToken), address(creditToken), 800_000e18);
     }
 
@@ -232,7 +232,7 @@ contract GroveBasinMaxSwapSizeFuzzTests is GroveBasinTestBase {
         swapToken.approve(address(groveBasin), amountIn);
 
         if (swapValue > maxSwapSize) {
-            vm.expectRevert("GB/swap-size-exceeded");
+            vm.expectRevert("GB/over-swap-size");
         }
 
         groveBasin.swapExactIn(address(swapToken), address(creditToken), amountIn, 0, receiver, 0);
@@ -258,7 +258,7 @@ contract GroveBasinMaxSwapSizeFuzzTests is GroveBasinTestBase {
         collateralToken.approve(address(groveBasin), amountIn);
 
         if (swapValue > maxSwapSize) {
-            vm.expectRevert("GB/swap-size-exceeded");
+            vm.expectRevert("GB/over-swap-size");
         }
 
         groveBasin.swapExactIn(address(collateralToken), address(creditToken), amountIn, 0, receiver, 0);
@@ -285,7 +285,7 @@ contract GroveBasinMaxSwapSizeFuzzTests is GroveBasinTestBase {
         creditToken.approve(address(groveBasin), amountIn);
 
         if (swapValue > maxSwapSize) {
-            vm.expectRevert("GB/swap-size-exceeded");
+            vm.expectRevert("GB/over-swap-size");
         }
 
         groveBasin.swapExactIn(address(creditToken), address(swapToken), amountIn, 0, receiver, 0);
@@ -331,7 +331,7 @@ contract GroveBasinMaxSwapSizeFuzzTests is GroveBasinTestBase {
                 0
             );
         } catch {
-            vm.expectRevert("GB/swap-size-exceeded");
+            vm.expectRevert("GB/over-swap-size");
             groveBasin.previewSwapExactOut(address(creditToken), address(swapToken), amountOut);
         }
     }
