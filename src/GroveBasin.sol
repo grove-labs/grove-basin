@@ -469,13 +469,13 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
         require(newShares > 0, "GB/no-new-shares");
 
-        shares[liquidityProvider] += newShares;
-        totalShares               += newShares;
+        shares[receiver] += newShares;
+        totalShares      += newShares;
 
         _pullAsset(asset, assetsToDeposit);
         _depositLiquidityInPocket(assetsToDeposit, asset);
 
-        emit Deposit(asset, msg.sender, liquidityProvider, assetsToDeposit, newShares);
+        emit Deposit(asset, msg.sender, receiver, assetsToDeposit, newShares);
     }
 
     /// @inheritdoc IGroveBasin
