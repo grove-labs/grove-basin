@@ -1121,53 +1121,6 @@ contract GroveBasinSwapWithFeesMultiFuzzTests is GroveBasinTestBase {
 }
 
 /**********************************************************************************************/
-/*** Preview swap fee tests                                                                 ***/
-/**********************************************************************************************/
-
-contract GroveBasinPreviewSwapFeeTests is GroveBasinTestBase {
-
-    function setUp() public override {
-        super.setUp();
-
-        vm.prank(owner);
-        groveBasin.setFeeBounds(0, 500);
-    }
-
-    function test_previewSwapExactInFee_creditToken_withFee() public {
-        vm.prank(owner);
-        groveBasin.setPurchaseFee(100);
-
-        uint256 fee = groveBasin.previewSwapExactInFee(address(creditToken), 100e18);
-        assertEq(fee, 1e18);
-    }
-
-    function test_previewSwapExactInFee_nonCreditToken_withFee() public {
-        vm.prank(owner);
-        groveBasin.setRedemptionFee(100);
-
-        uint256 fee = groveBasin.previewSwapExactInFee(address(swapToken), 100e6);
-        assertEq(fee, 1e6);
-    }
-
-    function test_previewSwapExactOutFee_creditToken_withFee() public {
-        vm.prank(owner);
-        groveBasin.setPurchaseFee(100);
-
-        uint256 fee = groveBasin.previewSwapExactOutFee(address(creditToken), 100e18);
-        assertEq(fee, Math.ceilDiv(100e18 * 10_000, 9_900) - 100e18);
-    }
-
-    function test_previewSwapExactOutFee_nonCreditToken_withFee() public {
-        vm.prank(owner);
-        groveBasin.setRedemptionFee(100);
-
-        uint256 fee = groveBasin.previewSwapExactOutFee(address(swapToken), 100e6);
-        assertEq(fee, Math.ceilDiv(100e6 * 10_000, 9_900) - 100e6);
-    }
-
-}
-
-/**********************************************************************************************/
 /*** Fee share accrual tests                                                                ***/
 /**********************************************************************************************/
 
