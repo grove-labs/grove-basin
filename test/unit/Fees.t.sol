@@ -495,13 +495,16 @@ contract GroveBasinFeeCalculationTests is GroveBasinTestBase {
 
 contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
 
-    address swapper = makeAddr("swapper");
+    address swapper    = makeAddr("swapper");
+    address feeClaimer = makeAddr("feeClaimer");
 
     function setUp() public override {
         super.setUp();
 
-        vm.prank(owner);
+        vm.startPrank(owner);
         groveBasin.setFeeBounds(0, 500);
+        groveBasin.setFeeClaimer(feeClaimer);
+        vm.stopPrank();
 
         _deposit(address(swapToken),       makeAddr("seeder"), 1_000_000e6);
         _deposit(address(collateralToken), makeAddr("seeder"), 1_000_000e18);
@@ -664,12 +667,13 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
         assertEq(swapToken.balanceOf(swapper), 125e6);
     }
 
-    // --- Fee accrues value to basin ---
+    // --- Fee accrues as shares to fee claimer ---
 
-    function test_swapExactIn_feeAccruesToBasin() public {
+    function test_swapExactIn_feeAccruesToFeeClaimer() public {
+
         _deposit(address(collateralToken), makeAddr("depositor"), 10_000e18);
 
-        uint256 totalAssetsBefore = groveBasin.totalAssets();
+        uint256 totalSharesBefore = groveBasin.totalShares();
 
         vm.prank(owner);
         groveBasin.setPurchaseFee(100);  // 1%
@@ -681,7 +685,8 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
         groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, swapper, 0);
         vm.stopPrank();
 
-        assertGt(groveBasin.totalAssets(), totalAssetsBefore);
+        assertGt(groveBasin.shares(feeClaimer), 0);
+        assertGt(groveBasin.totalShares(), totalSharesBefore);
     }
 
     // --- Purchase fee doesn't affect redemptions and vice versa ---
@@ -757,13 +762,16 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
 
 contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
 
-    address swapper = makeAddr("swapper");
+    address swapper    = makeAddr("swapper");
+    address feeClaimer = makeAddr("feeClaimer");
 
     function setUp() public override {
         super.setUp();
 
-        vm.prank(owner);
+        vm.startPrank(owner);
         groveBasin.setFeeBounds(0, 2000);  // Max 20% for fuzz range
+        groveBasin.setFeeClaimer(feeClaimer);
+        vm.stopPrank();
 
         _deposit(address(collateralToken), makeAddr("seeder"), COLLATERAL_TOKEN_MAX * 100);
         _deposit(address(swapToken),       makeAddr("seeder"), SWAP_TOKEN_MAX * 100);
@@ -903,7 +911,7 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
         assertEq(amountIn, expectedAmountIn);
     }
 
-    function testFuzz_feeAccruesToBasin(
+    function testFuzz_feeAccruesToFeeClaimer(
         uint256 amountIn,
         uint256 purchaseFee_,
         uint256 redemptionFee_
@@ -919,15 +927,13 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
         groveBasin.setRedemptionFee(redemptionFee_);
         vm.stopPrank();
 
-        uint256 totalAssetsBefore = groveBasin.totalAssets();
-
         swapToken.mint(swapper, amountIn);
         vm.startPrank(swapper);
         swapToken.approve(address(groveBasin), amountIn);
         groveBasin.swapExactIn(address(swapToken), address(creditToken), amountIn, 0, swapper, 0);
         vm.stopPrank();
 
-        assertGe(groveBasin.totalAssets(), totalAssetsBefore);
+        assertGt(groveBasin.shares(feeClaimer), 0);
     }
 
     function testFuzz_setFeeBounds(uint256 newMaxFee) public {
@@ -970,8 +976,9 @@ contract GroveBasinSwapWithFeesMultiFuzzTests is GroveBasinTestBase {
     address lp1 = makeAddr("lp1");
     address lp2 = makeAddr("lp2");
 
-    address lpRole_  = makeAddr("lpRole");
-    address swapper = makeAddr("swapper");
+    address lpRole_    = makeAddr("lpRole");
+    address swapper    = makeAddr("swapper");
+    address feeClaimer = makeAddr("feeClaimer");
 
     /// forge-config: default.fuzz.runs = 10
     /// forge-config: pr.fuzz.runs = 100
@@ -989,6 +996,7 @@ contract GroveBasinSwapWithFeesMultiFuzzTests is GroveBasinTestBase {
         vm.startPrank(owner);
         groveBasin.setFeeBounds(0, 2000);
         groveBasin.grantRole(lpRoleHash, lpRole_);
+        groveBasin.setFeeClaimer(feeClaimer);
         vm.stopPrank();
 
         purchaseFee_   = _bound(purchaseFee_,   0, 2000);
@@ -1114,6 +1122,168 @@ contract GroveBasinPreviewSwapFeeTests is GroveBasinTestBase {
 
         uint256 fee = groveBasin.previewSwapExactOutFee(address(swapToken), 100e6);
         assertEq(fee, Math.ceilDiv(100e6 * 10_000, 9_900) - 100e6);
+    }
+
+}
+
+/**********************************************************************************************/
+/*** Fee share accrual tests                                                                ***/
+/**********************************************************************************************/
+
+contract GroveBasinFeeShareAccrualTests is GroveBasinTestBase {
+
+    event FeeSharesAccrued(address indexed claimer, uint256 shares);
+
+    address swapper    = makeAddr("swapper");
+    address feeClaimer = makeAddr("feeClaimer");
+
+    function setUp() public override {
+        super.setUp();
+
+        vm.startPrank(owner);
+        groveBasin.setFeeBounds(0, 500);
+        groveBasin.setPurchaseFee(100);  // 1%
+        groveBasin.setFeeClaimer(feeClaimer);
+        vm.stopPrank();
+
+        _deposit(address(swapToken),       makeAddr("seeder"), 1_000_000e6);
+        _deposit(address(collateralToken), makeAddr("seeder"), 1_000_000e18);
+        _deposit(address(creditToken),     makeAddr("seeder"), 1_000_000e18);
+    }
+
+    function test_feeSharesAccrued_afterSwapExactIn() public {
+        swapToken.mint(swapper, 100e6);
+
+        vm.startPrank(swapper);
+        swapToken.approve(address(groveBasin), 100e6);
+        groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, swapper, 0);
+        vm.stopPrank();
+
+        assertGt(groveBasin.shares(feeClaimer), 0);
+    }
+
+    function test_feeSharesAccrued_afterSwapExactOut() public {
+        vm.prank(owner);
+        groveBasin.setRedemptionFee(200);  // 2%
+
+        uint256 amountIn = groveBasin.previewSwapExactOut(
+            address(creditToken), address(collateralToken), 100e18
+        );
+        creditToken.mint(swapper, amountIn);
+
+        vm.startPrank(swapper);
+        creditToken.approve(address(groveBasin), amountIn);
+        groveBasin.swapExactOut(address(creditToken), address(collateralToken), 100e18, amountIn, swapper, 0);
+        vm.stopPrank();
+
+        assertGt(groveBasin.shares(feeClaimer), 0);
+    }
+
+    function test_feeSharesAccumulate_multipleSwaps() public {
+        swapToken.mint(swapper, 200e6);
+        vm.startPrank(swapper);
+        swapToken.approve(address(groveBasin), 200e6);
+
+        groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, swapper, 0);
+        uint256 firstShares = groveBasin.shares(feeClaimer);
+        assertGt(firstShares, 0);
+
+        groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, swapper, 0);
+        vm.stopPrank();
+
+        assertGt(groveBasin.shares(feeClaimer), firstShares);
+    }
+
+    function test_feeSharesNotAccrued_noFeeClaimerSet() public {
+        vm.prank(owner);
+        groveBasin.setFeeClaimer(address(0));
+
+        assertEq(groveBasin.feeClaimer(), address(0));
+
+        uint256 totalSharesBefore = groveBasin.totalShares();
+
+        swapToken.mint(swapper, 100e6);
+        vm.startPrank(swapper);
+        swapToken.approve(address(groveBasin), 100e6);
+        groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, swapper, 0);
+        vm.stopPrank();
+
+        assertEq(groveBasin.totalShares(), totalSharesBefore);
+    }
+
+    function test_feeSharesAccrued_emitsEvent() public {
+        swapToken.mint(swapper, 100e6);
+
+        vm.startPrank(swapper);
+        swapToken.approve(address(groveBasin), 100e6);
+        vm.expectEmit(true, false, false, false, address(groveBasin));
+        emit FeeSharesAccrued(feeClaimer, 0);
+        groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, swapper, 0);
+        vm.stopPrank();
+    }
+
+    function test_feeClaimerCanWithdraw() public {
+        swapToken.mint(swapper, 100e6);
+        vm.startPrank(swapper);
+        swapToken.approve(address(groveBasin), 100e6);
+        groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, swapper, 0);
+        vm.stopPrank();
+
+        uint256 feeClaimerShares = groveBasin.shares(feeClaimer);
+        assertGt(feeClaimerShares, 0);
+
+        uint256 expectedAssets = groveBasin.convertToAssets(address(collateralToken), feeClaimerShares);
+
+        vm.prank(feeClaimer);
+        uint256 assetsWithdrawn = groveBasin.withdraw(address(collateralToken), feeClaimer, type(uint256).max);
+
+        assertEq(assetsWithdrawn, expectedAssets);
+        assertEq(groveBasin.shares(feeClaimer), 0);
+    }
+
+    function test_setFeeClaimer() public {
+        address newClaimer = makeAddr("newClaimer");
+
+        vm.prank(owner);
+        groveBasin.setFeeClaimer(newClaimer);
+
+        assertEq(groveBasin.feeClaimer(), newClaimer);
+    }
+
+    function test_setFeeClaimer_toZero() public {
+        assertEq(groveBasin.feeClaimer(), feeClaimer);
+
+        vm.prank(owner);
+        groveBasin.setFeeClaimer(address(0));
+
+        assertEq(groveBasin.feeClaimer(), address(0));
+    }
+
+    function test_setFeeClaimer_notAdmin() public {
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                address(this),
+                groveBasin.MANAGER_ADMIN_ROLE()
+            )
+        );
+        groveBasin.setFeeClaimer(makeAddr("random"));
+    }
+
+    function testFuzz_feeSharesAccrued(uint256 amountIn, uint256 fee) public {
+        amountIn = _bound(amountIn, 1e6, 100_000e6);
+        fee      = _bound(fee,      1,   500);
+
+        vm.prank(owner);
+        groveBasin.setPurchaseFee(fee);
+
+        swapToken.mint(swapper, amountIn);
+        vm.startPrank(swapper);
+        swapToken.approve(address(groveBasin), amountIn);
+        groveBasin.swapExactIn(address(swapToken), address(creditToken), amountIn, 0, swapper, 0);
+        vm.stopPrank();
+
+        assertGt(groveBasin.shares(feeClaimer), 0);
     }
 
 }

@@ -73,6 +73,8 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     uint256 public override maxStalenessThreshold;
     uint256 public override redeemedCreditTokenBalance;
 
+    address public override feeClaimer;
+
     mapping(address user => uint256 shares) public override shares;
 
     constructor(
@@ -328,6 +330,17 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     }
 
     /**********************************************************************************************/
+    /*** Fee claimer functions                                                                  ***/
+    /**********************************************************************************************/
+
+    /// @inheritdoc IGroveBasin
+    function setFeeClaimer(address newFeeClaimer) external override onlyRole(MANAGER_ADMIN_ROLE) {
+        address oldFeeClaimer = feeClaimer;
+        feeClaimer = newFeeClaimer;
+        emit FeeClaimerSet(oldFeeClaimer, newFeeClaimer);
+    }
+
+    /**********************************************************************************************/
     /*** Manager functions                                                                      ***/
     /**********************************************************************************************/
 
@@ -403,9 +416,16 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
         _checkSwapNotPaused(assetIn, assetOut);
 
-        amountOut = previewSwapExactIn(assetIn, assetOut, amountIn);
+        if (_getAssetValue(assetIn, amountIn, false) > maxSwapSize) revert SwapSizeExceeded();
+
+        uint256 grossOut = _getSwapQuote(assetIn, assetOut, amountIn, false);
+        uint256 fee      = previewSwapExactInFee(assetOut, grossOut);
+
+        amountOut = grossOut - fee;
 
         if (amountOut < minAmountOut) revert AmountOutTooLow();
+
+        _accrueFeeShares(assetOut, fee);
 
         _withdrawLiquidityInPocket(amountOut, assetOut);
         _pullAsset(assetIn, amountIn);
@@ -430,9 +450,14 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
         _checkSwapNotPaused(assetIn, assetOut);
 
-        amountIn = previewSwapExactOut(assetIn, assetOut, amountOut);
+        uint256 fee = previewSwapExactOutFee(assetOut, amountOut);
 
-        if (amountIn > maxAmountIn) revert AmountInTooHigh();
+        amountIn = _getSwapQuote(assetOut, assetIn, amountOut + fee, true);
+
+        if (_getAssetValue(assetIn, amountIn, false) > maxSwapSize) revert SwapSizeExceeded();
+        if (amountIn > maxAmountIn)                                 revert AmountInTooHigh();
+
+        _accrueFeeShares(assetOut, fee);
 
         _withdrawLiquidityInPocket(amountOut, assetOut);
         _pullAsset(assetIn, amountIn);
@@ -817,6 +842,24 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     /**********************************************************************************************/
     /*** Internal helper functions                                                              ***/
     /**********************************************************************************************/
+
+    /// @dev Converts a fee amount in `asset` terms to shares and assigns them to the fee claimer.
+    function _accrueFeeShares(address asset, uint256 feeAmount) internal {
+        if (feeAmount == 0) return;
+
+        address feeClaimer_ = feeClaimer;
+        if (feeClaimer_ == address(0)) return;
+
+        uint256 feeValue  = _getAssetValue(asset, feeAmount, false);
+        uint256 feeShares = convertToShares(feeValue);
+
+        if (feeShares == 0) return;
+
+        shares[feeClaimer_] += feeShares;
+        totalShares         += feeShares;
+
+        emit FeeSharesAccrued(feeClaimer_, feeShares);
+    }
 
     /// @dev Converts asset value to shares, rounding up. Used for withdrawal share calculations.
     function _convertToSharesRoundUp(uint256 assetValue) internal view returns (uint256) {

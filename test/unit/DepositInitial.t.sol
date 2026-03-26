@@ -85,7 +85,7 @@ contract DepositInitialTests is GroveBasinTestBase {
         swapToken.mint(depositor, 1);
         vm.startPrank(depositor);
         swapToken.approve(address(zeroShareBasin), 1);
-        vm.expectRevert("GB/no-new-shares");
+        vm.expectRevert(IGroveBasin.NoNewShares.selector);
         zeroShareBasin.depositInitial(address(swapToken), 1);
         vm.stopPrank();
 
