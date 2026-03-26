@@ -141,9 +141,9 @@ abstract contract BUIDLForkTestBase is ForkTestBase {
 contract BUIDLForkTest_Deployment is BUIDLForkTestBase {
 
     function test_deployment() public {
-        assertEq(address(groveBasin.swapToken()),       Ethereum.USDS);
-        assertEq(address(groveBasin.collateralToken()), Ethereum.USDC);
-        assertEq(address(groveBasin.creditToken()),     Ethereum.BUIDL);
+        assertEq(groveBasin.swapToken(),       Ethereum.USDS);
+        assertEq(groveBasin.collateralToken(), Ethereum.USDC);
+        assertEq(groveBasin.creditToken(),     Ethereum.BUIDL);
         assertEq(groveBasin.pocket(),                   pocket);
     }
 

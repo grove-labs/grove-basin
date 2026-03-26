@@ -39,9 +39,9 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     uint256 internal immutable _collateralTokenPrecision;
     uint256 internal immutable _creditTokenPrecision;
 
-    IERC20 public override immutable swapToken;
-    IERC20 public override immutable collateralToken;
-    IERC20 public override immutable creditToken;
+    address public override immutable swapToken;
+    address public override immutable collateralToken;
+    address public override immutable creditToken;
 
     address public override swapTokenRateProvider;
     address public override collateralTokenRateProvider;
@@ -106,9 +106,9 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
             "GB/tokens-must-be-unique"
         );
 
-        swapToken       = IERC20(swapToken_);
-        collateralToken = IERC20(collateralToken_);
-        creditToken     = IERC20(creditToken_);
+        swapToken       = swapToken_;
+        collateralToken = collateralToken_;
+        creditToken     = creditToken_;
 
         _swapTokenPrecision       = 10 ** IERC20(swapToken_).decimals();
         _collateralTokenPrecision = 10 ** IERC20(collateralToken_).decimals();
@@ -171,13 +171,13 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
         address oldRateProvider;
 
-        if (token == address(swapToken)) {
+        if (token == swapToken) {
             oldRateProvider             = swapTokenRateProvider;
             swapTokenRateProvider       = newRateProvider;
-        } else if (token == address(collateralToken)) {
+        } else if (token == collateralToken) {
             oldRateProvider             = collateralTokenRateProvider;
             collateralTokenRateProvider = newRateProvider;
-        } else if (token == address(creditToken)) {
+        } else if (token == creditToken) {
             oldRateProvider             = creditTokenRateProvider;
             creditTokenRateProvider     = newRateProvider;
         } else {
@@ -272,14 +272,14 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
         require(newPocket != pocket_, "GB/same-pocket");
 
-        _withdrawLiquidityInPocket(_getAvailableBalance(address(swapToken)), address(swapToken));
+        _withdrawLiquidityInPocket(_getAvailableBalance(swapToken), swapToken);
 
-        uint256 amountToTransfer = swapToken.balanceOf(pocket_);
+        uint256 amountToTransfer = IERC20(swapToken).balanceOf(pocket_);
 
         if (!_hasPocket()) {
-            swapToken.safeTransfer(newPocket, amountToTransfer);
+            IERC20(swapToken).safeTransfer(newPocket, amountToTransfer);
         } else {
-            swapToken.safeTransferFrom(pocket_, newPocket, amountToTransfer);
+            IERC20(swapToken).safeTransferFrom(pocket_, newPocket, amountToTransfer);
         }
 
         pocket = newPocket;
@@ -508,7 +508,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
         public view override returns (uint256)
     {
         require(
-            !(asset == address(creditToken) && creditTokenDepositsDisabled),
+            !(asset == creditToken && creditTokenDepositsDisabled),
             "GB/creditToken-deposits-disabled"
         );
 
@@ -554,7 +554,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
         amountOut = _getSwapQuote(assetIn, assetOut, amountIn, false);
 
         // Assumes no stable-to-stable swap
-        if (assetOut == address(creditToken)) {
+        if (assetOut == creditToken) {
             amountOut -= _calculateFee(amountOut, purchaseFee, false);
         } else {
             amountOut -= _calculateFee(amountOut, redemptionFee, false);
@@ -571,7 +571,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
         require(_getAssetValue(assetIn, amountIn, false) <= maxSwapSize, "GB/swap-size-exceeded");
 
         // Assumes no stable-to-stable swap
-        if (assetOut == address(creditToken)) {
+        if (assetOut == creditToken) {
             amountIn += _calculateFee(amountIn, purchaseFee, true);
         } else {
             amountIn += _calculateFee(amountIn, redemptionFee, true);
@@ -590,13 +590,13 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
         uint256 assetValue = convertToAssetValue(numShares);
 
-        if (asset == address(swapToken)) {
+        if (asset == swapToken) {
             return assetValue
                 * 1e9
                 * _swapTokenPrecision
                 / _getConversionRate(swapTokenRateProvider);
         }
-        else if (asset == address(collateralToken)) {
+        else if (asset == collateralToken) {
             // assetValue is in 1e18, rate is 1e27, precision is native decimals
             // amount = assetValue * 1e27 / rate * precision / 1e18 = assetValue * 1e9 * precision / rate
             return assetValue
@@ -643,13 +643,13 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     /// @inheritdoc IGroveBasin
     function totalAssets() public view override returns (uint256) {
         return _getSwapTokenValue(
-                    _getAvailableBalance(address(swapToken))
+                    _getAvailableBalance(swapToken)
                 )
             +  _getCollateralTokenValue(
-                    _getAvailableBalance(address(collateralToken))
+                    _getAvailableBalance(collateralToken)
                 )
             +  _getCreditTokenValue(
-                    _getAvailableBalance(address(creditToken)), false // Round down
+                    _getAvailableBalance(creditToken), false // Round down
                 );
     }
 
@@ -664,9 +664,9 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
     /// @dev Returns the USD value of `amount` of `asset` in 1e18 precision.
     function _getAssetValue(address asset, uint256 amount, bool roundUp) internal view returns (uint256) {
-        if      (asset == address(swapToken))       return _getSwapTokenValue(amount);
-        else if (asset == address(collateralToken)) return _getCollateralTokenValue(amount);
-        else if (asset == address(creditToken))     return _getCreditTokenValue(amount, roundUp);
+        if      (asset == swapToken)       return _getSwapTokenValue(amount);
+        else if (asset == collateralToken) return _getCollateralTokenValue(amount);
+        else if (asset == creditToken)     return _getCreditTokenValue(amount, roundUp);
         else                                        revert("GB/invalid-asset");
     }
 
@@ -709,19 +709,19 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     function _getSwapQuote(address asset, address quoteAsset, uint256 amount, bool roundUp)
         internal view returns (uint256 quoteAmount)
     {
-        if (asset == address(swapToken)) {
-            if      (quoteAsset == address(collateralToken)) revert("GB/invalid-swap");
-            else if (quoteAsset == address(creditToken))     return _convertSwapToCreditToken(amount, roundUp);
+        if (asset == swapToken) {
+            if      (quoteAsset == collateralToken) revert("GB/invalid-swap");
+            else if (quoteAsset == creditToken)     return _convertSwapToCreditToken(amount, roundUp);
         }
 
-        else if (asset == address(collateralToken)) {
-            if      (quoteAsset == address(swapToken))      revert("GB/invalid-swap");
-            else if (quoteAsset == address(creditToken))    return _convertCollateralToCreditToken(amount, roundUp);
+        else if (asset == collateralToken) {
+            if      (quoteAsset == swapToken)      revert("GB/invalid-swap");
+            else if (quoteAsset == creditToken)    return _convertCollateralToCreditToken(amount, roundUp);
         }
 
-        else if (asset == address(creditToken)) {
-            if      (quoteAsset == address(swapToken))       return _convertCreditTokenToSwap(amount, roundUp);
-            else if (quoteAsset == address(collateralToken)) return _convertCreditTokenToCollateral(amount, roundUp);
+        else if (asset == creditToken) {
+            if      (quoteAsset == swapToken)       return _convertCreditTokenToSwap(amount, roundUp);
+            else if (quoteAsset == collateralToken) return _convertCreditTokenToCollateral(amount, roundUp);
         }
 
         revert("GB/invalid-asset");
@@ -835,9 +835,9 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     function _withdrawLiquidityInPocket(uint256 amount, address asset) internal {
         if (!_hasPocket()) return;
 
-        if (asset == address(swapToken)) {
+        if (asset == swapToken) {
             IGroveBasinPocket(pocket).withdrawLiquidity(amount, asset);
-        } else if (asset == address(collateralToken)) {
+        } else if (asset == collateralToken) {
             uint256 basinBalance = IERC20(asset).balanceOf(address(this));
 
             if (basinBalance < amount) {
@@ -850,14 +850,14 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
     /// @dev Deposits swap token liquidity into the pocket if one is configured.
     function _depositLiquidityInPocket(uint256 amount, address asset) internal {
-        if (asset == address(swapToken) && _hasPocket()) {
+        if (asset == swapToken && _hasPocket()) {
             IGroveBasinPocket(pocket).depositLiquidity(amount, asset);
         }
     }
 
     /// @dev Returns the available balance of `asset`, querying the pocket for swap tokens.
     function _getAvailableBalance(address asset) internal view returns (uint256) {
-        if (asset == address(swapToken) && _hasPocket()) {
+        if (asset == swapToken && _hasPocket()) {
             return IGroveBasinPocket(pocket).availableBalance(asset);
         }
 
@@ -871,25 +871,25 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
     /// @dev Reverts if the swap direction from `assetIn` to `assetOut` is paused.
     function _checkSwapNotPaused(address assetIn, address assetOut) internal view {
-        if (assetIn == address(swapToken) && assetOut == address(creditToken)) {
+        if (assetIn == swapToken && assetOut == creditToken) {
             require(!pausedSwapToCredit, "GB/route-paused");
-        } else if (assetIn == address(creditToken) && assetOut == address(swapToken)) {
+        } else if (assetIn == creditToken && assetOut == swapToken) {
             require(!pausedCreditToSwap, "GB/route-paused");
-        } else if (assetIn == address(collateralToken) && assetOut == address(creditToken)) {
+        } else if (assetIn == collateralToken && assetOut == creditToken) {
             require(!pausedCollateralToCredit, "GB/route-paused");
-        } else if (assetIn == address(creditToken) && assetOut == address(collateralToken)) {
+        } else if (assetIn == creditToken && assetOut == collateralToken) {
             require(!pausedCreditToCollateral, "GB/route-paused");
         }
     }
 
     /// @dev Returns true if `asset` is one of the three supported tokens.
     function _isValidAsset(address asset) internal view returns (bool) {
-        return asset == address(swapToken) || asset == address(collateralToken) || asset == address(creditToken);
+        return asset == swapToken || asset == collateralToken || asset == creditToken;
     }
 
     /// @dev Returns the address holding custody of `asset` (pocket for swap tokens, Basin otherwise).
     function _getAssetCustodian(address asset) internal view returns (address custodian) {
-        custodian = asset == address(swapToken) ? pocket : address(this);
+        custodian = asset == swapToken ? pocket : address(this);
     }
 
     /// @dev Transfers `amount` of `asset` from `msg.sender` to the asset's custodian.
@@ -899,7 +899,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
     /// @dev Transfers `amount` of `asset` to `receiver`, pulling from pocket if needed.
     function _pushAsset(address asset, address receiver, uint256 amount) internal {
-        if (asset == address(swapToken) && _hasPocket()) {
+        if (asset == swapToken && _hasPocket()) {
             IERC20(asset).safeTransferFrom(pocket, receiver, amount);
         } else {
             IERC20(asset).safeTransfer(receiver, amount);
@@ -911,9 +911,9 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
         require(!pausedInitiateRedeem,                     "GB/initiate-redeem-paused");
         require(hasRole(REDEEMER_CONTRACT_ROLE, redeemer), "GB/invalid-redeemer");
 
-        creditToken.approve(redeemer, creditTokenAmount);
+        IERC20(creditToken).approve(redeemer, creditTokenAmount);
         ITokenRedeemer(redeemer).initiateRedeem(creditTokenAmount);
-        creditToken.approve(redeemer, 0);
+        IERC20(creditToken).approve(redeemer, 0);
 
         redeemedCreditTokenBalance += creditTokenAmount;
         emit RedeemInitiated(redeemer, msg.sender, creditTokenAmount);

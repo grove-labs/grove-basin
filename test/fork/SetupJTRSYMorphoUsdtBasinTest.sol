@@ -38,9 +38,9 @@ contract SetupJTRSYMorphoUsdtBasinTest is Test, SetupJTRSYMorphoUsdtBasin {
     }
 
     function test_deploy_basinTokens() public view {
-        assertEq(address(groveBasin.swapToken()),       Ethereum.USDT);
-        assertEq(address(groveBasin.collateralToken()), Ethereum.USDC);
-        assertEq(address(groveBasin.creditToken()),     Ethereum.SUSDS);
+        assertEq(groveBasin.swapToken(),       Ethereum.USDT);
+        assertEq(groveBasin.collateralToken(), Ethereum.USDC);
+        assertEq(groveBasin.creditToken(),     Ethereum.SUSDS);
     }
 
     function test_deploy_rateProviders() public view {

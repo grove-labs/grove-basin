@@ -57,9 +57,9 @@ contract GroveBasinDeployForkTest is Test {
         GroveBasin groveBasin = GroveBasin(groveBasinAddress);
 
         // Verify initialization worked correctly
-        assertEq(address(groveBasin.swapToken()),       Ethereum.USDT);
-        assertEq(address(groveBasin.collateralToken()), Ethereum.USDC);
-        assertEq(address(groveBasin.creditToken()),     Ethereum.USDS);
+        assertEq(groveBasin.swapToken(),       Ethereum.USDT);
+        assertEq(groveBasin.collateralToken(), Ethereum.USDC);
+        assertEq(groveBasin.creditToken(),     Ethereum.USDS);
 
         // Verify the safeApprove worked by checking that deposit executed successfully
         // The library does: safeApprove(1e6) then deposit(1e6)

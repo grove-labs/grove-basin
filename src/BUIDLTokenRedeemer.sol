@@ -32,12 +32,12 @@ contract BUIDLTokenRedeemer is ITokenRedeemer {
         require(basin_             != address(0), "BUIDLTokenRedeemer/invalid-basin");
 
         require(
-            address(IGroveBasin(basin_).creditToken()) == creditToken_,
+            IGroveBasin(basin_).creditToken() == creditToken_,
             "BUIDLTokenRedeemer/creditToken-mismatch"
         );
 
         creditToken       = creditToken_;
-        collateralToken   = address(IGroveBasin(basin_).collateralToken());
+        collateralToken   = IGroveBasin(basin_).collateralToken();
         redemptionAddress = redemptionAddress_;
         basin             = IGroveBasin(basin_);
     }

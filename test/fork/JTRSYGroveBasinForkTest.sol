@@ -82,9 +82,9 @@ contract JTRSYGroveBasinForkTest_Constructor is JTRSYGroveBasinForkTestBase {
         assertEq(tokenRedeemer.vault(),       CENTRIFUGE_JTRSY_VAULT);
         assertEq(tokenRedeemer.creditToken(), address(creditToken));
 
-        assertEq(address(groveBasin.swapToken()),       address(swapToken));
-        assertEq(address(groveBasin.collateralToken()), address(collateralToken));
-        assertEq(address(groveBasin.creditToken()),     address(creditToken));
+        assertEq(groveBasin.swapToken(),       address(swapToken));
+        assertEq(groveBasin.collateralToken(), address(collateralToken));
+        assertEq(groveBasin.creditToken(),     address(creditToken));
 
         assertTrue(groveBasin.hasRole(groveBasin.REDEEMER_CONTRACT_ROLE(), address(tokenRedeemer)));
     }

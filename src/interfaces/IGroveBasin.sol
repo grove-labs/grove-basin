@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.24;
 
-import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
-
 interface IGroveBasin {
 
     /**********************************************************************************************/
@@ -193,24 +191,23 @@ interface IGroveBasin {
     /**********************************************************************************************/
 
     /**
-     *  @dev    Returns the IERC20 interface representing the swap token.
-     *  @return The IERC20 interface of the swap token.
+     *  @dev    Returns the address of the swap token.
+     *  @return The address of the swap token.
      */
-    function swapToken() external view returns (IERC20);
+    function swapToken() external view returns (address);
 
     /**
-     *  @dev    Returns the IERC20 interface representing the collateral token.
-     *  @return The IERC20 interface of the collateral token.
+     *  @dev    Returns the address of the collateral token.
+     *  @return The address of the collateral token.
      */
-    function collateralToken() external view returns (IERC20);
+    function collateralToken() external view returns (address);
 
     /**
-     *  @dev    Returns the IERC20 interface representing the credit token. This asset is the
-     *          yield-bearing asset in the GroveBasin. The value of this asset is queried from the
-     *          rate provider.
-     *  @return The IERC20 interface of the credit token.
+     *  @dev    Returns the address of the credit token. This asset is the yield-bearing asset in
+     *          the GroveBasin. The value of this asset is queried from the rate provider.
+     *  @return The address of the credit token.
      */
-    function creditToken() external view returns (IERC20);
+    function creditToken() external view returns (address);
 
     /**
      *  @dev    Returns the maximum value of a swap in 1e18 precision. Settable by the manager.
