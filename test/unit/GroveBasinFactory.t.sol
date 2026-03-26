@@ -37,9 +37,9 @@ contract GroveBasinFactoryTests is GroveBasinTestBase {
 
         assertTrue(basin.hasRole(basin.OWNER_ROLE(), owner));
 
-        assertEq(address(basin.swapToken()),                   address(swapToken));
-        assertEq(address(basin.collateralToken()),             address(collateralToken));
-        assertEq(address(basin.creditToken()),                 address(creditToken));
+        assertEq(basin.swapToken(),                   address(swapToken));
+        assertEq(basin.collateralToken(),             address(collateralToken));
+        assertEq(basin.creditToken(),                 address(creditToken));
         assertEq(address(basin.swapTokenRateProvider()),       address(swapTokenRateProvider));
         assertEq(address(basin.collateralTokenRateProvider()), address(collateralTokenRateProvider));
         assertEq(address(basin.creditTokenRateProvider()),     address(creditTokenRateProvider));

@@ -46,11 +46,11 @@ contract JTRSYTokenRedeemer is ITokenRedeemer {
         require(basin_       != address(0), "JTRSYTokenRedeemer/invalid-basin");
 
         require(
-            address(IGroveBasin(basin_).creditToken()) == creditToken_,
+            IGroveBasin(basin_).creditToken() == creditToken_,
             "JTRSYTokenRedeemer/creditToken-mismatch"
         );
         require(
-            address(IGroveBasin(basin_).collateralToken()) == IAsyncVaultLike(vault_).asset(),
+            IGroveBasin(basin_).collateralToken() == IAsyncVaultLike(vault_).asset(),
             "JTRSYTokenRedeemer/collateral-asset-mismatch"
         );
 

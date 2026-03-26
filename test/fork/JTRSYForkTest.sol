@@ -109,9 +109,9 @@ abstract contract JTRSYForkTestBase is ForkTestBase {
 contract JTRSYForkTest_Deployment is JTRSYForkTestBase {
 
     function test_deployment() public {
-        assertEq(address(groveBasin.swapToken()),       Ethereum.USDS);
-        assertEq(address(groveBasin.collateralToken()), Ethereum.USDC);
-        assertEq(address(groveBasin.creditToken()),     JTRSY_TOKEN);
+        assertEq(groveBasin.swapToken(),       Ethereum.USDS);
+        assertEq(groveBasin.collateralToken(), Ethereum.USDC);
+        assertEq(groveBasin.creditToken(),     JTRSY_TOKEN);
         assertEq(groveBasin.pocket(),                   pocket);
     }
 
