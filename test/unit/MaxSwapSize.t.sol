@@ -115,6 +115,11 @@ contract GroveBasinMaxSwapSizeSwapExactInTests is GroveBasinTestBase {
         groveBasin.swapExactIn(address(swapToken), address(creditToken), 1e6, 0, receiver, 0);
     }
 
+    function test_previewSwapExactIn_exceedsMaxSwapSize() public {
+        vm.expectRevert("GB/swap-size-exceeded");
+        groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), 101e6);
+    }
+
     function test_swapExactIn_defaultMaxSwapSize() public {
         GroveBasin basin = new GroveBasin(
             owner,
@@ -153,6 +158,16 @@ contract GroveBasinMaxSwapSizeSwapExactOutTests is GroveBasinTestBase {
         // Preview also reverts since check is in _getSwapQuote
         vm.expectRevert(IGroveBasin.SwapSizeExceeded.selector);
         groveBasin.previewSwapExactOut(address(swapToken), address(creditToken), 80.8e18);
+    }
+
+    function test_swapExactOut_exceedsMaxSwapSize_directSwap() public {
+        swapToken.mint(swapper, 200e6);
+
+        vm.startPrank(swapper);
+        swapToken.approve(address(groveBasin), 200e6);
+
+        vm.expectRevert("GB/swap-size-exceeded");
+        groveBasin.swapExactOut(address(swapToken), address(creditToken), 81e18, type(uint256).max, receiver, 0);
     }
 
     function test_swapExactOut_swapTokenToCreditToken_exactMaxSwapSize() public {

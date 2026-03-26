@@ -389,6 +389,47 @@ contract GroveBasinSetRedemptionFeeSuccessTests is GroveBasinTestBase {
 /*** Fee calculation tests                                                                  ***/
 /**********************************************************************************************/
 
+contract GroveBasinPreviewSwapFeeTests is GroveBasinTestBase {
+
+    function setUp() public override {
+        super.setUp();
+
+        vm.prank(owner);
+        groveBasin.setFeeBounds(0, 500);
+    }
+
+    function test_previewSwapExactInFee_creditToken() public {
+        vm.prank(owner);
+        groveBasin.setPurchaseFee(100);  // 1%
+
+        assertEq(groveBasin.previewSwapExactInFee(address(creditToken), 10_000e18), 100e18);
+    }
+
+    function test_previewSwapExactInFee_nonCreditToken() public {
+        vm.prank(owner);
+        groveBasin.setRedemptionFee(200);  // 2%
+
+        assertEq(groveBasin.previewSwapExactInFee(address(swapToken), 10_000e6), 200e6);
+    }
+
+    function test_previewSwapExactOutFee_creditToken() public {
+        vm.prank(owner);
+        groveBasin.setPurchaseFee(100);  // 1%
+
+        uint256 fee = groveBasin.previewSwapExactOutFee(address(creditToken), 9_900e18);
+        assertEq(fee, 100e18);
+    }
+
+    function test_previewSwapExactOutFee_nonCreditToken() public {
+        vm.prank(owner);
+        groveBasin.setRedemptionFee(200);  // 2%
+
+        uint256 fee = groveBasin.previewSwapExactOutFee(address(swapToken), 9_800e6);
+        assertEq(fee, 200e6);
+    }
+
+}
+
 contract GroveBasinFeeCalculationTests is GroveBasinTestBase {
 
     function setUp() public override {
@@ -1192,6 +1233,21 @@ contract GroveBasinFeeShareAccrualTests is GroveBasinTestBase {
         vm.stopPrank();
 
         assertGt(groveBasin.shares(feeClaimer), firstShares);
+    }
+
+    function test_feeSharesNotAccrued_zeroSharesFromTinyFee() public {
+        _deposit(address(collateralToken), makeAddr("bigLp"), 1e18);
+
+        // Inflate totalAssets relative to totalShares so fee rounds to 0 shares
+        mockCollateralTokenRateProvider.__setConversionRate(1e45);
+
+        swapToken.mint(swapper, 1);
+        vm.startPrank(swapper);
+        swapToken.approve(address(groveBasin), 1);
+        groveBasin.swapExactIn(address(swapToken), address(creditToken), 1, 0, swapper, 0);
+        vm.stopPrank();
+
+        assertEq(groveBasin.shares(feeClaimer), 0);
     }
 
     function test_feeSharesNotAccrued_noFeeClaimerSet() public {
