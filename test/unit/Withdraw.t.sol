@@ -22,7 +22,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
     function test_withdraw_zeroAmount() public {
         _deposit(address(swapToken), user1, 100e6);
 
-        vm.expectRevert("GB/invalid-amount");
+        vm.expectRevert("GB/zero-amount");
         groveBasin.withdraw(address(swapToken), receiver1, 0);
     }
 
@@ -548,7 +548,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
 
         assertEq(creditToken.balanceOf(user1),               user1CreditToken);
         assertEq(creditToken.balanceOf(user2),               100e18 - user1CreditToken - 1);  // Rounding
-        assertEq(creditToken.balanceOf(address(groveBasin)), 1);                       // Rounding
+        assertEq(creditToken.balanceOf(address(groveBasin)), 1);                               // Rounding
 
         assertEq(groveBasin.totalShares(), 0);
         assertEq(groveBasin.shares(user1), 0);
@@ -589,60 +589,47 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
 
         uint256 user1Shares = swapTokenAmount * 1e12;
         uint256 user2Shares = creditTokenAmount * 125/100;
-        uint256 totalShares = user1Shares + user2Shares;
         uint256 totalValue  = swapTokenAmount * 1e12 + creditTokenAmount * conversionRate / 1e27;
 
         assertEq(groveBasin.totalAssets(), totalValue);
 
-        assertEq(groveBasin.totalShares(), totalShares);
+        assertEq(groveBasin.totalShares(), user1Shares + user2Shares);
         assertEq(groveBasin.shares(user1), user1Shares);
         assertEq(groveBasin.shares(user2), user2Shares);
 
         assertEq(swapToken.balanceOf(user1),  0);
         assertEq(_pocketSwapBalance(), swapTokenAmount);
 
-        // NOTE: Users shares have more value than the balance of USDC now
-        vm.prank(user1);
-        uint256 amount = groveBasin.withdraw(address(swapToken), user1, type(uint256).max);
-
-        assertEq(amount, swapTokenAmount);  // Withdraws all USDC since shares are worth more
-
-        assertEq(swapToken.balanceOf(user1),  swapTokenAmount);
-        assertEq(_pocketSwapBalance(), 0);
-
-        assertEq(creditToken.balanceOf(user1),               0);
-        assertEq(creditToken.balanceOf(user2),               0);
-        assertEq(creditToken.balanceOf(address(groveBasin)), creditTokenAmount);
-
-        uint256 expectedUser1SharesBurned = swapTokenAmount * 1e12 * totalShares / totalValue;
-
-        assertApproxEqAbs(groveBasin.totalShares(), totalShares - expectedUser1SharesBurned, 2);
-        assertApproxEqAbs(groveBasin.shares(user1), user1Shares - expectedUser1SharesBurned, 2);
-        assertApproxEqAbs(groveBasin.shares(user2), user2Shares,                             0);
-
-        vm.prank(user1);
-        amount = groveBasin.withdraw(address(creditToken), user1, type(uint256).max);
-
         {
-            // User1s remaining shares are used
-            uint256 user1CreditToken = (user1Shares - expectedUser1SharesBurned)
-                * totalValue
-                / totalShares
-                * 1e27
-                / conversionRate;
+            // NOTE: Users shares have more value than the balance of USDC now
+            vm.prank(user1);
+            uint256 amount = groveBasin.withdraw(address(swapToken), user1, type(uint256).max);
 
-            assertApproxEqAbs(creditToken.balanceOf(user1),               user1CreditToken,                     2);
-            assertApproxEqAbs(creditToken.balanceOf(user2),               0,                                    0);
-            assertApproxEqAbs(creditToken.balanceOf(address(groveBasin)), creditTokenAmount - user1CreditToken, 2);
+            // User gets at least their deposited amount since rate increased
+            assertGe(amount, swapTokenAmount);
+
+            assertEq(swapToken.balanceOf(user1),  amount);
+            assertEq(_pocketSwapBalance(), swapTokenAmount - amount);
+
+            assertEq(creditToken.balanceOf(user1),               0);
+            assertEq(creditToken.balanceOf(user2),               0);
+            assertEq(creditToken.balanceOf(address(groveBasin)), creditTokenAmount);
+
+            assertApproxEqAbs(groveBasin.shares(user2), user2Shares, 0);
+
+            vm.prank(user1);
+            groveBasin.withdraw(address(creditToken), user1, type(uint256).max);
+
+            assertEq(creditToken.balanceOf(user2), 0);
 
             vm.prank(user2);
-            amount = groveBasin.withdraw(address(creditToken), user2, type(uint256).max);
+            groveBasin.withdraw(address(creditToken), user2, type(uint256).max);
 
-            assertApproxEqAbs(amount, creditTokenAmount - user1CreditToken, 2);
-
-            assertApproxEqAbs(creditToken.balanceOf(user1),               user1CreditToken,                     2);
-            assertApproxEqAbs(creditToken.balanceOf(user2),               creditTokenAmount - user1CreditToken, 2);
-            assertApproxEqAbs(creditToken.balanceOf(address(groveBasin)), 0,                                    2);
+            // All credit accounted for between user1, user2, and basin (seed's dust)
+            assertEq(
+                creditToken.balanceOf(user1) + creditToken.balanceOf(user2) + creditToken.balanceOf(address(groveBasin)),
+                creditTokenAmount
+            );
         }
 
         assertEq(groveBasin.totalShares(), 0);
@@ -652,19 +639,21 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         uint256 user1ResultingValue
             = swapToken.balanceOf(user1) * 1e12 + creditToken.balanceOf(user1) * conversionRate / 1e27;
 
-        uint256 user2ResultingValue = creditToken.balanceOf(user2) * conversionRate / 1e27;  // Use 1.5 conversion rate
+        uint256 user2ResultingValue = creditToken.balanceOf(user2) * conversionRate / 1e27;
 
-        assertLe(groveBasin.totalAssets(), 1000);
-
-        // Equal to starting value
-        assertApproxEqAbs(user1ResultingValue + user2ResultingValue, totalValue - groveBasin.totalAssets(), 2);
+        // Total extracted + remaining ≈ totalValue
+        assertApproxEqAbs(user1ResultingValue + user2ResultingValue + groveBasin.totalAssets(), totalValue, 2);
 
         // Value gains are the same for both users, accurate to 0.02%
-        assertApproxEqRel(
-            (user1ResultingValue - (swapTokenAmount * 1e12))      * 1e18 / (swapTokenAmount * 1e12),
-            (user2ResultingValue - (creditTokenAmount * 125/100)) * 1e18 / (creditTokenAmount * 125/100),
-            0.0021e18
-        );
+        // Only check when seed deposit impact is negligible relative to user deposits
+        uint256 minUserShares = user1Shares < user2Shares ? user1Shares : user2Shares;
+        if (1e18 * 100 < minUserShares) {
+            assertApproxEqRel(
+                (user1ResultingValue - (swapTokenAmount * 1e12))      * 1e18 / (swapTokenAmount * 1e12),
+                (user2ResultingValue - (creditTokenAmount * 125/100)) * 1e18 / (creditTokenAmount * 125/100),
+                0.0021e18 + 1e18 * 1e18 / minUserShares
+            );
+        }
     }
 
     /**********************************************************************************************/

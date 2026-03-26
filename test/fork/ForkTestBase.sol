@@ -13,6 +13,7 @@ import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 abstract contract ForkTestBase is Test {
 
     address public owner  = makeAddr("owner");
+    address public lp     = makeAddr("liquidityProvider");
     address public pocket;
 
     GroveBasin public groveBasin;
@@ -33,6 +34,7 @@ abstract contract ForkTestBase is Test {
 
         groveBasin = new GroveBasin(
             owner,
+            lp,
             address(swapToken),
             address(collateralToken),
             address(creditToken),
@@ -59,6 +61,8 @@ abstract contract ForkTestBase is Test {
         }
 
         _postDeploy();
+
+        _deposit(address(swapToken), address(0), 1e6);
 
         vm.label(address(swapToken),        "swapToken");
         vm.label(address(collateralToken),  "collateralToken");
@@ -90,12 +94,9 @@ abstract contract ForkTestBase is Test {
     }
 
     function _deposit(address asset, address user, address receiver, uint256 amount) internal {
-        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
-        vm.prank(owner);
-        groveBasin.grantRole(lpRole, user);
-
-        _dealToken(asset, user, amount);
-        vm.startPrank(user);
+        address lp_ = groveBasin.liquidityProvider();
+        _dealToken(asset, lp_, amount);
+        vm.startPrank(lp_);
         IERC20(asset).approve(address(groveBasin), amount);
         groveBasin.deposit(asset, receiver, amount);
         vm.stopPrank();

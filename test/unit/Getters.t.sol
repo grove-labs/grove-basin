@@ -15,6 +15,7 @@ contract GroveBasinHarnessTests is GroveBasinTestBase {
         super.setUp();
         groveBasinHarness = new GroveBasinHarness(
             address(owner),
+            lp,
             address(swapToken),
             address(collateralToken),
             address(creditToken),

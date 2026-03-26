@@ -151,7 +151,7 @@ contract JTRSYForkTest_Deposit is JTRSYForkTestBase {
         _deposit(Ethereum.USDS, depositor, amount);
 
         assertGt(groveBasin.shares(depositor), 0);
-        assertEq(IERC20(Ethereum.USDS).balanceOf(pocket), amount);
+        assertEq(IERC20(Ethereum.USDS).balanceOf(pocket), amount + 1e6);
     }
 
     function test_deposit_allTokens() public {

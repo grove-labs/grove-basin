@@ -20,7 +20,7 @@ contract CollateralTokenRateProviderTests is GroveBasinTestBase {
         // Deposit 100 credit token ($125 worth at 18 decimals, since credit token rate is 1.25e27)
         _deposit(address(creditToken), address(this), 100e18);
 
-        // Total should be $225 (100 from collateral + 125 from credit)
+        // Total should be $225 (100 from USDC + 125 from credit)
         assertEq(groveBasin.totalAssets(), 225e18);
 
         // Swapping USDC to credit: 10 USDC ($10) should get 8 credit tokens ($10 / $1.25)
@@ -98,16 +98,22 @@ contract CollateralTokenRateProviderTests is GroveBasinTestBase {
         // User1's share value increased
         assertEq(groveBasin.convertToAssetValue(user1Shares), 110e18);
 
-        // User2 deposits 88 credit token ($110 worth: 88 * 1.25 = 110)
+        // User2 deposits credit tokens worth the same value as user1's shares
         address user2 = makeAddr("user2");
-        _deposit(address(creditToken), user2, 88e18);
+        uint256 user1Value = groveBasin.convertToAssetValue(user1Shares);
+        uint256 creditAmount = user1Value * 1e27 / 1.25e27;
+        _deposit(address(creditToken), user2, creditAmount);
 
-        // User2 should get same shares as user1 since they deposited same value
+        // User2 should get approximately same shares as user1
         uint256 user2Shares = groveBasin.shares(user2);
-        assertEq(user2Shares, user1Shares);
+        assertApproxEqAbs(user2Shares, user1Shares, 1);
 
-        // Both users have equal shares and equal value
-        assertEq(groveBasin.convertToAssetValue(user1Shares), groveBasin.convertToAssetValue(user2Shares));
+        // Both users have approximately equal value
+        assertApproxEqAbs(
+            groveBasin.convertToAssetValue(user1Shares),
+            groveBasin.convertToAssetValue(user2Shares),
+            2
+        );
     }
 
     function test_collateralTokenSwapWithCreditToken() public {

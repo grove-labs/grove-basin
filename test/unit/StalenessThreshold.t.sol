@@ -295,6 +295,7 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
     function test_defaultThreshold_staleRateReverts() public {
         GroveBasin freshBasin = new GroveBasin(
             owner,
+            lp,
             address(swapToken),
             address(collateralToken),
             address(creditToken),
@@ -390,12 +391,13 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
     function test_deposit_staleRate() public {
         mockCreditTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours - 1);
 
-        creditToken.mint(swapper, 100e18);
-        vm.startPrank(swapper);
+        address lp_ = groveBasin.liquidityProvider();
+        creditToken.mint(lp_, 100e18);
+        vm.startPrank(lp_);
         creditToken.approve(address(groveBasin), 100e18);
 
         vm.expectRevert("GB/stale-rate");
-        groveBasin.deposit(address(creditToken), swapper, 100e18);
+        groveBasin.deposit(address(creditToken), lp_, 100e18);
     }
 
     /**********************************************************************************************/
@@ -467,6 +469,7 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
     function test_getConversionRate_fresh() public {
         GroveBasinHarness harness = new GroveBasinHarness(
             owner,
+            lp,
             address(swapToken),
             address(collateralToken),
             address(creditToken),
@@ -490,6 +493,7 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
     function test_getConversionRate_stale() public {
         GroveBasinHarness harness = new GroveBasinHarness(
             owner,
+            lp,
             address(swapToken),
             address(collateralToken),
             address(creditToken),
@@ -515,6 +519,7 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
     function test_getConversionRate_defaultThresholdEnforced() public {
         GroveBasinHarness harness = new GroveBasinHarness(
             owner,
+            lp,
             address(swapToken),
             address(collateralToken),
             address(creditToken),

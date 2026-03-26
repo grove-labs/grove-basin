@@ -78,6 +78,7 @@ contract BUIDLTokenRedeemerConstructorTests is Test {
 
         return new GroveBasin(
             address(this),
+            address(this),
             address(swapToken_),
             collateralToken_,
             creditToken_,
@@ -150,6 +151,7 @@ contract BUIDLTokenRedeemerSetUpTests is Test {
 
         return new GroveBasin(
             address(this),
+            address(this),
             address(swapToken),
             collateralToken_,
             creditToken_,
@@ -189,6 +191,7 @@ contract BUIDLTokenRedeemerInitiateRedeemTests is Test {
         creditRp.__setConversionRate(1e27);
 
         basin = address(new GroveBasin(
+            address(this),
             address(this),
             address(swapToken),
             address(collateralToken),
@@ -274,6 +277,7 @@ contract BUIDLTokenRedeemerCompleteRedeemTests is Test {
         creditRp.__setConversionRate(1e27);
 
         basin = address(new GroveBasin(
+            address(this),
             address(this),
             address(swapToken),
             address(collateralToken),

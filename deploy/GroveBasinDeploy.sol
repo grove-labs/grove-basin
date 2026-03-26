@@ -12,6 +12,7 @@ library GroveBasinDeploy {
 
     function deploy(
         address owner,
+        address liquidityProvider,
         address swapToken,
         address collateralToken,
         address creditToken,
@@ -23,6 +24,7 @@ library GroveBasinDeploy {
     {
         groveBasin = address(new GroveBasin(
             owner,
+            liquidityProvider,
             swapToken,
             collateralToken,
             creditToken,
@@ -34,7 +36,7 @@ library GroveBasinDeploy {
         uint256 seedAmount = 10 ** IERC20(swapToken).decimals();
 
         IERC20(swapToken).safeApprove(groveBasin, seedAmount);
-        GroveBasin(groveBasin).deposit(swapToken, address(0), seedAmount);
+        GroveBasin(groveBasin).depositInitial(swapToken, seedAmount);
     }
 
 }

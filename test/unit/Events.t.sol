@@ -37,31 +37,27 @@ contract GroveBasinEventTests is GroveBasinTestBase {
     address receiver = makeAddr("receiver");
 
     function test_deposit_events() public {
-        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
-        vm.prank(owner);
-        groveBasin.grantRole(lpRole, sender);
+        vm.startPrank(lp);
 
-        vm.startPrank(sender);
-
-        collateralToken.mint(sender, 100e18);
+        collateralToken.mint(lp, 100e18);
         collateralToken.approve(address(groveBasin), 100e18);
 
         vm.expectEmit(address(groveBasin));
-        emit Deposit(address(collateralToken), sender, receiver, 100e18, 100e18);
+        emit Deposit(address(collateralToken), lp, receiver, 100e18, 100e18);
         groveBasin.deposit(address(collateralToken), receiver, 100e18);
 
-        swapToken.mint(sender, 100e6);
+        swapToken.mint(lp, 100e6);
         swapToken.approve(address(groveBasin), 100e6);
 
         vm.expectEmit(address(groveBasin));
-        emit Deposit(address(swapToken), sender, receiver, 100e6, 100e18);
+        emit Deposit(address(swapToken), lp, receiver, 100e6, 100e18);
         groveBasin.deposit(address(swapToken), receiver, 100e6);
 
-        creditToken.mint(sender, 100e18);
+        creditToken.mint(lp, 100e18);
         creditToken.approve(address(groveBasin), 100e18);
 
         vm.expectEmit(address(groveBasin));
-        emit Deposit(address(creditToken), sender, receiver, 100e18, 125e18);
+        emit Deposit(address(creditToken), lp, receiver, 100e18, 125e18);
         groveBasin.deposit(address(creditToken), receiver, 100e18);
     }
 

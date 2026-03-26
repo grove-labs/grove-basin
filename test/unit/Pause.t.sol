@@ -219,11 +219,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         vm.prank(manager);
         groveBasin.setPaused("deposits", true);
 
-        address user = makeAddr("user");
-
-        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
-        vm.prank(owner);
-        groveBasin.grantRole(lpRole, user);
+        address user = groveBasin.liquidityProvider();
 
         swapToken.mint(user, 100e6);
         vm.startPrank(user);
@@ -241,11 +237,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         vm.prank(manager);
         groveBasin.setPaused("deposits", false);
 
-        address user = makeAddr("user");
-
-        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
-        vm.prank(owner);
-        groveBasin.grantRole(lpRole, user);
+        address user = groveBasin.liquidityProvider();
 
         swapToken.mint(user, 100e6);
         vm.startPrank(user);

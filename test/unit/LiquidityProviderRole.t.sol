@@ -5,39 +5,23 @@ import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
 contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
 
-    address lp    = makeAddr("lp");
     address notLp = makeAddr("notLp");
 
-    function setUp() public override {
-        super.setUp();
-
-        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
-        vm.prank(owner);
-        groveBasin.grantRole(lpRole, lp);
-    }
-
     /**********************************************************************************************/
-    /*** LIQUIDITY_PROVIDER_ROLE gating                                                         ***/
+    /*** liquidityProvider gating                                                               ***/
     /**********************************************************************************************/
 
-    function test_deposit_unauthorized() public {
-        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
+    function test_deposit_notLiquidityProvider() public {
         collateralToken.mint(notLp, 100e18);
         vm.startPrank(notLp);
         collateralToken.approve(address(groveBasin), 100e18);
 
-        vm.expectRevert(
-            abi.encodeWithSignature(
-                "AccessControlUnauthorizedAccount(address,bytes32)",
-                notLp,
-                lpRole
-            )
-        );
+        vm.expectRevert("GB/not-lp");
         groveBasin.deposit(address(collateralToken), notLp, 100e18);
         vm.stopPrank();
     }
 
-    function test_deposit_authorized() public {
+    function test_deposit_asLiquidityProvider() public {
         collateralToken.mint(lp, 100e18);
         vm.startPrank(lp);
         collateralToken.approve(address(groveBasin), 100e18);
@@ -53,11 +37,11 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
 
     function test_setCreditTokenDepositsDisabled_notManagerAdmin() public {
         bytes32 managerAdminRole = groveBasin.MANAGER_ADMIN_ROLE();
-        vm.prank(lp);
+        vm.prank(notLp);
         vm.expectRevert(
             abi.encodeWithSignature(
                 "AccessControlUnauthorizedAccount(address,bytes32)",
-                lp,
+                notLp,
                 managerAdminRole
             )
         );
@@ -86,7 +70,7 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         vm.startPrank(lp);
         creditToken.approve(address(groveBasin), 100e18);
 
-        vm.expectRevert("GB/creditToken-deposits-disabled");
+        vm.expectRevert("GB/credit-deposits-disabled");
         groveBasin.deposit(address(creditToken), lp, 100e18);
         vm.stopPrank();
     }
@@ -95,7 +79,7 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         vm.prank(owner);
         groveBasin.setCreditTokenDepositsDisabled(true);
 
-        vm.expectRevert("GB/creditToken-deposits-disabled");
+        vm.expectRevert("GB/credit-deposits-disabled");
         groveBasin.previewDeposit(address(creditToken), 100e18);
     }
 

@@ -83,6 +83,7 @@ contract JTRSYTokenRedeemerConstructorTests is Test {
 
         return new GroveBasin(
             address(this),
+            address(this),
             address(swapToken_),
             collateralToken_,
             creditToken_,
@@ -145,6 +146,7 @@ contract JTRSYTokenRedeemerSetUpTests is Test {
 
         return new GroveBasin(
             address(this),
+            address(this),
             address(swapToken),
             collateralToken_,
             creditToken_,
@@ -184,6 +186,7 @@ contract JTRSYTokenRedeemerInitiateRedeemTests is Test {
         creditRp.__setConversionRate(1e27);
 
         basin = address(new GroveBasin(
+            address(this),
             address(this),
             address(swapToken),
             address(collateralToken),
@@ -272,6 +275,7 @@ contract JTRSYTokenRedeemerCompleteRedeemTests is Test {
         creditRp.__setConversionRate(1e27);
 
         basin = address(new GroveBasin(
+            address(this),
             address(this),
             address(swapToken),
             address(collateralToken),

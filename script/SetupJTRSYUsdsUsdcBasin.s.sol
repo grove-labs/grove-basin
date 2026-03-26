@@ -30,10 +30,11 @@ contract SetupJTRSYUsdsUsdcBasin is Script {
     }
 
     function deploy() public returns (address groveBasin, address pocket_, address redeemer_) {
-        require(IERC20(Ethereum.USDS).balanceOf(msg.sender) >= 1e6, "insufficient-usds-balance");
+        require(IERC20(Ethereum.USDS).balanceOf(msg.sender) >= 1e18, "insufficient-usds-balance");
 
         groveBasin = GroveBasinDeploy.deploy({
             owner                       : msg.sender,
+            liquidityProvider           : Ethereum.ALM_PROXY,
             swapToken                   : Ethereum.USDS,
             collateralToken             : Ethereum.USDC,
             creditToken                 : Ethereum.SUSDS,
@@ -62,8 +63,7 @@ contract SetupJTRSYUsdsUsdcBasin is Script {
 
         GroveBasin(groveBasin).addTokenRedeemer(address(redeemer));
 
-        GroveBasin(groveBasin).grantRole(GroveBasin(groveBasin).MANAGER_ROLE(),            Ethereum.ALM_RELAYER);
-        GroveBasin(groveBasin).grantRole(GroveBasin(groveBasin).LIQUIDITY_PROVIDER_ROLE(), Ethereum.ALM_PROXY);
+        GroveBasin(groveBasin).grantRole(GroveBasin(groveBasin).MANAGER_ROLE(), Ethereum.ALM_RELAYER);
 
         pocket_   = address(pocket);
         redeemer_ = address(redeemer);

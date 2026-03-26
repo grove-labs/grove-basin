@@ -26,6 +26,7 @@ import { SwapperHandler } from "test/invariant/handlers/SwapperHandler.sol";
 contract PocketInvariantTest is Test {
 
     address public owner      = makeAddr("owner");
+    address public lp         = makeAddr("liquidityProvider");
     address public groveProxy = makeAddr("groveProxy");
     address BURN_ADDRESS      = address(0);
 
@@ -63,6 +64,7 @@ contract PocketInvariantTest is Test {
 
         groveBasin = new GroveBasin(
             owner,
+            lp,
             address(swapToken),
             address(collateralToken),
             address(creditToken),
@@ -94,10 +96,12 @@ contract PocketInvariantTest is Test {
         groveBasin.setPocket(address(pocket));
         vm.stopPrank();
 
-        // Seed pool with initial deposit (1e18 of value)
-        collateralToken.mint(address(this), 1e18);
-        collateralToken.approve(address(groveBasin), 1e18);
-        groveBasin.deposit(address(collateralToken), BURN_ADDRESS, 1e18);
+        // Initial LP deposit for baseline liquidity
+        swapToken.mint(lp, 1e6);
+        vm.startPrank(lp);
+        swapToken.approve(address(groveBasin), 1e6);
+        groveBasin.deposit(address(swapToken), BURN_ADDRESS, 1e6);
+        vm.stopPrank();
 
         lpHandler      = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner);
         swapperHandler = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
@@ -158,6 +162,7 @@ contract PocketInvariantTest is Test {
 contract AaveV3PocketInvariantTest is Test {
 
     address public owner = makeAddr("owner");
+    address public lp    = makeAddr("liquidityProvider");
     address BURN_ADDRESS = address(0);
 
     GroveBasin       public groveBasin;
@@ -195,6 +200,7 @@ contract AaveV3PocketInvariantTest is Test {
 
         groveBasin = new GroveBasin(
             owner,
+            lp,
             address(swapToken),
             address(collateralToken),
             address(creditToken),
@@ -225,10 +231,12 @@ contract AaveV3PocketInvariantTest is Test {
         groveBasin.setPocket(address(pocket));
         vm.stopPrank();
 
-        // Seed pool with initial deposit (1e18 of value)
-        collateralToken.mint(address(this), 1e18);
-        collateralToken.approve(address(groveBasin), 1e18);
-        groveBasin.deposit(address(collateralToken), BURN_ADDRESS, 1e18);
+        // Initial LP deposit for baseline liquidity
+        swapToken.mint(lp, 1e6);
+        vm.startPrank(lp);
+        swapToken.approve(address(groveBasin), 1e6);
+        groveBasin.deposit(address(swapToken), BURN_ADDRESS, 1e6);
+        vm.stopPrank();
 
         lpHandler      = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner);
         swapperHandler = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
@@ -289,6 +297,7 @@ contract AaveV3PocketInvariantTest is Test {
 contract MorphoPocketInvariantTest is Test {
 
     address public owner = makeAddr("owner");
+    address public lp    = makeAddr("liquidityProvider");
     address BURN_ADDRESS = address(0);
 
     GroveBasin       public groveBasin;
@@ -322,6 +331,7 @@ contract MorphoPocketInvariantTest is Test {
 
         groveBasin = new GroveBasin(
             owner,
+            lp,
             address(swapToken),
             address(collateralToken),
             address(creditToken),
@@ -348,10 +358,12 @@ contract MorphoPocketInvariantTest is Test {
         groveBasin.setPocket(address(pocket));
         vm.stopPrank();
 
-        // Seed pool with initial deposit (1e18 of value)
-        collateralToken.mint(address(this), 1e18);
-        collateralToken.approve(address(groveBasin), 1e18);
-        groveBasin.deposit(address(collateralToken), BURN_ADDRESS, 1e18);
+        // Initial LP deposit for baseline liquidity
+        swapToken.mint(lp, 1e6);
+        vm.startPrank(lp);
+        swapToken.approve(address(groveBasin), 1e6);
+        groveBasin.deposit(address(swapToken), BURN_ADDRESS, 1e6);
+        vm.stopPrank();
 
         lpHandler      = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner);
         swapperHandler = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);

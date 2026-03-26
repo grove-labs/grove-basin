@@ -45,6 +45,7 @@ contract UsdsSwapScenarioTestBase is Test {
 
         groveBasin = new GroveBasin(
             owner,
+            grove,           // liquidityProvider
             address(usds),   // swapToken
             address(usdc),   // collateralToken
             address(jtrsy),  // creditToken
@@ -69,12 +70,12 @@ contract UsdsSwapScenarioTestBase is Test {
         vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(),      owner);
         groveBasin.grantRole(groveBasin.MANAGER_ROLE(),            owner);
-        groveBasin.grantRole(groveBasin.LIQUIDITY_PROVIDER_ROLE(), grove);
 
         groveBasin.setMaxSwapSizeBounds(0, 10_000_000_000_000_000e18);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
         groveBasin.setPocket(address(pocket));
         vm.stopPrank();
+
     }
 
 }
@@ -132,10 +133,9 @@ contract UsdsSwapScenarioTests is UsdsSwapScenarioTestBase {
         vm.stopPrank();
 
         // USDS rate = 1e27, precision = 1e18
-        // totalAssets = amount * rate / 1e9 / precision = 10_000e18 * 1e27 / 1e9 / 1e18 = 10_000e18
         assertEq(groveBasin.totalAssets(), groveDepositAmount);
 
-        // Verify shares match 1:1 for first deposit
+        // Shares match 1:1
         assertEq(groveBasin.shares(grove), groveDepositAmount);
         assertEq(groveBasin.totalShares(), groveDepositAmount);
     }

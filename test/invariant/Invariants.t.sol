@@ -34,14 +34,22 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
 
     address BURN_ADDRESS = address(0);
 
-    // NOTE [CRITICAL]: All invariant tests are operating under the assumption that the initial seed
-    //                  deposit of 1e18 shares has been made. This is a key requirement and
-    //                  assumption for all invariant tests.
+    // Seed deposit tracking for invariant assertions.
+    // These are set in setUp and can be overridden by subclasses that redeploy groveBasin.
+    uint256 public seedSwapTokenInflow;
+    uint256 public seedCollateralTokenInflow;
+    uint256 public seedDepositValue;
+
     function setUp() public virtual override {
         super.setUp();
 
-        // Seed the pool with 1e18 shares (1e18 of value)
+        // Initial LP deposit to provide baseline liquidity for invariant testing.
+        _deposit(address(swapToken), BURN_ADDRESS, 1e6);
         _deposit(address(collateralToken), BURN_ADDRESS, 1e18);
+
+        seedSwapTokenInflow       = 1e6;
+        seedCollateralTokenInflow = 1e18;
+        seedDepositValue          = 2e18;
     }
 
     /**********************************************************************************************/
@@ -49,9 +57,8 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
     /**********************************************************************************************/
 
     function _checkInvariant_A() public view {
-        uint256 lpShares = 1e18;  // Seed amount
+        uint256 lpShares = groveBasin.shares(BURN_ADDRESS);  // Seed shares
 
-        // NOTE: Can be refactored to be dynamic
         for (uint256 i = 0; i < 3; i++) {
             lpShares += groveBasin.shares(lpHandler.lps(i));
         }
@@ -68,7 +75,7 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
     }
 
     function _checkInvariant_C() public view {
-        uint256 lpAssetValue = groveBasin.convertToAssetValue(1e18);  // Seed amount
+        uint256 lpAssetValue = groveBasin.convertToAssetValue(groveBasin.shares(BURN_ADDRESS));  // Seed amount
 
         for (uint256 i = 0; i < 3; i++) {
             lpAssetValue += groveBasin.convertToAssetValue(groveBasin.shares(lpHandler.lps(i)));
@@ -80,8 +87,8 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
     // This might be failing because of swap rounding errors.
     function _checkInvariant_D() public view {
         // Seed amounts
-        uint256 lpDeposits   = 1e18;
-        uint256 lpAssetValue = groveBasin.convertToAssetValue(1e18);
+        uint256 lpDeposits   = seedDepositValue;
+        uint256 lpAssetValue = groveBasin.convertToAssetValue(groveBasin.shares(BURN_ADDRESS));
 
         for (uint256 i = 0; i < 3; i++) {
             address lp = lpHandler.lps(i);
@@ -100,8 +107,8 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
     }
 
     function _checkInvariant_E() public view {
-        uint256 expectedSwapTokenInflows       = 0;
-        uint256 expectedCollateralTokenInflows = 1e18;  // Seed amount
+        uint256 expectedSwapTokenInflows       = seedSwapTokenInflow;
+        uint256 expectedCollateralTokenInflows = seedCollateralTokenInflow;
         uint256 expectedCreditTokenInflows     = 0;
 
         uint256 expectedSwapTokenOutflows       = 0;
@@ -247,7 +254,7 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
 
         uint256 groveBasinTotalValue = groveBasin.totalAssets();
 
-        uint256 startingSeedValue = groveBasin.convertToAssetValue(1e18);
+        uint256 startingSeedValue = groveBasin.convertToAssetValue(groveBasin.shares(BURN_ADDRESS));
 
         // Liquidity is unknown so withdraw all assets for all users to empty GroveBasin.
         _withdraw(address(collateralToken), lp0, type(uint256).max);
@@ -267,10 +274,10 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
         assertEq(groveBasin.shares(lp1), 0);
         assertEq(groveBasin.shares(lp2), 0);
 
-        uint256 seedValue = groveBasin.convertToAssetValue(1e18);
+        uint256 seedValue = groveBasin.convertToAssetValue(groveBasin.shares(BURN_ADDRESS));
 
         // GroveBasin is empty (besides seed amount).
-        assertEq(groveBasin.totalShares(), 1e18);
+        assertEq(groveBasin.totalShares(), groveBasin.shares(BURN_ADDRESS));
         assertEq(groveBasin.totalAssets(), seedValue);
 
         // Tokens held by LPs are equal to the sum of their previous balance
@@ -568,7 +575,7 @@ contract GroveBasinInvariants_TimeBasedRateSetting_NoTransfer is GroveBasinInvar
         MockSSRRateProvider ssrRateProvider = new MockSSRRateProvider(ssrOracle);
 
         // Redeploy GroveBasin with new rate provider
-        groveBasin = new GroveBasin(owner, address(swapToken), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(ssrRateProvider));
+        groveBasin = new GroveBasin(owner, lp, address(swapToken), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(ssrRateProvider));
 
         // Set a large staleness threshold so warps don't cause stale-rate reverts
         vm.startPrank(owner);
@@ -580,8 +587,13 @@ contract GroveBasinInvariants_TimeBasedRateSetting_NoTransfer is GroveBasinInvar
 
         // NOTE: Don't need to set GroveBasin as pocket for this suite as its default on deploy
 
-        // Seed the new GroveBasin with 1e18 shares (1e18 of value)
+        // Initial LP deposit for baseline liquidity
+        _deposit(address(swapToken), BURN_ADDRESS, 1e6);
         _deposit(address(collateralToken), BURN_ADDRESS, 1e18);
+
+        seedSwapTokenInflow       = 1e6;
+        seedCollateralTokenInflow = 1e18;
+        seedDepositValue          = 2e18;
 
         lpHandler            = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner);
         swapperHandler       = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
@@ -659,7 +671,7 @@ contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinIn
         MockSSRRateProvider ssrRateProvider = new MockSSRRateProvider(ssrOracle);
 
         // Redeploy GroveBasin with new rate provider
-        groveBasin = new GroveBasin(owner, address(swapToken), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(ssrRateProvider));
+        groveBasin = new GroveBasin(owner, lp, address(swapToken), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(ssrRateProvider));
 
         // Set a large staleness threshold so warps don't cause stale-rate reverts
         vm.startPrank(owner);
@@ -672,8 +684,13 @@ contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinIn
         // NOTE: This base test suite tests the case of the GroveBasin being the pocket for the whole time,
         //       where the other suites are testing with an external `pocket`.
 
-        // Seed the new GroveBasin with 1e18 shares (1e18 of value)
+        // Initial LP deposit for baseline liquidity
+        _deposit(address(swapToken), BURN_ADDRESS, 1e6);
         _deposit(address(collateralToken), BURN_ADDRESS, 1e18);
+
+        seedSwapTokenInflow       = 1e6;
+        seedCollateralTokenInflow = 1e18;
+        seedDepositValue          = 2e18;
 
         lpHandler            = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner);
         swapperHandler       = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);

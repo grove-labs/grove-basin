@@ -12,18 +12,14 @@ contract InflationAttackTests is GroveBasinTestBase {
     address deployer       = makeAddr("deployer");
 
     function test_inflationAttack_noInitialDeposit_creditToken() public {
-        // Step 1: Front runner deposits 1 creditToken to get 1 share
-
-        // Have to use creditToken because 1 USDC mints 1e12 shares
+        // Front runner deposits 1 creditToken to get 1 share
         _deposit(address(creditToken), frontRunner, 1);
 
         _runInflationAttack_noInitialDepositTest();
     }
 
     function test_inflationAttack_noInitialDeposit_collateralToken() public {
-        // Step 1: Front runner deposits 1 creditToken to get 1 share
-
-        // Have to use collateralToken because 1 USDC mints 1e12 shares
+        // Front runner deposits 1 collateralToken to get 1 share
         _deposit(address(collateralToken), frontRunner, 1);
 
         _runInflationAttack_noInitialDepositTest();
@@ -32,30 +28,26 @@ contract InflationAttackTests is GroveBasinTestBase {
     function test_inflationAttack_useInitialDeposit_creditToken() public {
         _deposit(address(creditToken), address(deployer), 0.8e18);  // 1e18 shares
 
-        // Step 1: Front runner deposits creditToken to get 1 share
-
-        // User tries to do the same attack, depositing one creditToken for 1 share
+        // Front runner deposits 1 creditToken to get 1 share
         _deposit(address(creditToken), frontRunner, 1);
 
-        _runInflationAttack_useInitialDepositTest();
+        _runInflationAttack_mitigatedByDeployerTest();
     }
 
     function test_inflationAttack_useInitialDeposit_collateralToken() public {
         _deposit(address(collateralToken), address(deployer), 1e18);  // 1e18 shares
 
-        // Step 1: Front runner deposits collateralToken to get 1 share
-
-        // User tries to do the same attack, depositing one creditToken for 1 share
+        // Front runner deposits 1 collateralToken to get 1 share
         _deposit(address(collateralToken), frontRunner, 1);
 
-        _runInflationAttack_useInitialDepositTest();
+        _runInflationAttack_mitigatedByDeployerTest();
     }
 
     function _runInflationAttack_noInitialDepositTest() internal {
+        // Front runner has 1 share, no other deposits exist
         assertEq(groveBasin.shares(frontRunner), 1);
 
-        // Step 2: Front runner transfers 10m USDC to inflate the exchange rate to 1:(10m + 1)
-
+        // Step 2: Front runner transfers 10m USDC to inflate the exchange rate
         deal(address(swapToken), frontRunner, 10_000_000e6);
 
         assertEq(groveBasin.convertToAssetValue(1), 1);
@@ -73,7 +65,7 @@ contract InflationAttackTests is GroveBasinTestBase {
 
         assertEq(groveBasin.shares(firstDepositor), 1);
 
-        // 1 share = 3 million USDC / 2 shares = 1.5 million USDC
+        // 1 share = 30 million USDC / 2 shares = 15 million USDC
         assertEq(groveBasin.convertToAssetValue(1), 15_000_000e18);
 
         // Step 4: Both users withdraw the max amount of funds they can
@@ -88,11 +80,11 @@ contract InflationAttackTests is GroveBasinTestBase {
         assertEq(swapToken.balanceOf(frontRunner),    15_000_000e6);
     }
 
-    function _runInflationAttack_useInitialDepositTest() internal {
+    function _runInflationAttack_mitigatedByDeployerTest() internal {
+        // Front runner has 1 share, deployer has 1e18 shares
         assertEq(groveBasin.shares(frontRunner), 1);
 
-        // Step 2: Front runner transfers 10m USDC to inflate the exchange rate to 1:(10m + 1)
-
+        // Step 2: Front runner transfers 10m USDC to inflate the exchange rate
         assertEq(groveBasin.convertToAssetValue(1), 1);
 
         deal(address(swapToken), frontRunner, 10_000_000e6);

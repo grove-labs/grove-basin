@@ -19,6 +19,7 @@ contract DeployEthereum is Script {
 
         address groveBasin = GroveBasinDeploy.deploy({
             owner                       : Ethereum.GROVE_PROXY,
+            liquidityProvider           : Ethereum.ALM_PROXY,
             swapToken                   : Ethereum.USDC,
             collateralToken             : Ethereum.USDS,
             creditToken                 : Ethereum.SUSDS,

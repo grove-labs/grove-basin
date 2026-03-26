@@ -31,13 +31,14 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     bytes32 public constant override OWNER_ROLE              = DEFAULT_ADMIN_ROLE;
     bytes32 public constant override MANAGER_ADMIN_ROLE      = keccak256("MANAGER_ADMIN_ROLE");
     bytes32 public constant override MANAGER_ROLE            = keccak256("MANAGER_ROLE");
-    bytes32 public constant override LIQUIDITY_PROVIDER_ROLE = keccak256("LIQUIDITY_PROVIDER_ROLE");
     bytes32 public constant override REDEEMER_ROLE           = keccak256("REDEEMER_ROLE");
     bytes32 public constant override REDEEMER_CONTRACT_ROLE  = keccak256("REDEEMER_CONTRACT_ROLE");
 
     uint256 internal immutable _swapTokenPrecision;
     uint256 internal immutable _collateralTokenPrecision;
     uint256 internal immutable _creditTokenPrecision;
+
+    address public override immutable liquidityProvider;
 
     address public override immutable swapToken;
     address public override immutable collateralToken;
@@ -74,8 +75,9 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
     mapping(address user => uint256 shares) public override shares;
 
-        constructor(
+    constructor(
         address owner_,
+        address liquidityProvider_,
         address swapToken_,
         address collateralToken_,
         address creditToken_,
@@ -83,15 +85,8 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
         address collateralTokenRateProvider_,
         address creditTokenRateProvider_
     ) AccessControlDefaultAdminRules(0, owner_) {
-        // Setup Roles
-        _grantRole(LIQUIDITY_PROVIDER_ROLE, msg.sender);
+        require(liquidityProvider_ != address(0), "GB/invalid-lp");
 
-        _setRoleAdmin(MANAGER_ROLE,            MANAGER_ADMIN_ROLE);
-        _setRoleAdmin(LIQUIDITY_PROVIDER_ROLE, MANAGER_ADMIN_ROLE);
-        _setRoleAdmin(REDEEMER_CONTRACT_ROLE,  MANAGER_ADMIN_ROLE);
-        _setRoleAdmin(REDEEMER_ROLE,           MANAGER_ADMIN_ROLE);
-
-        // Setup Tokens
         require(
             swapToken_       != address(0) &&
             collateralToken_ != address(0) &&
@@ -105,6 +100,8 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
             collateralToken_ != creditToken_,
             "GB/tokens-must-be-unique"
         );
+
+        liquidityProvider = liquidityProvider_;
 
         swapToken       = swapToken_;
         collateralToken = collateralToken_;
@@ -149,6 +146,10 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
         minStalenessThreshold = 5 minutes;
         maxStalenessThreshold = 48 hours;
         stalenessThreshold    = minStalenessThreshold;
+
+        _setRoleAdmin(MANAGER_ROLE,           MANAGER_ADMIN_ROLE);
+        _setRoleAdmin(REDEEMER_CONTRACT_ROLE, MANAGER_ADMIN_ROLE);
+        _setRoleAdmin(REDEEMER_ROLE,          MANAGER_ADMIN_ROLE);
     }
 
     /**********************************************************************************************/
@@ -266,11 +267,13 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
     /// @inheritdoc IGroveBasin
     function setPocket(address newPocket) external override onlyRole(MANAGER_ADMIN_ROLE) {
-        require(newPocket != address(0), "GB/invalid-pocket");
-
         address pocket_ = pocket;
 
-        require(newPocket != pocket_, "GB/same-pocket");
+        require(
+            newPocket != address(0) && 
+            newPocket != pocket_, 
+            "GB/invalid-pocket"
+        );
 
         _withdrawLiquidityInPocket(_getAvailableBalance(swapToken), swapToken);
 
@@ -410,8 +413,8 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     )
         external override returns (uint256 amountOut)
     {
-        require(amountIn != 0,          "GB/invalid-amountIn");
-        require(receiver != address(0), "GB/invalid-receiver");
+        require(amountIn != 0,          "GB/zero-amountIn");
+        require(receiver != address(0), "GB/zero-receiver");
 
         _checkSwapNotPaused(assetIn, assetOut);
 
@@ -437,8 +440,8 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     )
         external override returns (uint256 amountIn)
     {
-        require(amountOut != 0,         "GB/invalid-amountOut");
-        require(receiver != address(0), "GB/invalid-receiver");
+        require(amountOut != 0,         "GB/zero-amountOut");
+        require(receiver != address(0), "GB/zero-receiver");
 
         _checkSwapNotPaused(assetIn, assetOut);
 
@@ -458,11 +461,32 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     /**********************************************************************************************/
 
     /// @inheritdoc IGroveBasin
-    function deposit(address asset, address receiver, uint256 assetsToDeposit)
-        external override onlyRole(LIQUIDITY_PROVIDER_ROLE) returns (uint256 newShares)
+    function depositInitial(address asset, uint256 assetsToDeposit)
+        external override returns (uint256 newShares)
     {
-        require(!pausedDeposits,      "GB/deposits-paused");
-        require(assetsToDeposit != 0, "GB/invalid-amount");
+        require(totalShares == 0,     "GB/already-seeded");
+        require(assetsToDeposit != 0, "GB/zero-amount");
+
+        newShares = previewDeposit(asset, assetsToDeposit);
+
+        require(newShares > 0, "GB/no-new-shares");
+
+        shares[address(0)] += newShares;
+        totalShares        += newShares;
+
+        _pullAsset(asset, assetsToDeposit);
+        _depositLiquidityInPocket(assetsToDeposit, asset);
+
+        emit Deposit(asset, msg.sender, address(0), assetsToDeposit, newShares);
+    }
+
+    /// @inheritdoc IGroveBasin
+    function deposit(address asset, address receiver, uint256 assetsToDeposit)
+        external override returns (uint256 newShares)
+    {
+        require(!pausedDeposits,                 "GB/deposits-paused");
+        require(assetsToDeposit != 0,            "GB/zero-amount");
+        require(msg.sender == liquidityProvider, "GB/not-lp");
 
         newShares = previewDeposit(asset, assetsToDeposit);
 
@@ -481,7 +505,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     function withdraw(address asset, address receiver, uint256 maxAssetsToWithdraw)
         external override returns (uint256 assetsWithdrawn)
     {
-        require(maxAssetsToWithdraw != 0, "GB/invalid-amount");
+        require(maxAssetsToWithdraw != 0, "GB/zero-amount");
 
         uint256 sharesToBurn;
 
@@ -509,7 +533,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     {
         require(
             !(asset == creditToken && creditTokenDepositsDisabled),
-            "GB/creditToken-deposits-disabled"
+            "GB/credit-deposits-disabled"
         );
 
         // Convert amount to 1e18 precision denominated in value of USD then convert to shares.
@@ -521,8 +545,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     function previewWithdraw(address asset, uint256 maxAssetsToWithdraw)
         public view override returns (uint256 sharesToBurn, uint256 assetsWithdrawn)
     {
-        require(_isValidAsset(asset), "GB/invalid-asset");
-
+        _requireValidAsset(asset);
         uint256 assetBalance = _getAvailableBalance(asset);
 
         assetsWithdrawn = assetBalance < maxAssetsToWithdraw
@@ -530,6 +553,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
             : maxAssetsToWithdraw;
 
         // Get shares to burn, rounding up for both calculations
+        // NOTE: Don't need to check valid asset here since `_getAssetValue` will revert if invalid
         sharesToBurn = _convertToSharesRoundUp(_getAssetValue(asset, assetsWithdrawn, true));
 
         uint256 userShares = shares[msg.sender];
@@ -548,7 +572,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     function previewSwapExactIn(address assetIn, address assetOut, uint256 amountIn)
         public view override returns (uint256 amountOut)
     {
-        require(_getAssetValue(assetIn, amountIn, false) <= maxSwapSize, "GB/swap-size-exceeded");
+        require(_getAssetValue(assetIn, amountIn, false) <= maxSwapSize, "GB/over-swap-size");
 
         // Round down to get amountOut
         amountOut = _getSwapQuote(assetIn, assetOut, amountIn, false);
@@ -568,7 +592,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
         // Round up to get amountIn
         amountIn = _getSwapQuote(assetOut, assetIn, amountOut, true);
 
-        require(_getAssetValue(assetIn, amountIn, false) <= maxSwapSize, "GB/swap-size-exceeded");
+        require(_getAssetValue(assetIn, amountIn, false) <= maxSwapSize, "GB/over-swap-size");
 
         // Assumes no stable-to-stable swap
         if (assetOut == creditToken) {
@@ -586,7 +610,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     function convertToAssets(address asset, uint256 numShares)
         public view override returns (uint256)
     {
-        require(_isValidAsset(asset), "GB/invalid-asset");
+        _requireValidAsset(asset);
 
         uint256 assetValue = convertToAssetValue(numShares);
 
@@ -632,7 +656,6 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
     /// @inheritdoc IGroveBasin
     function convertToShares(address asset, uint256 assets) public view override returns (uint256) {
-        require(_isValidAsset(asset), "GB/invalid-asset");
         return convertToShares(_getAssetValue(asset, assets, false));  // Round down
     }
 
@@ -667,7 +690,7 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
         if      (asset == swapToken)       return _getSwapTokenValue(amount);
         else if (asset == collateralToken) return _getCollateralTokenValue(amount);
         else if (asset == creditToken)     return _getCreditTokenValue(amount, roundUp);
-        else                                        revert("GB/invalid-asset");
+        else                               revert("GB/invalid-asset");
     }
 
     /// @dev Returns the USD value of `amount` of swap tokens in 1e18 precision.
@@ -882,9 +905,9 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
         }
     }
 
-    /// @dev Returns true if `asset` is one of the three supported tokens.
-    function _isValidAsset(address asset) internal view returns (bool) {
-        return asset == swapToken || asset == collateralToken || asset == creditToken;
+    /// @dev Reverts if `asset` is not one of the three supported tokens.
+    function _requireValidAsset(address asset) internal view {
+        require(asset == swapToken || asset == collateralToken || asset == creditToken, "GB/invalid-asset");
     }
 
     /// @dev Returns the address holding custody of `asset` (pocket for swap tokens, Basin otherwise).
