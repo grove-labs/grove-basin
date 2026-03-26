@@ -29,6 +29,7 @@ abstract contract JTRSYGroveBasinForkTestBase is JTRSYForkTestBase {
 
         groveBasin = new GroveBasin(
             owner,
+            lp,
             address(swapToken),
             address(collateralToken),
             address(creditToken),

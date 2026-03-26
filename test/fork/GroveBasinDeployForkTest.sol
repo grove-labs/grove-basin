@@ -43,6 +43,7 @@ contract GroveBasinDeployForkTest is Test {
         // Deploy using the library
         address groveBasinAddress = GroveBasinDeploy.deploy(
             owner,
+            makeAddr("liquidityProvider"),
             Ethereum.USDT,  // swapToken - actual mainnet USDT
             Ethereum.USDC,  // collateralToken
             Ethereum.USDS,  // creditToken
@@ -89,6 +90,7 @@ contract GroveBasinDeployForkTest is Test {
         // The safeApprove in GroveBasinDeploy should handle USDT's quirks
         address groveBasinAddress = GroveBasinDeploy.deploy(
             owner,
+            makeAddr("liquidityProvider"),
             Ethereum.USDT,
             Ethereum.USDC,
             Ethereum.USDS,
@@ -114,6 +116,7 @@ contract GroveBasinDeployForkTest is Test {
         // First deployment
         address groveBasin1 = GroveBasinDeploy.deploy(
             owner,
+            makeAddr("liquidityProvider"),
             Ethereum.USDT,
             Ethereum.USDC,
             Ethereum.USDS,
@@ -135,6 +138,7 @@ contract GroveBasinDeployForkTest is Test {
 
         address groveBasin2 = GroveBasinDeploy.deploy(
             owner,
+            makeAddr("liquidityProvider"),
             Ethereum.USDT,
             Ethereum.USDC,
             Ethereum.USDS,
@@ -160,6 +164,7 @@ contract GroveBasinDeployForkTest is Test {
         // Deploy - the library always deposits exactly 1e6
         address groveBasinAddress = GroveBasinDeploy.deploy(
             owner,
+            makeAddr("liquidityProvider"),
             Ethereum.USDT,
             Ethereum.USDC,
             Ethereum.USDS,

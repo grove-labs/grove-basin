@@ -67,7 +67,7 @@ contract SetupJTRSYUsdsUsdcBasinTest is Test, SetupJTRSYUsdsUsdcBasin {
         assertTrue(groveBasin.hasRole(groveBasin.OWNER_ROLE(),              address(this)));
         assertTrue(groveBasin.hasRole(groveBasin.MANAGER_ADMIN_ROLE(),      address(this)));
         assertTrue(groveBasin.hasRole(groveBasin.MANAGER_ROLE(),            Ethereum.ALM_RELAYER));
-        assertTrue(groveBasin.hasRole(groveBasin.LIQUIDITY_PROVIDER_ROLE(), Ethereum.ALM_PROXY));
+        assertEq(groveBasin.liquidityProvider(), Ethereum.ALM_PROXY);
     }
 
     function test_deploy_initialShares() public view {

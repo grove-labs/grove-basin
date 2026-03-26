@@ -138,12 +138,13 @@ contract GroveBasinSetPocketSuccessTests is GroveBasinTestBase {
         _deposit(address(collateralToken), owner, 1_000_000e18);
         _deposit(address(creditToken),     owner, 800_000e18);
 
-        assertEq(groveBasin.totalAssets(), 3_000_000e18);
+        uint256 expectedAssets = 3_000_000e18;
+        assertEq(groveBasin.totalAssets(), expectedAssets);
 
         vm.prank(owner);
         groveBasin.setPocket(address(pocket1));
 
-        assertEq(groveBasin.totalAssets(), 3_000_000e18);
+        assertEq(groveBasin.totalAssets(), expectedAssets);
     }
 
 }
@@ -151,6 +152,7 @@ contract GroveBasinSetPocketSuccessTests is GroveBasinTestBase {
 contract GroveBasinSetPocketYieldDeployedTests is Test {
 
     address public owner      = makeAddr("owner");
+    address public lp         = makeAddr("liquidityProvider");
     address public groveProxy = makeAddr("groveProxy");
 
     GroveBasin       public groveBasin;
@@ -190,6 +192,7 @@ contract GroveBasinSetPocketYieldDeployedTests is Test {
 
         groveBasin = new GroveBasin(
             owner,
+            lp,
             address(usdc),
             address(usdt),
             address(creditToken),
@@ -233,14 +236,10 @@ contract GroveBasinSetPocketYieldDeployedTests is Test {
     function test_setPocket_swapTokenFullyDeployedToYield() public {
         uint256 depositAmount = 1_000_000e6;
 
-        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
-        vm.prank(owner);
-        groveBasin.grantRole(lpRole, owner);
-
-        usdc.mint(owner, depositAmount);
-        vm.startPrank(owner);
+        usdc.mint(lp, depositAmount);
+        vm.startPrank(lp);
         usdc.approve(address(groveBasin), depositAmount);
-        groveBasin.deposit(address(usdc), owner, depositAmount);
+        groveBasin.deposit(address(usdc), lp, depositAmount);
         vm.stopPrank();
 
         // Verify USDC is fully deployed: pocket holds USDS, not USDC
@@ -311,6 +310,7 @@ contract GroveBasinSetPocketYieldDeployedTests is Test {
 contract GroveBasinSetPocketUsdtWithdrawalTests is Test {
 
     address public owner = makeAddr("owner");
+    address public lp    = makeAddr("liquidityProvider");
     address public admin = makeAddr("admin");
 
     GroveBasin       public groveBasin;
@@ -344,6 +344,7 @@ contract GroveBasinSetPocketUsdtWithdrawalTests is Test {
 
         groveBasin = new GroveBasin(
             owner,
+            lp,
             address(usdt),
             address(collateralToken),
             address(creditToken),

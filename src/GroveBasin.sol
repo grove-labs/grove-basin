@@ -31,13 +31,14 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     bytes32 public constant override OWNER_ROLE              = DEFAULT_ADMIN_ROLE;
     bytes32 public constant override MANAGER_ADMIN_ROLE      = keccak256("MANAGER_ADMIN_ROLE");
     bytes32 public constant override MANAGER_ROLE            = keccak256("MANAGER_ROLE");
-    bytes32 public constant override LIQUIDITY_PROVIDER_ROLE = keccak256("LIQUIDITY_PROVIDER_ROLE");
     bytes32 public constant override REDEEMER_ROLE           = keccak256("REDEEMER_ROLE");
     bytes32 public constant override REDEEMER_CONTRACT_ROLE  = keccak256("REDEEMER_CONTRACT_ROLE");
 
     uint256 internal immutable _swapTokenPrecision;
     uint256 internal immutable _collateralTokenPrecision;
     uint256 internal immutable _creditTokenPrecision;
+
+    address public override immutable liquidityProvider;
 
     address public override immutable swapToken;
     address public override immutable collateralToken;
@@ -74,8 +75,9 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
     mapping(address user => uint256 shares) public override shares;
 
-        constructor(
+    constructor(
         address owner_,
+        address liquidityProvider_,
         address swapToken_,
         address collateralToken_,
         address creditToken_,
@@ -83,15 +85,8 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
         address collateralTokenRateProvider_,
         address creditTokenRateProvider_
     ) AccessControlDefaultAdminRules(0, owner_) {
-        // Setup Roles
-        _grantRole(LIQUIDITY_PROVIDER_ROLE, msg.sender);
+        require(liquidityProvider_ != address(0), "GB/invalid-lp");
 
-        _setRoleAdmin(MANAGER_ROLE,            MANAGER_ADMIN_ROLE);
-        _setRoleAdmin(LIQUIDITY_PROVIDER_ROLE, MANAGER_ADMIN_ROLE);
-        _setRoleAdmin(REDEEMER_CONTRACT_ROLE,  MANAGER_ADMIN_ROLE);
-        _setRoleAdmin(REDEEMER_ROLE,           MANAGER_ADMIN_ROLE);
-
-        // Setup Tokens
         require(
             swapToken_       != address(0) &&
             collateralToken_ != address(0) &&
@@ -105,6 +100,8 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
             collateralToken_ != creditToken_,
             "GB/tokens-must-be-unique"
         );
+
+        liquidityProvider = liquidityProvider_;
 
         swapToken       = swapToken_;
         collateralToken = collateralToken_;
@@ -149,6 +146,10 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
         minStalenessThreshold = 5 minutes;
         maxStalenessThreshold = 48 hours;
         stalenessThreshold    = minStalenessThreshold;
+
+        _setRoleAdmin(MANAGER_ROLE,           MANAGER_ADMIN_ROLE);
+        _setRoleAdmin(REDEEMER_CONTRACT_ROLE, MANAGER_ADMIN_ROLE);
+        _setRoleAdmin(REDEEMER_ROLE,          MANAGER_ADMIN_ROLE);
     }
 
     /**********************************************************************************************/
@@ -459,10 +460,11 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
     /// @inheritdoc IGroveBasin
     function deposit(address asset, address receiver, uint256 assetsToDeposit)
-        external override onlyRole(LIQUIDITY_PROVIDER_ROLE) returns (uint256 newShares)
+        external override returns (uint256 newShares)
     {
-        require(!pausedDeposits,      "GB/deposits-paused");
-        require(assetsToDeposit != 0, "GB/invalid-amount");
+        require(!pausedDeposits,                 "GB/deposits-paused");
+        require(assetsToDeposit != 0,            "GB/invalid-amount");
+        require(msg.sender == liquidityProvider, "GB/not-lp");
 
         newShares = previewDeposit(asset, assetsToDeposit);
 
@@ -623,9 +625,10 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
     /// @inheritdoc IGroveBasin
     function convertToShares(uint256 assetValue) public view override returns (uint256) {
+        uint256 totalShares_ = totalShares;
         uint256 totalAssets_ = totalAssets();
-        if (totalAssets_ != 0) {
-            return assetValue * totalShares / totalAssets_;
+        if (totalShares_ != 0 && totalAssets_ != 0) {
+            return assetValue * totalShares_ / totalAssets_;
         }
         return assetValue;
     }

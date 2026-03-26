@@ -18,6 +18,7 @@ import { MockERC4626Vault }   from "test/mocks/MockERC4626Vault.sol";
 contract MorphoUsdtPocketTestBase is Test {
 
     address public owner   = makeAddr("owner");
+    address public lp      = makeAddr("liquidityProvider");
     address public manager = makeAddr("manager");
 
     GroveBasin       public groveBasin;
@@ -48,6 +49,7 @@ contract MorphoUsdtPocketTestBase is Test {
 
         groveBasin = new GroveBasin(
             owner,
+            lp,
             address(usdt),
             address(collateralToken),
             address(creditToken),

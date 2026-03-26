@@ -314,11 +314,11 @@ interface IGroveBasin {
     function MANAGER_ADMIN_ROLE() external view returns (bytes32);
 
     /**
-     *  @dev    Returns the role identifier for the liquidity provider role. This role is
-     *          required to deposit assets into the GroveBasin. Grantable by DEFAULT_ADMIN_ROLE.
-     *  @return The bytes32 role identifier.
+     *  @dev    Returns the address of the single immutable liquidity provider that is the only
+     *          address allowed to deposit assets, including the initial seed deposit.
+     *  @return The address of the liquidity provider.
      */
-    function LIQUIDITY_PROVIDER_ROLE() external view returns (bytes32);
+    function liquidityProvider() external view returns (address);
 
     /**
      *  @dev    Returns whether credit token deposits are disabled.
@@ -607,9 +607,9 @@ interface IGroveBasin {
     /**********************************************************************************************/
 
     /**
-     *  @dev    Deposits an amount of a given asset into the GroveBasin. Must be one of the supported
-     *          assets in order to succeed. The amount deposited is converted to shares based on
-     *          the current exchange rate.
+     *  @dev    Deposits an amount of a given asset into the GroveBasin. Only callable by the
+     *          liquidity provider. Must be one of the supported assets in order to succeed.
+     *          The amount deposited is converted to shares based on the current exchange rate.
      *  @param  asset           Address of the ERC-20 asset to deposit.
      *  @param  receiver        Address of the receiver of the resulting shares from the deposit.
      *  @param  assetsToDeposit Amount of the asset to deposit into the GroveBasin.

@@ -17,6 +17,7 @@ import { MockAaveV3Pool }  from "test/mocks/MockAaveV3Pool.sol";
 contract AaveV3UsdtPocketTestBase is Test {
 
     address public owner   = makeAddr("owner");
+    address public lp      = makeAddr("liquidityProvider");
     address public manager = makeAddr("manager");
 
     GroveBasin       public groveBasin;
@@ -49,6 +50,7 @@ contract AaveV3UsdtPocketTestBase is Test {
 
         groveBasin = new GroveBasin(
             owner,
+            lp,
             address(usdt),
             address(collateralToken),
             address(creditToken),

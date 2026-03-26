@@ -16,7 +16,8 @@ import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 
 contract GroveBasinTestBase is Test {
 
-    address public owner          = makeAddr("owner");
+    address public owner       = makeAddr("owner");
+    address public lp          = makeAddr("liquidityProvider");
     address public groveProxy  = makeAddr("groveProxy");
     address public pocket;
 
@@ -71,7 +72,7 @@ contract GroveBasinTestBase is Test {
         collateralTokenRateProvider = IRateProviderLike(address(mockCollateralTokenRateProvider));
         creditTokenRateProvider     = IRateProviderLike(address(mockCreditTokenRateProvider));
 
-        groveBasin = new GroveBasin(owner, address(swapToken), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider));
+        groveBasin = new GroveBasin(owner, lp, address(swapToken), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider));
 
         psm = new MockPSM(address(usds), address(swapToken));
         usds.mint(address(psm), type(uint128).max);
@@ -115,12 +116,9 @@ contract GroveBasinTestBase is Test {
     }
 
     function _deposit(address asset, address user, address receiver, uint256 amount) internal {
-        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
-        vm.prank(owner);
-        groveBasin.grantRole(lpRole, user);
-
-        vm.startPrank(user);
-        MockERC20(asset).mint(user, amount);
+        address lp_ = groveBasin.liquidityProvider();
+        vm.startPrank(lp_);
+        MockERC20(asset).mint(lp_, amount);
         MockERC20(asset).approve(address(groveBasin), amount);
         groveBasin.deposit(asset, receiver, amount);
         vm.stopPrank();

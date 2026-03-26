@@ -56,16 +56,14 @@ contract LpHandler is HandlerBase {
         uint256 startingValue      = groveBasin.totalAssets();
 
         // 3. Perform action against protocol
-        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
-        vm.prank(owner);
-        groveBasin.grantRole(lpRole, lp);
+        address lp_ = groveBasin.liquidityProvider();
 
         // Skip deposits that would produce zero shares
         uint256 previewShares = groveBasin.previewDeposit(address(asset), amount);
         if (previewShares == 0) return;
 
-        vm.startPrank(lp);
-        asset.mint(lp, amount);
+        vm.startPrank(lp_);
+        asset.mint(lp_, amount);
         asset.approve(address(groveBasin), amount);
         groveBasin.deposit(address(asset), lp, amount);
         vm.stopPrank();

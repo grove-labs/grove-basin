@@ -18,6 +18,7 @@ import { MockPSM }          from "test/mocks/MockPSM.sol";
 abstract contract UsdsUsdcPocketForkTestBase is Test {
 
     address public owner      = makeAddr("owner");
+    address public lp         = makeAddr("liquidityProvider");
     address public manager    = makeAddr("manager");
     address public groveProxy = makeAddr("groveProxy");
 
@@ -44,6 +45,7 @@ abstract contract UsdsUsdcPocketForkTestBase is Test {
         // swapToken = USDC, collateralToken = USDT, creditToken = USDS
         groveBasin = new GroveBasin(
             owner,
+            lp,
             Ethereum.USDC,
             Ethereum.USDT,
             Ethereum.USDS,
@@ -80,12 +82,9 @@ abstract contract UsdsUsdcPocketForkTestBase is Test {
     }
 
     function _deposit(address asset, address user, uint256 amount) internal {
-        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
-        vm.prank(owner);
-        groveBasin.grantRole(lpRole, user);
-
-        deal(asset, user, amount);
-        vm.startPrank(user);
+        address lp_ = groveBasin.liquidityProvider();
+        vm.startPrank(lp_);
+        deal(asset, lp_, amount);
         SafeERC20.safeApprove(IERC20(asset), address(groveBasin), 0);
         SafeERC20.safeApprove(IERC20(asset), address(groveBasin), amount);
         groveBasin.deposit(asset, user, amount);
@@ -117,6 +116,7 @@ contract UsdsUsdcPocketForkTest_Deployment is UsdsUsdcPocketForkTestBase {
 contract UsdsUsdcPocketForkTest_DrawLiquidityUsdc is UsdsUsdcPocketForkTestBase {
 
     function test_withdrawLiquidity_usdc_swapsUsdsForUsdc() public {
+        deal(Ethereum.USDC, address(pocket), 0);
         deal(Ethereum.USDS, address(pocket), 10_000e18);
 
         vm.prank(address(groveBasin));

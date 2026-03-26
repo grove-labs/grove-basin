@@ -17,6 +17,7 @@ import { MockPSM }          from "test/mocks/MockPSM.sol";
 contract UsdsUsdcPocketTestBase is Test {
 
     address public owner      = makeAddr("owner");
+    address public lp         = makeAddr("liquidityProvider");
     address public manager    = makeAddr("manager");
     address public groveProxy = makeAddr("groveProxy");
 
@@ -50,6 +51,7 @@ contract UsdsUsdcPocketTestBase is Test {
 
         groveBasin = new GroveBasin(
             owner,
+            lp,
             address(usdc),
             address(collateralToken),
             address(creditToken),

@@ -36,6 +36,7 @@ contract SetupJTRSYMorphoUsdtBasin is Script {
 
         groveBasin = GroveBasinDeploy.deploy({
             owner                       : msg.sender,
+            liquidityProvider           : Ethereum.ALM_PROXY,
             swapToken                   : Ethereum.USDT,
             collateralToken             : Ethereum.USDC,
             creditToken                 : Ethereum.SUSDS,
@@ -62,8 +63,7 @@ contract SetupJTRSYMorphoUsdtBasin is Script {
 
         GroveBasin(groveBasin).addTokenRedeemer(address(redeemer));
 
-        GroveBasin(groveBasin).grantRole(GroveBasin(groveBasin).MANAGER_ROLE(),            Ethereum.ALM_RELAYER);
-        GroveBasin(groveBasin).grantRole(GroveBasin(groveBasin).LIQUIDITY_PROVIDER_ROLE(), Ethereum.ALM_PROXY);
+        GroveBasin(groveBasin).grantRole(GroveBasin(groveBasin).MANAGER_ROLE(), Ethereum.ALM_RELAYER);
 
         pocket_   = address(pocket);
         redeemer_ = address(redeemer);

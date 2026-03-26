@@ -181,43 +181,6 @@ contract GroveBasinManagerAdminRoleTests is GroveBasinTestBase {
     }
 
     /**********************************************************************************************/
-    /*** LIQUIDITY_PROVIDER_ROLE is managed by MANAGER_ADMIN_ROLE                                ***/
-    /**********************************************************************************************/
-
-    function test_managerAdmin_canGrantLiquidityProviderRole() public {
-        address lp = makeAddr("lp");
-        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
-
-        vm.prank(managerAdmin);
-        groveBasin.grantRole(lpRole, lp);
-
-        assertTrue(groveBasin.hasRole(lpRole, lp));
-    }
-
-    function test_manager_cannotGrantLiquidityProviderRole() public {
-        address lp = makeAddr("lp");
-        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
-
-        vm.prank(managerAdmin);
-        groveBasin.grantRole(managerRole, manager);
-
-        vm.prank(manager);
-        vm.expectRevert(
-            abi.encodeWithSignature(
-                "AccessControlUnauthorizedAccount(address,bytes32)",
-                manager,
-                managerAdminRole
-            )
-        );
-        groveBasin.grantRole(lpRole, lp);
-    }
-
-    function test_liquidityProviderRoleAdmin() public {
-        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
-        assertEq(groveBasin.getRoleAdmin(lpRole), managerAdminRole);
-    }
-
-    /**********************************************************************************************/
     /*** MANAGER_ADMIN_ROLE can set staleness threshold bounds                                  ***/
     /**********************************************************************************************/
 

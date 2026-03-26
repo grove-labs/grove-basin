@@ -18,6 +18,7 @@ import { MockAaveV3Pool }  from "test/mocks/MockAaveV3Pool.sol";
 abstract contract AaveV3UsdtPocketForkTestBase is Test {
 
     address public owner   = makeAddr("owner");
+    address public lp      = makeAddr("liquidityProvider");
     address public admin   = makeAddr("admin");
 
     GroveBasin           public groveBasin;
@@ -44,6 +45,7 @@ abstract contract AaveV3UsdtPocketForkTestBase is Test {
         // swapToken = USDT, collateralToken = USDC, creditToken = USDS
         groveBasin = new GroveBasin(
             owner,
+            lp,
             Ethereum.USDT,
             Ethereum.USDC,
             Ethereum.USDS,
@@ -80,12 +82,9 @@ abstract contract AaveV3UsdtPocketForkTestBase is Test {
     }
 
     function _deposit(address asset, address user, uint256 amount) internal {
-        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
-        vm.prank(owner);
-        groveBasin.grantRole(lpRole, user);
-
-        deal(asset, user, amount);
-        vm.startPrank(user);
+        address lp_ = groveBasin.liquidityProvider();
+        vm.startPrank(lp_);
+        deal(asset, lp_, amount);
         SafeERC20.safeApprove(IERC20(asset), address(groveBasin), 0);
         SafeERC20.safeApprove(IERC20(asset), address(groveBasin), amount);
         groveBasin.deposit(asset, user, amount);
@@ -117,6 +116,7 @@ contract AaveV3UsdtPocketForkTest_Deployment is AaveV3UsdtPocketForkTestBase {
 contract AaveV3UsdtPocketForkTest_DrawLiquidity is AaveV3UsdtPocketForkTestBase {
 
     function test_withdrawLiquidity_withdrawsFromAave() public {
+        deal(Ethereum.USDT, address(pocket), 0);
         mockAUsdt.mint(address(pocket), 10_000e6);
 
         vm.prank(address(groveBasin));

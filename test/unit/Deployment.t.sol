@@ -12,10 +12,9 @@ import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 contract GroveBasinDeployTests is GroveBasinTestBase {
 
     function test_deploy() public {
-        deal(address(swapToken), address(this), 1e6);
-
         GroveBasin newGroveBasin = GroveBasin(GroveBasinDeploy.deploy(
             address(owner),
+            lp,
             address(swapToken),
             address(collateralToken),
             address(creditToken),
@@ -24,8 +23,8 @@ contract GroveBasinDeployTests is GroveBasinTestBase {
             address(creditTokenRateProvider)
         ));
 
-        assertTrue(newGroveBasin.hasRole(newGroveBasin.OWNER_ROLE(),              owner));
-        assertTrue(newGroveBasin.hasRole(newGroveBasin.LIQUIDITY_PROVIDER_ROLE(), address(this)));
+        assertTrue(newGroveBasin.hasRole(newGroveBasin.OWNER_ROLE(), owner));
+        assertEq(newGroveBasin.liquidityProvider(), lp);
         
         assertEq(newGroveBasin.OWNER_ROLE(), newGroveBasin.DEFAULT_ADMIN_ROLE());
 
@@ -36,12 +35,11 @@ contract GroveBasinDeployTests is GroveBasinTestBase {
         assertEq(address(newGroveBasin.collateralTokenRateProvider()), address(collateralTokenRateProvider));
         assertEq(address(newGroveBasin.creditTokenRateProvider()),     address(creditTokenRateProvider));
 
-        assertEq(swapToken.balanceOf(address(this)),          0);
-        assertEq(swapToken.balanceOf(address(newGroveBasin)), 1e6);
+        assertEq(swapToken.balanceOf(address(newGroveBasin)), 0);
 
-        assertEq(newGroveBasin.totalAssets(),      1e18);
-        assertEq(newGroveBasin.totalShares(),      1e18);
-        assertEq(newGroveBasin.shares(address(0)), 1e18);
+        assertEq(newGroveBasin.totalAssets(),      0);
+        assertEq(newGroveBasin.totalShares(),      0);
+        assertEq(newGroveBasin.shares(address(0)), 0);
     }
 
 }

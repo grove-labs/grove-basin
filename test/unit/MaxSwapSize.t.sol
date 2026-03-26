@@ -117,6 +117,7 @@ contract GroveBasinMaxSwapSizeSwapExactInTests is GroveBasinTestBase {
     function test_swapExactIn_defaultMaxSwapSize() public {
         GroveBasin basin = new GroveBasin(
             owner,
+            lp,
             address(swapToken),
             address(collateralToken),
             address(creditToken),

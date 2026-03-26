@@ -29,6 +29,7 @@ abstract contract TransferPocketForkTestBase is Test {
     using SafeERC20 for IERC20;
 
     address public owner      = makeAddr("owner");
+    address public lp         = makeAddr("liquidityProvider");
     address public admin      = makeAddr("admin");
     address public groveProxy = makeAddr("groveProxy");
 
@@ -55,6 +56,7 @@ abstract contract TransferPocketForkTestBase is Test {
         // swapToken = USDT, collateralToken = USDC, creditToken = USDS
         groveBasin = new GroveBasin(
             owner,
+            lp,
             Ethereum.USDT,
             Ethereum.USDC,
             Ethereum.USDS,
@@ -105,12 +107,9 @@ abstract contract TransferPocketForkTestBase is Test {
     }
 
     function _deposit(address asset, address user, uint256 amount) internal {
-        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
-        vm.prank(owner);
-        groveBasin.grantRole(lpRole, user);
-
-        deal(asset, user, amount);
-        vm.startPrank(user);
+        address lp_ = groveBasin.liquidityProvider();
+        vm.startPrank(lp_);
+        deal(asset, lp_, amount);
         SafeERC20.safeApprove(IERC20(asset), address(groveBasin), 0);
         SafeERC20.safeApprove(IERC20(asset), address(groveBasin), amount);
         groveBasin.deposit(asset, user, amount);
@@ -369,7 +368,6 @@ contract TransferPocketForkTest_PostMigrationOps is TransferPocketForkTestBase {
 
     address public swapper  = makeAddr("swapper");
     address public receiver = makeAddr("receiver");
-    address public lp       = makeAddr("lp");
 
     function test_swapAfterAaveToMorphoMigration() public {
         AaveV3UsdtPocket aavePocket = _createAavePocket();
@@ -454,7 +452,9 @@ contract TransferPocketForkTest_PostMigrationOps is TransferPocketForkTestBase {
 contract TransferPocketForkTest_EdgeCases is TransferPocketForkTestBase {
 
     function test_setPocket_zeroBalance_noPocketToAave() public {
-        // Basin has zero USDT
+        // Clear seed deposit balance so basin truly has zero USDT
+        deal(Ethereum.USDT, address(groveBasin), 0);
+
         uint256 totalAssetsBefore = groveBasin.totalAssets();
 
         AaveV3UsdtPocket aavePocket = _createAavePocket();
@@ -478,7 +478,9 @@ contract TransferPocketForkTest_EdgeCases is TransferPocketForkTestBase {
         vm.prank(owner);
         groveBasin.setPocket(address(aavePocket));
 
-        // No funds deposited
+        // Clear seed deposit balance so pocket truly has zero
+        deal(Ethereum.USDT, address(aavePocket), 0);
+
         uint256 totalAssetsBefore = groveBasin.totalAssets();
 
         MorphoUsdtPocket morphoPocket = _createMorphoPocket();
@@ -548,7 +550,6 @@ contract TransferPocketForkTest_ReverseMigrations is TransferPocketForkTestBase 
 
     address public swapper  = makeAddr("swapper");
     address public receiver = makeAddr("receiver");
-    address public lp       = makeAddr("lp");
 
     function test_setPocket_aaveToBasin_withdrawsAllToBasin() public {
         AaveV3UsdtPocket aavePocket = _createAavePocket();
@@ -933,6 +934,7 @@ abstract contract TransferPocketForkTestBase_USDC is Test {
     using SafeERC20 for IERC20;
 
     address public owner      = makeAddr("owner");
+    address public lp         = makeAddr("liquidityProvider");
     address public admin      = makeAddr("admin");
     address public groveProxy = makeAddr("groveProxy");
 
@@ -958,6 +960,7 @@ abstract contract TransferPocketForkTestBase_USDC is Test {
         // swapToken = USDC, collateralToken = USDT, creditToken = USDS
         groveBasin = new GroveBasin(
             owner,
+            lp,
             Ethereum.USDC,
             Ethereum.USDT,
             Ethereum.USDS,
@@ -995,12 +998,9 @@ abstract contract TransferPocketForkTestBase_USDC is Test {
     }
 
     function _deposit(address asset, address user, uint256 amount) internal {
-        bytes32 lpRole = groveBasin.LIQUIDITY_PROVIDER_ROLE();
-        vm.prank(owner);
-        groveBasin.grantRole(lpRole, user);
-
-        deal(asset, user, amount);
-        vm.startPrank(user);
+        address lp_ = groveBasin.liquidityProvider();
+        vm.startPrank(lp_);
+        deal(asset, lp_, amount);
         SafeERC20.safeApprove(IERC20(asset), address(groveBasin), 0);
         SafeERC20.safeApprove(IERC20(asset), address(groveBasin), amount);
         groveBasin.deposit(asset, user, amount);
