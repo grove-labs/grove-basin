@@ -230,68 +230,66 @@ contract GroveBasinHarnessTests is GroveBasinTestBase {
 
 contract GetGroveBasinTotalValueTests is GroveBasinTestBase {
 
-    uint256 constant SEED_VALUE = 0;
-
     function test_totalAssets_balanceChanges() public {
         collateralToken.mint(address(groveBasin), 1e18);
 
-        assertEq(groveBasin.totalAssets(), SEED_VALUE + 1e18);
+        assertEq(groveBasin.totalAssets(), 1e18);
 
         swapToken.mint(address(pocket), 1e6);
 
-        assertEq(groveBasin.totalAssets(), SEED_VALUE + 2e18);
+        assertEq(groveBasin.totalAssets(), 2e18);
 
         creditToken.mint(address(groveBasin), 1e18);
 
-        assertEq(groveBasin.totalAssets(), SEED_VALUE + 3.25e18);
+        assertEq(groveBasin.totalAssets(), 3.25e18);
 
         collateralToken.burn(address(groveBasin), 1e18);
 
-        assertEq(groveBasin.totalAssets(), SEED_VALUE + 2.25e18);
+        assertEq(groveBasin.totalAssets(), 2.25e18);
 
         swapToken.burn(address(pocket), 1e6);
 
-        assertEq(groveBasin.totalAssets(), SEED_VALUE + 1.25e18);
+        assertEq(groveBasin.totalAssets(), 1.25e18);
 
         creditToken.burn(address(groveBasin), 1e18);
 
-        assertEq(groveBasin.totalAssets(), SEED_VALUE);
+        assertEq(groveBasin.totalAssets(), 0);
     }
 
     function test_totalAssets_conversionRateChanges() public {
-        assertEq(groveBasin.totalAssets(), SEED_VALUE);
+        assertEq(groveBasin.totalAssets(), 0);
 
         collateralToken.mint(address(groveBasin), 1e18);
         swapToken.mint(address(pocket), 1e6);
         creditToken.mint(address(groveBasin), 1e18);
 
-        assertEq(groveBasin.totalAssets(), SEED_VALUE + 3.25e18);
+        assertEq(groveBasin.totalAssets(), 3.25e18);
 
         mockCreditTokenRateProvider.__setConversionRate(1.5e27);
 
-        assertEq(groveBasin.totalAssets(), SEED_VALUE + 3.5e18);
+        assertEq(groveBasin.totalAssets(), 3.5e18);
 
         mockCreditTokenRateProvider.__setConversionRate(0.8e27);
 
-        assertEq(groveBasin.totalAssets(), SEED_VALUE + 2.8e18);
+        assertEq(groveBasin.totalAssets(), 2.8e18);
     }
 
     function test_totalAssets_bothChange() public {
-        assertEq(groveBasin.totalAssets(), SEED_VALUE);
+        assertEq(groveBasin.totalAssets(), 0);
 
         collateralToken.mint(address(groveBasin), 1e18);
         swapToken.mint(address(pocket), 1e6);
         creditToken.mint(address(groveBasin), 1e18);
 
-        assertEq(groveBasin.totalAssets(), SEED_VALUE + 3.25e18);
+        assertEq(groveBasin.totalAssets(), 3.25e18);
 
         mockCreditTokenRateProvider.__setConversionRate(1.5e27);
 
-        assertEq(groveBasin.totalAssets(), SEED_VALUE + 3.5e18);
+        assertEq(groveBasin.totalAssets(), 3.5e18);
 
         creditToken.mint(address(groveBasin), 1e18);
 
-        assertEq(groveBasin.totalAssets(), SEED_VALUE + 5e18);
+        assertEq(groveBasin.totalAssets(), 5e18);
     }
 
     function testFuzz_totalAssets(
@@ -315,7 +313,7 @@ contract GetGroveBasinTotalValueTests is GroveBasinTestBase {
 
         assertEq(
             groveBasin.totalAssets(),
-            SEED_VALUE + collateralTokenAmount + (swapTokenAmount * 1e12) + (creditTokenAmount * conversionRate / 1e27)
+            collateralTokenAmount + (swapTokenAmount * 1e12) + (creditTokenAmount * conversionRate / 1e27)
         );
     }
 
