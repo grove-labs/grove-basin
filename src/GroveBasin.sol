@@ -387,13 +387,13 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     /**********************************************************************************************/
 
     /// @inheritdoc IGroveBasin
-    function calculatePurchaseFee(uint256 amount, bool roundUp) external view override returns (uint256) {
-        return _calculateFee(amount, purchaseFee, roundUp);
+    function calculatePurchaseFee(uint256 amount) external view override returns (uint256) {
+        return _calculateFee(amount, purchaseFee);
     }
 
     /// @inheritdoc IGroveBasin
-    function calculateRedemptionFee(uint256 amount, bool roundUp) external view override returns (uint256) {
-        return _calculateFee(amount, redemptionFee, roundUp);
+    function calculateRedemptionFee(uint256 amount) external view override returns (uint256) {
+        return _calculateFee(amount, redemptionFee);
     }
 
     /**********************************************************************************************/
@@ -600,9 +600,9 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
         public view returns (uint256)
     {
         if (assetOut == creditToken) {
-            return _calculateFee(amountOut, purchaseFee, true);
+            return _calculateFee(amountOut, purchaseFee);
         }
-        return _calculateFee(amountOut, redemptionFee, true);
+        return _calculateFee(amountOut, redemptionFee);
     }
 
     /// @dev Returns the fee that must be added to a net output amount to get the gross output (ExactOut). Rounds up.
@@ -984,9 +984,8 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     }
 
     /// @dev Calculates a fee on `amount` in basis points.
-    function _calculateFee(uint256 amount, uint256 fee, bool roundUp) internal pure returns (uint256) {
-        if (roundUp) return Math.ceilDiv(amount * fee, BPS);
-        return amount * fee / BPS;
+    function _calculateFee(uint256 amount, uint256 fee) internal pure returns (uint256) {
+        return Math.ceilDiv(amount * fee, BPS);
     }
 
     /// @dev Computes the gross amount before fee that yields `netAmount` after fee deduction.

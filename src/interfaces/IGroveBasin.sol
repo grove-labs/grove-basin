@@ -617,20 +617,18 @@ interface IGroveBasin {
     /**********************************************************************************************/
 
     /**
-     *  @dev    View function that calculates the purchase fee for a given amount.
+     *  @dev    View function that calculates the purchase fee for a given amount. Rounds up.
      *  @param  amount  The gross amount to calculate the fee on.
-     *  @param  roundUp Whether to round up the fee calculation.
      *  @return fee     The fee amount that would be deducted.
      */
-    function calculatePurchaseFee(uint256 amount, bool roundUp) external view returns (uint256 fee);
+    function calculatePurchaseFee(uint256 amount) external view returns (uint256 fee);
 
     /**
-     *  @dev    View function that calculates the redemption fee for a given amount.
+     *  @dev    View function that calculates the redemption fee for a given amount. Rounds up.
      *  @param  amount  The gross amount to calculate the fee on.
-     *  @param  roundUp Whether to round up the fee calculation.
      *  @return fee     The fee amount that would be deducted.
      */
-    function calculateRedemptionFee(uint256 amount, bool roundUp) external view returns (uint256 fee);
+    function calculateRedemptionFee(uint256 amount) external view returns (uint256 fee);
 
     /**********************************************************************************************/
     /*** Swap functions                                                                         ***/

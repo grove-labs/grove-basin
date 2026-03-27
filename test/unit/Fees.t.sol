@@ -450,28 +450,32 @@ contract GroveBasinFeeCalculationTests is GroveBasinTestBase {
     }
 
     function test_calculatePurchaseFee_zeroFee() public view {
-        assertEq(groveBasin.calculatePurchaseFee(100e18, false), 0);
+        assertEq(groveBasin.calculatePurchaseFee(100e18), 0);
     }
 
     function test_calculatePurchaseFee_withFee() public {
         vm.prank(owner);
         groveBasin.setPurchaseFee(100);  // 1%
 
-        assertEq(groveBasin.calculatePurchaseFee(100e18, false), 1e18);
-        assertEq(groveBasin.calculatePurchaseFee(1000e6, false), 10e6);
-        assertEq(groveBasin.calculatePurchaseFee(0, false),      0);
+        assertEq(groveBasin.calculatePurchaseFee(100e18), 1e18);
+        assertEq(groveBasin.calculatePurchaseFee(1000e6), 10e6);
+        assertEq(groveBasin.calculatePurchaseFee(0),      0);
+        // 3 * 100 / 10000 = 0.03 -> rounds up to 1
+        assertEq(groveBasin.calculatePurchaseFee(3),      1);
     }
 
     function test_calculateRedemptionFee_zeroFee() public view {
-        assertEq(groveBasin.calculateRedemptionFee(100e18, false), 0);
+        assertEq(groveBasin.calculateRedemptionFee(100e18), 0);
     }
 
     function test_calculateRedemptionFee_withFee() public {
         vm.prank(owner);
         groveBasin.setRedemptionFee(50);  // 0.5%
 
-        assertEq(groveBasin.calculateRedemptionFee(10_000e18, false), 50e18);
-        assertEq(groveBasin.calculateRedemptionFee(0, false),         0);
+        assertEq(groveBasin.calculateRedemptionFee(10_000e18), 50e18);
+        assertEq(groveBasin.calculateRedemptionFee(0),         0);
+        // 3 * 50 / 10000 = 0.015 -> rounds up to 1
+        assertEq(groveBasin.calculateRedemptionFee(3),         1);
     }
 
     function testFuzz_calculatePurchaseFee(uint256 amount, uint256 fee) public {
@@ -481,7 +485,8 @@ contract GroveBasinFeeCalculationTests is GroveBasinTestBase {
         vm.prank(owner);
         groveBasin.setPurchaseFee(fee);
 
-        assertEq(groveBasin.calculatePurchaseFee(amount, false), amount * fee / 10_000);
+        uint256 expected = fee == 0 ? 0 : Math.ceilDiv(amount * fee, 10_000);
+        assertEq(groveBasin.calculatePurchaseFee(amount), expected);
     }
 
     function testFuzz_calculateRedemptionFee(uint256 amount, uint256 fee) public {
@@ -491,51 +496,8 @@ contract GroveBasinFeeCalculationTests is GroveBasinTestBase {
         vm.prank(owner);
         groveBasin.setRedemptionFee(fee);
 
-        assertEq(groveBasin.calculateRedemptionFee(amount, false), amount * fee / 10_000);
-    }
-
-    function test_calculatePurchaseFee_roundUp() public {
-        vm.prank(owner);
-        groveBasin.setPurchaseFee(100);  // 1%
-
-        assertEq(groveBasin.calculatePurchaseFee(100e18, true), 1e18);
-        assertEq(groveBasin.calculatePurchaseFee(0, true),      0);
-        // 3 * 100 / 10000 = 0.03 -> rounds up to 1
-        assertEq(groveBasin.calculatePurchaseFee(3, true),  1);
-        assertEq(groveBasin.calculatePurchaseFee(3, false), 0);
-    }
-
-    function test_calculateRedemptionFee_roundUp() public {
-        vm.prank(owner);
-        groveBasin.setRedemptionFee(50);  // 0.5%
-
-        assertEq(groveBasin.calculateRedemptionFee(10_000e18, true), 50e18);
-        assertEq(groveBasin.calculateRedemptionFee(0, true),         0);
-        // 3 * 50 / 10000 = 0.015 -> rounds up to 1
-        assertEq(groveBasin.calculateRedemptionFee(3, true),  1);
-        assertEq(groveBasin.calculateRedemptionFee(3, false), 0);
-    }
-
-    function testFuzz_calculatePurchaseFee_roundUp(uint256 amount, uint256 fee) public {
-        fee    = _bound(fee,    0, 500);
-        amount = _bound(amount, 0, 1e30);
-
-        vm.prank(owner);
-        groveBasin.setPurchaseFee(fee);
-
         uint256 expected = fee == 0 ? 0 : Math.ceilDiv(amount * fee, 10_000);
-        assertEq(groveBasin.calculatePurchaseFee(amount, true), expected);
-    }
-
-    function testFuzz_calculateRedemptionFee_roundUp(uint256 amount, uint256 fee) public {
-        fee    = _bound(fee, 0, 500);
-        amount = _bound(amount, 0, 1e30);
-
-        vm.prank(owner);
-        groveBasin.setRedemptionFee(fee);
-
-        uint256 expected = fee == 0 ? 0 : Math.ceilDiv(amount * fee, 10_000);
-        assertEq(groveBasin.calculateRedemptionFee(amount, true), expected);
+        assertEq(groveBasin.calculateRedemptionFee(amount), expected);
     }
 
 }
