@@ -83,8 +83,6 @@ contract AaveV3UsdtPocket is BasePocket {
         if (balance < amount) {
             uint256 remainder = amount - balance;
 
-            aUsdt.safeApprove(aaveV3Pool, remainder);
-
             convertedAmount = IAaveV3PoolLike(aaveV3Pool).withdraw(
                 address(usdt),
                 remainder,
