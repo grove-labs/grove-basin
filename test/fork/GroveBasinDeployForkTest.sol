@@ -7,8 +7,8 @@ import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
 
 import { Ethereum } from "lib/grove-address-registry/src/Ethereum.sol";
 
-import { GroveBasin }       from "src/GroveBasin.sol";
-import { GroveBasinDeploy } from "deploy/GroveBasinDeploy.sol";
+import { GroveBasin }        from "src/GroveBasin.sol";
+import { GroveBasinFactory } from "src/GroveBasinFactory.sol";
 
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 
@@ -19,12 +19,16 @@ contract GroveBasinDeployForkTest is Test {
 
     uint256 public seedAmount;
 
+    GroveBasinFactory public factory;
+
     MockRateProvider public swapTokenRateProvider;
     MockRateProvider public collateralTokenRateProvider;
     MockRateProvider public creditTokenRateProvider;
 
     function setUp() public {
         vm.createSelectFork(getChain("mainnet").rpcUrl, 24_522_338);
+
+        factory = new GroveBasinFactory();
 
         swapTokenRateProvider       = new MockRateProvider();
         collateralTokenRateProvider = new MockRateProvider();
@@ -39,8 +43,9 @@ contract GroveBasinDeployForkTest is Test {
 
     function test_deploy_withActualUSDT() public {
         deal(Ethereum.USDT, address(this), seedAmount);
+        IERC20(Ethereum.USDT).approve(address(factory), seedAmount);
 
-        address groveBasinAddress = GroveBasinDeploy.deploy(
+        address groveBasinAddress = factory.deploy(
             owner,
             lp,
             Ethereum.USDT,
@@ -68,8 +73,9 @@ contract GroveBasinDeployForkTest is Test {
 
     function test_deploy_multipleDeployments() public {
         deal(Ethereum.USDT, address(this), seedAmount);
+        IERC20(Ethereum.USDT).approve(address(factory), seedAmount);
 
-        address groveBasin1 = GroveBasinDeploy.deploy(
+        address groveBasin1 = factory.deploy(
             owner,
             lp,
             Ethereum.USDT,
@@ -89,8 +95,9 @@ contract GroveBasinDeployForkTest is Test {
         creditTokenRateProvider2.__setConversionRate(1e27);
 
         deal(Ethereum.USDT, address(this), seedAmount);
+        IERC20(Ethereum.USDT).approve(address(factory), seedAmount);
 
-        address groveBasin2 = GroveBasinDeploy.deploy(
+        address groveBasin2 = factory.deploy(
             owner,
             lp,
             Ethereum.USDT,
@@ -108,10 +115,11 @@ contract GroveBasinDeployForkTest is Test {
 
     function test_deploy_seedTokensTransferred() public {
         deal(Ethereum.USDT, address(this), seedAmount);
+        IERC20(Ethereum.USDT).approve(address(factory), seedAmount);
 
         uint256 balanceBefore = IERC20(Ethereum.USDT).balanceOf(address(this));
 
-        address groveBasinAddress = GroveBasinDeploy.deploy(
+        address groveBasinAddress = factory.deploy(
             owner,
             lp,
             Ethereum.USDT,

@@ -8,9 +8,9 @@ import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
 import { Ethereum } from "lib/grove-address-registry/src/Ethereum.sol";
 
 import { GroveBasin }          from "src/GroveBasin.sol";
+import { GroveBasinFactory }   from "src/GroveBasinFactory.sol";
 import { JTRSYTokenRedeemer }  from "src/JTRSYTokenRedeemer.sol";
 import { UsdsUsdcPocket }      from "src/pockets/UsdsUsdcPocket.sol";
-import { GroveBasinDeploy }    from "deploy/GroveBasinDeploy.sol";
 
 contract SetupJTRSYUsdsUsdcBasin is Script {
 
@@ -32,7 +32,12 @@ contract SetupJTRSYUsdsUsdcBasin is Script {
     function deploy() public returns (address groveBasin, address pocket_, address redeemer_) {
         require(IERC20(Ethereum.USDS).balanceOf(msg.sender) >= 1e18, "insufficient-usds-balance");
 
-        groveBasin = GroveBasinDeploy.deploy({
+        GroveBasinFactory factory = new GroveBasinFactory();
+
+        uint256 seedAmount = 10 ** IERC20(Ethereum.USDS).decimals();
+        IERC20(Ethereum.USDS).approve(address(factory), seedAmount);
+
+        groveBasin = factory.deploy({
             owner                       : msg.sender,
             liquidityProvider           : Ethereum.ALM_PROXY,
             swapToken                   : Ethereum.USDS,
