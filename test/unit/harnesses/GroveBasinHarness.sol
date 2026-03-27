@@ -23,12 +23,12 @@ contract GroveBasinHarness is GroveBasin {
         return _getAssetValue(asset, amount, roundUp);
     }
 
-    function getSwapTokenValue(uint256 amount) external view returns (uint256) {
-        return _getSwapTokenValue(amount);
+    function getSwapTokenValue(uint256 amount, bool roundUp) external view returns (uint256) {
+        return _getSwapTokenValue(amount, roundUp);
     }
 
-    function getCollateralTokenValue(uint256 amount) external view returns (uint256) {
-        return _getCollateralTokenValue(amount);
+    function getCollateralTokenValue(uint256 amount, bool roundUp) external view returns (uint256) {
+        return _getCollateralTokenValue(amount, roundUp);
     }
 
     function getCreditTokenValue(uint256 amount, bool roundUp) external view returns (uint256) {
@@ -41,6 +41,14 @@ contract GroveBasinHarness is GroveBasin {
 
     function getConversionRate(address rateProvider) external view returns (uint256) {
         return _getConversionRate(rateProvider);
+    }
+
+    function accrueFeeShares(address asset, uint256 feeAmount) external {
+        _accrueFeeShares(asset, feeAmount);
+    }
+
+    function setFeeClaimerDirect(address newFeeClaimer) external {
+        feeClaimer = newFeeClaimer;
     }
 
 }

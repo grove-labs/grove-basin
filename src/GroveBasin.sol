@@ -73,6 +73,8 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     uint256 public override maxStalenessThreshold;
     uint256 public override redeemedCreditTokenBalance;
 
+    address public override feeClaimer;
+
     mapping(address user => uint256 shares) public override shares;
 
     constructor(
@@ -328,6 +330,17 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     }
 
     /**********************************************************************************************/
+    /*** Fee claimer functions                                                                  ***/
+    /**********************************************************************************************/
+
+    /// @inheritdoc IGroveBasin
+    function setFeeClaimer(address newFeeClaimer) external override onlyRole(MANAGER_ADMIN_ROLE) {
+        address oldFeeClaimer = feeClaimer;
+        feeClaimer = newFeeClaimer;
+        emit FeeClaimerSet(oldFeeClaimer, newFeeClaimer);
+    }
+
+    /**********************************************************************************************/
     /*** Manager functions                                                                      ***/
     /**********************************************************************************************/
 
@@ -374,13 +387,13 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     /**********************************************************************************************/
 
     /// @inheritdoc IGroveBasin
-    function calculatePurchaseFee(uint256 amount, bool roundUp) external view override returns (uint256) {
-        return _calculateFee(amount, purchaseFee, roundUp);
+    function calculatePurchaseFee(uint256 amount) external view override returns (uint256) {
+        return _calculateFee(amount, purchaseFee);
     }
 
     /// @inheritdoc IGroveBasin
-    function calculateRedemptionFee(uint256 amount, bool roundUp) external view override returns (uint256) {
-        return _calculateFee(amount, redemptionFee, roundUp);
+    function calculateRedemptionFee(uint256 amount) external view override returns (uint256) {
+        return _calculateFee(amount, redemptionFee);
     }
 
     /**********************************************************************************************/
@@ -403,9 +416,16 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
         _checkSwapNotPaused(assetIn, assetOut);
 
-        amountOut = previewSwapExactIn(assetIn, assetOut, amountIn);
+        if (_getAssetValue(assetIn, amountIn, false) > maxSwapSize) revert SwapSizeExceeded();
+
+        uint256 grossOut = _getSwapQuote(assetIn, assetOut, amountIn, false);
+        uint256 fee      = previewSwapExactInFee(assetOut, grossOut);
+
+        amountOut = grossOut - fee;
 
         if (amountOut < minAmountOut) revert AmountOutTooLow();
+
+        _accrueFeeShares(assetOut, fee);
 
         _withdrawLiquidityInPocket(amountOut, assetOut);
         _pullAsset(assetIn, amountIn);
@@ -430,9 +450,14 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
         _checkSwapNotPaused(assetIn, assetOut);
 
-        amountIn = previewSwapExactOut(assetIn, assetOut, amountOut);
+        uint256 fee = previewSwapExactOutFee(assetOut, amountOut);
 
-        if (amountIn > maxAmountIn) revert AmountInTooHigh();
+        amountIn = _getSwapQuote(assetOut, assetIn, amountOut + fee, true);
+
+        if (_getAssetValue(assetIn, amountIn, false) > maxSwapSize) revert SwapSizeExceeded();
+        if (amountIn > maxAmountIn)                                 revert AmountInTooHigh();
+
+        _accrueFeeShares(assetOut, fee);
 
         _withdrawLiquidityInPocket(amountOut, assetOut);
         _pullAsset(assetIn, amountIn);
@@ -556,32 +581,38 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     {
         if (_getAssetValue(assetIn, amountIn, false) > maxSwapSize) revert SwapSizeExceeded();
 
-        // Round down to get amountOut
         amountOut = _getSwapQuote(assetIn, assetOut, amountIn, false);
-
-        // Assumes no stable-to-stable swap
-        if (assetOut == creditToken) {
-            amountOut -= _calculateFee(amountOut, purchaseFee, false);
-        } else {
-            amountOut -= _calculateFee(amountOut, redemptionFee, false);
-        }
+        amountOut -= previewSwapExactInFee(assetOut, amountOut);
     }
 
     /// @inheritdoc IGroveBasin
     function previewSwapExactOut(address assetIn, address assetOut, uint256 amountOut)
         public view override returns (uint256 amountIn)
     {
-        // Round up to get amountIn
-        amountIn = _getSwapQuote(assetOut, assetIn, amountOut, true);
+        amountOut += previewSwapExactOutFee(assetOut, amountOut);
+        amountIn   = _getSwapQuote(assetOut, assetIn, amountOut, true);
 
         if (_getAssetValue(assetIn, amountIn, false) > maxSwapSize) revert SwapSizeExceeded();
-
-        // Assumes no stable-to-stable swap
+    }
+    
+    /// @dev Returns the fee that will be deducted from a gross output amount (ExactIn). Rounds up.
+    function previewSwapExactInFee(address assetOut, uint256 amountOut)
+        public view returns (uint256)
+    {
         if (assetOut == creditToken) {
-            amountIn += _calculateFee(amountIn, purchaseFee, true);
-        } else {
-            amountIn += _calculateFee(amountIn, redemptionFee, true);
+            return _calculateFee(amountOut, purchaseFee);
         }
+        return _calculateFee(amountOut, redemptionFee);
+    }
+
+    /// @dev Returns the fee that must be added to a net output amount to get the gross output (ExactOut). Rounds up.
+    function previewSwapExactOutFee(address assetOut, uint256 amountOut)
+        public view returns (uint256)
+    {
+        if (assetOut == creditToken) {
+            return _getGrossAmountFromNet(amountOut, purchaseFee) - amountOut;
+        }
+        return _getGrossAmountFromNet(amountOut, redemptionFee) - amountOut;
     }
 
     /**********************************************************************************************/
@@ -648,13 +679,13 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     /// @inheritdoc IGroveBasin
     function totalAssets() public view override returns (uint256) {
         return _getSwapTokenValue(
-                    _getAvailableBalance(swapToken)
+                    _getAvailableBalance(swapToken), false  // Round down
                 )
             +  _getCollateralTokenValue(
-                    _getAvailableBalance(collateralToken)
+                    _getAvailableBalance(collateralToken), false  // Round down
                 )
             +  _getCreditTokenValue(
-                    _getAvailableBalance(creditToken), false // Round down
+                    _getAvailableBalance(creditToken), false  // Round down
                 );
     }
 
@@ -669,27 +700,29 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
     /// @dev Returns the USD value of `amount` of `asset` in 1e18 precision.
     function _getAssetValue(address asset, uint256 amount, bool roundUp) internal view returns (uint256) {
-        if      (asset == swapToken)       return _getSwapTokenValue(amount);
-        else if (asset == collateralToken) return _getCollateralTokenValue(amount);
+        if      (asset == swapToken)       return _getSwapTokenValue(amount, roundUp);
+        else if (asset == collateralToken) return _getCollateralTokenValue(amount, roundUp);
         else if (asset == creditToken)     return _getCreditTokenValue(amount, roundUp);
         else                               revert InvalidAsset();
     }
 
     /// @dev Returns the USD value of `amount` of swap tokens in 1e18 precision.
-    function _getSwapTokenValue(uint256 amount) internal view returns (uint256) {
+    function _getSwapTokenValue(uint256 amount, bool roundUp) internal view returns (uint256) {
         return Math.mulDiv(
             amount * _getConversionRate(swapTokenRateProvider),
             1e18,
-            IRateProviderLike(swapTokenRateProvider).getRatePrecision() * _swapTokenPrecision
+            IRateProviderLike(swapTokenRateProvider).getRatePrecision() * _swapTokenPrecision,
+            roundUp ? Math.Rounding.Ceil : Math.Rounding.Floor
         );
     }
 
     /// @dev Returns the USD value of `amount` of collateral tokens in 1e18 precision.
-    function _getCollateralTokenValue(uint256 amount) internal view returns (uint256) {
+    function _getCollateralTokenValue(uint256 amount, bool roundUp) internal view returns (uint256) {
         return Math.mulDiv(
             amount * _getConversionRate(collateralTokenRateProvider),
             1e18,
-            IRateProviderLike(collateralTokenRateProvider).getRatePrecision() * _collateralTokenPrecision
+            IRateProviderLike(collateralTokenRateProvider).getRatePrecision() * _collateralTokenPrecision,
+            roundUp ? Math.Rounding.Ceil : Math.Rounding.Floor
         );
     }
 
@@ -812,6 +845,24 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     /*** Internal helper functions                                                              ***/
     /**********************************************************************************************/
 
+    /// @dev Converts a fee amount in `asset` terms to shares and assigns them to the fee claimer.
+    function _accrueFeeShares(address asset, uint256 feeAmount) internal {
+        if (feeAmount == 0) return;
+
+        address feeClaimer_ = feeClaimer;
+        if (feeClaimer_ == address(0)) return;
+
+        uint256 feeValue  = _getAssetValue(asset, feeAmount, true);
+        uint256 feeShares = _convertToSharesRoundUp(feeValue);
+
+        if (feeShares == 0) return;
+
+        shares[feeClaimer_] += feeShares;
+        totalShares         += feeShares;
+
+        emit FeeSharesAccrued(feeClaimer_, feeShares);
+    }
+
     /// @dev Converts asset value to shares, rounding up. Used for withdrawal share calculations.
     function _convertToSharesRoundUp(uint256 assetValue) internal view returns (uint256) {
         uint256 totalValue = totalAssets();
@@ -933,9 +984,15 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     }
 
     /// @dev Calculates a fee on `amount` in basis points.
-    function _calculateFee(uint256 amount, uint256 fee, bool roundUp) internal pure returns (uint256) {
-        if (roundUp) return Math.ceilDiv(amount * fee, BPS);
-        return amount * fee / BPS;
+    function _calculateFee(uint256 amount, uint256 fee) internal pure returns (uint256) {
+        return Math.ceilDiv(amount * fee, BPS);
+    }
+
+    /// @dev Computes the gross amount before fee that yields `netAmount` after fee deduction.
+    ///      Inverse of: netAmount = grossAmount - grossAmount * fee / BPS
+    function _getGrossAmountFromNet(uint256 netAmount, uint256 fee) internal pure returns (uint256) {
+        if (fee == 0) return netAmount;
+        return Math.ceilDiv(netAmount * BPS, BPS - fee);
     }
 
     /// @dev Sets the purchase fee, enforcing it is within [minFee, maxFee].

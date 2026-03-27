@@ -389,6 +389,57 @@ contract GroveBasinSetRedemptionFeeSuccessTests is GroveBasinTestBase {
 /*** Fee calculation tests                                                                  ***/
 /**********************************************************************************************/
 
+contract GroveBasinPreviewSwapFeeTests is GroveBasinTestBase {
+
+    function setUp() public override {
+        super.setUp();
+
+        vm.prank(owner);
+        groveBasin.setFeeBounds(0, 500);
+    }
+
+    function test_previewSwapExactInFee_creditToken() public {
+        vm.prank(owner);
+        groveBasin.setPurchaseFee(100);  // 1%
+
+        assertEq(groveBasin.previewSwapExactInFee(address(creditToken), 10_000e18), 100e18);
+    }
+
+    function test_previewSwapExactInFee_nonCreditToken() public {
+        vm.prank(owner);
+        groveBasin.setRedemptionFee(200);  // 2%
+
+        assertEq(groveBasin.previewSwapExactInFee(address(swapToken), 10_000e6), 200e6);
+    }
+
+    function test_previewSwapExactOutFee_creditToken() public {
+        vm.prank(owner);
+        groveBasin.setPurchaseFee(100);  // 1%
+
+        uint256 fee = groveBasin.previewSwapExactOutFee(address(creditToken), 9_900e18);
+        assertEq(fee, 100e18);
+    }
+
+    function test_previewSwapExactOutFee_nonCreditToken() public {
+        vm.prank(owner);
+        groveBasin.setRedemptionFee(200);  // 2%
+
+        uint256 fee = groveBasin.previewSwapExactOutFee(address(swapToken), 9_800e6);
+        assertEq(fee, 200e6);
+    }
+
+    function test_previewSwapExactInFee_roundsUpFavoringProtocol() public {
+        vm.prank(owner);
+        groveBasin.setPurchaseFee(100);  // 1%
+
+        // 33 * 100 / 10000 = 0 with floor, 1 with ceil
+        // Fee must never round to zero when a fee is configured and amount is non-zero
+        uint256 fee = groveBasin.previewSwapExactInFee(address(creditToken), 33);
+        assertGt(fee, 0, "ExactIn fee should round up in favor of the protocol");
+    }
+
+}
+
 contract GroveBasinFeeCalculationTests is GroveBasinTestBase {
 
     function setUp() public override {
@@ -399,28 +450,32 @@ contract GroveBasinFeeCalculationTests is GroveBasinTestBase {
     }
 
     function test_calculatePurchaseFee_zeroFee() public view {
-        assertEq(groveBasin.calculatePurchaseFee(100e18, false), 0);
+        assertEq(groveBasin.calculatePurchaseFee(100e18), 0);
     }
 
     function test_calculatePurchaseFee_withFee() public {
         vm.prank(owner);
         groveBasin.setPurchaseFee(100);  // 1%
 
-        assertEq(groveBasin.calculatePurchaseFee(100e18, false), 1e18);
-        assertEq(groveBasin.calculatePurchaseFee(1000e6, false), 10e6);
-        assertEq(groveBasin.calculatePurchaseFee(0, false),      0);
+        assertEq(groveBasin.calculatePurchaseFee(100e18), 1e18);
+        assertEq(groveBasin.calculatePurchaseFee(1000e6), 10e6);
+        assertEq(groveBasin.calculatePurchaseFee(0),      0);
+        // 3 * 100 / 10000 = 0.03 -> rounds up to 1
+        assertEq(groveBasin.calculatePurchaseFee(3),      1);
     }
 
     function test_calculateRedemptionFee_zeroFee() public view {
-        assertEq(groveBasin.calculateRedemptionFee(100e18, false), 0);
+        assertEq(groveBasin.calculateRedemptionFee(100e18), 0);
     }
 
     function test_calculateRedemptionFee_withFee() public {
         vm.prank(owner);
         groveBasin.setRedemptionFee(50);  // 0.5%
 
-        assertEq(groveBasin.calculateRedemptionFee(10_000e18, false), 50e18);
-        assertEq(groveBasin.calculateRedemptionFee(0, false),         0);
+        assertEq(groveBasin.calculateRedemptionFee(10_000e18), 50e18);
+        assertEq(groveBasin.calculateRedemptionFee(0),         0);
+        // 3 * 50 / 10000 = 0.015 -> rounds up to 1
+        assertEq(groveBasin.calculateRedemptionFee(3),         1);
     }
 
     function testFuzz_calculatePurchaseFee(uint256 amount, uint256 fee) public {
@@ -430,7 +485,8 @@ contract GroveBasinFeeCalculationTests is GroveBasinTestBase {
         vm.prank(owner);
         groveBasin.setPurchaseFee(fee);
 
-        assertEq(groveBasin.calculatePurchaseFee(amount, false), amount * fee / 10_000);
+        uint256 expected = fee == 0 ? 0 : Math.ceilDiv(amount * fee, 10_000);
+        assertEq(groveBasin.calculatePurchaseFee(amount), expected);
     }
 
     function testFuzz_calculateRedemptionFee(uint256 amount, uint256 fee) public {
@@ -440,51 +496,8 @@ contract GroveBasinFeeCalculationTests is GroveBasinTestBase {
         vm.prank(owner);
         groveBasin.setRedemptionFee(fee);
 
-        assertEq(groveBasin.calculateRedemptionFee(amount, false), amount * fee / 10_000);
-    }
-
-    function test_calculatePurchaseFee_roundUp() public {
-        vm.prank(owner);
-        groveBasin.setPurchaseFee(100);  // 1%
-
-        assertEq(groveBasin.calculatePurchaseFee(100e18, true), 1e18);
-        assertEq(groveBasin.calculatePurchaseFee(0, true),      0);
-        // 3 * 100 / 10000 = 0.03 -> rounds up to 1
-        assertEq(groveBasin.calculatePurchaseFee(3, true),  1);
-        assertEq(groveBasin.calculatePurchaseFee(3, false), 0);
-    }
-
-    function test_calculateRedemptionFee_roundUp() public {
-        vm.prank(owner);
-        groveBasin.setRedemptionFee(50);  // 0.5%
-
-        assertEq(groveBasin.calculateRedemptionFee(10_000e18, true), 50e18);
-        assertEq(groveBasin.calculateRedemptionFee(0, true),         0);
-        // 3 * 50 / 10000 = 0.015 -> rounds up to 1
-        assertEq(groveBasin.calculateRedemptionFee(3, true),  1);
-        assertEq(groveBasin.calculateRedemptionFee(3, false), 0);
-    }
-
-    function testFuzz_calculatePurchaseFee_roundUp(uint256 amount, uint256 fee) public {
-        fee    = _bound(fee,    0, 500);
-        amount = _bound(amount, 0, 1e30);
-
-        vm.prank(owner);
-        groveBasin.setPurchaseFee(fee);
-
         uint256 expected = fee == 0 ? 0 : Math.ceilDiv(amount * fee, 10_000);
-        assertEq(groveBasin.calculatePurchaseFee(amount, true), expected);
-    }
-
-    function testFuzz_calculateRedemptionFee_roundUp(uint256 amount, uint256 fee) public {
-        fee    = _bound(fee, 0, 500);
-        amount = _bound(amount, 0, 1e30);
-
-        vm.prank(owner);
-        groveBasin.setRedemptionFee(fee);
-
-        uint256 expected = fee == 0 ? 0 : Math.ceilDiv(amount * fee, 10_000);
-        assertEq(groveBasin.calculateRedemptionFee(amount, true), expected);
+        assertEq(groveBasin.calculateRedemptionFee(amount), expected);
     }
 
 }
@@ -495,13 +508,16 @@ contract GroveBasinFeeCalculationTests is GroveBasinTestBase {
 
 contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
 
-    address swapper = makeAddr("swapper");
+    address swapper    = makeAddr("swapper");
+    address feeClaimer = makeAddr("feeClaimer");
 
     function setUp() public override {
         super.setUp();
 
-        vm.prank(owner);
+        vm.startPrank(owner);
         groveBasin.setFeeBounds(0, 500);
+        groveBasin.setFeeClaimer(feeClaimer);
+        vm.stopPrank();
 
         _deposit(address(swapToken),       makeAddr("seeder"), 1_000_000e6);
         _deposit(address(collateralToken), makeAddr("seeder"), 1_000_000e18);
@@ -535,9 +551,9 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
         groveBasin.setPurchaseFee(100);  // 1%
 
         // Without fee: 80 credit needs 100 USDC
-        // With 1% fee: amountIn = 100e6 + ceil(100e6 * 100 / 10000) = 101_000_000
+        // With 1% fee: grossOut = ceil(80e18 * 10000 / 9900), then amountIn = convert(grossOut)
         uint256 amountIn = groveBasin.previewSwapExactOut(address(swapToken), address(creditToken), 80e18);
-        assertEq(amountIn, 101_000_000);
+        assertEq(amountIn, 101_010_102);
     }
 
     // --- Redemption fee (credit -> swap/collateral) ---
@@ -567,9 +583,9 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
         groveBasin.setRedemptionFee(100);  // 1%
 
         // Without fee: 125 USDC needs 100 credit
-        // With 1% fee: amountIn = 100e18 + ceil(100e18 * 100 / 10000) = 101e18
+        // With 1% fee: grossOut = ceil(125e6 * 10000 / 9900), then amountIn = convert(grossOut)
         uint256 amountIn = groveBasin.previewSwapExactOut(address(creditToken), address(swapToken), 125e6);
-        assertEq(amountIn, 101e18);
+        assertEq(amountIn, 101_010_102_000_000_000_000);
     }
 
     // --- No fee when fee is zero ---
@@ -664,12 +680,13 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
         assertEq(swapToken.balanceOf(swapper), 125e6);
     }
 
-    // --- Fee accrues value to basin ---
+    // --- Fee accrues as shares to fee claimer ---
 
-    function test_swapExactIn_feeAccruesToBasin() public {
+    function test_swapExactIn_feeAccruesToFeeClaimer() public {
+
         _deposit(address(collateralToken), makeAddr("depositor"), 10_000e18);
 
-        uint256 totalAssetsBefore = groveBasin.totalAssets();
+        uint256 totalSharesBefore = groveBasin.totalShares();
 
         vm.prank(owner);
         groveBasin.setPurchaseFee(100);  // 1%
@@ -681,7 +698,8 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
         groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, swapper, 0);
         vm.stopPrank();
 
-        assertGt(groveBasin.totalAssets(), totalAssetsBefore);
+        assertGt(groveBasin.shares(feeClaimer), 0);
+        assertGt(groveBasin.totalShares(), totalSharesBefore);
     }
 
     // --- Purchase fee doesn't affect redemptions and vice versa ---
@@ -700,6 +718,32 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
 
         uint256 amountOut = groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), 100e6);
         assertEq(amountOut, 80e18);
+    }
+
+    // --- ExactIn and ExactOut charge the same fee ---
+
+    function test_exactInAndExactOut_sameFee_purchase() public {
+        vm.prank(owner);
+        groveBasin.setPurchaseFee(100);  // 1%
+
+        uint256 amountIn  = 100e6;
+        uint256 amountOut = groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), amountIn);
+
+        uint256 requiredAmountIn = groveBasin.previewSwapExactOut(address(swapToken), address(creditToken), amountOut);
+
+        assertEq(requiredAmountIn, amountIn);
+    }
+
+    function test_exactInAndExactOut_sameFee_redemption() public {
+        vm.prank(owner);
+        groveBasin.setRedemptionFee(100);  // 1%
+
+        uint256 amountIn  = 100e18;
+        uint256 amountOut = groveBasin.previewSwapExactIn(address(creditToken), address(swapToken), amountIn);
+
+        uint256 requiredAmountIn = groveBasin.previewSwapExactOut(address(creditToken), address(swapToken), amountOut);
+
+        assertEq(requiredAmountIn, amountIn);
     }
 
     // --- Both fees active simultaneously ---
@@ -731,13 +775,16 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
 
 contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
 
-    address swapper = makeAddr("swapper");
+    address swapper    = makeAddr("swapper");
+    address feeClaimer = makeAddr("feeClaimer");
 
     function setUp() public override {
         super.setUp();
 
-        vm.prank(owner);
+        vm.startPrank(owner);
         groveBasin.setFeeBounds(0, 2000);  // Max 20% for fuzz range
+        groveBasin.setFeeClaimer(feeClaimer);
+        vm.stopPrank();
 
         _deposit(address(collateralToken), makeAddr("seeder"), COLLATERAL_TOKEN_MAX * 100);
         _deposit(address(swapToken),       makeAddr("seeder"), SWAP_TOKEN_MAX * 100);
@@ -760,7 +807,7 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
 
         // Use precise calculation: amountIn * swapRate * creditPrecision / (creditRate * swapPrecision)
         uint256 rawAmountOut = (amountIn * 1e27 * 1e18) / (conversionRate * 1e6);
-        uint256 expectedAmountOut = rawAmountOut - rawAmountOut * fee / 10_000;
+        uint256 expectedAmountOut = rawAmountOut - Math.ceilDiv(rawAmountOut * fee, 10_000);
 
         uint256 amountOut = groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), amountIn);
         assertEq(amountOut, expectedAmountOut);
@@ -781,7 +828,7 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
         groveBasin.setRedemptionFee(fee);
 
         uint256 rawAmountOut      = amountIn * conversionRate / 1e27 / 1e12;
-        uint256 expectedAmountOut = rawAmountOut - rawAmountOut * fee / 10_000;
+        uint256 expectedAmountOut = rawAmountOut - Math.ceilDiv(rawAmountOut * fee, 10_000);
 
         uint256 amountOut = groveBasin.previewSwapExactIn(address(creditToken), address(swapToken), amountIn);
         assertEq(amountOut, expectedAmountOut);
@@ -802,7 +849,7 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
         groveBasin.setPurchaseFee(fee);
 
         uint256 rawAmountOut      = amountIn * 1e27 / conversionRate;
-        uint256 expectedAmountOut = rawAmountOut - rawAmountOut * fee / 10_000;
+        uint256 expectedAmountOut = rawAmountOut - Math.ceilDiv(rawAmountOut * fee, 10_000);
 
         uint256 amountOut = groveBasin.previewSwapExactIn(address(collateralToken), address(creditToken), amountIn);
         assertEq(amountOut, expectedAmountOut);
@@ -823,7 +870,7 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
         groveBasin.setRedemptionFee(fee);
 
         uint256 rawAmountOut      = amountIn * conversionRate / 1e27;
-        uint256 expectedAmountOut = rawAmountOut - rawAmountOut * fee / 10_000;
+        uint256 expectedAmountOut = rawAmountOut - Math.ceilDiv(rawAmountOut * fee, 10_000);
 
         uint256 amountOut = groveBasin.previewSwapExactIn(address(creditToken), address(collateralToken), amountIn);
         assertEq(amountOut, expectedAmountOut);
@@ -843,12 +890,11 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
         vm.prank(owner);
         groveBasin.setPurchaseFee(fee);
 
-        uint256 rawAmountIn = Math.ceilDiv(
-            Math.ceilDiv(amountOut * conversionRate, 1e27) * 1e6,
+        uint256 grossAmountOut = fee == 0 ? amountOut : Math.ceilDiv(amountOut * 10_000, 10_000 - fee);
+        uint256 expectedAmountIn = Math.ceilDiv(
+            Math.ceilDiv(grossAmountOut * conversionRate, 1e27) * 1e6,
             1e18
         );
-        uint256 feeAmount        = fee == 0 ? 0 : Math.ceilDiv(rawAmountIn * fee, 10_000);
-        uint256 expectedAmountIn = rawAmountIn + feeAmount;
 
         uint256 amountIn = groveBasin.previewSwapExactOut(address(swapToken), address(creditToken), amountOut);
         assertEq(amountIn, expectedAmountIn);
@@ -868,18 +914,17 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
         vm.prank(owner);
         groveBasin.setRedemptionFee(fee);
 
-        uint256 rawAmountIn = Math.ceilDiv(
-            Math.ceilDiv(amountOut * 1e27, conversionRate) * 1e18,
+        uint256 grossAmountOut = fee == 0 ? amountOut : Math.ceilDiv(amountOut * 10_000, 10_000 - fee);
+        uint256 expectedAmountIn = Math.ceilDiv(
+            Math.ceilDiv(grossAmountOut * 1e27, conversionRate) * 1e18,
             1e6
         );
-        uint256 feeAmount        = fee == 0 ? 0 : Math.ceilDiv(rawAmountIn * fee, 10_000);
-        uint256 expectedAmountIn = rawAmountIn + feeAmount;
 
         uint256 amountIn = groveBasin.previewSwapExactOut(address(creditToken), address(swapToken), amountOut);
         assertEq(amountIn, expectedAmountIn);
     }
 
-    function testFuzz_feeAccruesToBasin(
+    function testFuzz_feeAccruesToFeeClaimer(
         uint256 amountIn,
         uint256 purchaseFee_,
         uint256 redemptionFee_
@@ -895,15 +940,13 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
         groveBasin.setRedemptionFee(redemptionFee_);
         vm.stopPrank();
 
-        uint256 totalAssetsBefore = groveBasin.totalAssets();
-
         swapToken.mint(swapper, amountIn);
         vm.startPrank(swapper);
         swapToken.approve(address(groveBasin), amountIn);
         groveBasin.swapExactIn(address(swapToken), address(creditToken), amountIn, 0, swapper, 0);
         vm.stopPrank();
 
-        assertGe(groveBasin.totalAssets(), totalAssetsBefore);
+        assertGt(groveBasin.shares(feeClaimer), 0);
     }
 
     function testFuzz_setFeeBounds(uint256 newMaxFee) public {
@@ -946,8 +989,9 @@ contract GroveBasinSwapWithFeesMultiFuzzTests is GroveBasinTestBase {
     address lp1 = makeAddr("lp1");
     address lp2 = makeAddr("lp2");
 
-    address lpRole_  = makeAddr("lpRole");
-    address swapper = makeAddr("swapper");
+    address lpRole_    = makeAddr("lpRole");
+    address swapper    = makeAddr("swapper");
+    address feeClaimer = makeAddr("feeClaimer");
 
     /// forge-config: default.fuzz.runs = 10
     /// forge-config: pr.fuzz.runs = 100
@@ -965,6 +1009,7 @@ contract GroveBasinSwapWithFeesMultiFuzzTests is GroveBasinTestBase {
         vm.startPrank(owner);
         groveBasin.setFeeBounds(0, 2000);
         groveBasin.grantRole(lpRoleHash, lpRole_);
+        groveBasin.setFeeClaimer(feeClaimer);
         vm.stopPrank();
 
         purchaseFee_   = _bound(purchaseFee_,   0, 2000);
@@ -1043,6 +1088,185 @@ contract GroveBasinSwapWithFeesMultiFuzzTests is GroveBasinTestBase {
         if (index == 2) return creditToken;
 
         else revert("Invalid index");
+    }
+
+}
+
+/**********************************************************************************************/
+/*** Fee share accrual tests                                                                ***/
+/**********************************************************************************************/
+
+contract GroveBasinFeeShareAccrualTests is GroveBasinTestBase {
+
+    event FeeSharesAccrued(address indexed claimer, uint256 shares);
+
+    address swapper    = makeAddr("swapper");
+    address feeClaimer = makeAddr("feeClaimer");
+
+    function setUp() public override {
+        super.setUp();
+
+        vm.startPrank(owner);
+        groveBasin.setFeeBounds(0, 500);
+        groveBasin.setPurchaseFee(100);  // 1%
+        groveBasin.setFeeClaimer(feeClaimer);
+        vm.stopPrank();
+
+        _deposit(address(swapToken),       makeAddr("seeder"), 1_000_000e6);
+        _deposit(address(collateralToken), makeAddr("seeder"), 1_000_000e18);
+        _deposit(address(creditToken),     makeAddr("seeder"), 1_000_000e18);
+    }
+
+    function test_feeSharesAccrued_afterSwapExactIn() public {
+        swapToken.mint(swapper, 100e6);
+
+        vm.startPrank(swapper);
+        swapToken.approve(address(groveBasin), 100e6);
+        groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, swapper, 0);
+        vm.stopPrank();
+
+        assertGt(groveBasin.shares(feeClaimer), 0);
+    }
+
+    function test_feeSharesAccrued_afterSwapExactOut() public {
+        vm.prank(owner);
+        groveBasin.setRedemptionFee(200);  // 2%
+
+        uint256 amountIn = groveBasin.previewSwapExactOut(
+            address(creditToken), address(collateralToken), 100e18
+        );
+        creditToken.mint(swapper, amountIn);
+
+        vm.startPrank(swapper);
+        creditToken.approve(address(groveBasin), amountIn);
+        groveBasin.swapExactOut(address(creditToken), address(collateralToken), 100e18, amountIn, swapper, 0);
+        vm.stopPrank();
+
+        assertGt(groveBasin.shares(feeClaimer), 0);
+    }
+
+    function test_feeSharesAccumulate_multipleSwaps() public {
+        swapToken.mint(swapper, 200e6);
+        vm.startPrank(swapper);
+        swapToken.approve(address(groveBasin), 200e6);
+
+        groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, swapper, 0);
+        uint256 firstShares = groveBasin.shares(feeClaimer);
+        assertGt(firstShares, 0);
+
+        groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, swapper, 0);
+        vm.stopPrank();
+
+        assertGt(groveBasin.shares(feeClaimer), firstShares);
+    }
+
+    function test_accrueFeeShares_roundsUpFavoringProtocol() public {
+        _deposit(address(collateralToken), makeAddr("bigLp"), 1e18);
+
+        // Inflate totalAssets relative to totalShares so floor-division would give 0 shares
+        mockCollateralTokenRateProvider.__setConversionRate(1e45);
+
+        swapToken.mint(swapper, 1);
+        vm.startPrank(swapper);
+        swapToken.approve(address(groveBasin), 1);
+        groveBasin.swapExactIn(address(swapToken), address(creditToken), 1, 0, swapper, 0);
+        vm.stopPrank();
+
+        // A fee was charged (grossOut > amountOut), so the fee claimer must receive shares.
+        // Rounding should favor the protocol (ceil), not the user (floor).
+        assertGt(groveBasin.shares(feeClaimer), 0, "Fee shares should round up, not down to zero");
+    }
+
+    function test_feeSharesNotAccrued_noFeeClaimerSet() public {
+        vm.prank(owner);
+        groveBasin.setFeeClaimer(address(0));
+
+        assertEq(groveBasin.feeClaimer(), address(0));
+
+        uint256 totalSharesBefore = groveBasin.totalShares();
+
+        swapToken.mint(swapper, 100e6);
+        vm.startPrank(swapper);
+        swapToken.approve(address(groveBasin), 100e6);
+        groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, swapper, 0);
+        vm.stopPrank();
+
+        assertEq(groveBasin.totalShares(), totalSharesBefore);
+    }
+
+    function test_feeSharesAccrued_emitsEvent() public {
+        swapToken.mint(swapper, 100e6);
+
+        vm.startPrank(swapper);
+        swapToken.approve(address(groveBasin), 100e6);
+        vm.expectEmit(true, false, false, false, address(groveBasin));
+        emit FeeSharesAccrued(feeClaimer, 0);
+        groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, swapper, 0);
+        vm.stopPrank();
+    }
+
+    function test_feeClaimerCanWithdraw() public {
+        swapToken.mint(swapper, 100e6);
+        vm.startPrank(swapper);
+        swapToken.approve(address(groveBasin), 100e6);
+        groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, swapper, 0);
+        vm.stopPrank();
+
+        uint256 feeClaimerShares = groveBasin.shares(feeClaimer);
+        assertGt(feeClaimerShares, 0);
+
+        uint256 expectedAssets = groveBasin.convertToAssets(address(collateralToken), feeClaimerShares);
+
+        vm.prank(feeClaimer);
+        uint256 assetsWithdrawn = groveBasin.withdraw(address(collateralToken), feeClaimer, type(uint256).max);
+
+        assertEq(assetsWithdrawn, expectedAssets);
+        assertEq(groveBasin.shares(feeClaimer), 0);
+    }
+
+    function test_setFeeClaimer() public {
+        address newClaimer = makeAddr("newClaimer");
+
+        vm.prank(owner);
+        groveBasin.setFeeClaimer(newClaimer);
+
+        assertEq(groveBasin.feeClaimer(), newClaimer);
+    }
+
+    function test_setFeeClaimer_toZero() public {
+        assertEq(groveBasin.feeClaimer(), feeClaimer);
+
+        vm.prank(owner);
+        groveBasin.setFeeClaimer(address(0));
+
+        assertEq(groveBasin.feeClaimer(), address(0));
+    }
+
+    function test_setFeeClaimer_notAdmin() public {
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                address(this),
+                groveBasin.MANAGER_ADMIN_ROLE()
+            )
+        );
+        groveBasin.setFeeClaimer(makeAddr("random"));
+    }
+
+    function testFuzz_feeSharesAccrued(uint256 amountIn, uint256 fee) public {
+        amountIn = _bound(amountIn, 1e6, 100_000e6);
+        fee      = _bound(fee,      1,   500);
+
+        vm.prank(owner);
+        groveBasin.setPurchaseFee(fee);
+
+        swapToken.mint(swapper, amountIn);
+        vm.startPrank(swapper);
+        swapToken.approve(address(groveBasin), amountIn);
+        groveBasin.swapExactIn(address(swapToken), address(creditToken), amountIn, 0, swapper, 0);
+        vm.stopPrank();
+
+        assertGt(groveBasin.shares(feeClaimer), 0);
     }
 
 }

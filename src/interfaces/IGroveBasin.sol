@@ -192,6 +192,20 @@ interface IGroveBasin {
     event RedeemCompleted(address indexed redeemer, address indexed caller, uint256 amount);
 
     /**
+     *  @dev   Emitted when fee shares are accrued to the fee claimer during a swap.
+     *  @param claimer Address of the fee claimer.
+     *  @param shares  Number of shares accrued.
+     */
+    event FeeSharesAccrued(address indexed claimer, uint256 shares);
+
+    /**
+     *  @dev   Emitted when the fee claimer address is updated.
+     *  @param oldFeeClaimer Previous fee claimer address.
+     *  @param newFeeClaimer New fee claimer address.
+     */
+    event FeeClaimerSet(address indexed oldFeeClaimer, address indexed newFeeClaimer);
+
+    /**
      *  @dev   Emitted when a pause flag is set or unset.
      *  @param action The action being paused/unpaused.
      *  @param paused Whether the action is paused.
@@ -422,6 +436,14 @@ interface IGroveBasin {
     function redeemedCreditTokenBalance() external view returns (uint256);
 
     /**
+     *  @dev    Returns the address that accrues fee shares on every swap. The fee claimer can
+     *          withdraw their shares like any other shareholder. Note: if the fee claimer is
+     *          changed via `setFeeClaimer`, the previous claimer may still hold unclaimed shares.
+     *  @return The fee claimer address.
+     */
+    function feeClaimer() external view returns (address);
+
+    /**
      *  @dev    Returns the current purchase fee in BPS. Applied when buying credit tokens.
      *  @return The purchase fee in BPS.
      */
@@ -579,24 +601,34 @@ interface IGroveBasin {
     function setStalenessThreshold(uint256 newThreshold) external;
 
     /**********************************************************************************************/
+    /*** Fee claimer functions                                                                  ***/
+    /**********************************************************************************************/
+
+    /**
+     *  @dev    Sets the address that accrues fee shares on swaps. Callable only by MANAGER_ADMIN_ROLE.
+     *          Note: if the previous fee claimer holds shares, those shares remain; they are not
+     *          transferred or burned. The previous claimer can still withdraw their shares.
+     *  @param  newFeeClaimer The new fee claimer address.
+     */
+    function setFeeClaimer(address newFeeClaimer) external;
+
+    /**********************************************************************************************/
     /*** Fee calculation functions                                                              ***/
     /**********************************************************************************************/
 
     /**
-     *  @dev    View function that calculates the purchase fee for a given amount.
+     *  @dev    View function that calculates the purchase fee for a given amount. Rounds up.
      *  @param  amount  The gross amount to calculate the fee on.
-     *  @param  roundUp Whether to round up the fee calculation.
      *  @return fee     The fee amount that would be deducted.
      */
-    function calculatePurchaseFee(uint256 amount, bool roundUp) external view returns (uint256 fee);
+    function calculatePurchaseFee(uint256 amount) external view returns (uint256 fee);
 
     /**
-     *  @dev    View function that calculates the redemption fee for a given amount.
+     *  @dev    View function that calculates the redemption fee for a given amount. Rounds up.
      *  @param  amount  The gross amount to calculate the fee on.
-     *  @param  roundUp Whether to round up the fee calculation.
      *  @return fee     The fee amount that would be deducted.
      */
-    function calculateRedemptionFee(uint256 amount, bool roundUp) external view returns (uint256 fee);
+    function calculateRedemptionFee(uint256 amount) external view returns (uint256 fee);
 
     /**********************************************************************************************/
     /*** Swap functions                                                                         ***/
