@@ -428,6 +428,16 @@ contract GroveBasinPreviewSwapFeeTests is GroveBasinTestBase {
         assertEq(fee, 200e6);
     }
 
+    function test_previewSwapExactInFee_roundsUpFavoringProtocol() public {
+        vm.prank(owner);
+        groveBasin.setPurchaseFee(100);  // 1%
+
+        // 33 * 100 / 10000 = 0 with floor, 1 with ceil
+        // Fee must never round to zero when a fee is configured and amount is non-zero
+        uint256 fee = groveBasin.previewSwapExactInFee(address(creditToken), 33);
+        assertGt(fee, 0, "ExactIn fee should round up in favor of the protocol");
+    }
+
 }
 
 contract GroveBasinFeeCalculationTests is GroveBasinTestBase {
@@ -835,7 +845,7 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
 
         // Use precise calculation: amountIn * swapRate * creditPrecision / (creditRate * swapPrecision)
         uint256 rawAmountOut = (amountIn * 1e27 * 1e18) / (conversionRate * 1e6);
-        uint256 expectedAmountOut = rawAmountOut - rawAmountOut * fee / 10_000;
+        uint256 expectedAmountOut = rawAmountOut - Math.ceilDiv(rawAmountOut * fee, 10_000);
 
         uint256 amountOut = groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), amountIn);
         assertEq(amountOut, expectedAmountOut);
@@ -856,7 +866,7 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
         groveBasin.setRedemptionFee(fee);
 
         uint256 rawAmountOut      = amountIn * conversionRate / 1e27 / 1e12;
-        uint256 expectedAmountOut = rawAmountOut - rawAmountOut * fee / 10_000;
+        uint256 expectedAmountOut = rawAmountOut - Math.ceilDiv(rawAmountOut * fee, 10_000);
 
         uint256 amountOut = groveBasin.previewSwapExactIn(address(creditToken), address(swapToken), amountIn);
         assertEq(amountOut, expectedAmountOut);
@@ -877,7 +887,7 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
         groveBasin.setPurchaseFee(fee);
 
         uint256 rawAmountOut      = amountIn * 1e27 / conversionRate;
-        uint256 expectedAmountOut = rawAmountOut - rawAmountOut * fee / 10_000;
+        uint256 expectedAmountOut = rawAmountOut - Math.ceilDiv(rawAmountOut * fee, 10_000);
 
         uint256 amountOut = groveBasin.previewSwapExactIn(address(collateralToken), address(creditToken), amountIn);
         assertEq(amountOut, expectedAmountOut);
@@ -898,7 +908,7 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
         groveBasin.setRedemptionFee(fee);
 
         uint256 rawAmountOut      = amountIn * conversionRate / 1e27;
-        uint256 expectedAmountOut = rawAmountOut - rawAmountOut * fee / 10_000;
+        uint256 expectedAmountOut = rawAmountOut - Math.ceilDiv(rawAmountOut * fee, 10_000);
 
         uint256 amountOut = groveBasin.previewSwapExactIn(address(creditToken), address(collateralToken), amountIn);
         assertEq(amountOut, expectedAmountOut);
@@ -1188,10 +1198,10 @@ contract GroveBasinFeeShareAccrualTests is GroveBasinTestBase {
         assertGt(groveBasin.shares(feeClaimer), firstShares);
     }
 
-    function test_feeSharesNotAccrued_zeroSharesFromTinyFee() public {
+    function test_accrueFeeShares_roundsUpFavoringProtocol() public {
         _deposit(address(collateralToken), makeAddr("bigLp"), 1e18);
 
-        // Inflate totalAssets relative to totalShares so fee rounds to 0 shares
+        // Inflate totalAssets relative to totalShares so floor-division would give 0 shares
         mockCollateralTokenRateProvider.__setConversionRate(1e45);
 
         swapToken.mint(swapper, 1);
@@ -1200,7 +1210,9 @@ contract GroveBasinFeeShareAccrualTests is GroveBasinTestBase {
         groveBasin.swapExactIn(address(swapToken), address(creditToken), 1, 0, swapper, 0);
         vm.stopPrank();
 
-        assertEq(groveBasin.shares(feeClaimer), 0);
+        // A fee was charged (grossOut > amountOut), so the fee claimer must receive shares.
+        // Rounding should favor the protocol (ceil), not the user (floor).
+        assertGt(groveBasin.shares(feeClaimer), 0, "Fee shares should round up, not down to zero");
     }
 
     function test_feeSharesNotAccrued_noFeeClaimerSet() public {

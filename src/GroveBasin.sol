@@ -595,14 +595,14 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
         if (_getAssetValue(assetIn, amountIn, false) > maxSwapSize) revert SwapSizeExceeded();
     }
     
-    /// @dev Returns the fee that will be deducted from a gross output amount (ExactIn). Rounds down.
+    /// @dev Returns the fee that will be deducted from a gross output amount (ExactIn). Rounds up.
     function previewSwapExactInFee(address assetOut, uint256 amountOut)
         public view returns (uint256)
     {
         if (assetOut == creditToken) {
-            return _calculateFee(amountOut, purchaseFee, false);
+            return _calculateFee(amountOut, purchaseFee, true);
         }
-        return _calculateFee(amountOut, redemptionFee, false);
+        return _calculateFee(amountOut, redemptionFee, true);
     }
 
     /// @dev Returns the fee that must be added to a net output amount to get the gross output (ExactOut). Rounds up.
@@ -679,13 +679,13 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
     /// @inheritdoc IGroveBasin
     function totalAssets() public view override returns (uint256) {
         return _getSwapTokenValue(
-                    _getAvailableBalance(swapToken)
+                    _getAvailableBalance(swapToken), false  // Round down
                 )
             +  _getCollateralTokenValue(
-                    _getAvailableBalance(collateralToken)
+                    _getAvailableBalance(collateralToken), false  // Round down
                 )
             +  _getCreditTokenValue(
-                    _getAvailableBalance(creditToken), false // Round down
+                    _getAvailableBalance(creditToken), false  // Round down
                 );
     }
 
@@ -700,27 +700,29 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
 
     /// @dev Returns the USD value of `amount` of `asset` in 1e18 precision.
     function _getAssetValue(address asset, uint256 amount, bool roundUp) internal view returns (uint256) {
-        if      (asset == swapToken)       return _getSwapTokenValue(amount);
-        else if (asset == collateralToken) return _getCollateralTokenValue(amount);
+        if      (asset == swapToken)       return _getSwapTokenValue(amount, roundUp);
+        else if (asset == collateralToken) return _getCollateralTokenValue(amount, roundUp);
         else if (asset == creditToken)     return _getCreditTokenValue(amount, roundUp);
         else                               revert InvalidAsset();
     }
 
     /// @dev Returns the USD value of `amount` of swap tokens in 1e18 precision.
-    function _getSwapTokenValue(uint256 amount) internal view returns (uint256) {
+    function _getSwapTokenValue(uint256 amount, bool roundUp) internal view returns (uint256) {
         return Math.mulDiv(
             amount * _getConversionRate(swapTokenRateProvider),
             1e18,
-            IRateProviderLike(swapTokenRateProvider).getRatePrecision() * _swapTokenPrecision
+            IRateProviderLike(swapTokenRateProvider).getRatePrecision() * _swapTokenPrecision,
+            roundUp ? Math.Rounding.Ceil : Math.Rounding.Floor
         );
     }
 
     /// @dev Returns the USD value of `amount` of collateral tokens in 1e18 precision.
-    function _getCollateralTokenValue(uint256 amount) internal view returns (uint256) {
+    function _getCollateralTokenValue(uint256 amount, bool roundUp) internal view returns (uint256) {
         return Math.mulDiv(
             amount * _getConversionRate(collateralTokenRateProvider),
             1e18,
-            IRateProviderLike(collateralTokenRateProvider).getRatePrecision() * _collateralTokenPrecision
+            IRateProviderLike(collateralTokenRateProvider).getRatePrecision() * _collateralTokenPrecision,
+            roundUp ? Math.Rounding.Ceil : Math.Rounding.Floor
         );
     }
 
@@ -850,8 +852,8 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
         address feeClaimer_ = feeClaimer;
         if (feeClaimer_ == address(0)) return;
 
-        uint256 feeValue  = _getAssetValue(asset, feeAmount, false);
-        uint256 feeShares = convertToShares(feeValue);
+        uint256 feeValue  = _getAssetValue(asset, feeAmount, true);
+        uint256 feeShares = _convertToSharesRoundUp(feeValue);
 
         if (feeShares == 0) return;
 
