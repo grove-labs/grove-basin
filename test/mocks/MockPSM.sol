@@ -17,41 +17,20 @@ contract MockPSM {
         usdc = usdc_;
     }
 
-    function swapExactIn(
-        address assetIn,
-        address assetOut,
-        uint256 amountIn,
-        uint256,
-        address receiver,
-        uint256
-    ) external returns (uint256 amountOut) {
-        require(assetIn  == usdc, "MockPSM/invalid-assetIn");
-        require(assetOut == usds, "MockPSM/invalid-assetOut");
-
+    function sellGem(address usr, uint256 gemAmt) external returns (uint256 usdsOutWad) {
         // 1:1 swap, but USDC is 6 decimals and USDS is 18 decimals
-        amountOut = amountIn * 1e12;
+        usdsOutWad = gemAmt * 1e12;
 
-        IERC20(usdc).safeTransferFrom(msg.sender, address(this), amountIn);
-        IERC20(usds).safeTransfer(receiver, amountOut);
+        IERC20(usdc).safeTransferFrom(msg.sender, address(this), gemAmt);
+        IERC20(usds).safeTransfer(usr, usdsOutWad);
     }
 
-    function swapExactOut(
-        address assetIn,
-        address assetOut,
-        uint256 amountOut,
-        uint256 maxAmountIn,
-        address receiver,
-        uint256
-    ) external returns (uint256 amountIn) {
-        require(assetIn  == usds, "MockPSM/invalid-assetIn");
-        require(assetOut == usdc, "MockPSM/invalid-assetOut");
-
+    function buyGem(address usr, uint256 gemAmt) external returns (uint256 usdsInWad) {
         // 1:1 swap, but USDS is 18 decimals and USDC is 6 decimals
-        amountIn = amountOut * 1e12;
-        require(amountIn <= maxAmountIn, "MockPSM/amountIn-too-high");
+        usdsInWad = gemAmt * 1e12;
 
-        IERC20(usds).safeTransferFrom(msg.sender, address(this), amountIn);
-        IERC20(usdc).safeTransfer(receiver, amountOut);
+        IERC20(usds).safeTransferFrom(msg.sender, address(this), usdsInWad);
+        IERC20(usdc).safeTransfer(usr, gemAmt);
     }
 
 }
