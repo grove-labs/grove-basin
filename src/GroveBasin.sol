@@ -630,24 +630,31 @@ contract GroveBasin is IGroveBasin, AccessControl {
         uint256 assetValue = convertToAssetValue(numShares);
 
         if (asset == swapToken) {
-            return assetValue
-                * 1e9
-                * _swapTokenPrecision
-                / _getConversionRate(swapTokenRateProvider);
+            uint256 rate          = _getConversionRate(swapTokenRateProvider);
+            uint256 ratePrecision = IRateProviderLike(swapTokenRateProvider).getRatePrecision();
+            return Math.mulDiv(
+                assetValue * _swapTokenPrecision,
+                ratePrecision,
+                rate * 1e18
+            );
         }
         else if (asset == collateralToken) {
-            // assetValue is in 1e18, rate is 1e27, precision is native decimals
-            // amount = assetValue * 1e27 / rate * precision / 1e18 = assetValue * 1e9 * precision / rate
-            return assetValue
-                * 1e9
-                * _collateralTokenPrecision
-                / _getConversionRate(collateralTokenRateProvider);
+            uint256 rate          = _getConversionRate(collateralTokenRateProvider);
+            uint256 ratePrecision = IRateProviderLike(collateralTokenRateProvider).getRatePrecision();
+            return Math.mulDiv(
+                assetValue * _collateralTokenPrecision,
+                ratePrecision,
+                rate * 1e18
+            );
         }
 
-        return assetValue
-            * 1e9
-            * _creditTokenPrecision
-            / _getConversionRate(creditTokenRateProvider);
+        uint256 rate          = _getConversionRate(creditTokenRateProvider);
+        uint256 ratePrecision = IRateProviderLike(creditTokenRateProvider).getRatePrecision();
+        return Math.mulDiv(
+            assetValue * _creditTokenPrecision,
+            ratePrecision,
+            rate * 1e18
+        );
     }
 
     /// @inheritdoc IGroveBasin
@@ -771,16 +778,24 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function _convertSwapToCreditToken(uint256 amount, bool roundUp)
         internal view returns (uint256)
     {
-        uint256 swapRate   = _getConversionRate(swapTokenRateProvider);
-        uint256 creditRate = _getConversionRate(creditTokenRateProvider);
+        uint256 swapRate            = _getConversionRate(swapTokenRateProvider);
+        uint256 creditRate          = _getConversionRate(creditTokenRateProvider);
+        uint256 swapRatePrecision   = IRateProviderLike(swapTokenRateProvider).getRatePrecision();
+        uint256 creditRatePrecision = IRateProviderLike(creditTokenRateProvider).getRatePrecision();
 
         if (!roundUp) {
-            return Math.mulDiv(amount, swapRate * _creditTokenPrecision, creditRate * _swapTokenPrecision);
+            return Math.mulDiv(
+                amount,
+                swapRate * _creditTokenPrecision * creditRatePrecision,
+                creditRate * _swapTokenPrecision * swapRatePrecision
+            );
         }
 
-        return Math.ceilDiv(
-            Math.ceilDiv(amount * swapRate, creditRate) * _creditTokenPrecision,
-            _swapTokenPrecision
+        return Math.mulDiv(
+            Math.ceilDiv(amount * swapRate, creditRate),
+            _creditTokenPrecision * creditRatePrecision,
+            _swapTokenPrecision * swapRatePrecision,
+            Math.Rounding.Ceil
         );
     }
 
@@ -788,16 +803,24 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function _convertCreditTokenToSwap(uint256 amount, bool roundUp)
         internal view returns (uint256)
     {
-        uint256 swapRate   = _getConversionRate(swapTokenRateProvider);
-        uint256 creditRate = _getConversionRate(creditTokenRateProvider);
+        uint256 swapRate            = _getConversionRate(swapTokenRateProvider);
+        uint256 creditRate          = _getConversionRate(creditTokenRateProvider);
+        uint256 swapRatePrecision   = IRateProviderLike(swapTokenRateProvider).getRatePrecision();
+        uint256 creditRatePrecision = IRateProviderLike(creditTokenRateProvider).getRatePrecision();
 
         if (!roundUp) {
-            return Math.mulDiv(amount, creditRate * _swapTokenPrecision, swapRate * _creditTokenPrecision);
+            return Math.mulDiv(
+                amount,
+                creditRate * _swapTokenPrecision * swapRatePrecision,
+                swapRate * _creditTokenPrecision * creditRatePrecision
+            );
         }
 
-        return Math.ceilDiv(
-            Math.ceilDiv(amount * creditRate, swapRate) * _swapTokenPrecision,
-            _creditTokenPrecision
+        return Math.mulDiv(
+            Math.ceilDiv(amount * creditRate, swapRate),
+            _swapTokenPrecision * swapRatePrecision,
+            _creditTokenPrecision * creditRatePrecision,
+            Math.Rounding.Ceil
         );
     }
 
@@ -805,20 +828,24 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function _convertCollateralToCreditToken(uint256 amount, bool roundUp)
         internal view returns (uint256)
     {
-        // collateral -> USD value -> credit
-        // USD value = amount * collateralRate / 1e9 / collateralPrecision (in 1e18)
-        // credit = USD value * 1e27 / creditRate * creditPrecision / 1e18
-        //        = amount * collateralRate / creditRate * creditPrecision / collateralPrecision
-        uint256 collateralRate = _getConversionRate(collateralTokenRateProvider);
-        uint256 creditRate     = _getConversionRate(creditTokenRateProvider);
+        uint256 collateralRate          = _getConversionRate(collateralTokenRateProvider);
+        uint256 creditRate              = _getConversionRate(creditTokenRateProvider);
+        uint256 collateralRatePrecision = IRateProviderLike(collateralTokenRateProvider).getRatePrecision();
+        uint256 creditRatePrecision     = IRateProviderLike(creditTokenRateProvider).getRatePrecision();
 
         if (!roundUp) {
-            return Math.mulDiv(amount, collateralRate * _creditTokenPrecision, creditRate * _collateralTokenPrecision);
+            return Math.mulDiv(
+                amount,
+                collateralRate * _creditTokenPrecision * creditRatePrecision,
+                creditRate * _collateralTokenPrecision * collateralRatePrecision
+            );
         }
 
-        return Math.ceilDiv(
-            Math.ceilDiv(amount * collateralRate, creditRate) * _creditTokenPrecision,
-            _collateralTokenPrecision
+        return Math.mulDiv(
+            Math.ceilDiv(amount * collateralRate, creditRate),
+            _creditTokenPrecision * creditRatePrecision,
+            _collateralTokenPrecision * collateralRatePrecision,
+            Math.Rounding.Ceil
         );
     }
 
@@ -826,20 +853,24 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function _convertCreditTokenToCollateral(uint256 amount, bool roundUp)
         internal view returns (uint256)
     {
-        // credit -> USD value -> collateral
-        // USD value = amount * creditRate / 1e9 / creditPrecision (in 1e18)
-        // collateral = USD value * 1e27 / collateralRate * collateralPrecision / 1e18
-        //            = amount * creditRate / collateralRate * collateralPrecision / creditPrecision
-        uint256 collateralRate = _getConversionRate(collateralTokenRateProvider);
-        uint256 creditRate     = _getConversionRate(creditTokenRateProvider);
+        uint256 collateralRate          = _getConversionRate(collateralTokenRateProvider);
+        uint256 creditRate              = _getConversionRate(creditTokenRateProvider);
+        uint256 collateralRatePrecision = IRateProviderLike(collateralTokenRateProvider).getRatePrecision();
+        uint256 creditRatePrecision     = IRateProviderLike(creditTokenRateProvider).getRatePrecision();
 
         if (!roundUp) {
-            return Math.mulDiv(amount, creditRate * _collateralTokenPrecision, collateralRate * _creditTokenPrecision);
+            return Math.mulDiv(
+                amount,
+                creditRate * _collateralTokenPrecision * collateralRatePrecision,
+                collateralRate * _creditTokenPrecision * creditRatePrecision
+            );
         }
 
-        return Math.ceilDiv(
-            Math.ceilDiv(amount * creditRate, collateralRate) * _collateralTokenPrecision,
-            _creditTokenPrecision
+        return Math.mulDiv(
+            Math.ceilDiv(amount * creditRate, collateralRate),
+            _collateralTokenPrecision * collateralRatePrecision,
+            _creditTokenPrecision * creditRatePrecision,
+            Math.Rounding.Ceil
         );
     }
 
