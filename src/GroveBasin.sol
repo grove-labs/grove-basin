@@ -792,9 +792,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
         }
 
         return Math.mulDiv(
-            Math.ceilDiv(amount * swapRate, creditRate),
-            _creditTokenPrecision * creditRatePrecision,
-            _swapTokenPrecision * swapRatePrecision,
+            amount,
+            swapRate * _creditTokenPrecision * creditRatePrecision,
+            creditRate * _swapTokenPrecision * swapRatePrecision,
             Math.Rounding.Ceil
         );
     }
@@ -817,9 +817,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
         }
 
         return Math.mulDiv(
-            Math.ceilDiv(amount * creditRate, swapRate),
-            _swapTokenPrecision * swapRatePrecision,
-            _creditTokenPrecision * creditRatePrecision,
+            amount,
+            creditRate * _swapTokenPrecision * swapRatePrecision,
+            swapRate * _creditTokenPrecision * creditRatePrecision,
             Math.Rounding.Ceil
         );
     }
@@ -842,9 +842,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
         }
 
         return Math.mulDiv(
-            Math.ceilDiv(amount * collateralRate, creditRate),
-            _creditTokenPrecision * creditRatePrecision,
-            _collateralTokenPrecision * collateralRatePrecision,
+            amount,
+            collateralRate * _creditTokenPrecision * creditRatePrecision,
+            creditRate * _collateralTokenPrecision * collateralRatePrecision,
             Math.Rounding.Ceil
         );
     }
@@ -867,9 +867,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
         }
 
         return Math.mulDiv(
-            Math.ceilDiv(amount * creditRate, collateralRate),
-            _collateralTokenPrecision * collateralRatePrecision,
-            _creditTokenPrecision * creditRatePrecision,
+            amount,
+            creditRate * _collateralTokenPrecision * collateralRatePrecision,
+            collateralRate * _creditTokenPrecision * creditRatePrecision,
             Math.Rounding.Ceil
         );
     }

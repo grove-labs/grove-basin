@@ -585,7 +585,7 @@ contract GroveBasinSwapWithFeesTests is GroveBasinTestBase {
         // Without fee: 125 USDC needs 100 credit
         // With 1% fee: grossOut = ceil(125e6 * 10000 / 9900), then amountIn = convert(grossOut)
         uint256 amountIn = groveBasin.previewSwapExactOut(address(creditToken), address(swapToken), 125e6);
-        assertEq(amountIn, 101_010_102_000_000_000_000);
+        assertEq(amountIn, 101_010_101_600_000_000_000);
     }
 
     // --- No fee when fee is zero ---
@@ -891,9 +891,11 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
         groveBasin.setPurchaseFee(fee);
 
         uint256 grossAmountOut = fee == 0 ? amountOut : Math.ceilDiv(amountOut * 10_000, 10_000 - fee);
-        uint256 expectedAmountIn = Math.ceilDiv(
-            Math.ceilDiv(grossAmountOut * conversionRate, 1e27) * 1e6,
-            1e18
+        uint256 expectedAmountIn = Math.mulDiv(
+            grossAmountOut,
+            conversionRate * 1e6,
+            1e27 * 1e18,
+            Math.Rounding.Ceil
         );
 
         uint256 amountIn = groveBasin.previewSwapExactOut(address(swapToken), address(creditToken), amountOut);
@@ -915,9 +917,11 @@ contract GroveBasinSwapWithFeesFuzzTests is GroveBasinTestBase {
         groveBasin.setRedemptionFee(fee);
 
         uint256 grossAmountOut = fee == 0 ? amountOut : Math.ceilDiv(amountOut * 10_000, 10_000 - fee);
-        uint256 expectedAmountIn = Math.ceilDiv(
-            Math.ceilDiv(grossAmountOut * 1e27, conversionRate) * 1e18,
-            1e6
+        uint256 expectedAmountIn = Math.mulDiv(
+            grossAmountOut,
+            1e27 * 1e18,
+            conversionRate * 1e6,
+            Math.Rounding.Ceil
         );
 
         uint256 amountIn = groveBasin.previewSwapExactOut(address(creditToken), address(swapToken), amountOut);
