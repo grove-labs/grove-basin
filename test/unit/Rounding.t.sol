@@ -165,3 +165,62 @@ contract RoundingTests is GroveBasinTestBase {
         assertLe(asset.balanceOf(address(user2)), amount2);
     }
 }
+
+contract RoundingZeroShareWithdrawalTests is GroveBasinTestBase {
+
+    address user = makeAddr("user");
+
+    function setUp() public override {
+        super.setUp();
+
+        // Set collateral token rate to $0.50 (0.5e27) so that _getCollateralTokenValue(1)
+        // evaluates to (1 * 0.5e26 * 1e18) / (1e27 * 1e18) = 0.5, which rounds to 0 (floor) or 1 (ceil).
+        mockCollateralTokenRateProvider.__setConversionRate(0.5e27);
+    }
+
+    // Worst case: with an 18-decimal token at $0.50, withdrawing 1 wei would previously round
+    // the asset value to zero, causing zero shares to burn. The fix passes roundUp through to
+    // _getCollateralTokenValue(), so the value rounds up to 1 and at least 1 share is burned.
+    function test_withdrawOneWei_collateralToken_roundsUpSharesBurned() public {
+        _deposit(address(collateralToken), user, 1e18);
+
+        uint256 sharesBefore = groveBasin.shares(user);
+        assertGt(sharesBefore, 0);
+
+        // Preview a 1 wei withdrawal as `user`: asset value must round up so sharesToBurn > 0
+        vm.prank(user);
+        ( uint256 sharesToBurn, uint256 assetsWithdrawn ) = groveBasin.previewWithdraw(address(collateralToken), 1);
+
+        assertEq(assetsWithdrawn, 1);
+        assertGt(sharesToBurn, 0, "sharesToBurn must be non-zero for 1 wei withdrawal");
+
+        // Execute the withdrawal and verify shares are actually burned
+        vm.prank(user);
+        groveBasin.withdraw(address(collateralToken), user, 1);
+
+        assertLt(groveBasin.shares(user), sharesBefore, "shares must decrease after withdrawal");
+    }
+
+    // Same scenario but with the swap token: 6-decimal token at $0.50.
+    // _getSwapTokenValue(1) = (1 * 0.5e27 * 1e18) / (1e27 * 1e6) = 5e11, which is non-zero even
+    // without rounding up, but we verify the invariant that sharesToBurn > 0 holds regardless.
+    function test_withdrawOneWei_swapToken_roundsUpSharesBurned() public {
+        mockSwapTokenRateProvider.__setConversionRate(0.5e27);
+
+        _deposit(address(swapToken), user, 1e6);
+
+        uint256 sharesBefore = groveBasin.shares(user);
+        assertGt(sharesBefore, 0);
+
+        vm.prank(user);
+        ( uint256 sharesToBurn, uint256 assetsWithdrawn ) = groveBasin.previewWithdraw(address(swapToken), 1);
+
+        assertEq(assetsWithdrawn, 1);
+        assertGt(sharesToBurn, 0, "sharesToBurn must be non-zero for 1 wei withdrawal");
+
+        vm.prank(user);
+        groveBasin.withdraw(address(swapToken), user, 1);
+
+        assertLt(groveBasin.shares(user), sharesBefore, "shares must decrease after withdrawal");
+    }
+}
