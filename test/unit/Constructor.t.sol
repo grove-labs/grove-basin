@@ -15,7 +15,7 @@ import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 contract GroveBasinConstructorTests is GroveBasinTestBase {
 
     function test_constructor_invalidOwner() public {
-        vm.expectRevert(abi.encodeWithSignature("AccessControlInvalidDefaultAdmin(address)", address(0)));
+        vm.expectRevert(IGroveBasin.InvalidOwner.selector);
         new GroveBasin(address(0), lp, address(swapToken), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider));
     }
 

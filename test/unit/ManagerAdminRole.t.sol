@@ -270,7 +270,11 @@ contract GroveBasinManagerAdminRoleTests is GroveBasinTestBase {
         bytes32 adminRole = groveBasin.DEFAULT_ADMIN_ROLE();
         vm.prank(managerAdmin);
         vm.expectRevert(
-            abi.encodeWithSignature("AccessControlEnforcedDefaultAdminRules()")
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                managerAdmin,
+                adminRole
+            )
         );
         groveBasin.grantRole(adminRole, other);
     }

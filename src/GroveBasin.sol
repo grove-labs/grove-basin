@@ -86,9 +86,11 @@ contract GroveBasin is IGroveBasin, AccessControl {
         address swapTokenRateProvider_,
         address collateralTokenRateProvider_,
         address creditTokenRateProvider_
-    ) AccessControlDefaultAdminRules(0, owner_) {
-        if (liquidityProvider_ == address(0)) revert InvalidLiquidityProvider();
+    ) {
+        if (owner_ == address(0)) revert InvalidOwner();
+        _grantRole(OWNER_ROLE, owner_);
 
+        if (liquidityProvider_ == address(0)) revert InvalidLiquidityProvider();
         if (
             swapToken_       == address(0) ||
             collateralToken_ == address(0) ||
