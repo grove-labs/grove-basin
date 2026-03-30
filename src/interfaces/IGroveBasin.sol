@@ -7,6 +7,7 @@ interface IGroveBasin {
     /*** Custom errors                                                                          ***/
     /**********************************************************************************************/
 
+    error InvalidOwner();
     error InvalidLiquidityProvider();
     error ZeroTokenAddress();
     error DuplicateTokens();

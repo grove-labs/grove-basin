@@ -4,8 +4,8 @@ pragma solidity ^0.8.24;
 import { IERC20 }    from "erc20-helpers/interfaces/IERC20.sol";
 import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
 
-import { AccessControlDefaultAdminRules } from "openzeppelin-contracts/contracts/access/extensions/AccessControlDefaultAdminRules.sol";
-import { Math }                           from "openzeppelin-contracts/contracts/utils/math/Math.sol";
+import { AccessControl } from "openzeppelin-contracts/contracts/access/AccessControl.sol";
+import { Math }          from "openzeppelin-contracts/contracts/utils/math/Math.sol";
 
 import { IGroveBasin }             from "src/interfaces/IGroveBasin.sol";
 import { IGroveBasinPocket }       from "src/interfaces/IGroveBasinPocket.sol";
@@ -17,12 +17,12 @@ import { ITokenRedeemer }          from "src/interfaces/ITokenRedeemer.sol";
  * @notice Multi-asset liquidity pool that facilitates swaps between a swap token, collateral
  *         token, and a yield-bearing credit token. Liquidity providers deposit assets in exchange
  *         for shares that represent pro-rata ownership of the pool's total value.
- * @dev    Uses AccessControlDefaultAdminRules for role-based permissioning across owner, manager
+ * @dev    Uses AccessControl for role-based permissioning across owner, manager
  *         admin, manager, liquidity provider, and redeemer roles. Asset values are determined by
  *         external rate providers that return conversion rates in 1e27 precision. Swap token
  *         custody can be delegated to a pocket contract for yield generation.
  */
-contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
+contract GroveBasin is IGroveBasin, AccessControl {
 
     using SafeERC20 for IERC20;
 
@@ -86,9 +86,11 @@ contract GroveBasin is IGroveBasin, AccessControlDefaultAdminRules {
         address swapTokenRateProvider_,
         address collateralTokenRateProvider_,
         address creditTokenRateProvider_
-    ) AccessControlDefaultAdminRules(0, owner_) {
-        if (liquidityProvider_ == address(0)) revert InvalidLiquidityProvider();
+    ) {
+        if (owner_ == address(0)) revert InvalidOwner();
+        _grantRole(OWNER_ROLE, owner_);
 
+        if (liquidityProvider_ == address(0)) revert InvalidLiquidityProvider();
         if (
             swapToken_       == address(0) ||
             collateralToken_ == address(0) ||
