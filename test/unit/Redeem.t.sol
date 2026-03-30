@@ -65,16 +65,15 @@ contract GroveBasinCompleteRedeemTests is GroveBasinTestBase {
             )
         );
         vm.prank(nonRedeemer);
-        groveBasin.completeRedeem(makeAddr("redeemer"), 1000e18);
+        groveBasin.completeRedeem(bytes32(uint256(1)));
     }
 
 }
 
-contract GroveBasinCompleteRedeemInvalidRedeemerContractTests is GroveBasinTestBase {
+contract GroveBasinCompleteRedeemInvalidRequestTests is GroveBasinTestBase {
 
-    function test_completeRedeem_invalidRedeemerContract() public {
-        address redeemer        = makeAddr("redeemer");
-        address invalidContract = makeAddr("invalidContract");
+    function test_completeRedeem_invalidRedeemRequest() public {
+        address redeemer = makeAddr("redeemer");
 
         bytes32 redeemerRole = groveBasin.REDEEMER_ROLE();
 
@@ -82,8 +81,8 @@ contract GroveBasinCompleteRedeemInvalidRedeemerContractTests is GroveBasinTestB
         groveBasin.grantRole(redeemerRole, redeemer);
 
         vm.prank(redeemer);
-        vm.expectRevert(IGroveBasin.InvalidRedeemer.selector);
-        groveBasin.completeRedeem(invalidContract, 100e18);
+        vm.expectRevert(IGroveBasin.InvalidRedeemRequest.selector);
+        groveBasin.completeRedeem(bytes32(uint256(1)));
     }
 
 }

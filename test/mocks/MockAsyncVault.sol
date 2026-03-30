@@ -18,9 +18,19 @@ contract MockAsyncVault {
     address public lastRedeemReceiver;
     address public lastRedeemController;
 
+    uint256 public lastWithdrawAssets;
+    address public lastWithdrawReceiver;
+    address public lastWithdrawController;
+
+    uint256 public mockMaxWithdraw;
+
     constructor(address asset_, address share_) {
         asset = asset_;
         share = share_;
+    }
+
+    function __setMaxWithdraw(uint256 amount) external {
+        mockMaxWithdraw = amount;
     }
 
     function __setPermissioned(address account, bool status) external {
@@ -52,6 +62,23 @@ contract MockAsyncVault {
         if (asset != address(0)) {
             IERC20(asset).transfer(receiver, assets);
         }
+    }
+
+    function withdraw(uint256 assets, address receiver, address controller)
+        external returns (uint256 shares)
+    {
+        lastWithdrawAssets     = assets;
+        lastWithdrawReceiver   = receiver;
+        lastWithdrawController = controller;
+
+        shares = assets;
+        if (asset != address(0)) {
+            IERC20(asset).transfer(receiver, assets);
+        }
+    }
+
+    function maxWithdraw(address) external view returns (uint256) {
+        return mockMaxWithdraw;
     }
 
 }

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.24;
 
+import { RedeemRequest } from "src/interfaces/ITokenRedeemer.sol";
+
 interface IGroveBasin {
 
     /**********************************************************************************************/
@@ -47,6 +49,8 @@ interface IGroveBasin {
     error InitiateRedeemPaused();
     error PurchaseFeeOutOfBounds();
     error RedemptionFeeOutOfBounds();
+    error RequestAlreadyExists();
+    error InvalidRedeemRequest();
 
     /**********************************************************************************************/
     /*** Events                                                                                 ***/
@@ -430,11 +434,11 @@ interface IGroveBasin {
     function REDEEMER_CONTRACT_ROLE() external view returns (bytes32);
 
     /**
-     *  @dev    Returns the amount of redeemed credit tokens outstanding in pending redemptions.
-     *          Incremented on initiateRedeem and decremented on completeRedeem.
-     *  @return The amount of redeemed credit tokens in pending redemptions.
+     *  @dev    Returns the total credit token amount from pending redemptions. This is an estimate
+     *          of the value that Basin is due to receive, not a firm amount.
+     *  @return The credit token amount from pending redemptions.
      */
-    function redeemedCreditTokenBalance() external view returns (uint256);
+    function pendingCreditTokenBalance() external view returns (uint256);
 
     /**
      *  @dev    Returns the address that accrues fee shares on every swap. The fee claimer can
@@ -443,6 +447,21 @@ interface IGroveBasin {
      *  @return The fee claimer address.
      */
     function feeClaimer() external view returns (address);
+    
+    /**
+     *  @dev    Returns the redeem request for a specific request ID.
+     *  @param  redeemRequestId The keccak256 hash of the RedeemRequest struct.
+     *  @return blockNumber The block number at initiation.
+     *  @return redeemer The address of the redeemer contract.
+     *  @return creditTokenAmount The amount of credit tokens redeemed.
+     *  @return collateralTokenAmount The estimated collateral token amount.
+     */
+    function redeemRequests(bytes32 redeemRequestId) external view returns (
+        uint256 blockNumber,
+        address redeemer,
+        uint256 creditTokenAmount,
+        uint256 collateralTokenAmount
+    );
 
     /**
      *  @dev    Returns the current purchase fee in BPS. Applied when buying credit tokens.
@@ -561,18 +580,18 @@ interface IGroveBasin {
     /**
      *  @dev    Initiates a credit token redemption using a specific token redeemer.
      *          Callable only by the REDEEMER_ROLE.
-     *  @param  redeemer         Address of the token redeemer to use.
+     *  @param  redeemer          Address of the token redeemer to use.
      *  @param  creditTokenAmount Amount of credit tokens to redeem.
+     *  @return redeemRequestId   The keccak256 hash of the RedeemRequest struct.
      */
-    function initiateRedeem(address redeemer, uint256 creditTokenAmount) external;
+    function initiateRedeem(address redeemer, uint256 creditTokenAmount) external returns (bytes32 redeemRequestId);
 
     /**
-     *  @dev    Completes a credit token redemption using a specific token redeemer.
-     *          Callable only by the REDEEMER_ROLE.
-     *  @param  redeemer         Address of the token redeemer to use.
-     *  @param  creditTokenAmount Amount of credit tokens to complete redemption for.
+     *  @dev   Completes a credit token redemption using the redeemer from the stored request.
+     *         Callable only by the REDEEMER_ROLE.
+     *  @param redeemRequestId The keccak256 hash of the RedeemRequest struct.
      */
-    function completeRedeem(address redeemer, uint256 creditTokenAmount) external;
+    function completeRedeem(bytes32 redeemRequestId) external;
 
     /**********************************************************************************************/
     /*** Manager functions                                                                      ***/
@@ -824,19 +843,11 @@ interface IGroveBasin {
 
     /**
      *  @dev View function that returns the total value of the balance of all assets currently held
-     *       by the GroveBasin, converted to swap token/collateral token terms denominated in 18
-     *       decimal precision. Does not include credit tokens in pending redemptions. Use
-     *       `totalAssetsWithRedemptions()` for a closer approximation of the basin's total value.
+     *       by the GroveBasin, including the estimated value of pending credit tokens from
+     *       redemptions, converted to swap token/collateral token terms denominated in 18 decimal
+     *       precision. Note: pendingCreditTokenBalance is an estimate of the value that Basin is
+     *       due to receive, not a firm amount.
      */
     function totalAssets() external view returns (uint256);
-
-    /**
-     *  @dev    View function that returns the total value of all assets in the GroveBasin including
-     *          the value of credit tokens in pending redemptions. The actual yield may be slightly
-     *          higher than reported because some credit tokens may appreciate in value during the
-     *          redemption period.
-     *  @return The total value including pending redemptions, in 18 decimal precision.
-     */
-    function totalAssetsWithRedemptions() external view returns (uint256);
 
 }

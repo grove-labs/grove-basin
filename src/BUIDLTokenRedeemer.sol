@@ -4,8 +4,10 @@ pragma solidity ^0.8.24;
 import { IERC20 }    from "erc20-helpers/interfaces/IERC20.sol";
 import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
 
-import { IGroveBasin }    from "src/interfaces/IGroveBasin.sol";
-import { ITokenRedeemer } from "src/interfaces/ITokenRedeemer.sol";
+import { Math } from "openzeppelin-contracts/contracts/utils/math/Math.sol";
+
+import { IGroveBasin }                 from "src/interfaces/IGroveBasin.sol";
+import { ITokenRedeemer, RedeemRequest } from "src/interfaces/ITokenRedeemer.sol";
 
 contract BUIDLTokenRedeemer is ITokenRedeemer {
 
@@ -68,11 +70,10 @@ contract BUIDLTokenRedeemer is ITokenRedeemer {
     }
 
     /// @inheritdoc ITokenRedeemer
-    function completeRedeem(uint256 creditTokenAmount) external override onlyBasin returns (uint256 assets) {
-        assets = IERC20(collateralToken).balanceOf(address(this));
-        if (assets > creditTokenAmount) assets = creditTokenAmount;
-        IERC20(collateralToken).safeTransfer(address(basin), assets);
-        emit RedeemCompleted(creditTokenAmount, assets);
+    function completeRedeem(RedeemRequest calldata request) external override onlyBasin returns (uint256 collateralTokenReturned) {
+        collateralTokenReturned = Math.min(request.collateralTokenAmount, IERC20(collateralToken).balanceOf(address(this)));
+        IERC20(collateralToken).safeTransfer(address(basin), collateralTokenReturned);
+        emit RedeemCompleted(collateralTokenReturned);
     }
 
 }

@@ -9,7 +9,7 @@ import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
 import { GroveBasin }          from "src/GroveBasin.sol";
 import { JTRSYTokenRedeemer } from "src/JTRSYTokenRedeemer.sol";
-import { ITokenRedeemer }     from "src/interfaces/ITokenRedeemer.sol";
+import { ITokenRedeemer, RedeemRequest } from "src/interfaces/ITokenRedeemer.sol";
 
 import { MockAsyncVault }   from "test/mocks/MockAsyncVault.sol";
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
@@ -291,31 +291,45 @@ contract JTRSYTokenRedeemerCompleteRedeemTests is Test {
         collateralToken.mint(address(vault), 100_000e18);
     }
 
+    function _makeRequest(uint256 creditAmount, uint256 collateralAmount) internal view returns (RedeemRequest memory) {
+        return RedeemRequest({
+            blockNumber:           block.number,
+            redeemer:              address(redeemer),
+            creditTokenAmount:     creditAmount,
+            collateralTokenAmount: collateralAmount
+        });
+    }
+
     function test_completeRedeem_sendsCollateralToCaller() public {
-        uint256 creditTokenAmount = 1000e18;
+        uint256 creditAmount = 1000e18;
+        RedeemRequest memory request = _makeRequest(creditAmount, creditAmount);
 
         uint256 callerBalanceBefore = collateralToken.balanceOf(basin);
 
         vm.prank(basin);
-        uint256 assets = redeemer.completeRedeem(creditTokenAmount);
+        uint256 assets = redeemer.completeRedeem(request);
 
         uint256 callerBalanceAfter = collateralToken.balanceOf(basin);
 
-        assertEq(assets,                                   creditTokenAmount);
-        assertEq(callerBalanceAfter - callerBalanceBefore, creditTokenAmount);
+        // vault.redeem returns shares 1:1 as assets in mock
+        assertEq(assets,                                   creditAmount);
+        assertEq(callerBalanceAfter - callerBalanceBefore, creditAmount);
 
-        assertEq(vault.lastRedeemShares(),     creditTokenAmount);
+        assertEq(vault.lastRedeemShares(),     creditAmount);
         assertEq(vault.lastRedeemReceiver(),   address(redeemer));
         assertEq(vault.lastRedeemController(), address(redeemer));
     }
 
     function test_completeRedeem_multipleCompletes() public {
+        RedeemRequest memory request1 = _makeRequest(100e18, 100e18);
+
         vm.startPrank(basin);
-        redeemer.completeRedeem(100e18);
+        redeemer.completeRedeem(request1);
 
         uint256 balanceAfterFirst = collateralToken.balanceOf(basin);
 
-        redeemer.completeRedeem(200e18);
+        RedeemRequest memory request2 = _makeRequest(200e18, 200e18);
+        redeemer.completeRedeem(request2);
 
         uint256 balanceAfterSecond = collateralToken.balanceOf(basin);
         vm.stopPrank();
@@ -324,21 +338,23 @@ contract JTRSYTokenRedeemerCompleteRedeemTests is Test {
     }
 
     function test_completeRedeem_emitsEvent() public {
-        uint256 creditTokenAmount = 1000e18;
+        uint256 creditAmount = 1000e18;
+        RedeemRequest memory request = _makeRequest(creditAmount, creditAmount);
 
         vm.expectEmit(address(redeemer));
-        emit ITokenRedeemer.RedeemCompleted(creditTokenAmount, creditTokenAmount);
+        emit ITokenRedeemer.RedeemCompleted(creditAmount);
 
         vm.prank(basin);
-        redeemer.completeRedeem(creditTokenAmount);
+        redeemer.completeRedeem(request);
     }
 
     function test_completeRedeem_onlyBasin() public {
         address notBasin = makeAddr("notBasin");
+        RedeemRequest memory request = _makeRequest(1000e18, 1000e18);
 
         vm.prank(notBasin);
         vm.expectRevert(ITokenRedeemer.OnlyBasin.selector);
-        redeemer.completeRedeem(1000e18);
+        redeemer.completeRedeem(request);
     }
 
 }

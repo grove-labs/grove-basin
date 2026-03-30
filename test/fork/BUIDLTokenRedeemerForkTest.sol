@@ -78,7 +78,7 @@ contract BUIDLTokenRedeemerForkTest_InitiateRedeem is BUIDLTokenRedeemerForkTest
             IERC20(Ethereum.BUIDLI).balanceOf(Ethereum.BUIDLI_REDEEM),
             redemptionAddrBefore + redeemAmount
         );
-        assertEq(groveBasin.redeemedCreditTokenBalance(), redeemAmount);
+        assertEq(groveBasin.pendingCreditTokenBalance(), redeemAmount);
     }
 
     function test_initiateRedeem_emitsEvent() public {
@@ -109,7 +109,7 @@ contract BUIDLTokenRedeemerForkTest_CompleteRedeem is BUIDLTokenRedeemerForkTest
         uint256 redeemAmount = 1_000e6;
 
         vm.prank(owner);
-        groveBasin.initiateRedeem(address(redeemer), redeemAmount);
+        bytes32 requestId = groveBasin.initiateRedeem(address(redeemer), redeemAmount);
 
         // Simulate offchain settlement: USDC sent to redeemer
         deal(Ethereum.USDC, address(redeemer), redeemAmount);
@@ -117,14 +117,14 @@ contract BUIDLTokenRedeemerForkTest_CompleteRedeem is BUIDLTokenRedeemerForkTest
         uint256 basinUsdcBefore = IERC20(Ethereum.USDC).balanceOf(address(groveBasin));
 
         vm.prank(owner);
-        groveBasin.completeRedeem(address(redeemer), redeemAmount);
+        groveBasin.completeRedeem(requestId);
 
         assertEq(
             IERC20(Ethereum.USDC).balanceOf(address(groveBasin)),
             basinUsdcBefore + redeemAmount
         );
         assertEq(IERC20(Ethereum.USDC).balanceOf(address(redeemer)), 0);
-        assertEq(groveBasin.redeemedCreditTokenBalance(), 0);
+        assertEq(groveBasin.pendingCreditTokenBalance(), 0);
     }
 
     function test_completeRedeem_partialFill() public {
@@ -135,7 +135,7 @@ contract BUIDLTokenRedeemerForkTest_CompleteRedeem is BUIDLTokenRedeemerForkTest
         uint256 settledAmount  = 999e6;  // Slightly less than redeemed
 
         vm.prank(owner);
-        groveBasin.initiateRedeem(address(redeemer), redeemAmount);
+        bytes32 requestId = groveBasin.initiateRedeem(address(redeemer), redeemAmount);
 
         // Simulate partial fill
         deal(Ethereum.USDC, address(redeemer), settledAmount);
@@ -143,7 +143,7 @@ contract BUIDLTokenRedeemerForkTest_CompleteRedeem is BUIDLTokenRedeemerForkTest
         uint256 basinUsdcBefore = IERC20(Ethereum.USDC).balanceOf(address(groveBasin));
 
         vm.prank(owner);
-        groveBasin.completeRedeem(address(redeemer), redeemAmount);
+        groveBasin.completeRedeem(requestId);
 
         assertEq(
             IERC20(Ethereum.USDC).balanceOf(address(groveBasin)),
@@ -159,7 +159,7 @@ contract BUIDLTokenRedeemerForkTest_CompleteRedeem is BUIDLTokenRedeemerForkTest
         uint256 redeemAmount = 1_000e6;
 
         vm.prank(owner);
-        groveBasin.initiateRedeem(address(redeemer), redeemAmount);
+        bytes32 requestId = groveBasin.initiateRedeem(address(redeemer), redeemAmount);
 
         deal(Ethereum.USDC, address(redeemer), redeemAmount);
 
@@ -167,7 +167,7 @@ contract BUIDLTokenRedeemerForkTest_CompleteRedeem is BUIDLTokenRedeemerForkTest
         emit IGroveBasin.RedeemCompleted(address(redeemer), owner, redeemAmount);
 
         vm.prank(owner);
-        groveBasin.completeRedeem(address(redeemer), redeemAmount);
+        groveBasin.completeRedeem(requestId);
     }
 
 }
@@ -186,9 +186,9 @@ contract BUIDLTokenRedeemerForkTest_FullFlow is BUIDLTokenRedeemerForkTestBase {
 
         // Initiate
         vm.prank(owner);
-        groveBasin.initiateRedeem(address(redeemer), redeemAmount);
+        bytes32 requestId = groveBasin.initiateRedeem(address(redeemer), redeemAmount);
 
-        assertEq(groveBasin.redeemedCreditTokenBalance(), redeemAmount);
+        assertEq(groveBasin.pendingCreditTokenBalance(), redeemAmount);
         assertEq(IERC20(Ethereum.BUIDLI).balanceOf(address(groveBasin)), depositAmount - redeemAmount);
 
         // Simulate settlement
@@ -198,9 +198,9 @@ contract BUIDLTokenRedeemerForkTest_FullFlow is BUIDLTokenRedeemerForkTestBase {
         uint256 basinUsdcBefore = IERC20(Ethereum.USDC).balanceOf(address(groveBasin));
 
         vm.prank(owner);
-        groveBasin.completeRedeem(address(redeemer), redeemAmount);
+        groveBasin.completeRedeem(requestId);
 
-        assertEq(groveBasin.redeemedCreditTokenBalance(), 0);
+        assertEq(groveBasin.pendingCreditTokenBalance(), 0);
         assertEq(
             IERC20(Ethereum.USDC).balanceOf(address(groveBasin)),
             basinUsdcBefore + redeemAmount
@@ -213,30 +213,31 @@ contract BUIDLTokenRedeemerForkTest_FullFlow is BUIDLTokenRedeemerForkTestBase {
 
         // First redemption
         vm.prank(owner);
-        groveBasin.initiateRedeem(address(redeemer), 1_000e6);
-        assertEq(groveBasin.redeemedCreditTokenBalance(), 1_000e6);
+        bytes32 requestId1 = groveBasin.initiateRedeem(address(redeemer), 1_000e6);
+        assertEq(groveBasin.pendingCreditTokenBalance(), 1_000e6);
 
-        // Second redemption
+        vm.roll(block.number + 1);
+
+        // Second redemption on different block
         vm.prank(owner);
-        groveBasin.initiateRedeem(address(redeemer), 2_000e6);
-        assertEq(groveBasin.redeemedCreditTokenBalance(), 3_000e6);
+        bytes32 requestId2 = groveBasin.initiateRedeem(address(redeemer), 2_000e6);
+        assertEq(groveBasin.pendingCreditTokenBalance(), 3_000e6);
 
-        // Complete first (partial settlement)
-        deal(Ethereum.USDC, address(redeemer), 999e6);
+        // Complete first request
+        deal(Ethereum.USDC, address(redeemer), 1_000e6);
 
         vm.prank(owner);
-        groveBasin.completeRedeem(address(redeemer), 1_000e6);
+        groveBasin.completeRedeem(requestId1);
 
-        // redeemedCreditTokenBalance decrements by the creditTokenAmount param, not the assets
-        assertEq(groveBasin.redeemedCreditTokenBalance(), 2_000e6);
+        assertEq(groveBasin.pendingCreditTokenBalance(), 2_000e6);
 
-        // Complete second
+        // Complete second request
         deal(Ethereum.USDC, address(redeemer), 2_000e6);
 
         vm.prank(owner);
-        groveBasin.completeRedeem(address(redeemer), 2_000e6);
+        groveBasin.completeRedeem(requestId2);
 
-        assertEq(groveBasin.redeemedCreditTokenBalance(), 0);
+        assertEq(groveBasin.pendingCreditTokenBalance(), 0);
     }
 
 }

@@ -10,7 +10,7 @@ import { Math }          from "openzeppelin-contracts/contracts/utils/math/Math.
 import { IGroveBasin }             from "src/interfaces/IGroveBasin.sol";
 import { IGroveBasinPocket }       from "src/interfaces/IGroveBasinPocket.sol";
 import { IRateProviderLike }       from "src/interfaces/IRateProviderLike.sol";
-import { ITokenRedeemer }          from "src/interfaces/ITokenRedeemer.sol";
+import { ITokenRedeemer, RedeemRequest } from "src/interfaces/ITokenRedeemer.sol";
 
 /**
  * @title  GroveBasin
@@ -71,11 +71,12 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     uint256 public override minStalenessThreshold;
     uint256 public override maxStalenessThreshold;
-    uint256 public override redeemedCreditTokenBalance;
+    uint256 public override pendingCreditTokenBalance;
 
     address public override feeClaimer;
 
-    mapping(address user => uint256 shares) public override shares;
+    mapping(address user       => uint256 shares)        public override shares;
+    mapping(bytes32 requestId  => RedeemRequest request)  public override redeemRequests;
 
     constructor(
         address owner_,
@@ -322,13 +323,13 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /**********************************************************************************************/
 
     /// @inheritdoc IGroveBasin
-    function initiateRedeem(address redeemer, uint256 creditTokenAmount) external override onlyRole(REDEEMER_ROLE) {
-        _initiateRedeem(redeemer, creditTokenAmount);
+    function initiateRedeem(address redeemer, uint256 creditTokenAmount) external override onlyRole(REDEEMER_ROLE) returns (bytes32 redeemRequestId) {
+        return _initiateRedeem(redeemer, creditTokenAmount);
     }
 
     /// @inheritdoc IGroveBasin
-    function completeRedeem(address redeemer, uint256 creditTokenAmount) external override onlyRole(REDEEMER_ROLE) {
-        _completeRedeem(redeemer, creditTokenAmount);
+    function completeRedeem(bytes32 redeemRequestId) external override onlyRole(REDEEMER_ROLE) {
+        _completeRedeem(redeemRequestId);
     }
 
     /**********************************************************************************************/
@@ -686,6 +687,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /**********************************************************************************************/
 
     /// @inheritdoc IGroveBasin
+    /// @dev pendingCreditTokenBalance is an estimate of the value that Basin is due to receive, not a firm amount.
     function totalAssets() public view override returns (uint256) {
         return _getSwapTokenValue(
                     _getAvailableBalance(swapToken), false  // Round down
@@ -694,13 +696,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
                     _getAvailableBalance(collateralToken), false  // Round down
                 )
             +  _getCreditTokenValue(
-                    _getAvailableBalance(creditToken), false  // Round down
+                    _getAvailableBalance(address(creditToken)) + pendingCreditTokenBalance,
+                    false // Round down
                 );
-    }
-
-    /// @inheritdoc IGroveBasin
-    function totalAssetsWithRedemptions() public view returns (uint256) {
-        return totalAssets() + _getCreditTokenValue(redeemedCreditTokenBalance, false);
     }
 
     /**********************************************************************************************/
@@ -993,27 +991,44 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     /// @dev Approves and sends credit tokens to the redeemer to initiate an async redemption.
-    function _initiateRedeem(address redeemer, uint256 creditTokenAmount) internal {
+    function _initiateRedeem(address redeemer, uint256 creditTokenAmount) internal returns (bytes32 redeemRequestId) {
         if (pausedInitiateRedeem)                       revert InitiateRedeemPaused();
         if (!hasRole(REDEEMER_CONTRACT_ROLE, redeemer)) revert InvalidRedeemer();
+
+        uint256 collateralTokenAmount = _convertCreditTokenToCollateral(creditTokenAmount, false);
+
+        RedeemRequest memory request = RedeemRequest({
+            blockNumber:           block.number,
+            redeemer:              redeemer,
+            creditTokenAmount:     creditTokenAmount,
+            collateralTokenAmount: collateralTokenAmount
+        });
+
+        redeemRequestId = keccak256(abi.encode(request));
+        if (redeemRequests[redeemRequestId].creditTokenAmount != 0) revert RequestAlreadyExists();
+
+        redeemRequests[redeemRequestId] = request;
+        pendingCreditTokenBalance += creditTokenAmount;
 
         IERC20(creditToken).approve(redeemer, creditTokenAmount);
         ITokenRedeemer(redeemer).initiateRedeem(creditTokenAmount);
         IERC20(creditToken).approve(redeemer, 0);
 
-        redeemedCreditTokenBalance += creditTokenAmount;
         emit RedeemInitiated(redeemer, msg.sender, creditTokenAmount);
     }
 
-    /// @dev Completes an async redemption, decreasing the tracked credit token balance.
-    function _completeRedeem(address redeemer, uint256 creditTokenAmount) internal {
-        if (!hasRole(REDEEMER_CONTRACT_ROLE, redeemer)) revert InvalidRedeemer();
+    /// @dev Completes an async redemption, decreasing the pending credit token balance.
+    function _completeRedeem(bytes32 redeemRequestId) internal {
+        RedeemRequest memory request = redeemRequests[redeemRequestId];
+        if (request.creditTokenAmount == 0) revert InvalidRedeemRequest();
+        if (!hasRole(REDEEMER_CONTRACT_ROLE, request.redeemer)) revert InvalidRedeemer();
 
-        redeemedCreditTokenBalance = creditTokenAmount > redeemedCreditTokenBalance ? 0 : redeemedCreditTokenBalance - creditTokenAmount;
+        delete redeemRequests[redeemRequestId];
+        pendingCreditTokenBalance -= request.creditTokenAmount;
 
-        emit RedeemCompleted(redeemer, msg.sender, creditTokenAmount);
-        
-        ITokenRedeemer(redeemer).completeRedeem(creditTokenAmount);
+        uint256 collateralTokenReturned = ITokenRedeemer(request.redeemer).completeRedeem(request);
+
+        emit RedeemCompleted(request.redeemer, msg.sender, collateralTokenReturned);
     }
 
     /// @dev Calculates a fee on `amount` in basis points.

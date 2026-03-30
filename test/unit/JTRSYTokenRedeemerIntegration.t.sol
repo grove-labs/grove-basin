@@ -233,15 +233,22 @@ contract JTRSYTokenRedeemerCompleteRedeemIntegrationTests is GroveBasinTestBase 
         collateralToken.mint(address(vault), 100_000e18);
     }
 
-    function test_completeRedeem_withAddress() public {
+    function test_completeRedeem_withRequestId() public {
         uint256 amount = 1000e18;
+
+        // First initiate to create a request
+        creditToken.mint(address(groveBasin), amount);
+        bytes32 requestId = groveBasin.initiateRedeem(address(redeemer), amount);
+
+        collateralToken.mint(address(vault), amount);
 
         uint256 basinBalanceBefore = collateralToken.balanceOf(address(groveBasin));
 
-        groveBasin.completeRedeem(address(redeemer), amount);
+        groveBasin.completeRedeem(requestId);
 
-        assertEq(vault.lastRedeemShares(),   amount);
-        assertEq(vault.lastRedeemReceiver(), address(redeemer));
+        // vault.redeem returns shares 1:1 as assets in mock
+        assertEq(vault.lastRedeemShares(),     amount);
+        assertEq(vault.lastRedeemReceiver(),   address(redeemer));
 
         assertEq(collateralToken.balanceOf(address(groveBasin)), basinBalanceBefore + amount);
     }
@@ -249,10 +256,15 @@ contract JTRSYTokenRedeemerCompleteRedeemIntegrationTests is GroveBasinTestBase 
     function test_completeRedeem_emitsEvent() public {
         uint256 amount = 1000e18;
 
+        creditToken.mint(address(groveBasin), amount);
+        bytes32 requestId = groveBasin.initiateRedeem(address(redeemer), amount);
+
+        collateralToken.mint(address(vault), amount);
+
         vm.expectEmit(true, true, false, true);
         emit IGroveBasin.RedeemCompleted(address(redeemer), address(this), amount);
 
-        groveBasin.completeRedeem(address(redeemer), amount);
+        groveBasin.completeRedeem(requestId);
     }
 
 }
@@ -299,10 +311,17 @@ contract JTRSYTokenRedeemerMultipleRedeemersTests is GroveBasinTestBase {
         assertEq(vault1.lastRequestRedeemShares(), amount);
     }
 
-    function test_completeRedeem_multipleRedeemers_withAddress() public {
+    function test_completeRedeem_multipleRedeemers_withRequestId() public {
         uint256 amount = 1000e18;
 
-        groveBasin.completeRedeem(address(redeemer2), amount);
+        creditToken.mint(address(groveBasin), amount);
+
+        vm.prank(owner);
+        bytes32 requestId = groveBasin.initiateRedeem(address(redeemer2), amount);
+
+        collateralToken.mint(address(vault2), amount);
+
+        groveBasin.completeRedeem(requestId);
 
         assertEq(vault2.lastRedeemShares(), amount);
         assertEq(vault2.lastRedeemReceiver(), address(redeemer2));
@@ -338,11 +357,10 @@ contract JTRSYTokenRedeemerFullFlowTests is GroveBasinTestBase {
 
     function test_fullFlow_initiateAndCompleteRedeem() public {
         uint256 initiateAmount = 1000e18;
-        uint256 completeAmount = 500e18;
 
         // Initiate redeem
         vm.prank(owner);
-        groveBasin.initiateRedeem(address(redeemer), initiateAmount);
+        bytes32 requestId = groveBasin.initiateRedeem(address(redeemer), initiateAmount);
 
         assertEq(vault.lastRequestRedeemShares(),     initiateAmount);
         assertEq(vault.lastRequestRedeemController(), address(redeemer));
@@ -350,13 +368,14 @@ contract JTRSYTokenRedeemerFullFlowTests is GroveBasinTestBase {
 
         // Complete redeem - redeemer receives collateral from vault, forwards to basin
         uint256 basinCollateralBefore = collateralToken.balanceOf(address(groveBasin));
-        groveBasin.completeRedeem(address(redeemer), completeAmount);
+        groveBasin.completeRedeem(requestId);
 
-        assertEq(vault.lastRedeemShares(),     completeAmount);
+        // vault.redeem returns shares 1:1 as assets in mock
+        assertEq(vault.lastRedeemShares(),     initiateAmount);
         assertEq(vault.lastRedeemReceiver(),   address(redeemer));
         assertEq(vault.lastRedeemController(), address(redeemer));
 
-        assertEq(collateralToken.balanceOf(address(groveBasin)), basinCollateralBefore + completeAmount);
+        assertEq(collateralToken.balanceOf(address(groveBasin)), basinCollateralBefore + initiateAmount);
     }
 
 }
@@ -387,66 +406,71 @@ contract CreditTokenBalanceTrackingTests is GroveBasinTestBase {
         collateralToken.mint(address(vault), 100_000e18);
     }
 
-    function test_redeemedCreditTokenBalance_initiallyZero() public view {
-        assertEq(groveBasin.redeemedCreditTokenBalance(), 0);
+    function test_pendingCreditTokenBalance_initiallyZero() public view {
+        assertEq(groveBasin.pendingCreditTokenBalance(), 0);
     }
 
-    function test_redeemedCreditTokenBalance_incrementsOnInitiate() public {
+    function test_pendingCreditTokenBalance_incrementsOnInitiate() public {
         uint256 amount = 1000e18;
 
         vm.prank(owner);
         groveBasin.initiateRedeem(address(redeemer), amount);
 
-        assertEq(groveBasin.redeemedCreditTokenBalance(), amount);
+        assertEq(groveBasin.pendingCreditTokenBalance(), amount);
     }
 
-    function test_redeemedCreditTokenBalance_decrementsOnComplete() public {
+    function test_pendingCreditTokenBalance_decrementsOnComplete() public {
         uint256 initiateAmount = 1000e18;
-        uint256 completeAmount = 400e18;
 
         vm.prank(owner);
-        groveBasin.initiateRedeem(address(redeemer), initiateAmount);
-        assertEq(groveBasin.redeemedCreditTokenBalance(), initiateAmount);
+        bytes32 requestId = groveBasin.initiateRedeem(address(redeemer), initiateAmount);
+        assertEq(groveBasin.pendingCreditTokenBalance(), initiateAmount);
 
-        groveBasin.completeRedeem(address(redeemer), completeAmount);
+        groveBasin.completeRedeem(requestId);
 
-        assertEq(groveBasin.redeemedCreditTokenBalance(), initiateAmount - completeAmount);
+        assertEq(groveBasin.pendingCreditTokenBalance(), 0);
     }
 
-    function test_redeemedCreditTokenBalance_fullRedeemCycle() public {
+    function test_pendingCreditTokenBalance_fullRedeemCycle() public {
         uint256 amount = 1000e18;
 
         vm.prank(owner);
-        groveBasin.initiateRedeem(address(redeemer), amount);
-        assertEq(groveBasin.redeemedCreditTokenBalance(), amount);
+        bytes32 requestId = groveBasin.initiateRedeem(address(redeemer), amount);
+        assertEq(groveBasin.pendingCreditTokenBalance(), amount);
 
-        groveBasin.completeRedeem(address(redeemer), amount);
+        groveBasin.completeRedeem(requestId);
 
-        assertEq(groveBasin.redeemedCreditTokenBalance(), 0);
+        assertEq(groveBasin.pendingCreditTokenBalance(), 0);
     }
 
-    function test_redeemedCreditTokenBalance_underflowProtection() public {
-        uint256 amount = 1000e18;
+    function test_pendingCreditTokenBalance_multipleRequestIds() public {
+        vm.prank(owner);
+        bytes32 requestId1 = groveBasin.initiateRedeem(address(redeemer), 500e18);
+        assertEq(groveBasin.pendingCreditTokenBalance(), 500e18);
+
+        vm.roll(block.number + 1);
 
         vm.prank(owner);
-        groveBasin.initiateRedeem(address(redeemer), amount);
-        assertEq(groveBasin.redeemedCreditTokenBalance(), amount);
+        bytes32 requestId2 = groveBasin.initiateRedeem(address(redeemer), 500e18);
+        assertEq(groveBasin.pendingCreditTokenBalance(), 1000e18);
 
-        // Complete with more than was initiated
-        groveBasin.completeRedeem(address(redeemer), amount + 500e18);
+        // Complete first request
+        groveBasin.completeRedeem(requestId1);
 
-        // Should floor at 0 rather than underflow
-        assertEq(groveBasin.redeemedCreditTokenBalance(), 0);
+        assertEq(groveBasin.pendingCreditTokenBalance(), 500e18);
+
+        // Complete second request
+        groveBasin.completeRedeem(requestId2);
+
+        assertEq(groveBasin.pendingCreditTokenBalance(), 0);
     }
 
-    function test_redeemedCreditTokenBalance_multipleInitiates() public {
-        vm.startPrank(owner);
-        groveBasin.initiateRedeem(address(redeemer), 500e18);
-        assertEq(groveBasin.redeemedCreditTokenBalance(), 500e18);
+    function test_initiateRedeem_returnsRedeemRequestId() public {
+        vm.prank(owner);
+        bytes32 requestId = groveBasin.initiateRedeem(address(redeemer), 1000e18);
 
-        groveBasin.initiateRedeem(address(redeemer), 500e18);
-        assertEq(groveBasin.redeemedCreditTokenBalance(), 1000e18);
-        vm.stopPrank();
+        // Request ID is keccak256(abi.encode(request))
+        assertTrue(requestId != bytes32(0));
     }
 
 }
