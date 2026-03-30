@@ -3,7 +3,8 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 
-import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
+import { IERC20 }    from "erc20-helpers/interfaces/IERC20.sol";
+import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
 
 import { Ethereum } from "lib/grove-address-registry/src/Ethereum.sol";
 
@@ -13,6 +14,8 @@ import { GroveBasinFactory } from "src/GroveBasinFactory.sol";
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 
 contract GroveBasinDeployForkTest is Test {
+
+    using SafeERC20 for IERC20;
 
     address public owner = makeAddr("owner");
     address public lp    = makeAddr("liquidityProvider");
@@ -43,7 +46,7 @@ contract GroveBasinDeployForkTest is Test {
 
     function test_deploy_withActualUSDT() public {
         deal(Ethereum.USDT, address(this), seedAmount);
-        IERC20(Ethereum.USDT).approve(address(factory), seedAmount);
+        IERC20(Ethereum.USDT).safeApprove(address(factory), seedAmount);
 
         address groveBasinAddress = factory.deploy(
             owner,
@@ -73,7 +76,7 @@ contract GroveBasinDeployForkTest is Test {
 
     function test_deploy_multipleDeployments() public {
         deal(Ethereum.USDT, address(this), seedAmount);
-        IERC20(Ethereum.USDT).approve(address(factory), seedAmount);
+        IERC20(Ethereum.USDT).safeApprove(address(factory), seedAmount);
 
         address groveBasin1 = factory.deploy(
             owner,
@@ -95,7 +98,7 @@ contract GroveBasinDeployForkTest is Test {
         creditTokenRateProvider2.__setConversionRate(1e27);
 
         deal(Ethereum.USDT, address(this), seedAmount);
-        IERC20(Ethereum.USDT).approve(address(factory), seedAmount);
+        IERC20(Ethereum.USDT).safeApprove(address(factory), seedAmount);
 
         address groveBasin2 = factory.deploy(
             owner,
@@ -115,7 +118,7 @@ contract GroveBasinDeployForkTest is Test {
 
     function test_deploy_seedTokensTransferred() public {
         deal(Ethereum.USDT, address(this), seedAmount);
-        IERC20(Ethereum.USDT).approve(address(factory), seedAmount);
+        IERC20(Ethereum.USDT).safeApprove(address(factory), seedAmount);
 
         uint256 balanceBefore = IERC20(Ethereum.USDT).balanceOf(address(this));
 

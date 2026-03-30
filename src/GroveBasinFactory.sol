@@ -32,7 +32,7 @@ contract GroveBasinFactory {
     {
         uint256 seedAmount = 10 ** IERC20(swapToken).decimals();
 
-        IERC20(swapToken).transferFrom(msg.sender, address(this), seedAmount);
+        IERC20(swapToken).safeTransferFrom(msg.sender, address(this), seedAmount);
 
         groveBasin = address(new GroveBasin(
             owner,
@@ -45,7 +45,7 @@ contract GroveBasinFactory {
             creditTokenRateProvider
         ));
 
-        IERC20(swapToken).approve(groveBasin, seedAmount);
+        IERC20(swapToken).safeApprove(groveBasin, seedAmount);
         GroveBasin(groveBasin).depositInitial(swapToken, seedAmount);
 
         emit GroveBasinDeployed(groveBasin, owner, swapToken, collateralToken, creditToken);
