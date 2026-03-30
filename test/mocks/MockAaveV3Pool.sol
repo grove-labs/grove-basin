@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
 
+import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
 
 contract MockAaveV3Pool {
@@ -27,7 +28,7 @@ contract MockAaveV3Pool {
     function withdraw(address asset, uint256 amount, address to) external returns (uint256) {
         require(asset == underlying, "MockAaveV3Pool/invalid-asset");
 
-        IERC20(aToken).safeTransferFrom(msg.sender, address(this), amount);
+        MockERC20(aToken).burn(msg.sender, amount);
         IERC20(underlying).safeTransfer(to, amount);
 
         return amount;

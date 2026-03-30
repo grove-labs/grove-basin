@@ -78,14 +78,7 @@ contract UsdsUsdcPocket is BasePocket {
         } else if (asset == address(usdc)) {
             usdc.safeApprove(psm, amount);
 
-            uint256 convertedAmount = IPSMLike(psm).swapExactIn(
-                address(usdc),
-                address(usds),
-                amount,
-                0,
-                address(this),
-                0
-            );
+            uint256 convertedAmount = IPSMLike(psm).sellGem(address(this), amount);
 
             usdc.safeApprove(psm, 0);
 
@@ -110,14 +103,7 @@ contract UsdsUsdcPocket is BasePocket {
 
                 usds.safeApprove(psm, type(uint256).max);
 
-                convertedAmount = IPSMLike(psm).swapExactOut(
-                    address(usds),
-                    address(usdc),
-                    remainder,
-                    type(uint256).max,
-                    address(this),
-                    0
-                );
+                convertedAmount = IPSMLike(psm).buyGem(address(this), remainder);
 
                 usds.safeApprove(psm, 0);
 

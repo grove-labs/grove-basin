@@ -3,19 +3,21 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 
-import { GroveBasinDeploy } from "deploy/GroveBasinDeploy.sol";
-
-import { GroveBasin } from "src/GroveBasin.sol";
+import { GroveBasin }        from "src/GroveBasin.sol";
+import { GroveBasinFactory } from "src/GroveBasinFactory.sol";
 
 import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
 contract GroveBasinDeployTests is GroveBasinTestBase {
 
     function test_deploy() public {
+        GroveBasinFactory factory = new GroveBasinFactory();
+
         uint256 seedAmount = 10 ** swapToken.decimals();
         swapToken.mint(address(this), seedAmount);
+        swapToken.approve(address(factory), seedAmount);
 
-        GroveBasin newGroveBasin = GroveBasin(GroveBasinDeploy.deploy(
+        GroveBasin newGroveBasin = GroveBasin(factory.deploy(
             address(owner),
             lp,
             address(swapToken),

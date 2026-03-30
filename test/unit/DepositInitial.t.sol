@@ -3,10 +3,9 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 
-import { GroveBasin }  from "src/GroveBasin.sol";
-import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
-
-import { GroveBasinDeploy } from "deploy/GroveBasinDeploy.sol";
+import { GroveBasin }        from "src/GroveBasin.sol";
+import { GroveBasinFactory } from "src/GroveBasinFactory.sol";
+import { IGroveBasin }       from "src/interfaces/IGroveBasin.sol";
 
 import { MockERC20, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
@@ -266,13 +265,16 @@ contract DepositInitialTests is GroveBasinTestBase {
     }
 
     /**********************************************************************************************/
-    /*** Deploy library integration tests                                                       ***/
+    /*** Factory integration tests                                                              ***/
     /**********************************************************************************************/
 
-    function test_depositInitial_viaDeploy() public {
-        swapToken.mint(address(this), 1e6);
+    function test_depositInitial_viaFactory() public {
+        GroveBasinFactory factory = new GroveBasinFactory();
 
-        address newBasin = GroveBasinDeploy.deploy(
+        swapToken.mint(address(this), 1e6);
+        swapToken.approve(address(factory), 1e6);
+
+        address newBasin = factory.deploy(
             owner,
             lp,
             address(swapToken),

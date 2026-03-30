@@ -3,7 +3,8 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 
-import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
+import { Math }        from "openzeppelin-contracts/contracts/utils/math/Math.sol";
+import { IGroveBasin }  from "src/interfaces/IGroveBasin.sol";
 
 import { MockRateProvider, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
@@ -306,9 +307,9 @@ contract GroveBasinPreviewSwapExactOut_CreditTokenAssetInTests is GroveBasinTest
 
     function test_previewSwapExactOut_creditTokenToSwapToken() public view {
         // Demo rounding up
-        assertEq(groveBasin.previewSwapExactOut(address(creditToken), address(swapToken), 1e6 - 1), 0.8e18);
+        assertEq(groveBasin.previewSwapExactOut(address(creditToken), address(swapToken), 1e6 - 1), 799_999_200_000_000_000);
         assertEq(groveBasin.previewSwapExactOut(address(creditToken), address(swapToken), 1e6),     0.8e18);
-        assertEq(groveBasin.previewSwapExactOut(address(creditToken), address(swapToken), 1e6 + 1), 0.800001e18);
+        assertEq(groveBasin.previewSwapExactOut(address(creditToken), address(swapToken), 1e6 + 1), 800_000_800_000_000_000);
 
         assertEq(groveBasin.previewSwapExactOut(address(creditToken), address(swapToken), 1.25e6), 1e18);
         assertEq(groveBasin.previewSwapExactOut(address(creditToken), address(swapToken), 2.5e6),  2e18);
@@ -321,12 +322,12 @@ contract GroveBasinPreviewSwapExactOut_CreditTokenAssetInTests is GroveBasinTest
 
         mockCreditTokenRateProvider.__setConversionRate(conversionRate);
 
-        uint256 expectedAmountIn = amountOut * 1e27 / conversionRate * 1e12;
+        uint256 expectedAmountIn = Math.mulDiv(amountOut, 1e27 * 1e18, conversionRate * 1e6);
 
         uint256 amountIn = groveBasin.previewSwapExactOut(address(creditToken), address(swapToken), amountOut);
 
-        // Allow for rounding error of 1e12 upwards
-        assertLe(amountIn - expectedAmountIn, 1e12);
+        // Allow for rounding error of +1 upwards (single ceil)
+        assertLe(amountIn - expectedAmountIn, 1);
     }
 
 }

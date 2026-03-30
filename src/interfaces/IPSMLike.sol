@@ -3,29 +3,15 @@ pragma solidity ^0.8.24;
 
 /**
  * @title  IPSMLike
- * @notice Minimal interface for a Peg Stability Module (PSM) that supports exact-in and
- *         exact-out swaps between stablecoins.
+ * @notice Minimal interface for the USDS PSM Wrapper on Ethereum mainnet that supports
+ *         gem (USDC) buy/sell operations against USDS.
  */
 interface IPSMLike {
 
-    /// @notice Swaps an exact amount of `assetIn` for `assetOut`, receiving at least `minAmountOut`.
-    function swapExactIn(
-        address assetIn,
-        address assetOut,
-        uint256 amountIn,
-        uint256 minAmountOut,
-        address receiver,
-        uint256 referralCode
-    ) external returns (uint256 amountOut);
+    /// @notice Sells `gemAmt` of gem (USDC) for USDS. Caller must approve gem to the PSM.
+    function sellGem(address usr, uint256 gemAmt) external returns (uint256 usdsOutWad);
 
-    /// @notice Swaps `assetIn` for an exact amount of `assetOut`, spending at most `maxAmountIn`.
-    function swapExactOut(
-        address assetIn,
-        address assetOut,
-        uint256 amountOut,
-        uint256 maxAmountIn,
-        address receiver,
-        uint256 referralCode
-    ) external returns (uint256 amountIn);
+    /// @notice Buys `gemAmt` of gem (USDC) with USDS. Caller must approve USDS to the PSM.
+    function buyGem(address usr, uint256 gemAmt) external returns (uint256 usdsInWad);
 
 }
