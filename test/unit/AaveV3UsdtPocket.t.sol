@@ -343,6 +343,14 @@ contract AaveV3UsdtPocketDrawLiquidityTests is AaveV3UsdtPocketTestBase {
         assertEq(aUsdt.balanceOf(address(pocket)), 500e6);
     }
 
+    function test_withdrawLiquidity_uintMaxBalanceFails() public {
+        aUsdt.mint(address(pocket), 1000e6);
+
+        vm.prank(address(groveBasin));
+        vm.expectRevert(AaveV3UsdtPocket.NoWithdrawMaxUint.selector);
+        pocket.withdrawLiquidity(type(uint256).max, address(usdt));
+    }
+
     function test_withdrawLiquidity_emitsEvent() public {
         aUsdt.mint(address(pocket), 1000e6);
 

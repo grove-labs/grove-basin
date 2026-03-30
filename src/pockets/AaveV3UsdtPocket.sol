@@ -26,6 +26,7 @@ contract AaveV3UsdtPocket is BasePocket {
     error InvalidUsdt();
     error InvalidAUsdt();
     error InvalidAaveV3Pool();
+    error NoWithdrawMaxUint();
 
     IERC20 public immutable usdt;
     IERC20 public immutable aUsdt;
@@ -75,6 +76,11 @@ contract AaveV3UsdtPocket is BasePocket {
         if (amount == 0) return 0;
 
         if (asset != address(usdt)) revert InvalidAsset();
+        
+        // Aave lets users withdraw their whole balance by passing in the max value
+        // This check ensures the amount returned and emitted in logs is valid and
+        // explicitly defined by the caller.
+        if (amount == type(uint256).max) revert NoWithdrawMaxUint();
 
         uint256 balance = usdt.balanceOf(address(this));
 
