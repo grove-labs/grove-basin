@@ -19,7 +19,7 @@ import { ITokenRedeemer, RedeemRequest } from "src/interfaces/ITokenRedeemer.sol
  *         for shares that represent pro-rata ownership of the pool's total value.
  * @dev    Uses AccessControl for role-based permissioning across owner, manager
  *         admin, manager, liquidity provider, and redeemer roles. Asset values are determined by
- *         external rate providers that return conversion rates in 1e27 precision. Swap token
+ *         external rate providers that return conversion rates. Swap token
  *         custody can be delegated to a pocket contract for yield generation.
  */
 contract GroveBasin is IGroveBasin, AccessControl {

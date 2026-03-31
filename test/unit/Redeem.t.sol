@@ -3,10 +3,12 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 
-import { GroveBasin }  from "src/GroveBasin.sol";
-import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
+import { GroveBasin }          from "src/GroveBasin.sol";
+import { IGroveBasin }         from "src/interfaces/IGroveBasin.sol";
+import { JTRSYTokenRedeemer } from "src/JTRSYTokenRedeemer.sol";
 
 import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
+import { MockAsyncVault }     from "test/mocks/MockAsyncVault.sol";
 
 /**********************************************************************************************/
 /*** InitiateRedeem tests                                                                   ***/
@@ -83,6 +85,81 @@ contract GroveBasinCompleteRedeemInvalidRequestTests is GroveBasinTestBase {
         vm.prank(redeemer);
         vm.expectRevert(IGroveBasin.InvalidRedeemRequest.selector);
         groveBasin.completeRedeem(bytes32(uint256(1)));
+    }
+
+}
+
+/**********************************************************************************************/
+/*** RequestAlreadyExists tests                                                             ***/
+/**********************************************************************************************/
+
+contract GroveBasinRequestAlreadyExistsTests is GroveBasinTestBase {
+
+    MockAsyncVault     public vault;
+    JTRSYTokenRedeemer public redeemer;
+
+    function setUp() public override {
+        super.setUp();
+
+        vault = new MockAsyncVault(address(collateralToken), address(creditToken));
+        redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(groveBasin));
+
+        vm.startPrank(owner);
+        groveBasin.addTokenRedeemer(address(redeemer));
+        groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), owner);
+        vm.stopPrank();
+
+        creditToken.mint(address(groveBasin), 10_000e18);
+    }
+
+    function test_initiateRedeem_requestAlreadyExists() public {
+        uint256 amount = 1000e18;
+
+        vm.startPrank(owner);
+        groveBasin.initiateRedeem(address(redeemer), amount);
+
+        vm.expectRevert(IGroveBasin.RequestAlreadyExists.selector);
+        groveBasin.initiateRedeem(address(redeemer), amount);
+        vm.stopPrank();
+    }
+
+}
+
+/**********************************************************************************************/
+/*** CompleteRedeem InvalidRedeemer tests                                                    ***/
+/**********************************************************************************************/
+
+contract GroveBasinCompleteRedeemInvalidRedeemerTests is GroveBasinTestBase {
+
+    MockAsyncVault     public vault;
+    JTRSYTokenRedeemer public redeemer;
+
+    function setUp() public override {
+        super.setUp();
+
+        vault = new MockAsyncVault(address(collateralToken), address(creditToken));
+        redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(groveBasin));
+
+        vm.startPrank(owner);
+        groveBasin.addTokenRedeemer(address(redeemer));
+        groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), owner);
+        vm.stopPrank();
+
+        creditToken.mint(address(groveBasin), 10_000e18);
+    }
+
+    function test_completeRedeem_invalidRedeemer() public {
+        uint256 amount = 1000e18;
+
+        vm.prank(owner);
+        bytes32 requestId = groveBasin.initiateRedeem(address(redeemer), amount);
+
+        vm.prank(owner);
+        groveBasin.removeTokenRedeemer(address(redeemer));
+
+        vm.prank(owner);
+        vm.expectRevert(IGroveBasin.InvalidRedeemer.selector);
+        groveBasin.completeRedeem(requestId);
     }
 
 }
