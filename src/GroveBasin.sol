@@ -31,6 +31,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     bytes32 public constant override OWNER_ROLE              = DEFAULT_ADMIN_ROLE;
     bytes32 public constant override MANAGER_ADMIN_ROLE      = keccak256("MANAGER_ADMIN_ROLE");
     bytes32 public constant override MANAGER_ROLE            = keccak256("MANAGER_ROLE");
+    bytes32 public constant override PAUSER_ROLE             = keccak256("PAUSER_ROLE");
     bytes32 public constant override REDEEMER_ROLE           = keccak256("REDEEMER_ROLE");
     bytes32 public constant override REDEEMER_CONTRACT_ROLE  = keccak256("REDEEMER_CONTRACT_ROLE");
 
@@ -151,6 +152,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         stalenessThreshold    = minStalenessThreshold;
 
         _setRoleAdmin(MANAGER_ROLE,           MANAGER_ADMIN_ROLE);
+        _setRoleAdmin(PAUSER_ROLE,            MANAGER_ADMIN_ROLE);
         _setRoleAdmin(REDEEMER_CONTRACT_ROLE, MANAGER_ADMIN_ROLE);
         _setRoleAdmin(REDEEMER_ROLE,          MANAGER_ADMIN_ROLE);
     }
@@ -360,7 +362,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     /// @inheritdoc IGroveBasin
-    function setPaused(bytes4 sig, bool state) external override onlyRole(MANAGER_ROLE) {
+    function setPaused(bytes4 sig, bool state) external override onlyRole(PAUSER_ROLE) {
         paused[sig] = state;
         emit PausedSet(sig, state);
     }
@@ -688,6 +690,22 @@ contract GroveBasin is IGroveBasin, AccessControl {
                     _getAvailableBalance(address(creditToken)) + pendingCreditTokenBalance,
                     false // Round down
                 );
+    }
+
+    /**********************************************************************************************/
+    /*** AccessControl overrides                                                                ***/
+    /**********************************************************************************************/
+
+    /// @dev Extends revokeRole to allow PAUSER_ROLE holders to revoke MANAGER_ROLE and REDEEMER_ROLE.
+    function revokeRole(bytes32 role, address account) public override {
+        if (
+            (role == MANAGER_ROLE || role == REDEEMER_ROLE) &&
+            hasRole(PAUSER_ROLE, msg.sender)
+        ) {
+            _revokeRole(role, account);
+            return;
+        }
+        super.revokeRole(role, account);
     }
 
     /**********************************************************************************************/
