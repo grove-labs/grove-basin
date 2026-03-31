@@ -18,17 +18,17 @@ abstract contract BUIDLTokenRedeemerForkTestBase is BUIDLForkTestBase {
     function _initTokens() internal override {
         swapToken       = IERC20(Ethereum.USDS);
         collateralToken = IERC20(Ethereum.USDC);
-        creditToken     = IERC20(Ethereum.BUIDLI);
+        creditToken     = IERC20(Ethereum.BUIDL);
 
-        buidl = IBUIDLLike(Ethereum.BUIDLI);
+        buidl = IBUIDLLike(Ethereum.BUIDL);
     }
 
     function _postDeploy() internal override {
         super._postDeploy();
 
         redeemer = new BUIDLTokenRedeemer(
-            Ethereum.BUIDLI,
-            Ethereum.BUIDLI_REDEEM,
+            Ethereum.BUIDL,
+            Ethereum.BUIDL_REDEEM,
             address(groveBasin)
         );
 
@@ -47,10 +47,10 @@ abstract contract BUIDLTokenRedeemerForkTestBase is BUIDLForkTestBase {
 contract BUIDLTokenRedeemerForkTest_Deployment is BUIDLTokenRedeemerForkTestBase {
 
     function test_deployment() public view {
-        assertEq(redeemer.creditToken(),       Ethereum.BUIDLI);
+        assertEq(redeemer.creditToken(),       Ethereum.BUIDL);
         assertEq(redeemer.collateralToken(),   Ethereum.USDC);
-        assertEq(redeemer.redemptionAddress(), Ethereum.BUIDLI_REDEEM);
-        assertEq(redeemer.vault(),             Ethereum.BUIDLI_REDEEM);
+        assertEq(redeemer.redemptionAddress(), Ethereum.BUIDL_REDEEM);
+        assertEq(redeemer.vault(),             Ethereum.BUIDL_REDEEM);
         assertEq(address(redeemer.basin()),    address(groveBasin));
     }
 
@@ -64,18 +64,18 @@ contract BUIDLTokenRedeemerForkTest_InitiateRedeem is BUIDLTokenRedeemerForkTest
 
     function test_initiateRedeem() public {
         uint256 depositAmount = 10_000e6;
-        _deposit(Ethereum.BUIDLI, makeAddr("lp"), depositAmount);
+        _deposit(Ethereum.BUIDL, makeAddr("lp"), depositAmount);
 
         uint256 redeemAmount = 1_000e6;
-        uint256 redemptionAddrBefore = IERC20(Ethereum.BUIDLI).balanceOf(Ethereum.BUIDLI_REDEEM);
+        uint256 redemptionAddrBefore = IERC20(Ethereum.BUIDL).balanceOf(Ethereum.BUIDL_REDEEM);
 
         vm.prank(owner);
         groveBasin.initiateRedeem(address(redeemer), redeemAmount);
 
-        assertEq(IERC20(Ethereum.BUIDLI).balanceOf(address(groveBasin)), depositAmount - redeemAmount);
-        assertEq(IERC20(Ethereum.BUIDLI).balanceOf(address(redeemer)),   0);
+        assertEq(IERC20(Ethereum.BUIDL).balanceOf(address(groveBasin)), depositAmount - redeemAmount);
+        assertEq(IERC20(Ethereum.BUIDL).balanceOf(address(redeemer)),   0);
         assertEq(
-            IERC20(Ethereum.BUIDLI).balanceOf(Ethereum.BUIDLI_REDEEM),
+            IERC20(Ethereum.BUIDL).balanceOf(Ethereum.BUIDL_REDEEM),
             redemptionAddrBefore + redeemAmount
         );
         assertEq(groveBasin.pendingCreditTokenBalance(), redeemAmount);
@@ -83,7 +83,7 @@ contract BUIDLTokenRedeemerForkTest_InitiateRedeem is BUIDLTokenRedeemerForkTest
 
     function test_initiateRedeem_emitsEvent() public {
         uint256 depositAmount = 10_000e6;
-        _deposit(Ethereum.BUIDLI, makeAddr("lp"), depositAmount);
+        _deposit(Ethereum.BUIDL, makeAddr("lp"), depositAmount);
 
         uint256 redeemAmount = 1_000e6;
 
@@ -104,7 +104,7 @@ contract BUIDLTokenRedeemerForkTest_CompleteRedeem is BUIDLTokenRedeemerForkTest
 
     function test_completeRedeem() public {
         uint256 depositAmount = 10_000e6;
-        _deposit(Ethereum.BUIDLI, makeAddr("lp"), depositAmount);
+        _deposit(Ethereum.BUIDL, makeAddr("lp"), depositAmount);
 
         uint256 redeemAmount = 1_000e6;
 
@@ -129,7 +129,7 @@ contract BUIDLTokenRedeemerForkTest_CompleteRedeem is BUIDLTokenRedeemerForkTest
 
     function test_completeRedeem_partialFill() public {
         uint256 depositAmount = 10_000e6;
-        _deposit(Ethereum.BUIDLI, makeAddr("lp"), depositAmount);
+        _deposit(Ethereum.BUIDL, makeAddr("lp"), depositAmount);
 
         uint256 redeemAmount   = 1_000e6;
         uint256 settledAmount  = 999e6;  // Slightly less than redeemed
@@ -154,7 +154,7 @@ contract BUIDLTokenRedeemerForkTest_CompleteRedeem is BUIDLTokenRedeemerForkTest
 
     function test_completeRedeem_emitsEvent() public {
         uint256 depositAmount = 10_000e6;
-        _deposit(Ethereum.BUIDLI, makeAddr("lp"), depositAmount);
+        _deposit(Ethereum.BUIDL, makeAddr("lp"), depositAmount);
 
         uint256 redeemAmount = 1_000e6;
 
@@ -180,7 +180,7 @@ contract BUIDLTokenRedeemerForkTest_FullFlow is BUIDLTokenRedeemerForkTestBase {
 
     function test_fullFlow_initiateAndComplete() public {
         uint256 depositAmount = 10_000e6;
-        _deposit(Ethereum.BUIDLI, makeAddr("lp"), depositAmount);
+        _deposit(Ethereum.BUIDL, makeAddr("lp"), depositAmount);
 
         uint256 redeemAmount = 2_000e6;
 
@@ -189,7 +189,7 @@ contract BUIDLTokenRedeemerForkTest_FullFlow is BUIDLTokenRedeemerForkTestBase {
         bytes32 requestId = groveBasin.initiateRedeem(address(redeemer), redeemAmount);
 
         assertEq(groveBasin.pendingCreditTokenBalance(), redeemAmount);
-        assertEq(IERC20(Ethereum.BUIDLI).balanceOf(address(groveBasin)), depositAmount - redeemAmount);
+        assertEq(IERC20(Ethereum.BUIDL).balanceOf(address(groveBasin)), depositAmount - redeemAmount);
 
         // Simulate settlement
         deal(Ethereum.USDC, address(redeemer), redeemAmount);
@@ -209,7 +209,7 @@ contract BUIDLTokenRedeemerForkTest_FullFlow is BUIDLTokenRedeemerForkTestBase {
 
     function test_fullFlow_multipleRedemptions() public {
         uint256 depositAmount = 10_000e6;
-        _deposit(Ethereum.BUIDLI, makeAddr("lp"), depositAmount);
+        _deposit(Ethereum.BUIDL, makeAddr("lp"), depositAmount);
 
         // First redemption
         vm.prank(owner);
