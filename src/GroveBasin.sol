@@ -34,6 +34,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
     bytes32 public constant override REDEEMER_ROLE           = keccak256("REDEEMER_ROLE");
     bytes32 public constant override REDEEMER_CONTRACT_ROLE  = keccak256("REDEEMER_CONTRACT_ROLE");
 
+    /// @dev Mapping of function selectors to pause state. bytes4(0) is reserved for global pause.
+    mapping(bytes4 => bool) public override paused;
+
     uint256 internal immutable _swapTokenPrecision;
     uint256 internal immutable _collateralTokenPrecision;
     uint256 internal immutable _creditTokenPrecision;
@@ -51,12 +54,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
     address public override pocket;
 
     bool public override creditTokenDepositsDisabled;
-    bool public override pausedSwapToCredit;
-    bool public override pausedCreditToSwap;
-    bool public override pausedCollateralToCredit;
-    bool public override pausedCreditToCollateral;
-    bool public override pausedDeposits;
-    bool public override pausedInitiateRedeem;
 
     uint256 public override stalenessThreshold;
     uint256 public override totalShares;
@@ -77,6 +74,12 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     mapping(address user       => uint256 shares)        public override shares;
     mapping(bytes32 requestId  => RedeemRequest request)  public override redeemRequests;
+
+    /// @dev Modifier to check if the function is paused. Checks both global pause (bytes4(0)) and function-specific pause.
+    modifier whenNotPaused() {
+        if (paused[bytes4(0)] || paused[msg.sig]) revert Paused();
+        _;
+    }
 
     constructor(
         address owner_,
@@ -323,7 +326,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /**********************************************************************************************/
 
     /// @inheritdoc IGroveBasin
-    function initiateRedeem(address redeemer, uint256 creditTokenAmount) external override onlyRole(REDEEMER_ROLE) returns (bytes32 redeemRequestId) {
+    function initiateRedeem(address redeemer, uint256 creditTokenAmount) external override whenNotPaused onlyRole(REDEEMER_ROLE) returns (bytes32 redeemRequestId) {
         return _initiateRedeem(redeemer, creditTokenAmount);
     }
 
@@ -357,18 +360,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     /// @inheritdoc IGroveBasin
-    function setPaused(bytes32 action, bool paused)
-        external override onlyRole(MANAGER_ROLE)
-    {
-        if      (action == "swapToCredit")        pausedSwapToCredit        = paused;
-        else if (action == "creditToSwap")        pausedCreditToSwap        = paused;
-        else if (action == "collateralToCredit")  pausedCollateralToCredit  = paused;
-        else if (action == "creditToCollateral")  pausedCreditToCollateral  = paused;
-        else if (action == "deposits")            pausedDeposits            = paused;
-        else if (action == "initiateRedeem")      pausedInitiateRedeem      = paused;
-        else                                      revert InvalidAction();
-
-        emit PausedSet(action, paused);
+    function setPaused(bytes4 sig, bool state) external override onlyRole(MANAGER_ROLE) {
+        paused[sig] = state;
+        emit PausedSet(sig, state);
     }
 
     /// @inheritdoc IGroveBasin
@@ -412,12 +406,10 @@ contract GroveBasin is IGroveBasin, AccessControl {
         address receiver,
         uint256 referralCode
     )
-        external override returns (uint256 amountOut)
+        external override whenNotPaused returns (uint256 amountOut)
     {
         if (amountIn == 0)          revert ZeroAmountIn();
         if (receiver == address(0)) revert ZeroReceiver();
-
-        _checkSwapNotPaused(assetIn, assetOut);
 
         if (_getAssetValue(assetIn, amountIn, false) > maxSwapSize) revert SwapSizeExceeded();
 
@@ -446,12 +438,10 @@ contract GroveBasin is IGroveBasin, AccessControl {
         address receiver,
         uint256 referralCode
     )
-        external override returns (uint256 amountIn)
+        external override whenNotPaused returns (uint256 amountIn)
     {
         if (amountOut == 0)         revert ZeroAmountOut();
         if (receiver == address(0)) revert ZeroReceiver();
-
-        _checkSwapNotPaused(assetIn, assetOut);
 
         uint256 fee = previewSwapExactOutFee(assetOut, amountOut);
 
@@ -495,9 +485,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     /// @inheritdoc IGroveBasin
     function deposit(address asset, address receiver, uint256 assetsToDeposit)
-        external override returns (uint256 newShares)
+        external override whenNotPaused returns (uint256 newShares)
     {
-        if (pausedDeposits)                  revert DepositsPaused();
         if (assetsToDeposit == 0)            revert ZeroAmount();
         if (msg.sender != liquidityProvider) revert NotLiquidityProvider();
 
@@ -953,19 +942,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
         return pocket != address(this);
     }
 
-    /// @dev Reverts if the swap direction from `assetIn` to `assetOut` is paused.
-    function _checkSwapNotPaused(address assetIn, address assetOut) internal view {
-        if (assetIn == swapToken && assetOut == creditToken) {
-            if (pausedSwapToCredit) revert RoutePaused();
-        } else if (assetIn == creditToken && assetOut == swapToken) {
-            if (pausedCreditToSwap) revert RoutePaused();
-        } else if (assetIn == collateralToken && assetOut == creditToken) {
-            if (pausedCollateralToCredit) revert RoutePaused();
-        } else if (assetIn == creditToken && assetOut == collateralToken) {
-            if (pausedCreditToCollateral) revert RoutePaused();
-        }
-    }
-
     /// @dev Reverts if `asset` is not one of the three supported tokens.
     function _requireValidAsset(address asset) internal view {
         if (asset != swapToken && asset != collateralToken && asset != creditToken) revert InvalidAsset();
@@ -992,7 +968,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     /// @dev Approves and sends credit tokens to the redeemer to initiate an async redemption.
     function _initiateRedeem(address redeemer, uint256 creditTokenAmount) internal returns (bytes32 redeemRequestId) {
-        if (pausedInitiateRedeem)                       revert InitiateRedeemPaused();
         if (!hasRole(REDEEMER_CONTRACT_ROLE, redeemer)) revert InvalidRedeemer();
 
         uint256 collateralTokenAmount = _convertCreditTokenToCollateral(creditTokenAmount, false);
