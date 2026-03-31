@@ -31,6 +31,8 @@ contract SwapperHandler is HandlerBase {
 
     // Fee tracking
     uint256 public totalFeesAccrued;
+    mapping(address user => uint256) public feeValueExtracted;
+    uint256 public totalFeeValueExtracted;
 
     constructor(
         GroveBasin groveBasin_,
@@ -170,11 +172,12 @@ contract SwapperHandler is HandlerBase {
         // 5. Perform action-specific assertions
 
         // Rounding because of USDC precision, the conversion rate of a
-        // user's position can fluctuate by up to 2e12 per 1e18 shares
+        // user's position can fluctuate by up to 2e12 per 1e18 shares.
+        // Fee share minting dilutes existing holders proportionally.
         assertApproxEqAbs(
             groveBasin.convertToAssetValue(1e18),
             startingConversion,
-            3e12,
+            3e12 + _getFeeDilutionTolerance(1e18),
             "SwapperHandler/swapExactIn/conversion-rate-change"
         );
 
@@ -182,31 +185,34 @@ contract SwapperHandler is HandlerBase {
         assertApproxEqAbs(
             groveBasin.convertToAssetValue(1_000_000e18),
             startingConversionMillion,
-            3_000_000e12, // 2e18 of value
+            3_000_000e12 + _getFeeDilutionTolerance(1_000_000e18),
             "SwapperHandler/swapExactIn/conversion-rate-change-million"
         );
 
         // Rounding is always in favour of the protocol
+        // Fee share minting can cause dilution proportional to fee rate
         assertGe(
-            groveBasin.convertToAssetValue(1_000_000e18),
+            groveBasin.convertToAssetValue(1_000_000e18) + _getFeeDilutionTolerance(1_000_000e18),
             startingConversionMillion,
             "SwapperHandler/swapExactIn/conversion-rate-million-decrease"
         );
 
         // Disregard this assertion if the LP has less than a dollar of value
         if (startingConversionLp0 > 1e18) {
-            // Position values can fluctuate by up to 0.00000002% on swaps
-            assertApproxEqRel(
+            uint256 feeDilutionLp0 = _getFeeDilutionTolerance(groveBasin.shares(lp0));
+            // Position values can fluctuate by up to 0.00000002% on swaps plus fee dilution
+            assertApproxEqAbs(
                 groveBasin.convertToAssetValue(groveBasin.shares(lp0)),
                 startingConversionLp0,
-                0.000002e18,
+                startingConversionLp0 * 0.000002e18 / 1e18 + feeDilutionLp0 + 1,
                 "SwapperHandler/swapExactIn/conversion-rate-change-lp"
             );
         }
 
-        // Rounding is always in favour of the user
+        // Rounding is always in favour of the user, fee dilution can decrease LP value
         assertGe(
-            groveBasin.convertToAssetValue(groveBasin.shares(lp0)),
+            groveBasin.convertToAssetValue(groveBasin.shares(lp0))
+                + _getFeeDilutionTolerance(groveBasin.shares(lp0)),
             startingConversionLp0,
             "SwapperHandler/swapExactIn/conversion-rate-lp-decrease"
         );
@@ -233,11 +239,18 @@ contract SwapperHandler is HandlerBase {
 
         assertApproxEqAbs(
             valueIn,
-            valueOut, 1e12 + rateIntroducedRounding * 1e12,
+            valueOut, 1e12 + rateIntroducedRounding * 1e12 + _getFeeTolerance(valueIn),
             "SwapperHandler/swapExactIn/value-mismatch"
         );
 
         assertGe(valueIn, valueOut, "SwapperHandler/swapExactIn/value-out-greater-than-in");
+
+        // Track fee value extracted from this swap (valueIn - valueOut includes fee + rounding)
+        if (valueIn > valueOut) {
+            uint256 feeAndRounding = valueIn - valueOut;
+            feeValueExtracted[swapper] += feeAndRounding;
+            totalFeeValueExtracted     += feeAndRounding;
+        }
 
         // Track fee accrual if fees are enabled
         _trackFeeAccrual(startingValue);
@@ -334,11 +347,12 @@ contract SwapperHandler is HandlerBase {
         // 5. Perform action-specific assertions
 
         // Rounding because of USDC precision, the conversion rate of a
-        // user's position can fluctuate by up to 2e12 per 1e18 shares
+        // user's position can fluctuate by up to 2e12 per 1e18 shares.
+        // Fee share minting dilutes existing holders proportionally.
         assertApproxEqAbs(
             groveBasin.convertToAssetValue(1e18),
             startingConversion,
-            3e12,
+            3e12 + _getFeeDilutionTolerance(1e18),
             "SwapperHandler/swapExactOut/conversion-rate-change"
         );
 
@@ -346,31 +360,34 @@ contract SwapperHandler is HandlerBase {
         assertApproxEqAbs(
             groveBasin.convertToAssetValue(1_000_000e18),
             startingConversionMillion,
-            3_000_000e12, // 2e18 of value
+            3_000_000e12 + _getFeeDilutionTolerance(1_000_000e18),
             "SwapperHandler/swapExactOut/conversion-rate-change-million"
         );
 
         // Rounding is always in favour of the protocol
+        // Fee share minting can cause dilution proportional to fee rate
         assertGe(
-            groveBasin.convertToAssetValue(1_000_000e18),
+            groveBasin.convertToAssetValue(1_000_000e18) + _getFeeDilutionTolerance(1_000_000e18),
             startingConversionMillion,
             "SwapperHandler/swapExactOut/conversion-rate-million-decrease"
         );
 
         // Disregard this assertion if the LP has less than a dollar of value
         if (startingConversionLp0 > 1e18) {
-            // Position values can fluctuate by up to 0.00000003% on swaps
-            assertApproxEqRel(
+            uint256 feeDilutionLp0 = _getFeeDilutionTolerance(groveBasin.shares(lp0));
+            // Position values can fluctuate by up to 0.00000003% on swaps plus fee dilution
+            assertApproxEqAbs(
                 groveBasin.convertToAssetValue(groveBasin.shares(lp0)),
                 startingConversionLp0,
-                0.000003e18,
+                startingConversionLp0 * 0.000003e18 / 1e18 + feeDilutionLp0 + 1,
                 "SwapperHandler/swapExactOut/conversion-rate-change-lp"
             );
         }
 
-        // Rounding is always in favour of the user
+        // Rounding is always in favour of the user, fee dilution can decrease LP value
         assertGe(
-            groveBasin.convertToAssetValue(groveBasin.shares(lp0)),
+            groveBasin.convertToAssetValue(groveBasin.shares(lp0))
+                + _getFeeDilutionTolerance(groveBasin.shares(lp0)),
             startingConversionLp0,
             "SwapperHandler/swapExactOut/conversion-rate-lp-decrease"
         );
@@ -397,11 +414,18 @@ contract SwapperHandler is HandlerBase {
 
         assertApproxEqAbs(
             valueIn,
-            valueOut, 1e12 + rateIntroducedRounding * 1e12,
+            valueOut, 1e12 + rateIntroducedRounding * 1e12 + _getFeeTolerance(valueIn),
             "SwapperHandler/swapExactOut/value-mismatch"
         );
 
         assertGe(valueIn, valueOut, "SwapperHandler/swapExactOut/value-out-greater-than-in");
+
+        // Track fee value extracted from this swap (valueIn - valueOut includes fee + rounding)
+        if (valueIn > valueOut) {
+            uint256 feeAndRounding = valueIn - valueOut;
+            feeValueExtracted[swapper] += feeAndRounding;
+            totalFeeValueExtracted     += feeAndRounding;
+        }
 
         // Track fee accrual if fees are enabled
         _trackFeeAccrual(startingValue);
@@ -428,6 +452,23 @@ contract SwapperHandler is HandlerBase {
                 "SwapperHandler/fees-should-increase-value"
             );
         }
+    }
+
+    function _getFeeTolerance(uint256 valueIn) internal view returns (uint256) {
+        uint256 pFee = groveBasin.purchaseFee();
+        uint256 rFee = groveBasin.redemptionFee();
+        uint256 maxFee = pFee > rFee ? pFee : rFee;
+        return maxFee > 0 ? valueIn * maxFee / 10000 : 0;
+    }
+
+    function _getFeeDilutionTolerance(uint256 numShares) internal view returns (uint256) {
+        if (groveBasin.feeClaimer() == address(0)) return 0;
+        uint256 pFee = groveBasin.purchaseFee();
+        uint256 rFee = groveBasin.redemptionFee();
+        uint256 maxFee = pFee > rFee ? pFee : rFee;
+        if (maxFee == 0) return 0;
+        uint256 shareValue = groveBasin.convertToAssetValue(numShares);
+        return shareValue * maxFee / 10000 + 1;
     }
 
     function _getAssetValue(address asset, uint256 amount) internal view returns (uint256) {
