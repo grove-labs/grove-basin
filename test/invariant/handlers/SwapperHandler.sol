@@ -29,6 +29,9 @@ contract SwapperHandler is HandlerBase {
     uint256 public swapCount;
     uint256 public zeroBalanceCount;
 
+    // Fee tracking
+    uint256 public totalFeesAccrued;
+
     constructor(
         GroveBasin groveBasin_,
         MockERC20  swapToken,
@@ -209,14 +212,16 @@ contract SwapperHandler is HandlerBase {
         );
 
         // GroveBasin value can fluctuate by up to 0.00000002% on swaps because of USDC rounding
+        // When fees are enabled, value increases by the fee amount, so we only check for decreases
+        // and allow for a wider tolerance to account for fees
         assertApproxEqRel(
             groveBasin.totalAssets(),
             startingValue,
-            0.000002e18,
+            0.06e18,  // 6% tolerance to account for max 5% fee plus rounding
             "SwapperHandler/swapExactIn/groveBasin-total-value-change"
         );
 
-        // Rounding is always in favour of the protocol
+        // Rounding is always in favour of the protocol, and fees increase value
         assertGe(
             groveBasin.totalAssets(),
             startingValue,
@@ -233,6 +238,9 @@ contract SwapperHandler is HandlerBase {
         );
 
         assertGe(valueIn, valueOut, "SwapperHandler/swapExactIn/value-out-greater-than-in");
+
+        // Track fee accrual if fees are enabled
+        _trackFeeAccrual(startingValue);
 
         // 6. Update metrics tracking state
         swapperSwapCount[swapper]++;
@@ -368,14 +376,16 @@ contract SwapperHandler is HandlerBase {
         );
 
         // GroveBasin value can fluctuate by up to 0.00000003% on swaps because of USDC rounding
+        // When fees are enabled, value increases by the fee amount, so we only check for decreases
+        // and allow for a wider tolerance to account for fees
         assertApproxEqRel(
             groveBasin.totalAssets(),
             startingValue,
-            0.000003e18,
+            0.06e18,  // 6% tolerance to account for max 5% fee plus rounding
             "SwapperHandler/swapExactOut/groveBasin-total-value-change"
         );
 
-        // Rounding is always in favour of the protocol
+        // Rounding is always in favour of the protocol, and fees increase value
         assertGe(
             groveBasin.totalAssets(),
             startingValue,
@@ -393,9 +403,31 @@ contract SwapperHandler is HandlerBase {
 
         assertGe(valueIn, valueOut, "SwapperHandler/swapExactOut/value-out-greater-than-in");
 
+        // Track fee accrual if fees are enabled
+        _trackFeeAccrual(startingValue);
+
         // 6. Update metrics tracking state
         swapperSwapCount[swapper]++;
         swapCount++;
+    }
+
+    // Helper function to track fee accrual and avoid stack too deep
+    function _trackFeeAccrual(uint256 startingValue) internal {
+        address feeClaimer = groveBasin.feeClaimer();
+        if (feeClaimer != address(0)) {
+            uint256 currentShares = groveBasin.shares(feeClaimer);
+            uint256 feeValue = groveBasin.convertToAssetValue(currentShares);
+
+            // Update total fees accrued (approximate, accounts for all fees up to now)
+            totalFeesAccrued = feeValue;
+
+            // Assert that fees increase pool value (critical invariant from feedback)
+            assertGe(
+                groveBasin.totalAssets(),
+                startingValue,
+                "SwapperHandler/fees-should-increase-value"
+            );
+        }
     }
 
     function _getAssetValue(address asset, uint256 amount) internal view returns (uint256) {
