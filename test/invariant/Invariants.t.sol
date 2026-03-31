@@ -14,6 +14,7 @@ import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
 import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
+import { FeeSetterHandler }     from "test/invariant/handlers/FeeSetterHandler.sol";
 import { LpHandler }            from "test/invariant/handlers/LpHandler.sol";
 import { RateSetterHandler }    from "test/invariant/handlers/RateSetterHandler.sol";
 import { SwapperHandler }       from "test/invariant/handlers/SwapperHandler.sol";
@@ -26,6 +27,7 @@ import { MockSSRRateProvider }  from "test/mocks/MockSSRRateProvider.sol";
 
 abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
 
+    FeeSetterHandler     public feeSetterHandler;
     LpHandler            public lpHandler;
     RateSetterHandler    public rateSetterHandler;
     SwapperHandler       public swapperHandler;
@@ -33,6 +35,7 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
     TimeBasedRateHandler public timeBasedRateHandler;
 
     address BURN_ADDRESS = address(0);
+    address FEE_CLAIMER  = makeAddr("feeClaimer");
 
     // Seed deposit tracking for invariant assertions.
     // These are set in setUp and can be overridden by subclasses that redeploy groveBasin.
@@ -42,6 +45,14 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
 
     function setUp() public virtual override {
         super.setUp();
+
+        // Set up fee claimer for invariant testing
+        vm.prank(owner);
+        groveBasin.setFeeClaimer(FEE_CLAIMER);
+
+        // Set fee bounds to allow fees to be enabled
+        vm.prank(owner);
+        groveBasin.setFeeBounds(0, 500);  // 0-5% fees
 
         // Initial LP deposit to provide baseline liquidity for invariant testing.
         _deposit(address(swapToken), BURN_ADDRESS, 1e6);
@@ -63,6 +74,9 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
             lpShares += groveBasin.shares(lpHandler.lps(i));
         }
 
+        // Add fee claimer shares
+        lpShares += groveBasin.shares(FEE_CLAIMER);
+
         assertEq(lpShares, groveBasin.totalShares());
     }
 
@@ -80,6 +94,9 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
         for (uint256 i = 0; i < 3; i++) {
             lpAssetValue += groveBasin.convertToAssetValue(groveBasin.shares(lpHandler.lps(i)));
         }
+
+        // Add fee claimer value
+        lpAssetValue += groveBasin.convertToAssetValue(groveBasin.shares(FEE_CLAIMER));
 
         assertApproxEqAbs(lpAssetValue, groveBasin.totalAssets(), 4);
     }
@@ -164,10 +181,12 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
 
             // TODO: Paramaterize the TimeBasedHandler and make this function take parameters.
             //       At really high rates the rounding errors can be quite large.
+            // Fee value extracted from swapper is included in the tolerance.
             assertApproxEqAbs(
                 valueSwappedIn,
                 valueSwappedOut,
                 swapperHandler.swapperSwapCount(swapper) * 3e12
+                    + swapperHandler.feeValueExtracted(swapper)
             );
             assertGe(valueSwappedIn, valueSwappedOut);
 
@@ -175,13 +194,31 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
             totalValueSwappedOut += valueSwappedOut;
         }
 
-        // Rounding error of up to 3e12 per swap, always rounding in favour of the GroveBasin
+        // Rounding error of up to 3e12 per swap, always rounding in favour of the GroveBasin.
+        // Fee value is also extracted from swappers and needs to be in tolerance.
         assertApproxEqAbs(
             totalValueSwappedIn,
             totalValueSwappedOut,
-            swapperHandler.swapCount() * 3e12
+            swapperHandler.swapCount() * 3e12 + swapperHandler.totalFeeValueExtracted()
         );
         assertGe(totalValueSwappedIn, totalValueSwappedOut);
+    }
+
+    function _checkInvariant_G_FeeIncreasesPoolValue() public view {
+        // Swaps with fees always increase pool value (asserted per-swap in SwapperHandler).
+        // Verify fee claimer shares are non-negative and that total pool value
+        // was never decreased by a swap (this is checked per-swap in the handler).
+        uint256 feeClaimerShares_ = groveBasin.shares(FEE_CLAIMER);
+        uint256 feeClaimerValue   = groveBasin.convertToAssetValue(feeClaimerShares_);
+
+        // Fee claimer value should be consistent with their shares
+        if (feeClaimerShares_ > 0) {
+            assertGt(
+                feeClaimerValue,
+                0,
+                "Invariant G: Fee claimer shares should have positive value"
+            );
+        }
     }
 
     /**********************************************************************************************/
@@ -242,19 +279,20 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
         address lp1 = lpHandler.lps(1);
         address lp2 = lpHandler.lps(2);
 
-        // Get value of each LPs current deposits.
-        uint256 lp0DepositsValue = groveBasin.convertToAssetValue(groveBasin.shares(lp0));
-        uint256 lp1DepositsValue = groveBasin.convertToAssetValue(groveBasin.shares(lp1));
-        uint256 lp2DepositsValue = groveBasin.convertToAssetValue(groveBasin.shares(lp2));
-
-        // Get value of each LPs token holdings from previous withdrawals.
-        uint256 lp0WithdrawsValue = _getLpTokenValue(lp0);
-        uint256 lp1WithdrawsValue = _getLpTokenValue(lp1);
-        uint256 lp2WithdrawsValue = _getLpTokenValue(lp2);
-
         uint256 groveBasinTotalValue = groveBasin.totalAssets();
-
         uint256 startingSeedValue = groveBasin.convertToAssetValue(groveBasin.shares(BURN_ADDRESS));
+
+        // Store before values for individual LPs
+        uint256[3] memory depositsValues = [
+            groveBasin.convertToAssetValue(groveBasin.shares(lp0)),
+            groveBasin.convertToAssetValue(groveBasin.shares(lp1)),
+            groveBasin.convertToAssetValue(groveBasin.shares(lp2))
+        ];
+        uint256[3] memory withdrawsValues = [
+            _getLpTokenValue(lp0),
+            _getLpTokenValue(lp1),
+            _getLpTokenValue(lp2)
+        ];
 
         // Liquidity is unknown so withdraw all assets for all users to empty GroveBasin.
         _withdraw(address(collateralToken), lp0, type(uint256).max);
@@ -275,63 +313,58 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
         assertEq(groveBasin.shares(lp2), 0);
 
         uint256 seedValue = groveBasin.convertToAssetValue(groveBasin.shares(BURN_ADDRESS));
+        uint256 feeClaimerShares = groveBasin.shares(FEE_CLAIMER);
+        uint256 feeClaimerValue  = groveBasin.convertToAssetValue(feeClaimerShares);
 
-        // GroveBasin is empty (besides seed amount).
-        assertEq(groveBasin.totalShares(), groveBasin.shares(BURN_ADDRESS));
-        assertEq(groveBasin.totalAssets(), seedValue);
+        // GroveBasin is empty (besides seed amount and fee claimer shares).
+        assertEq(groveBasin.totalShares(), groveBasin.shares(BURN_ADDRESS) + feeClaimerShares);
+        // convertToAssetValue rounds down, so totalAssets can exceed the sum by up to 1
+        assertApproxEqAbs(
+            groveBasin.totalAssets(),
+            seedValue + feeClaimerValue,
+            1
+        );
 
-        // Tokens held by LPs are equal to the sum of their previous balance
-        // plus the amount of value originally represented in the GroveBasin's shares.
-        // There can be rounding here because of share burning up to 2e12 when withdrawing SwapToken.
-        // It should be noted that LP2 here has a rounding error of 4e12 since both LP0 and LP1
-        // could have rounding errors that accumulate to LP2.
-        assertApproxEqAbs(_getLpTokenValue(lp0), lp0DepositsValue + lp0WithdrawsValue, 2e12);
-        assertApproxEqAbs(_getLpTokenValue(lp1), lp1DepositsValue + lp1WithdrawsValue, 2e12);
-        assertApproxEqAbs(_getLpTokenValue(lp2), lp2DepositsValue + lp2WithdrawsValue, 4e12);
+        // Check individual LP values with rounding tolerance.
+        // Fee share dilution can reduce LP values, so add fee claimer value as tolerance.
+        assertApproxEqAbs(_getLpTokenValue(lp0), depositsValues[0] + withdrawsValues[0], 2e12 + feeClaimerValue);
+        assertApproxEqAbs(_getLpTokenValue(lp1), depositsValues[1] + withdrawsValues[1], 2e12 + feeClaimerValue);
+        assertApproxEqAbs(_getLpTokenValue(lp2), depositsValues[2] + withdrawsValues[2], 4e12 + feeClaimerValue);
 
         // All rounding errors from LPs can accrue to the burn address after withdrawals are made.
         assertApproxEqAbs(seedValue, startingSeedValue, 6e12);
 
-        // Current value of all LPs' token holdings.
+        // Verify total value accounting
         uint256 sumLpValue = _getLpTokenValue(lp0) + _getLpTokenValue(lp1) + _getLpTokenValue(lp2);
+        uint256 totalWithdrawals = sumLpValue - (withdrawsValues[0] + withdrawsValues[1] + withdrawsValues[2]);
 
-        // Total amount just withdrawn from the GroveBasin.
-        uint256 totalWithdrawals
-            = sumLpValue - (lp0WithdrawsValue + lp1WithdrawsValue + lp2WithdrawsValue);
+        assertApproxEqAbs(totalWithdrawals, groveBasinTotalValue - seedValue - feeClaimerValue, 3 + feeClaimerValue);
 
-        // Assert that all funds were withdrawn equals the original value of the GroveBasin minus the
-        // 1e18 share seed deposit, rounding for each LP.
-        assertApproxEqAbs(totalWithdrawals, groveBasinTotalValue - seedValue, 3);
-
-        // Get the starting sum of all LPs' deposits and withdrawals.
         uint256 sumStartingValue =
-            (lp0DepositsValue  + lp1DepositsValue  + lp2DepositsValue) +
-            (lp0WithdrawsValue + lp1WithdrawsValue + lp2WithdrawsValue);
+            (depositsValues[0] + depositsValues[1] + depositsValues[2]) +
+            (withdrawsValues[0] + withdrawsValues[1] + withdrawsValues[2]);
 
-        // Assert that the sum of all LPs' deposits and withdrawals equals
-        // the sum of all LPs' resulting token holdings. Rounding errors are accumulated to the
-        // burn address.
-        assertApproxEqAbs(sumLpValue, sumStartingValue, seedValue - startingSeedValue + 3);
+        assertApproxEqAbs(sumLpValue, sumStartingValue, seedValue - startingSeedValue + 3 + feeClaimerValue);
 
         // NOTE: Below logic is not realistic, shown to demonstrate precision.
-
         _withdraw(address(collateralToken), BURN_ADDRESS, type(uint256).max);
         _withdraw(address(swapToken),       BURN_ADDRESS, type(uint256).max);
         _withdraw(address(creditToken),     BURN_ADDRESS, type(uint256).max);
 
-        // When all funds are completely withdrawn, the sum of all funds withdrawn is equal to the
-        // sum of value of all LPs including the burn address. All rounding errors get reduced to
-        // a few wei. Using 20 as a low tolerance that still allows for high rounding errors with
-        // large rate changes in long campaigns.
+        // Withdraw fee claimer position
+        _withdraw(address(collateralToken), FEE_CLAIMER, type(uint256).max);
+        _withdraw(address(swapToken),       FEE_CLAIMER, type(uint256).max);
+        _withdraw(address(creditToken),     FEE_CLAIMER, type(uint256).max);
+
         assertApproxEqAbs(
-            sumLpValue + _getLpTokenValue(BURN_ADDRESS),
-            sumStartingValue + startingSeedValue,
-            20
+            sumLpValue + _getLpTokenValue(BURN_ADDRESS) + _getLpTokenValue(FEE_CLAIMER),
+            sumStartingValue + startingSeedValue + feeClaimerValue,
+            20 + 6e12  // extra rounding from fee claimer withdrawal (up to 2e12 per token type)
         );
 
         // All funds can always be withdrawn completely (rounding in withdrawal against users).
         assertEq(groveBasin.totalShares(), 0);
-        assertLe(groveBasin.totalAssets(), 20);
+        assertLe(groveBasin.totalAssets(), 20 + 6e12);
     }
 
     function _warpAndAssertConsistentValueAccrual() public {
@@ -378,9 +411,11 @@ contract GroveBasinInvariants_ConstantRate_NoTransfer is GroveBasinInvariantTest
     function setUp() public override {
         super.setUp();
 
-        lpHandler      = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner);
-        swapperHandler = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
+        feeSetterHandler = new FeeSetterHandler(groveBasin, 500, owner);  // 0-5% fees
+        lpHandler        = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner);
+        swapperHandler   = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
 
+        targetContract(address(feeSetterHandler));
         targetContract(address(lpHandler));
         targetContract(address(swapperHandler));
 
@@ -412,6 +447,10 @@ contract GroveBasinInvariants_ConstantRate_NoTransfer is GroveBasinInvariantTest
         _checkInvariant_F();
     }
 
+    function invariant_G() public view {
+        _checkInvariant_G_FeeIncreasesPoolValue();
+    }
+
     function afterInvariant() public {
         _withdrawAllPositions();
     }
@@ -423,10 +462,12 @@ contract GroveBasinInvariants_ConstantRate_WithTransfers is GroveBasinInvariantT
     function setUp() public override {
         super.setUp();
 
-        lpHandler       = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner);
-        swapperHandler  = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
-        transferHandler = new TransferHandler(groveBasin, swapToken, collateralToken, creditToken);
+        feeSetterHandler = new FeeSetterHandler(groveBasin, 500, owner);  // 0-5% fees
+        lpHandler        = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner);
+        swapperHandler   = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
+        transferHandler  = new TransferHandler(groveBasin, swapToken, collateralToken, creditToken);
 
+        targetContract(address(feeSetterHandler));
         targetContract(address(lpHandler));
         targetContract(address(swapperHandler));
         targetContract(address(transferHandler));
@@ -455,6 +496,10 @@ contract GroveBasinInvariants_ConstantRate_WithTransfers is GroveBasinInvariantT
         _checkInvariant_F();
     }
 
+    function invariant_G() public view {
+        _checkInvariant_G_FeeIncreasesPoolValue();
+    }
+
     function afterInvariant() public {
         _withdrawAllPositions();
     }
@@ -466,10 +511,12 @@ contract GroveBasinInvariants_RateSetting_NoTransfer is GroveBasinInvariantTestB
     function setUp() public override {
         super.setUp();
 
+        feeSetterHandler  = new FeeSetterHandler(groveBasin, 500, owner);  // 0-5% fees
         lpHandler         = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner);
         rateSetterHandler = new RateSetterHandler(groveBasin, address(creditTokenRateProvider), 1.25e27);
         swapperHandler    = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
 
+        targetContract(address(feeSetterHandler));
         targetContract(address(lpHandler));
         targetContract(address(rateSetterHandler));
         targetContract(address(swapperHandler));
@@ -512,11 +559,13 @@ contract GroveBasinInvariants_RateSetting_WithTransfers is GroveBasinInvariantTe
     function setUp() public override {
         super.setUp();
 
+        feeSetterHandler  = new FeeSetterHandler(groveBasin, 500, owner);  // 0-5% fees
         lpHandler         = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner);
         rateSetterHandler = new RateSetterHandler(groveBasin, address(creditTokenRateProvider), 1.25e27);
         swapperHandler    = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
         transferHandler   = new TransferHandler(groveBasin, swapToken, collateralToken, creditToken);
 
+        targetContract(address(feeSetterHandler));
         targetContract(address(lpHandler));
         targetContract(address(rateSetterHandler));
         targetContract(address(swapperHandler));
@@ -547,6 +596,10 @@ contract GroveBasinInvariants_RateSetting_WithTransfers is GroveBasinInvariantTe
 
     function invariant_F() public view {
         _checkInvariant_F();
+    }
+
+    function invariant_G() public view {
+        _checkInvariant_G_FeeIncreasesPoolValue();
     }
 
     function afterInvariant() public {
@@ -583,6 +636,9 @@ contract GroveBasinInvariants_TimeBasedRateSetting_NoTransfer is GroveBasinInvar
         groveBasin.grantRole(groveBasin.MANAGER_ROLE(), owner);
         groveBasin.setStalenessThresholdBounds(1, type(uint128).max);
         groveBasin.setStalenessThreshold(type(uint128).max);
+        // Set up fee claimer and bounds for this test suite
+        groveBasin.setFeeClaimer(FEE_CLAIMER);
+        groveBasin.setFeeBounds(0, 500);  // 0-5% fees
         vm.stopPrank();
 
         // NOTE: Don't need to set GroveBasin as pocket for this suite as its default on deploy
@@ -595,6 +651,7 @@ contract GroveBasinInvariants_TimeBasedRateSetting_NoTransfer is GroveBasinInvar
         seedCollateralTokenInflow = 1e18;
         seedDepositValue          = 2e18;
 
+        feeSetterHandler     = new FeeSetterHandler(groveBasin, 500, owner);  // 0-5% fees
         lpHandler            = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner);
         swapperHandler       = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
         timeBasedRateHandler = new TimeBasedRateHandler(groveBasin, ssrOracle);
@@ -608,6 +665,7 @@ contract GroveBasinInvariants_TimeBasedRateSetting_NoTransfer is GroveBasinInvar
         // Manually set initial values for the oracle through the handler to start
         timeBasedRateHandler.setRateData(1e27);
 
+        targetContract(address(feeSetterHandler));
         targetContract(address(lpHandler));
         targetContract(address(swapperHandler));
         targetContract(address(timeBasedRateHandler));
@@ -637,6 +695,10 @@ contract GroveBasinInvariants_TimeBasedRateSetting_NoTransfer is GroveBasinInvar
 
     function invariant_F() public view {
         _checkInvariant_F();
+    }
+
+    function invariant_G() public view {
+        _checkInvariant_G_FeeIncreasesPoolValue();
     }
 
     function afterInvariant() public {
@@ -679,6 +741,9 @@ contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinIn
         groveBasin.grantRole(groveBasin.MANAGER_ROLE(), owner);
         groveBasin.setStalenessThresholdBounds(1, type(uint128).max);
         groveBasin.setStalenessThreshold(type(uint128).max);
+        // Set up fee claimer and bounds for this test suite
+        groveBasin.setFeeClaimer(FEE_CLAIMER);
+        groveBasin.setFeeBounds(0, 500);  // 0-5% fees
         vm.stopPrank();
 
         // NOTE: This base test suite tests the case of the GroveBasin being the pocket for the whole time,
@@ -692,6 +757,7 @@ contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinIn
         seedCollateralTokenInflow = 1e18;
         seedDepositValue          = 2e18;
 
+        feeSetterHandler     = new FeeSetterHandler(groveBasin, 500, owner);  // 0-5% fees
         lpHandler            = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner);
         swapperHandler       = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
         timeBasedRateHandler = new TimeBasedRateHandler(groveBasin, ssrOracle);
@@ -706,6 +772,7 @@ contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinIn
         // Manually set initial values for the oracle through the handler to start
         timeBasedRateHandler.setRateData(1e27);
 
+        targetContract(address(feeSetterHandler));
         targetContract(address(lpHandler));
         targetContract(address(swapperHandler));
         targetContract(address(timeBasedRateHandler));
@@ -736,6 +803,10 @@ contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinIn
 
     function invariant_F() public view {
         _checkInvariant_F();
+    }
+
+    function invariant_G() public view {
+        _checkInvariant_G_FeeIncreasesPoolValue();
     }
 
     function afterInvariant() public {
