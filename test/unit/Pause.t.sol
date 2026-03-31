@@ -41,76 +41,85 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
             )
         );
         vm.prank(nonManager);
-        groveBasin.setPaused("swapToCredit", true);
+        groveBasin.setPaused(groveBasin.swapExactIn.selector, true);
     }
 
-    function test_setPaused_invalidAction() public {
-        vm.expectRevert(IGroveBasin.InvalidAction.selector);
-        vm.prank(manager);
-        groveBasin.setPaused("invalidAction", true);
+    function test_setPaused_globalNotManager() public {
+        address nonManager = makeAddr("nonManager");
+
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                nonManager,
+                groveBasin.MANAGER_ROLE()
+            )
+        );
+        vm.prank(nonManager);
+        groveBasin.setPaused(bytes4(0), true);
     }
 
     /**********************************************************************************************/
     /*** setPaused flag tests                                                                   ***/
     /**********************************************************************************************/
 
-    function test_setPaused_swapToCredit() public {
-        assertEq(groveBasin.pausedSwapToCredit(), false);
+    function test_setPaused_swapExactIn() public {
+        bytes4 sig = groveBasin.swapExactIn.selector;
+        assertEq(groveBasin.paused(sig), false);
 
         vm.prank(manager);
-        groveBasin.setPaused("swapToCredit", true);
+        groveBasin.setPaused(sig, true);
 
-        assertEq(groveBasin.pausedSwapToCredit(), true);
+        assertEq(groveBasin.paused(sig), true);
 
         vm.prank(manager);
-        groveBasin.setPaused("swapToCredit", false);
+        groveBasin.setPaused(sig, false);
 
-        assertEq(groveBasin.pausedSwapToCredit(), false);
+        assertEq(groveBasin.paused(sig), false);
     }
 
-    function test_setPaused_creditToSwap() public {
-        assertEq(groveBasin.pausedCreditToSwap(), false);
+    function test_setPaused_swapExactOut() public {
+        bytes4 sig = groveBasin.swapExactOut.selector;
+        assertEq(groveBasin.paused(sig), false);
 
         vm.prank(manager);
-        groveBasin.setPaused("creditToSwap", true);
+        groveBasin.setPaused(sig, true);
 
-        assertEq(groveBasin.pausedCreditToSwap(), true);
+        assertEq(groveBasin.paused(sig), true);
     }
 
-    function test_setPaused_collateralToCredit() public {
-        assertEq(groveBasin.pausedCollateralToCredit(), false);
+    function test_setPaused_deposit() public {
+        bytes4 sig = groveBasin.deposit.selector;
+        assertEq(groveBasin.paused(sig), false);
 
         vm.prank(manager);
-        groveBasin.setPaused("collateralToCredit", true);
+        groveBasin.setPaused(sig, true);
 
-        assertEq(groveBasin.pausedCollateralToCredit(), true);
-    }
-
-    function test_setPaused_creditToCollateral() public {
-        assertEq(groveBasin.pausedCreditToCollateral(), false);
-
-        vm.prank(manager);
-        groveBasin.setPaused("creditToCollateral", true);
-
-        assertEq(groveBasin.pausedCreditToCollateral(), true);
-    }
-
-    function test_setPaused_deposits() public {
-        assertEq(groveBasin.pausedDeposits(), false);
-
-        vm.prank(manager);
-        groveBasin.setPaused("deposits", true);
-
-        assertEq(groveBasin.pausedDeposits(), true);
+        assertEq(groveBasin.paused(sig), true);
     }
 
     function test_setPaused_initiateRedeem() public {
-        assertEq(groveBasin.pausedInitiateRedeem(), false);
+        bytes4 sig = groveBasin.initiateRedeem.selector;
+        assertEq(groveBasin.paused(sig), false);
 
         vm.prank(manager);
-        groveBasin.setPaused("initiateRedeem", true);
+        groveBasin.setPaused(sig, true);
 
-        assertEq(groveBasin.pausedInitiateRedeem(), true);
+        assertEq(groveBasin.paused(sig), true);
+    }
+
+    function test_setPaused_global() public {
+        bytes4 globalSig = bytes4(0);
+        assertEq(groveBasin.paused(globalSig), false);
+
+        vm.prank(manager);
+        groveBasin.setPaused(globalSig, true);
+
+        assertEq(groveBasin.paused(globalSig), true);
+
+        vm.prank(manager);
+        groveBasin.setPaused(globalSig, false);
+
+        assertEq(groveBasin.paused(globalSig), false);
     }
 
     /**********************************************************************************************/
@@ -118,91 +127,73 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
     /**********************************************************************************************/
 
     function test_setPaused_event() public {
+        bytes4 sig = groveBasin.swapExactIn.selector;
+
         vm.expectEmit(true, false, false, true);
-        emit IGroveBasin.PausedSet("swapToCredit", true);
+        emit IGroveBasin.PausedSet(sig, true);
 
         vm.prank(manager);
-        groveBasin.setPaused("swapToCredit", true);
+        groveBasin.setPaused(sig, true);
+    }
+
+    function test_setPaused_globalEvent() public {
+        bytes4 globalSig = bytes4(0);
+
+        vm.expectEmit(true, false, false, true);
+        emit IGroveBasin.PausedSet(globalSig, true);
+
+        vm.prank(manager);
+        groveBasin.setPaused(globalSig, true);
     }
 
     /**********************************************************************************************/
     /*** Swap pause enforcement tests                                                           ***/
     /**********************************************************************************************/
 
-    function test_swapExactIn_pausedSwapToCredit() public {
+    function test_swapExactIn_paused() public {
         vm.prank(manager);
-        groveBasin.setPaused("swapToCredit", true);
+        groveBasin.setPaused(groveBasin.swapExactIn.selector, true);
 
-        vm.expectRevert(IGroveBasin.RoutePaused.selector);
+        vm.expectRevert(IGroveBasin.Paused.selector);
         groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, receiver, 0);
     }
 
-    function test_swapExactOut_pausedSwapToCredit() public {
+    function test_swapExactOut_paused() public {
         vm.prank(manager);
-        groveBasin.setPaused("swapToCredit", true);
+        groveBasin.setPaused(groveBasin.swapExactOut.selector, true);
 
-        vm.expectRevert(IGroveBasin.RoutePaused.selector);
+        vm.expectRevert(IGroveBasin.Paused.selector);
         groveBasin.swapExactOut(address(swapToken), address(creditToken), 80e18, type(uint256).max, receiver, 0);
     }
 
-    function test_swapExactIn_pausedCreditToSwap() public {
+    function test_swapExactIn_globalPaused() public {
         vm.prank(manager);
-        groveBasin.setPaused("creditToSwap", true);
+        groveBasin.setPaused(bytes4(0), true);
 
-        vm.expectRevert(IGroveBasin.RoutePaused.selector);
-        groveBasin.swapExactIn(address(creditToken), address(swapToken), 100e18, 0, receiver, 0);
+        vm.expectRevert(IGroveBasin.Paused.selector);
+        groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, receiver, 0);
     }
 
-    function test_swapExactOut_pausedCreditToSwap() public {
+    function test_swapExactOut_globalPaused() public {
         vm.prank(manager);
-        groveBasin.setPaused("creditToSwap", true);
+        groveBasin.setPaused(bytes4(0), true);
 
-        vm.expectRevert(IGroveBasin.RoutePaused.selector);
+        vm.expectRevert(IGroveBasin.Paused.selector);
         groveBasin.swapExactOut(address(creditToken), address(swapToken), 100e6, type(uint256).max, receiver, 0);
-    }
-
-    function test_swapExactIn_pausedCollateralToCredit() public {
-        vm.prank(manager);
-        groveBasin.setPaused("collateralToCredit", true);
-
-        vm.expectRevert(IGroveBasin.RoutePaused.selector);
-        groveBasin.swapExactIn(address(collateralToken), address(creditToken), 100e18, 0, receiver, 0);
-    }
-
-    function test_swapExactOut_pausedCollateralToCredit() public {
-        vm.prank(manager);
-        groveBasin.setPaused("collateralToCredit", true);
-
-        vm.expectRevert(IGroveBasin.RoutePaused.selector);
-        groveBasin.swapExactOut(address(collateralToken), address(creditToken), 80e18, type(uint256).max, receiver, 0);
-    }
-
-    function test_swapExactIn_pausedCreditToCollateral() public {
-        vm.prank(manager);
-        groveBasin.setPaused("creditToCollateral", true);
-
-        vm.expectRevert(IGroveBasin.RoutePaused.selector);
-        groveBasin.swapExactIn(address(creditToken), address(collateralToken), 100e18, 0, receiver, 0);
-    }
-
-    function test_swapExactOut_pausedCreditToCollateral() public {
-        vm.prank(manager);
-        groveBasin.setPaused("creditToCollateral", true);
-
-        vm.expectRevert(IGroveBasin.RoutePaused.selector);
-        groveBasin.swapExactOut(address(creditToken), address(collateralToken), 100e18, type(uint256).max, receiver, 0);
     }
 
     /**********************************************************************************************/
     /*** Swap unpaused success tests                                                            ***/
     /**********************************************************************************************/
 
-    function test_swapExactIn_swapToCreditUnpaused() public {
-        vm.prank(manager);
-        groveBasin.setPaused("swapToCredit", true);
+    function test_swapExactIn_unpaused() public {
+        bytes4 sig = groveBasin.swapExactIn.selector;
 
         vm.prank(manager);
-        groveBasin.setPaused("swapToCredit", false);
+        groveBasin.setPaused(sig, true);
+
+        vm.prank(manager);
+        groveBasin.setPaused(sig, false);
 
         swapToken.mint(swapper, 100e6);
         vm.startPrank(swapper);
@@ -217,7 +208,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
 
     function test_deposit_paused() public {
         vm.prank(manager);
-        groveBasin.setPaused("deposits", true);
+        groveBasin.setPaused(groveBasin.deposit.selector, true);
 
         address user = groveBasin.liquidityProvider();
 
@@ -225,17 +216,19 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         vm.startPrank(user);
         swapToken.approve(address(groveBasin), 100e6);
 
-        vm.expectRevert(IGroveBasin.DepositsPaused.selector);
+        vm.expectRevert(IGroveBasin.Paused.selector);
         groveBasin.deposit(address(swapToken), user, 100e6);
         vm.stopPrank();
     }
 
     function test_deposit_unpaused() public {
-        vm.prank(manager);
-        groveBasin.setPaused("deposits", true);
+        bytes4 sig = groveBasin.deposit.selector;
 
         vm.prank(manager);
-        groveBasin.setPaused("deposits", false);
+        groveBasin.setPaused(sig, true);
+
+        vm.prank(manager);
+        groveBasin.setPaused(sig, false);
 
         address user = groveBasin.liquidityProvider();
 
@@ -252,7 +245,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
 
     function test_initiateRedeem_paused() public {
         vm.prank(manager);
-        groveBasin.setPaused("initiateRedeem", true);
+        groveBasin.setPaused(groveBasin.initiateRedeem.selector, true);
 
         address redeemer = makeAddr("redeemer");
 
@@ -261,7 +254,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         groveBasin.grantRole(redeemerRole, redeemer);
 
         vm.prank(redeemer);
-        vm.expectRevert(IGroveBasin.InitiateRedeemPaused.selector);
+        vm.expectRevert(IGroveBasin.Paused.selector);
         groveBasin.initiateRedeem(makeAddr("redeemerContract"), 100e18);
     }
 

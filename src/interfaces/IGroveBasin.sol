@@ -27,7 +27,7 @@ interface IGroveBasin {
     error InvalidRedeemer();
     error RedeemerAlreadyAdded();
     error SwapSizeOutOfBounds();
-    error InvalidAction();
+    error Paused();
     error ThresholdOutOfBounds();
     error SameThreshold();
     error ZeroAmountIn();
@@ -38,15 +38,12 @@ interface IGroveBasin {
     error AlreadySeeded();
     error ZeroAmount();
     error NoNewShares();
-    error DepositsPaused();
     error NotLiquidityProvider();
     error CreditDepositsDisabled();
     error SwapSizeExceeded();
     error InvalidAsset();
     error InvalidSwap();
     error StaleRate();
-    error RoutePaused();
-    error InitiateRedeemPaused();
     error PurchaseFeeOutOfBounds();
     error RedemptionFeeOutOfBounds();
     error RequestAlreadyExists();
@@ -211,11 +208,11 @@ interface IGroveBasin {
     event FeeClaimerSet(address indexed oldFeeClaimer, address indexed newFeeClaimer);
 
     /**
-     *  @dev   Emitted when a pause flag is set or unset.
-     *  @param action The action being paused/unpaused.
-     *  @param paused Whether the action is paused.
+     *  @dev   Emitted when a function pause flag is set or unset.
+     *  @param sig    The function selector being paused/unpaused (bytes4(0) for global pause).
+     *  @param paused Whether the function is paused.
      */
-    event PausedSet(bytes32 indexed action, bool paused);
+    event PausedSet(bytes4 indexed sig, bool paused);
 
     /**
      *  @dev   Emitted when an asset is deposited into the GroveBasin.
@@ -390,34 +387,12 @@ interface IGroveBasin {
     function creditTokenDepositsDisabled() external view returns (bool);
 
     /**
-     *  @dev    Returns whether swap token to credit token swaps are paused.
+     *  @dev    Returns whether a specific function is paused by its selector.
+     *          Use bytes4(0) to check if the global pause is enabled.
+     *  @param  sig The function selector (bytes4(0) for global pause).
+     *  @return Whether the function is paused.
      */
-    function pausedSwapToCredit() external view returns (bool);
-
-    /**
-     *  @dev    Returns whether credit token to swap token swaps are paused.
-     */
-    function pausedCreditToSwap() external view returns (bool);
-
-    /**
-     *  @dev    Returns whether collateral token to credit token swaps are paused.
-     */
-    function pausedCollateralToCredit() external view returns (bool);
-
-    /**
-     *  @dev    Returns whether credit token to collateral token swaps are paused.
-     */
-    function pausedCreditToCollateral() external view returns (bool);
-
-    /**
-     *  @dev    Returns whether deposits are paused.
-     */
-    function pausedDeposits() external view returns (bool);
-
-    /**
-     *  @dev    Returns whether initiateRedeem is paused.
-     */
-    function pausedInitiateRedeem() external view returns (bool);
+    function paused(bytes4 sig) external view returns (bool);
 
     /**
      *  @dev    Returns the role identifier for the redeemer role. Addresses with this role
@@ -605,13 +580,12 @@ interface IGroveBasin {
     function setMaxSwapSize(uint256 newMaxSwapSize) external;
 
     /**
-     *  @dev   Sets or unsets a pause flag. Callable only by MANAGER_ROLE.
-     *         Valid actions: "swapToCredit", "creditToSwap", "collateralToCredit",
-     *         "creditToCollateral", "deposits", "initiateRedeem".
-     *  @param action The action to pause/unpause.
-     *  @param paused Whether to pause the action.
+     *  @dev   Sets or unsets a function pause flag by its selector. Callable only by MANAGER_ROLE.
+     *         Use bytes4(0) to set the global pause (pauses all pausable functions).
+     *  @param sig   The function selector to pause/unpause (bytes4(0) for global pause).
+     *  @param state Whether to pause the function.
      */
-    function setPaused(bytes32 action, bool paused) external;
+    function setPaused(bytes4 sig, bool state) external;
 
     /**
      *  @dev   Sets the staleness threshold in seconds. Must be within
