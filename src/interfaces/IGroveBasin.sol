@@ -47,6 +47,7 @@ interface IGroveBasin {
     error RedemptionFeeOutOfBounds();
     error RequestAlreadyExists();
     error InvalidRedeemRequest();
+    error PendingRedemptions();
 
     /**********************************************************************************************/
     /*** Events                                                                                 ***/
@@ -441,6 +442,13 @@ interface IGroveBasin {
      *  @return The credit token amount from pending redemptions.
      */
     function pendingCreditTokenBalance() external view returns (uint256);
+
+    /**
+     *  @dev    Returns the number of pending redemptions for a given token redeemer.
+     *  @param  redeemer The address of the token redeemer.
+     *  @return The number of pending redemptions.
+     */
+    function pendingRedemptions(address redeemer) external view returns (uint256);
 
     /**
      *  @dev    Returns the address that accrues fee shares on every swap. The fee claimer can

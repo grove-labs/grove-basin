@@ -148,18 +148,15 @@ contract GroveBasinCompleteRedeemInvalidRedeemerTests is GroveBasinTestBase {
         creditToken.mint(address(groveBasin), 10_000e18);
     }
 
-    function test_completeRedeem_invalidRedeemer() public {
+    function test_removeTokenRedeemer_pendingRedemptions() public {
         uint256 amount = 1000e18;
 
         vm.prank(owner);
-        bytes32 requestId = groveBasin.initiateRedeem(address(redeemer), amount);
+        groveBasin.initiateRedeem(address(redeemer), amount);
 
         vm.prank(owner);
+        vm.expectRevert(IGroveBasin.PendingRedemptions.selector);
         groveBasin.removeTokenRedeemer(address(redeemer));
-
-        vm.prank(owner);
-        vm.expectRevert(IGroveBasin.InvalidRedeemer.selector);
-        groveBasin.completeRedeem(requestId);
     }
 
 }

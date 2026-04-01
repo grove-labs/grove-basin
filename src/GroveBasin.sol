@@ -81,6 +81,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     mapping(address user       => uint256 shares)        public override shares;
     mapping(bytes32 requestId  => RedeemRequest request)  public override redeemRequests;
+    mapping(address redeemer   => uint256 count)          public override pendingRedemptions;
 
     constructor(
         address owner_,
@@ -295,6 +296,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /// @inheritdoc IGroveBasin
     function removeTokenRedeemer(address redeemer) external override onlyRole(MANAGER_ADMIN_ROLE) {
         if (!hasRole(REDEEMER_CONTRACT_ROLE, redeemer)) revert InvalidRedeemer();
+        if (pendingRedemptions[redeemer] > 0)           revert PendingRedemptions();
 
         try ITokenRedeemer(redeemer).tearDown(address(this)) {} catch {}
 
@@ -1019,6 +1021,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         redeemRequests[redeemRequestId] = request;
         pendingCreditTokenBalance += creditTokenAmount;
+        pendingRedemptions[redeemer]++;
 
         IERC20(creditToken).approve(redeemer, creditTokenAmount);
         ITokenRedeemer(redeemer).initiateRedeem(creditTokenAmount);
@@ -1035,6 +1038,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         delete redeemRequests[redeemRequestId];
         pendingCreditTokenBalance -= request.creditTokenAmount;
+        pendingRedemptions[request.redeemer]--;
 
         uint256 collateralTokenReturned = ITokenRedeemer(request.redeemer).completeRedeem(request);
 
