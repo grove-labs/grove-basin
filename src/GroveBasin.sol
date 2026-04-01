@@ -759,125 +759,83 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /*** Internal preview functions (swaps)                                                     ***/
     /**********************************************************************************************/
 
+    /// @dev Returns the conversion rate, rate precision, and token precision for a supported asset.
+    function _getTokenRateAndPrecision(address token)
+        internal view returns (uint256 rate, uint256 ratePrecision, uint256 tokenPrecision)
+    {
+        if (token == swapToken) {
+            return (
+                _getConversionRate(swapTokenRateProvider),
+                IRateProviderLike(swapTokenRateProvider).getRatePrecision(),
+                _swapTokenPrecision
+            );
+        }
+        if (token == collateralToken) {
+            return (
+                _getConversionRate(collateralTokenRateProvider),
+                IRateProviderLike(collateralTokenRateProvider).getRatePrecision(),
+                _collateralTokenPrecision
+            );
+        }
+        return (
+            _getConversionRate(creditTokenRateProvider),
+            IRateProviderLike(creditTokenRateProvider).getRatePrecision(),
+            _creditTokenPrecision
+        );
+    }
+
+    /// @dev Converts `amount` of one token to another using their rates and precisions.
+    ///      Consolidates the four precision values (all powers of 10) into a single net scalar
+    ///      applied to either the numerator or denominator, keeping a single mulDiv call.
+    function _convert(
+        uint256 amount,
+        uint256 rateIn,
+        uint256 ratePrecisionIn,
+        uint256 tokenPrecisionIn,
+        uint256 rateOut,
+        uint256 ratePrecisionOut,
+        uint256 tokenPrecisionOut,
+        bool    roundUp
+    )
+        internal pure returns (uint256)
+    {
+        uint256 numeratorPrecision   = tokenPrecisionOut * ratePrecisionOut;
+        uint256 denominatorPrecision = tokenPrecisionIn  * ratePrecisionIn;
+
+        if (numeratorPrecision >= denominatorPrecision) {
+            uint256 scalar = numeratorPrecision / denominatorPrecision;
+
+            if (!roundUp) return Math.mulDiv(amount * scalar, rateIn, rateOut);
+
+            return Math.mulDiv(amount * scalar, rateIn, rateOut, Math.Rounding.Ceil);
+        }
+
+        uint256 scalar = denominatorPrecision / numeratorPrecision;
+
+        if (!roundUp) return Math.mulDiv(amount, rateIn, rateOut * scalar);
+
+        return Math.mulDiv(amount, rateIn, rateOut * scalar, Math.Rounding.Ceil);
+    }
+
     /// @dev Converts `amount` of `asset` into `quoteAsset` terms using rate providers.
     function _getSwapQuote(address asset, address quoteAsset, uint256 amount, bool roundUp)
-        internal view returns (uint256 quoteAmount)
-    {
-        if (asset == swapToken) {
-            if      (quoteAsset == collateralToken) revert InvalidSwap();
-            else if (quoteAsset == creditToken)     return _convertSwapToCreditToken(amount, roundUp);
-        }
-
-        else if (asset == collateralToken) {
-            if      (quoteAsset == swapToken)      revert InvalidSwap();
-            else if (quoteAsset == creditToken)    return _convertCollateralToCreditToken(amount, roundUp);
-        }
-
-        else if (asset == creditToken) {
-            if      (quoteAsset == swapToken)       return _convertCreditTokenToSwap(amount, roundUp);
-            else if (quoteAsset == collateralToken) return _convertCreditTokenToCollateral(amount, roundUp);
-        }
-
-        revert InvalidAsset();
-    }
-
-    /// @dev Converts swap token amount to equivalent credit token amount.
-    function _convertSwapToCreditToken(uint256 amount, bool roundUp)
         internal view returns (uint256)
     {
-        uint256 swapRate            = _getConversionRate(swapTokenRateProvider);
-        uint256 creditRate          = _getConversionRate(creditTokenRateProvider);
-        uint256 swapRatePrecision   = IRateProviderLike(swapTokenRateProvider).getRatePrecision();
-        uint256 creditRatePrecision = IRateProviderLike(creditTokenRateProvider).getRatePrecision();
+        _requireValidAsset(asset);
+        _requireValidAsset(quoteAsset);
 
-        if (!roundUp) {
-            return Math.mulDiv(
-                amount,
-                swapRate * _creditTokenPrecision * creditRatePrecision,
-                creditRate * _swapTokenPrecision * swapRatePrecision
-            );
-        }
+        if (asset == quoteAsset)                                      revert InvalidAsset();
+        if (asset == swapToken       && quoteAsset == collateralToken) revert InvalidSwap();
+        if (asset == collateralToken && quoteAsset == swapToken)       revert InvalidSwap();
 
-        return Math.mulDiv(
+        (uint256 rateIn,  uint256 ratePrecisionIn,  uint256 tokenPrecisionIn)  = _getTokenRateAndPrecision(asset);
+        (uint256 rateOut, uint256 ratePrecisionOut, uint256 tokenPrecisionOut) = _getTokenRateAndPrecision(quoteAsset);
+
+        return _convert(
             amount,
-            swapRate * _creditTokenPrecision * creditRatePrecision,
-            creditRate * _swapTokenPrecision * swapRatePrecision,
-            Math.Rounding.Ceil
-        );
-    }
-
-    /// @dev Converts credit token amount to equivalent swap token amount.
-    function _convertCreditTokenToSwap(uint256 amount, bool roundUp)
-        internal view returns (uint256)
-    {
-        uint256 swapRate            = _getConversionRate(swapTokenRateProvider);
-        uint256 creditRate          = _getConversionRate(creditTokenRateProvider);
-        uint256 swapRatePrecision   = IRateProviderLike(swapTokenRateProvider).getRatePrecision();
-        uint256 creditRatePrecision = IRateProviderLike(creditTokenRateProvider).getRatePrecision();
-
-        if (!roundUp) {
-            return Math.mulDiv(
-                amount,
-                creditRate * _swapTokenPrecision * swapRatePrecision,
-                swapRate * _creditTokenPrecision * creditRatePrecision
-            );
-        }
-
-        return Math.mulDiv(
-            amount,
-            creditRate * _swapTokenPrecision * swapRatePrecision,
-            swapRate * _creditTokenPrecision * creditRatePrecision,
-            Math.Rounding.Ceil
-        );
-    }
-
-    /// @dev Converts collateral token amount to equivalent credit token amount.
-    function _convertCollateralToCreditToken(uint256 amount, bool roundUp)
-        internal view returns (uint256)
-    {
-        uint256 collateralRate          = _getConversionRate(collateralTokenRateProvider);
-        uint256 creditRate              = _getConversionRate(creditTokenRateProvider);
-        uint256 collateralRatePrecision = IRateProviderLike(collateralTokenRateProvider).getRatePrecision();
-        uint256 creditRatePrecision     = IRateProviderLike(creditTokenRateProvider).getRatePrecision();
-
-        if (!roundUp) {
-            return Math.mulDiv(
-                amount,
-                collateralRate * _creditTokenPrecision * creditRatePrecision,
-                creditRate * _collateralTokenPrecision * collateralRatePrecision
-            );
-        }
-
-        return Math.mulDiv(
-            amount,
-            collateralRate * _creditTokenPrecision * creditRatePrecision,
-            creditRate * _collateralTokenPrecision * collateralRatePrecision,
-            Math.Rounding.Ceil
-        );
-    }
-
-    /// @dev Converts credit token amount to equivalent collateral token amount.
-    function _convertCreditTokenToCollateral(uint256 amount, bool roundUp)
-        internal view returns (uint256)
-    {
-        uint256 collateralRate          = _getConversionRate(collateralTokenRateProvider);
-        uint256 creditRate              = _getConversionRate(creditTokenRateProvider);
-        uint256 collateralRatePrecision = IRateProviderLike(collateralTokenRateProvider).getRatePrecision();
-        uint256 creditRatePrecision     = IRateProviderLike(creditTokenRateProvider).getRatePrecision();
-
-        if (!roundUp) {
-            return Math.mulDiv(
-                amount,
-                creditRate * _collateralTokenPrecision * collateralRatePrecision,
-                collateralRate * _creditTokenPrecision * creditRatePrecision
-            );
-        }
-
-        return Math.mulDiv(
-            amount,
-            creditRate * _collateralTokenPrecision * collateralRatePrecision,
-            collateralRate * _creditTokenPrecision * creditRatePrecision,
-            Math.Rounding.Ceil
+            rateIn,  ratePrecisionIn,  tokenPrecisionIn,
+            rateOut, ratePrecisionOut, tokenPrecisionOut,
+            roundUp
         );
     }
 
@@ -1007,7 +965,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function _initiateRedeem(address redeemer, uint256 creditTokenAmount) internal returns (bytes32 redeemRequestId) {
         if (!hasRole(REDEEMER_CONTRACT_ROLE, redeemer)) revert InvalidRedeemer();
 
-        uint256 collateralTokenAmount = _convertCreditTokenToCollateral(creditTokenAmount, false);
+        uint256 collateralTokenAmount = _getSwapQuote(creditToken, collateralToken, creditTokenAmount, false);
 
         RedeemRequest memory request = RedeemRequest({
             blockNumber:           block.number,
