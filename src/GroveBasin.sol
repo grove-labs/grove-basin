@@ -623,29 +623,11 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         uint256 assetValue = convertToAssetValue(numShares);
 
-        if (asset == swapToken) {
-            uint256 rate          = _getConversionRate(swapTokenRateProvider);
-            uint256 ratePrecision = IRateProviderLike(swapTokenRateProvider).getRatePrecision();
-            return Math.mulDiv(
-                assetValue * _swapTokenPrecision,
-                ratePrecision,
-                rate * 1e18
-            );
-        }
-        else if (asset == collateralToken) {
-            uint256 rate          = _getConversionRate(collateralTokenRateProvider);
-            uint256 ratePrecision = IRateProviderLike(collateralTokenRateProvider).getRatePrecision();
-            return Math.mulDiv(
-                assetValue * _collateralTokenPrecision,
-                ratePrecision,
-                rate * 1e18
-            );
-        }
+        ( uint256 rate, uint256 ratePrecision, uint256 tokenPrecision ) =
+            _getTokenRateAndPrecision(asset);
 
-        uint256 rate          = _getConversionRate(creditTokenRateProvider);
-        uint256 ratePrecision = IRateProviderLike(creditTokenRateProvider).getRatePrecision();
         return Math.mulDiv(
-            assetValue * _creditTokenPrecision,
+            assetValue * tokenPrecision,
             ratePrecision,
             rate * 1e18
         );
@@ -682,13 +664,14 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /// @inheritdoc IGroveBasin
     /// @dev pendingCreditTokenBalance is an estimate of the value that Basin is due to receive, not a firm amount.
     function totalAssets() public view override returns (uint256) {
-        return _getSwapTokenValue(
-                    _getAvailableBalance(swapToken), false  // Round down
+        return _getAssetValue(
+                    swapToken, _getAvailableBalance(swapToken), false  // Round down
                 )
-            +  _getCollateralTokenValue(
-                    _getAvailableBalance(collateralToken), false  // Round down
+            +  _getAssetValue(
+                    collateralToken, _getAvailableBalance(collateralToken), false  // Round down
                 )
-            +  _getCreditTokenValue(
+            +  _getAssetValue(
+                    creditToken,
                     _getAvailableBalance(address(creditToken)) + pendingCreditTokenBalance,
                     false // Round down
                 );
@@ -716,41 +699,15 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     /// @dev Returns the USD value of `amount` of `asset` in 1e18 precision.
     function _getAssetValue(address asset, uint256 amount, bool roundUp) internal view returns (uint256) {
-        if      (asset == swapToken)       return _getSwapTokenValue(amount, roundUp);
-        else if (asset == collateralToken) return _getCollateralTokenValue(amount, roundUp);
-        else if (asset == creditToken)     return _getCreditTokenValue(amount, roundUp);
-        else                               revert InvalidAsset();
-    }
+        _requireValidAsset(asset);
 
-    /// @dev Returns the USD value of `amount` of swap tokens in 1e18 precision.
-    function _getSwapTokenValue(uint256 amount, bool roundUp) internal view returns (uint256) {
-        return Math.mulDiv(
-            amount * _getConversionRate(swapTokenRateProvider),
-            1e18,
-            IRateProviderLike(swapTokenRateProvider).getRatePrecision() * _swapTokenPrecision,
-            roundUp ? Math.Rounding.Ceil : Math.Rounding.Floor
-        );
-    }
-
-    /// @dev Returns the USD value of `amount` of collateral tokens in 1e18 precision.
-    function _getCollateralTokenValue(uint256 amount, bool roundUp) internal view returns (uint256) {
-        return Math.mulDiv(
-            amount * _getConversionRate(collateralTokenRateProvider),
-            1e18,
-            IRateProviderLike(collateralTokenRateProvider).getRatePrecision() * _collateralTokenPrecision,
-            roundUp ? Math.Rounding.Ceil : Math.Rounding.Floor
-        );
-    }
-
-    /// @dev Returns the USD value of `amount` of credit tokens in 1e18 precision.
-    function _getCreditTokenValue(uint256 amount, bool roundUp) internal view returns (uint256) {
-        uint256 rate      = _getConversionRate(creditTokenRateProvider);
-        uint256 precision = IRateProviderLike(creditTokenRateProvider).getRatePrecision();
-
+        ( uint256 rate, uint256 ratePrecision, uint256 tokenPrecision ) =
+            _getTokenRateAndPrecision(asset);
+        
         return Math.mulDiv(
             amount * rate,
             1e18,
-            precision * _creditTokenPrecision,
+            ratePrecision * tokenPrecision,
             roundUp ? Math.Rounding.Ceil : Math.Rounding.Floor
         );
     }

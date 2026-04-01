@@ -24,15 +24,15 @@ contract GroveBasinHarness is GroveBasin {
     }
 
     function getSwapTokenValue(uint256 amount, bool roundUp) external view returns (uint256) {
-        return _getSwapTokenValue(amount, roundUp);
+        return _getAssetValue(swapToken, amount, roundUp);
     }
 
     function getCollateralTokenValue(uint256 amount, bool roundUp) external view returns (uint256) {
-        return _getCollateralTokenValue(amount, roundUp);
+        return _getAssetValue(collateralToken, amount, roundUp);
     }
 
     function getCreditTokenValue(uint256 amount, bool roundUp) external view returns (uint256) {
-        return _getCreditTokenValue(amount, roundUp);
+        return _getAssetValue(creditToken, amount, roundUp);
     }
 
     function getAssetCustodian(address asset) external view returns (address) {
