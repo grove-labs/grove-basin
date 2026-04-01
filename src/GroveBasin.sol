@@ -305,6 +305,14 @@ contract GroveBasin is IGroveBasin, AccessControl {
         emit TokenRedeemerRemoved(redeemer);
     }
 
+    /// @inheritdoc IGroveBasin
+    function setFeeClaimer(address newFeeClaimer) external override onlyRole(MANAGER_ADMIN_ROLE) {
+        address oldFeeClaimer = feeClaimer;
+        feeClaimer = newFeeClaimer;
+        emit FeeClaimerSet(oldFeeClaimer, newFeeClaimer);
+    }
+
+
     /**********************************************************************************************/
     /*** Owner functions                                                                        ***/
     /**********************************************************************************************/
@@ -335,17 +343,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     /**********************************************************************************************/
-    /*** Fee claimer functions                                                                  ***/
-    /**********************************************************************************************/
-
-    /// @inheritdoc IGroveBasin
-    function setFeeClaimer(address newFeeClaimer) external override onlyRole(MANAGER_ADMIN_ROLE) {
-        address oldFeeClaimer = feeClaimer;
-        feeClaimer = newFeeClaimer;
-        emit FeeClaimerSet(oldFeeClaimer, newFeeClaimer);
-    }
-
-    /**********************************************************************************************/
     /*** Manager functions                                                                      ***/
     /**********************************************************************************************/
 
@@ -356,12 +353,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
         uint256 oldMaxSwapSize = maxSwapSize;
         maxSwapSize            = newMaxSwapSize;
         emit MaxSwapSizeSet(oldMaxSwapSize, newMaxSwapSize);
-    }
-
-    /// @inheritdoc IGroveBasin
-    function setPaused(bytes4 key, bool state) external override onlyRole(PAUSER_ROLE) {
-        paused[key] = state;
-        emit PausedSet(key, state);
     }
 
     /// @inheritdoc IGroveBasin
@@ -376,6 +367,16 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         stalenessThreshold = newThreshold;
         emit StalenessThresholdSet(oldThreshold, newThreshold);
+    }
+
+    /**********************************************************************************************/
+    /*** Pauser functions                                                              ***/
+    /**********************************************************************************************/
+
+    /// @inheritdoc IGroveBasin
+    function setPaused(bytes4 key, bool state) external override onlyRole(PAUSER_ROLE) {
+        paused[key] = state;
+        emit PausedSet(key, state);
     }
 
     /**********************************************************************************************/
