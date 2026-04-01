@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 
 import { GroveBasin }          from "src/GroveBasin.sol";
 import { IGroveBasin }         from "src/interfaces/IGroveBasin.sol";
-import { JTRSYTokenRedeemer } from "src/JTRSYTokenRedeemer.sol";
+import { JTRSYTokenRedeemer } from "src/redeemers/JTRSYTokenRedeemer.sol";
 
 import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 import { MockAsyncVault }     from "test/mocks/MockAsyncVault.sol";

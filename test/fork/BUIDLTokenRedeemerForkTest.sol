@@ -5,7 +5,7 @@ import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
 
 import { Ethereum } from "lib/grove-address-registry/src/Ethereum.sol";
 
-import { BUIDLTokenRedeemer } from "src/BUIDLTokenRedeemer.sol";
+import { BUIDLTokenRedeemer } from "src/redeemers/BUIDLTokenRedeemer.sol";
 import { IGroveBasin }        from "src/interfaces/IGroveBasin.sol";
 import { ITokenRedeemer }     from "src/interfaces/ITokenRedeemer.sol";
 

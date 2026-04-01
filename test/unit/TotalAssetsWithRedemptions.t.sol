@@ -6,7 +6,7 @@ import "forge-std/Test.sol";
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
 import { GroveBasin }          from "src/GroveBasin.sol";
-import { JTRSYTokenRedeemer }  from "src/JTRSYTokenRedeemer.sol";
+import { JTRSYTokenRedeemer }  from "src/redeemers/JTRSYTokenRedeemer.sol";
 
 import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 import { MockAsyncVault }     from "test/mocks/MockAsyncVault.sol";

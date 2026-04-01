@@ -7,7 +7,7 @@ import { Ethereum } from "lib/grove-address-registry/src/Ethereum.sol";
 
 import { GroveBasin }              from "src/GroveBasin.sol";
 import { UsdsUsdcPocket }          from "src/pockets/UsdsUsdcPocket.sol";
-import { JTRSYTokenRedeemer }      from "src/JTRSYTokenRedeemer.sol";
+import { JTRSYTokenRedeemer }      from "src/redeemers/JTRSYTokenRedeemer.sol";
 import { SetupJTRSYUsdsUsdcBasin } from "script/SetupJTRSYUsdsUsdcBasin.s.sol";
 
 contract SetupJTRSYUsdsUsdcBasinTest is Test, SetupJTRSYUsdsUsdcBasin {
