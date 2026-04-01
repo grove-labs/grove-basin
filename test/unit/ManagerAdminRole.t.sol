@@ -68,43 +68,6 @@ contract GroveBasinManagerAdminRoleTests is GroveBasinTestBase {
     }
 
     /**********************************************************************************************/
-    /*** MANAGER_ADMIN_ROLE can set credit token deposits disabled                              ***/
-    /**********************************************************************************************/
-
-    function test_managerAdmin_setCreditTokenDepositsDisabled() public {
-        vm.prank(managerAdmin);
-        groveBasin.setCreditTokenDepositsDisabled(true);
-
-        assertTrue(groveBasin.creditTokenDepositsDisabled());
-    }
-
-    function test_unauthorized_setCreditTokenDepositsDisabled() public {
-        vm.expectRevert(
-            abi.encodeWithSignature(
-                "AccessControlUnauthorizedAccount(address,bytes32)",
-                address(this),
-                managerAdminRole
-            )
-        );
-        groveBasin.setCreditTokenDepositsDisabled(true);
-    }
-
-    function test_manager_cannotSetCreditTokenDepositsDisabled() public {
-        vm.prank(managerAdmin);
-        groveBasin.grantRole(managerRole, manager);
-
-        vm.prank(manager);
-        vm.expectRevert(
-            abi.encodeWithSignature(
-                "AccessControlUnauthorizedAccount(address,bytes32)",
-                manager,
-                managerAdminRole
-            )
-        );
-        groveBasin.setCreditTokenDepositsDisabled(true);
-    }
-
-    /**********************************************************************************************/
     /*** MANAGER_ADMIN_ROLE can set fee bounds                                                  ***/
     /**********************************************************************************************/
 

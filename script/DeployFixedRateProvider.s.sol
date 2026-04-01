@@ -21,7 +21,7 @@ import { FixedRateProvider } from "src/rate-providers/FixedRateProvider.sol";
  *             --broadcast \
  *             --sig "run(uint256)" 1000000000000000000000000000
  *
- *         For simpler usage, set the rate in the runDefault() function and run without parameters:
+ *         For simpler usage, set the rate in the run() function and run without parameters:
  *         forge script script/DeployFixedRateProvider.s.sol:DeployFixedRateProvider \
  *             --rpc-url $RPC_URL \
  *             --broadcast

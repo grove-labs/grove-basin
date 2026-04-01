@@ -199,6 +199,263 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
     }
 
     /**********************************************************************************************/
+    /*** Swap direction pause key flag tests                                                    ***/
+    /**********************************************************************************************/
+
+    function test_setPaused_swapCreditToCollateral() public {
+        bytes4 key = groveBasin.PAUSED_SWAP_CREDIT_TO_COLLATERAL();
+        assertEq(groveBasin.paused(key), false);
+
+        vm.prank(pauser);
+        groveBasin.setPaused(key, true);
+
+        assertEq(groveBasin.paused(key), true);
+
+        vm.prank(pauser);
+        groveBasin.setPaused(key, false);
+
+        assertEq(groveBasin.paused(key), false);
+    }
+
+    function test_setPaused_swapCreditToSwap() public {
+        bytes4 key = groveBasin.PAUSED_SWAP_CREDIT_TO_SWAP();
+        assertEq(groveBasin.paused(key), false);
+
+        vm.prank(pauser);
+        groveBasin.setPaused(key, true);
+
+        assertEq(groveBasin.paused(key), true);
+    }
+
+    function test_setPaused_swapCollateralToCredit() public {
+        bytes4 key = groveBasin.PAUSED_SWAP_COLLATERAL_TO_CREDIT();
+        assertEq(groveBasin.paused(key), false);
+
+        vm.prank(pauser);
+        groveBasin.setPaused(key, true);
+
+        assertEq(groveBasin.paused(key), true);
+    }
+
+    function test_setPaused_swapSwapToCredit() public {
+        bytes4 key = groveBasin.PAUSED_SWAP_SWAP_TO_CREDIT();
+        assertEq(groveBasin.paused(key), false);
+
+        vm.prank(pauser);
+        groveBasin.setPaused(key, true);
+
+        assertEq(groveBasin.paused(key), true);
+    }
+
+    function test_setPaused_depositCredit() public {
+        bytes4 key = groveBasin.PAUSED_DEPOSIT_CREDIT();
+        assertEq(groveBasin.paused(key), false);
+
+        vm.prank(pauser);
+        groveBasin.setPaused(key, true);
+
+        assertEq(groveBasin.paused(key), true);
+
+        vm.prank(pauser);
+        groveBasin.setPaused(key, false);
+
+        assertEq(groveBasin.paused(key), false);
+    }
+
+    function test_setPaused_arbitraryKey() public {
+        bytes4 key = bytes4(keccak256("CUSTOM_KEY"));
+        assertEq(groveBasin.paused(key), false);
+
+        vm.prank(pauser);
+        groveBasin.setPaused(key, true);
+
+        assertEq(groveBasin.paused(key), true);
+
+        vm.prank(pauser);
+        groveBasin.setPaused(key, false);
+
+        assertEq(groveBasin.paused(key), false);
+    }
+
+    function test_setPaused_arbitraryKeyEvent() public {
+        bytes4 key = bytes4(keccak256("CUSTOM_KEY"));
+
+        vm.expectEmit(true, false, false, true);
+        emit IGroveBasin.PausedSet(key, true);
+
+        vm.prank(pauser);
+        groveBasin.setPaused(key, true);
+    }
+
+    /**********************************************************************************************/
+    /*** Swap direction pause enforcement tests                                                 ***/
+    /**********************************************************************************************/
+
+    function test_swapExactIn_pausedCreditToCollateral() public {
+        bytes4 key = groveBasin.PAUSED_SWAP_CREDIT_TO_COLLATERAL();
+
+        vm.prank(pauser);
+        groveBasin.setPaused(key, true);
+
+        creditToken.mint(swapper, 100e18);
+        vm.prank(swapper);
+        creditToken.approve(address(groveBasin), 100e18);
+
+        vm.prank(swapper);
+        vm.expectRevert(IGroveBasin.Paused.selector);
+        groveBasin.swapExactIn(address(creditToken), address(collateralToken), 100e18, 0, receiver, 0);
+    }
+
+    function test_swapExactOut_pausedCreditToCollateral() public {
+        bytes4 key = groveBasin.PAUSED_SWAP_CREDIT_TO_COLLATERAL();
+
+        vm.prank(pauser);
+        groveBasin.setPaused(key, true);
+
+        creditToken.mint(swapper, 200e18);
+        vm.prank(swapper);
+        creditToken.approve(address(groveBasin), 200e18);
+
+        vm.prank(swapper);
+        vm.expectRevert(IGroveBasin.Paused.selector);
+        groveBasin.swapExactOut(address(creditToken), address(collateralToken), 50e18, type(uint256).max, receiver, 0);
+    }
+
+    function test_swapExactIn_pausedCreditToSwap() public {
+        bytes4 key = groveBasin.PAUSED_SWAP_CREDIT_TO_SWAP();
+
+        vm.prank(pauser);
+        groveBasin.setPaused(key, true);
+
+        creditToken.mint(swapper, 100e18);
+        vm.prank(swapper);
+        creditToken.approve(address(groveBasin), 100e18);
+
+        vm.prank(swapper);
+        vm.expectRevert(IGroveBasin.Paused.selector);
+        groveBasin.swapExactIn(address(creditToken), address(swapToken), 100e18, 0, receiver, 0);
+    }
+
+    function test_swapExactOut_pausedCreditToSwap() public {
+        bytes4 key = groveBasin.PAUSED_SWAP_CREDIT_TO_SWAP();
+
+        vm.prank(pauser);
+        groveBasin.setPaused(key, true);
+
+        creditToken.mint(swapper, 200e18);
+        vm.prank(swapper);
+        creditToken.approve(address(groveBasin), 200e18);
+
+        vm.prank(swapper);
+        vm.expectRevert(IGroveBasin.Paused.selector);
+        groveBasin.swapExactOut(address(creditToken), address(swapToken), 50e6, type(uint256).max, receiver, 0);
+    }
+
+    function test_swapExactIn_pausedCollateralToCredit() public {
+        bytes4 key = groveBasin.PAUSED_SWAP_COLLATERAL_TO_CREDIT();
+
+        vm.prank(pauser);
+        groveBasin.setPaused(key, true);
+
+        collateralToken.mint(swapper, 100e18);
+        vm.prank(swapper);
+        collateralToken.approve(address(groveBasin), 100e18);
+
+        vm.prank(swapper);
+        vm.expectRevert(IGroveBasin.Paused.selector);
+        groveBasin.swapExactIn(address(collateralToken), address(creditToken), 100e18, 0, receiver, 0);
+    }
+
+    function test_swapExactOut_pausedCollateralToCredit() public {
+        bytes4 key = groveBasin.PAUSED_SWAP_COLLATERAL_TO_CREDIT();
+
+        vm.prank(pauser);
+        groveBasin.setPaused(key, true);
+
+        collateralToken.mint(swapper, 200e18);
+        vm.prank(swapper);
+        collateralToken.approve(address(groveBasin), 200e18);
+
+        vm.prank(swapper);
+        vm.expectRevert(IGroveBasin.Paused.selector);
+        groveBasin.swapExactOut(address(collateralToken), address(creditToken), 50e18, type(uint256).max, receiver, 0);
+    }
+
+    function test_swapExactIn_pausedSwapToCredit() public {
+        bytes4 key = groveBasin.PAUSED_SWAP_SWAP_TO_CREDIT();
+
+        vm.prank(pauser);
+        groveBasin.setPaused(key, true);
+
+        swapToken.mint(swapper, 100e6);
+        vm.prank(swapper);
+        swapToken.approve(address(groveBasin), 100e6);
+
+        vm.prank(swapper);
+        vm.expectRevert(IGroveBasin.Paused.selector);
+        groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, receiver, 0);
+    }
+
+    function test_swapExactOut_pausedSwapToCredit() public {
+        bytes4 key = groveBasin.PAUSED_SWAP_SWAP_TO_CREDIT();
+
+        vm.prank(pauser);
+        groveBasin.setPaused(key, true);
+
+        swapToken.mint(swapper, 200e6);
+        vm.prank(swapper);
+        swapToken.approve(address(groveBasin), 200e6);
+
+        vm.prank(swapper);
+        vm.expectRevert(IGroveBasin.Paused.selector);
+        groveBasin.swapExactOut(address(swapToken), address(creditToken), 50e18, type(uint256).max, receiver, 0);
+    }
+
+    function test_swapExactIn_directionPauseDoesNotAffectOtherDirection() public {
+        bytes4 key = groveBasin.PAUSED_SWAP_SWAP_TO_CREDIT();
+
+        vm.prank(pauser);
+        groveBasin.setPaused(key, true);
+
+        // credit -> swap should still work
+        creditToken.mint(swapper, 100e18);
+        vm.startPrank(swapper);
+        creditToken.approve(address(groveBasin), 100e18);
+        groveBasin.swapExactIn(address(creditToken), address(swapToken), 100e18, 0, receiver, 0);
+        vm.stopPrank();
+    }
+
+    function test_swapExactOut_directionPauseDoesNotAffectOtherDirection() public {
+        bytes4 key = groveBasin.PAUSED_SWAP_CREDIT_TO_SWAP();
+
+        vm.prank(pauser);
+        groveBasin.setPaused(key, true);
+
+        // swap -> credit should still work
+        swapToken.mint(swapper, 100e6);
+        vm.startPrank(swapper);
+        swapToken.approve(address(groveBasin), 100e6);
+        groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, receiver, 0);
+        vm.stopPrank();
+    }
+
+    function test_swapExactIn_unpausedDirection() public {
+        bytes4 key = groveBasin.PAUSED_SWAP_SWAP_TO_CREDIT();
+
+        vm.prank(pauser);
+        groveBasin.setPaused(key, true);
+
+        vm.prank(pauser);
+        groveBasin.setPaused(key, false);
+
+        swapToken.mint(swapper, 100e6);
+        vm.startPrank(swapper);
+        swapToken.approve(address(groveBasin), 100e6);
+        groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, receiver, 0);
+        vm.stopPrank();
+    }
+
+    /**********************************************************************************************/
     /*** Swap unpaused success tests                                                            ***/
     /**********************************************************************************************/
 

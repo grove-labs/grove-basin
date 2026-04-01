@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 
 import { GroveBasin }          from "src/GroveBasin.sol";
 import { IGroveBasin }         from "src/interfaces/IGroveBasin.sol";
-import { JTRSYTokenRedeemer } from "src/JTRSYTokenRedeemer.sol";
+import { JTRSYTokenRedeemer } from "src/redeemers/JTRSYTokenRedeemer.sol";
 
 import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 import { MockAsyncVault }     from "test/mocks/MockAsyncVault.sol";
@@ -148,18 +148,15 @@ contract GroveBasinCompleteRedeemInvalidRedeemerTests is GroveBasinTestBase {
         creditToken.mint(address(groveBasin), 10_000e18);
     }
 
-    function test_completeRedeem_invalidRedeemer() public {
+    function test_removeTokenRedeemer_pendingRedemptions() public {
         uint256 amount = 1000e18;
 
         vm.prank(owner);
-        bytes32 requestId = groveBasin.initiateRedeem(address(redeemer), amount);
+        groveBasin.initiateRedeem(address(redeemer), amount);
 
         vm.prank(owner);
+        vm.expectRevert(IGroveBasin.PendingRedemptions.selector);
         groveBasin.removeTokenRedeemer(address(redeemer));
-
-        vm.prank(owner);
-        vm.expectRevert(IGroveBasin.InvalidRedeemer.selector);
-        groveBasin.completeRedeem(requestId);
     }
 
 }

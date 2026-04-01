@@ -39,7 +39,6 @@ interface IGroveBasin {
     error ZeroAmount();
     error NoNewShares();
     error NotLiquidityProvider();
-    error CreditDepositsDisabled();
     error SwapSizeExceeded();
     error InvalidAsset();
     error InvalidSwap();
@@ -48,6 +47,7 @@ interface IGroveBasin {
     error RedemptionFeeOutOfBounds();
     error RequestAlreadyExists();
     error InvalidRedeemRequest();
+    error PendingRedemptions();
 
     /**********************************************************************************************/
     /*** Events                                                                                 ***/
@@ -159,11 +159,7 @@ interface IGroveBasin {
         uint256 referralCode
     );
 
-    /**
-     *  @dev   Emitted when the credit token deposits disabled flag is set.
-     *  @param disabled Whether credit token deposits are disabled.
-     */
-    event CreditTokenDepositsDisabledSet(bool disabled);
+
 
     /**
      *  @dev   Emitted when a token redeemer is added to the basin.
@@ -189,7 +185,7 @@ interface IGroveBasin {
      *  @dev   Emitted when a credit token redemption is completed via a redeemer.
      *  @param redeemer Address of the redeemer contract.
      *  @param caller   Address of the caller that completed the redemption.
-     *  @param amount   Amount passed to the redeemer's completeRedeem.
+     *  @param amount   Amount of collateral tokens returned from the redeemer.
      */
     event RedeemCompleted(address indexed redeemer, address indexed caller, uint256 amount);
 
@@ -208,11 +204,12 @@ interface IGroveBasin {
     event FeeClaimerSet(address indexed oldFeeClaimer, address indexed newFeeClaimer);
 
     /**
-     *  @dev   Emitted when a function pause flag is set or unset.
-     *  @param sig    The function selector being paused/unpaused (bytes4(0) for global pause).
-     *  @param paused Whether the function is paused.
+     *  @dev   Emitted when a pause flag is set or unset.
+     *  @param key    The pause key being toggled. Can be a function selector, an arbitrary
+     *                bytes4 key, or bytes4(0) for the global pause.
+     *  @param paused Whether the key is paused.
      */
-    event PausedSet(bytes4 indexed sig, bool paused);
+    event PausedSet(bytes4 indexed key, bool paused);
 
     /**
      *  @dev   Emitted when an asset is deposited into the GroveBasin.
@@ -308,7 +305,7 @@ interface IGroveBasin {
 
     /**
      *  @dev    Returns the address of the pocket, an address that holds custody of the swap
-     *          token in the GroveBasin and can deploy it to yield-bearing strategies. Settable by the owner.
+     *          token in the GroveBasin and can deploy it to yield-bearing strategies. Settable by the manager admin.
      *  @return The address of the pocket.
      */
     function pocket() external view returns (address);
@@ -375,24 +372,48 @@ interface IGroveBasin {
 
     /**
      *  @dev    Returns the address of the single immutable liquidity provider that is the only
-     *          address allowed to deposit assets, including the initial seed deposit.
+     *          address allowed to call `deposit`.
      *  @return The address of the liquidity provider.
      */
     function liquidityProvider() external view returns (address);
 
     /**
-     *  @dev    Returns whether credit token deposits are disabled.
-     *  @return Whether credit token deposits are disabled.
+     *  @dev    Pause key for credit-to-collateral swaps.
+     *  @return The bytes4 pause key.
      */
-    function creditTokenDepositsDisabled() external view returns (bool);
+    function PAUSED_SWAP_CREDIT_TO_COLLATERAL() external view returns (bytes4);
 
     /**
-     *  @dev    Returns whether a specific function is paused by its selector.
-     *          Use bytes4(0) to check if the global pause is enabled.
-     *  @param  sig The function selector (bytes4(0) for global pause).
-     *  @return Whether the function is paused.
+     *  @dev    Pause key for credit-to-swap swaps.
+     *  @return The bytes4 pause key.
      */
-    function paused(bytes4 sig) external view returns (bool);
+    function PAUSED_SWAP_CREDIT_TO_SWAP() external view returns (bytes4);
+
+    /**
+     *  @dev    Pause key for collateral-to-credit swaps.
+     *  @return The bytes4 pause key.
+     */
+    function PAUSED_SWAP_COLLATERAL_TO_CREDIT() external view returns (bytes4);
+
+    /**
+     *  @dev    Pause key for swap-to-credit swaps.
+     *  @return The bytes4 pause key.
+     */
+    function PAUSED_SWAP_SWAP_TO_CREDIT() external view returns (bytes4);
+
+    /**
+     *  @dev    Pause key for credit token deposits.
+     *  @return The bytes4 pause key.
+     */
+    function PAUSED_DEPOSIT_CREDIT() external view returns (bytes4);
+
+    /**
+     *  @dev    Returns whether a specific pause key is active. Pause keys can be function
+     *          selectors or arbitrary bytes4 keys. Use bytes4(0) to check the global pause.
+     *  @param  key The pause key (function selector, arbitrary key, or bytes4(0) for global pause).
+     *  @return Whether the key is paused.
+     */
+    function paused(bytes4 key) external view returns (bool);
 
     /**
      *  @dev    Returns the role identifier for the pauser role. Addresses with this role
@@ -421,6 +442,13 @@ interface IGroveBasin {
      *  @return The credit token amount from pending redemptions.
      */
     function pendingCreditTokenBalance() external view returns (uint256);
+
+    /**
+     *  @dev    Returns the number of pending redemptions for a given token redeemer.
+     *  @param  redeemer The address of the token redeemer.
+     *  @return The number of pending redemptions.
+     */
+    function pendingRedemptions(address redeemer) external view returns (uint256);
 
     /**
      *  @dev    Returns the address that accrues fee shares on every swap. The fee claimer can
@@ -472,12 +500,6 @@ interface IGroveBasin {
     /**********************************************************************************************/
     /*** Manager admin functions                                                                ***/
     /**********************************************************************************************/
-
-    /**
-     *  @dev    Sets whether credit token deposits are disabled. Callable only by MANAGER_ADMIN_ROLE.
-     *  @param  disabled Whether to disable credit token deposits.
-     */
-    function setCreditTokenDepositsDisabled(bool disabled) external;
 
     /**
      *  @dev    Sets the rate provider for a given token. The token must be one of the supported
@@ -587,12 +609,12 @@ interface IGroveBasin {
     function setMaxSwapSize(uint256 newMaxSwapSize) external;
 
     /**
-     *  @dev   Sets or unsets a function pause flag by its selector. Callable only by PAUSER_ROLE.
-     *         Use bytes4(0) to set the global pause (pauses all pausable functions).
-     *  @param sig   The function selector to pause/unpause (bytes4(0) for global pause).
-     *  @param state Whether to pause the function.
+     *  @dev   Sets or unsets a pause flag. Pause keys can be function selectors or arbitrary
+     *         bytes4 keys. Use bytes4(0) to set the global pause (pauses all pausable functions).
+     *  @param key   The pause key (function selector, arbitrary key, or bytes4(0) for global pause).
+     *  @param state Whether to pause the key.
      */
-    function setPaused(bytes4 sig, bool state) external;
+    function setPaused(bytes4 key, bool state) external;
 
     /**
      *  @dev   Sets the staleness threshold in seconds. Must be within
@@ -794,16 +816,16 @@ interface IGroveBasin {
      *  @dev    View function that converts an amount of a given shares to the equivalent
      *          amount of assetValue.
      *  @param  numShares  Number of shares to convert to assetValue.
-     *  @return assetValue Value of assets in swap token denominated in 18 decimals.
+     *  @return assetValue Normalized USD value of assets in 1e18 precision.
      */
     function convertToAssetValue(uint256 numShares) external view returns (uint256);
 
     /**
-     *  @dev    View function that converts an amount of assetValue (18 decimal value denominated in
-     *          swap token and collateral token) to shares in the GroveBasin based on the current
-     *          exchange rate. Note that this rounds down on calculation so is intended to be used
-     *          for quoting the current exchange rate.
-     *  @param  assetValue 18 decimal value denominated in swap token (e.g., 1e6 swap token = 1e18)
+     *  @dev    View function that converts an amount of assetValue (normalized USD value in 1e18
+     *          precision) to shares in the GroveBasin based on the current exchange rate. Note that
+     *          this rounds down on calculation so is intended to be used for quoting the current
+     *          exchange rate.
+     *  @param  assetValue Normalized USD value in 1e18 precision.
      *  @return shares     Number of shares that the assetValue is equivalent to.
      */
     function convertToShares(uint256 assetValue) external view returns (uint256);
@@ -825,9 +847,9 @@ interface IGroveBasin {
     /**
      *  @dev View function that returns the total value of the balance of all assets currently held
      *       by the GroveBasin, including the estimated value of pending credit tokens from
-     *       redemptions, converted to swap token/collateral token terms denominated in 18 decimal
-     *       precision. Note: pendingCreditTokenBalance is an estimate of the value that Basin is
-     *       due to receive, not a firm amount.
+     *       redemptions, as a normalized USD value in 1e18 precision. Note:
+     *       pendingCreditTokenBalance is an estimate of the value that Basin is due to receive,
+     *       not a firm amount.
      */
     function totalAssets() external view returns (uint256);
 

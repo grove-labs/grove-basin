@@ -60,7 +60,7 @@ contract GroveBasinSetStalenessThresholdFailureTests is GroveBasinTestBase {
     function test_setStalenessThreshold_tooHigh() public {
         vm.prank(manager);
         vm.expectRevert(IGroveBasin.ThresholdOutOfBounds.selector);
-        groveBasin.setStalenessThreshold(48 hours + 1);
+        groveBasin.setStalenessThreshold(2 weeks + 1);
     }
 
     function test_setStalenessThreshold_minimumBoundary() public {
@@ -128,14 +128,14 @@ contract GroveBasinSetStalenessThresholdBoundsSuccessTests is GroveBasinTestBase
 
     function test_setStalenessThresholdBounds_defaults() public view {
         assertEq(groveBasin.minStalenessThreshold(), 5 minutes);
-        assertEq(groveBasin.maxStalenessThreshold(), 48 hours);
+        assertEq(groveBasin.maxStalenessThreshold(), 2 weeks);
     }
 
     function test_setStalenessThresholdBounds() public {
         vm.prank(owner);
 
         vm.expectEmit(address(groveBasin));
-        emit StalenessThresholdBoundsSet(5 minutes, 48 hours, 1 minutes, 24 hours);
+        emit StalenessThresholdBoundsSet(5 minutes, 2 weeks, 1 minutes, 24 hours);
         groveBasin.setStalenessThresholdBounds(1 minutes, 24 hours);
 
         assertEq(groveBasin.minStalenessThreshold(), 1 minutes);
@@ -149,7 +149,7 @@ contract GroveBasinSetStalenessThresholdBoundsSuccessTests is GroveBasinTestBase
         vm.prank(owner);
 
         vm.expectEmit(address(groveBasin));
-        emit StalenessThresholdBoundsSet(5 minutes, 48 hours, 30 minutes, 24 hours);
+        emit StalenessThresholdBoundsSet(5 minutes, 2 weeks, 30 minutes, 24 hours);
         vm.expectEmit(address(groveBasin));
         emit StalenessThresholdSet(10 minutes, 30 minutes);
         groveBasin.setStalenessThresholdBounds(30 minutes, 24 hours);
@@ -163,7 +163,7 @@ contract GroveBasinSetStalenessThresholdBoundsSuccessTests is GroveBasinTestBase
 
         vm.prank(owner);
         vm.expectEmit(address(groveBasin));
-        emit StalenessThresholdBoundsSet(5 minutes, 48 hours, 1 minutes, 2 hours);
+        emit StalenessThresholdBoundsSet(5 minutes, 2 weeks, 1 minutes, 2 hours);
         vm.expectEmit(address(groveBasin));
         emit StalenessThresholdSet(6 hours, 2 hours);
         groveBasin.setStalenessThresholdBounds(1 minutes, 2 hours);
@@ -540,7 +540,7 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
     /**********************************************************************************************/
 
     function testFuzz_staleness_boundary(uint256 threshold, uint256 age) public {
-        threshold = _bound(threshold, 5 minutes, 48 hours);
+        threshold = _bound(threshold, 5 minutes, 2 weeks);
         age       = _bound(age, 0, block.timestamp);
 
         if (threshold != groveBasin.stalenessThreshold()) {

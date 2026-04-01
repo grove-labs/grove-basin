@@ -7,9 +7,9 @@ import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
 import { AccessControl } from "openzeppelin-contracts/contracts/access/AccessControl.sol";
 import { Math }          from "openzeppelin-contracts/contracts/utils/math/Math.sol";
 
-import { IGroveBasin }             from "src/interfaces/IGroveBasin.sol";
-import { IGroveBasinPocket }       from "src/interfaces/IGroveBasinPocket.sol";
-import { IRateProviderLike }       from "src/interfaces/IRateProviderLike.sol";
+import { IGroveBasin }                   from "src/interfaces/IGroveBasin.sol";
+import { IGroveBasinPocket }             from "src/interfaces/IGroveBasinPocket.sol";
+import { IRateProviderLike }             from "src/interfaces/IRateProviderLike.sol";
 import { ITokenRedeemer, RedeemRequest } from "src/interfaces/ITokenRedeemer.sol";
 
 /**
@@ -35,8 +35,12 @@ contract GroveBasin is IGroveBasin, AccessControl {
     bytes32 public constant override REDEEMER_ROLE           = keccak256("REDEEMER_ROLE");
     bytes32 public constant override REDEEMER_CONTRACT_ROLE  = keccak256("REDEEMER_CONTRACT_ROLE");
 
-    /// @dev Mapping of function selectors to pause state. bytes4(0) is reserved for global pause.
-    mapping(bytes4 => bool) public override paused;
+    /// @dev Pause keys
+    bytes4 public constant PAUSED_SWAP_CREDIT_TO_COLLATERAL = bytes4(keccak256("PAUSED_SWAP_CREDIT_TO_COLLATERAL"));
+    bytes4 public constant PAUSED_SWAP_CREDIT_TO_SWAP       = bytes4(keccak256("PAUSED_SWAP_CREDIT_TO_SWAP"));
+    bytes4 public constant PAUSED_SWAP_COLLATERAL_TO_CREDIT = bytes4(keccak256("PAUSED_SWAP_COLLATERAL_TO_CREDIT"));
+    bytes4 public constant PAUSED_SWAP_SWAP_TO_CREDIT       = bytes4(keccak256("PAUSED_SWAP_SWAP_TO_CREDIT"));
+    bytes4 public constant PAUSED_DEPOSIT_CREDIT            = bytes4(keccak256("PAUSED_DEPOSIT_CREDIT"));
 
     uint256 internal immutable _swapTokenPrecision;
     uint256 internal immutable _collateralTokenPrecision;
@@ -54,10 +58,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     address public override pocket;
 
-    bool public override creditTokenDepositsDisabled;
-
-    uint256 public override stalenessThreshold;
     uint256 public override totalShares;
+    uint256 public override pendingCreditTokenBalance;
+
     uint256 public override maxSwapSize;
     uint256 public override maxSwapSizeLowerBound;
     uint256 public override maxSwapSizeUpperBound;
@@ -67,20 +70,18 @@ contract GroveBasin is IGroveBasin, AccessControl {
     uint256 public override minFee;
     uint256 public override maxFee;
 
+    uint256 public override stalenessThreshold;
     uint256 public override minStalenessThreshold;
     uint256 public override maxStalenessThreshold;
-    uint256 public override pendingCreditTokenBalance;
-
+    
     address public override feeClaimer;
 
-    mapping(address user       => uint256 shares)        public override shares;
-    mapping(bytes32 requestId  => RedeemRequest request)  public override redeemRequests;
-
-    /// @dev Modifier to check if the function is paused. Checks both global pause (bytes4(0)) and function-specific pause.
-    modifier whenNotPaused() {
-        if (paused[bytes4(0)] || paused[msg.sig]) revert Paused();
-        _;
-    }
+    /// @dev Mapping of pause keys to pause state. Keys can be function selectors or arbitrary
+    ///      bytes4 values. bytes4(0) is reserved for global pause.
+    mapping(bytes4 pauseKey   => bool isPaused)         public override paused;
+    mapping(address user      => uint256 shares)        public override shares;
+    mapping(bytes32 requestId => RedeemRequest request) public override redeemRequests;
+    mapping(address redeemer  => uint256 count)         public override pendingRedemptions;
 
     constructor(
         address owner_,
@@ -148,7 +149,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         maxSwapSizeLowerBound = 0;
         maxSwapSizeUpperBound = 1_000_000_000e18;
         minStalenessThreshold = 5 minutes;
-        maxStalenessThreshold = 48 hours;
+        maxStalenessThreshold = 2 weeks;
         stalenessThreshold    = minStalenessThreshold;
 
         _setRoleAdmin(MANAGER_ROLE,           MANAGER_ADMIN_ROLE);
@@ -160,12 +161,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /**********************************************************************************************/
     /*** Manager admin functions                                                                ***/
     /**********************************************************************************************/
-
-    /// @inheritdoc IGroveBasin
-    function setCreditTokenDepositsDisabled(bool disabled) external override onlyRole(MANAGER_ADMIN_ROLE) {
-        creditTokenDepositsDisabled = disabled;
-        emit CreditTokenDepositsDisabledSet(disabled);
-    }
 
     /// @inheritdoc IGroveBasin
     function setRateProvider(address token, address newRateProvider) external override onlyRole(MANAGER_ADMIN_ROLE) {
@@ -301,6 +296,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /// @inheritdoc IGroveBasin
     function removeTokenRedeemer(address redeemer) external override onlyRole(MANAGER_ADMIN_ROLE) {
         if (!hasRole(REDEEMER_CONTRACT_ROLE, redeemer)) revert InvalidRedeemer();
+        if (pendingRedemptions[redeemer] > 0)           revert PendingRedemptions();
 
         try ITokenRedeemer(redeemer).tearDown(address(this)) {} catch {}
 
@@ -308,6 +304,14 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         emit TokenRedeemerRemoved(redeemer);
     }
+
+    /// @inheritdoc IGroveBasin
+    function setFeeClaimer(address newFeeClaimer) external override onlyRole(MANAGER_ADMIN_ROLE) {
+        address oldFeeClaimer = feeClaimer;
+        feeClaimer = newFeeClaimer;
+        emit FeeClaimerSet(oldFeeClaimer, newFeeClaimer);
+    }
+
 
     /**********************************************************************************************/
     /*** Owner functions                                                                        ***/
@@ -324,28 +328,18 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     /**********************************************************************************************/
-    /*** Redeemer functions                                                                        ***/
+    /*** Redeemer functions                                                                     ***/
     /**********************************************************************************************/
 
     /// @inheritdoc IGroveBasin
-    function initiateRedeem(address redeemer, uint256 creditTokenAmount) external override whenNotPaused onlyRole(REDEEMER_ROLE) returns (bytes32 redeemRequestId) {
+    function initiateRedeem(address redeemer, uint256 creditTokenAmount) external override onlyRole(REDEEMER_ROLE) returns (bytes32 redeemRequestId) {
+        _checkPaused(msg.sig);
         return _initiateRedeem(redeemer, creditTokenAmount);
     }
 
     /// @inheritdoc IGroveBasin
     function completeRedeem(bytes32 redeemRequestId) external override onlyRole(REDEEMER_ROLE) {
         _completeRedeem(redeemRequestId);
-    }
-
-    /**********************************************************************************************/
-    /*** Fee claimer functions                                                                  ***/
-    /**********************************************************************************************/
-
-    /// @inheritdoc IGroveBasin
-    function setFeeClaimer(address newFeeClaimer) external override onlyRole(MANAGER_ADMIN_ROLE) {
-        address oldFeeClaimer = feeClaimer;
-        feeClaimer = newFeeClaimer;
-        emit FeeClaimerSet(oldFeeClaimer, newFeeClaimer);
     }
 
     /**********************************************************************************************/
@@ -362,12 +356,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     /// @inheritdoc IGroveBasin
-    function setPaused(bytes4 sig, bool state) external override onlyRole(PAUSER_ROLE) {
-        paused[sig] = state;
-        emit PausedSet(sig, state);
-    }
-
-    /// @inheritdoc IGroveBasin
     function setStalenessThreshold(uint256 newThreshold)
         external override onlyRole(MANAGER_ROLE)
     {
@@ -379,6 +367,16 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         stalenessThreshold = newThreshold;
         emit StalenessThresholdSet(oldThreshold, newThreshold);
+    }
+
+    /**********************************************************************************************/
+    /*** Pauser functions                                                              ***/
+    /**********************************************************************************************/
+
+    /// @inheritdoc IGroveBasin
+    function setPaused(bytes4 key, bool state) external override onlyRole(PAUSER_ROLE) {
+        paused[key] = state;
+        emit PausedSet(key, state);
     }
 
     /**********************************************************************************************/
@@ -408,8 +406,10 @@ contract GroveBasin is IGroveBasin, AccessControl {
         address receiver,
         uint256 referralCode
     )
-        external override whenNotPaused returns (uint256 amountOut)
+        external override returns (uint256 amountOut)
     {
+        _checkPaused(msg.sig);
+        _checkPaused(_getSwapPauseKey(assetIn, assetOut));
         if (amountIn == 0)          revert ZeroAmountIn();
         if (receiver == address(0)) revert ZeroReceiver();
 
@@ -440,8 +440,10 @@ contract GroveBasin is IGroveBasin, AccessControl {
         address receiver,
         uint256 referralCode
     )
-        external override whenNotPaused returns (uint256 amountIn)
+        external override returns (uint256 amountIn)
     {
+        _checkPaused(msg.sig);
+        _checkPaused(_getSwapPauseKey(assetIn, assetOut));
         if (amountOut == 0)         revert ZeroAmountOut();
         if (receiver == address(0)) revert ZeroReceiver();
 
@@ -487,8 +489,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     /// @inheritdoc IGroveBasin
     function deposit(address asset, address receiver, uint256 assetsToDeposit)
-        external override whenNotPaused returns (uint256 newShares)
+        external override returns (uint256 newShares)
     {
+        _checkPaused(msg.sig);
         if (assetsToDeposit == 0)            revert ZeroAmount();
         if (msg.sender != liquidityProvider) revert NotLiquidityProvider();
 
@@ -535,7 +538,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function previewDeposit(address asset, uint256 assetsToDeposit)
         public view override returns (uint256)
     {
-        if (asset == creditToken && creditTokenDepositsDisabled) revert CreditDepositsDisabled();
+        if (asset == creditToken) _checkPaused(PAUSED_DEPOSIT_CREDIT);
 
         // Convert amount to 1e18 precision denominated in value of USD then convert to shares.
         // NOTE: Don't need to check valid asset here since `_getAssetValue` will revert if invalid
@@ -621,29 +624,11 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         uint256 assetValue = convertToAssetValue(numShares);
 
-        if (asset == swapToken) {
-            uint256 rate          = _getConversionRate(swapTokenRateProvider);
-            uint256 ratePrecision = IRateProviderLike(swapTokenRateProvider).getRatePrecision();
-            return Math.mulDiv(
-                assetValue * _swapTokenPrecision,
-                ratePrecision,
-                rate * 1e18
-            );
-        }
-        else if (asset == collateralToken) {
-            uint256 rate          = _getConversionRate(collateralTokenRateProvider);
-            uint256 ratePrecision = IRateProviderLike(collateralTokenRateProvider).getRatePrecision();
-            return Math.mulDiv(
-                assetValue * _collateralTokenPrecision,
-                ratePrecision,
-                rate * 1e18
-            );
-        }
+        ( uint256 rate, uint256 ratePrecision, uint256 tokenPrecision ) =
+            _getTokenRateAndPrecision(asset);
 
-        uint256 rate          = _getConversionRate(creditTokenRateProvider);
-        uint256 ratePrecision = IRateProviderLike(creditTokenRateProvider).getRatePrecision();
         return Math.mulDiv(
-            assetValue * _creditTokenPrecision,
+            assetValue * tokenPrecision,
             ratePrecision,
             rate * 1e18
         );
@@ -680,13 +665,14 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /// @inheritdoc IGroveBasin
     /// @dev pendingCreditTokenBalance is an estimate of the value that Basin is due to receive, not a firm amount.
     function totalAssets() public view override returns (uint256) {
-        return _getSwapTokenValue(
-                    _getAvailableBalance(swapToken), false  // Round down
+        return _getAssetValue(
+                    swapToken, _getAvailableBalance(swapToken), false  // Round down
                 )
-            +  _getCollateralTokenValue(
-                    _getAvailableBalance(collateralToken), false  // Round down
+            +  _getAssetValue(
+                    collateralToken, _getAvailableBalance(collateralToken), false  // Round down
                 )
-            +  _getCreditTokenValue(
+            +  _getAssetValue(
+                    creditToken,
                     _getAvailableBalance(address(creditToken)) + pendingCreditTokenBalance,
                     false // Round down
                 );
@@ -714,41 +700,15 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     /// @dev Returns the USD value of `amount` of `asset` in 1e18 precision.
     function _getAssetValue(address asset, uint256 amount, bool roundUp) internal view returns (uint256) {
-        if      (asset == swapToken)       return _getSwapTokenValue(amount, roundUp);
-        else if (asset == collateralToken) return _getCollateralTokenValue(amount, roundUp);
-        else if (asset == creditToken)     return _getCreditTokenValue(amount, roundUp);
-        else                               revert InvalidAsset();
-    }
+        _requireValidAsset(asset);
 
-    /// @dev Returns the USD value of `amount` of swap tokens in 1e18 precision.
-    function _getSwapTokenValue(uint256 amount, bool roundUp) internal view returns (uint256) {
-        return Math.mulDiv(
-            amount * _getConversionRate(swapTokenRateProvider),
-            1e18,
-            IRateProviderLike(swapTokenRateProvider).getRatePrecision() * _swapTokenPrecision,
-            roundUp ? Math.Rounding.Ceil : Math.Rounding.Floor
-        );
-    }
-
-    /// @dev Returns the USD value of `amount` of collateral tokens in 1e18 precision.
-    function _getCollateralTokenValue(uint256 amount, bool roundUp) internal view returns (uint256) {
-        return Math.mulDiv(
-            amount * _getConversionRate(collateralTokenRateProvider),
-            1e18,
-            IRateProviderLike(collateralTokenRateProvider).getRatePrecision() * _collateralTokenPrecision,
-            roundUp ? Math.Rounding.Ceil : Math.Rounding.Floor
-        );
-    }
-
-    /// @dev Returns the USD value of `amount` of credit tokens in 1e18 precision.
-    function _getCreditTokenValue(uint256 amount, bool roundUp) internal view returns (uint256) {
-        uint256 rate      = _getConversionRate(creditTokenRateProvider);
-        uint256 precision = IRateProviderLike(creditTokenRateProvider).getRatePrecision();
-
+        ( uint256 rate, uint256 ratePrecision, uint256 tokenPrecision ) =
+            _getTokenRateAndPrecision(asset);
+        
         return Math.mulDiv(
             amount * rate,
             1e18,
-            precision * _creditTokenPrecision,
+            ratePrecision * tokenPrecision,
             roundUp ? Math.Rounding.Ceil : Math.Rounding.Floor
         );
     }
@@ -757,125 +717,96 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /*** Internal preview functions (swaps)                                                     ***/
     /**********************************************************************************************/
 
+    /// @dev Returns the conversion rate, rate precision, and token precision for a supported asset.
+    function _getTokenRateAndPrecision(address token)
+        internal view returns (uint256 rate, uint256 ratePrecision, uint256 tokenPrecision)
+    {
+        if (token == swapToken) {
+            return (
+                _getConversionRate(swapTokenRateProvider),
+                IRateProviderLike(swapTokenRateProvider).getRatePrecision(),
+                _swapTokenPrecision
+            );
+        }
+        if (token == collateralToken) {
+            return (
+                _getConversionRate(collateralTokenRateProvider),
+                IRateProviderLike(collateralTokenRateProvider).getRatePrecision(),
+                _collateralTokenPrecision
+            );
+        }
+        return (
+            _getConversionRate(creditTokenRateProvider),
+            IRateProviderLike(creditTokenRateProvider).getRatePrecision(),
+            _creditTokenPrecision
+        );
+    }
+
+    /// @dev Converts `amount` of tokenIn to tokenOut using their rates and precisions.
+    ///      Consolidates the four precision values (all powers of 10) into a single net scalar
+    ///      applied to either the numerator or denominator, keeping a single mulDiv call.
+    ///      
+    ///      result =  amount * rateIn  * tokenPrecisionOut * ratePrecisionOut
+    ///               --------------------------------------------------------
+    ///                         rateOut * tokenPrecisionIn  * ratePrecisionIn
+    function _convert(
+        uint256 amount,
+        uint256 rateIn,
+        uint256 ratePrecisionIn,
+        uint256 tokenPrecisionIn,
+        uint256 rateOut,
+        uint256 ratePrecisionOut,
+        uint256 tokenPrecisionOut,
+        bool    roundUp
+    )
+        internal pure returns (uint256)
+    {
+        uint256 numeratorPrecision   = tokenPrecisionOut * ratePrecisionOut;
+        uint256 denominatorPrecision = tokenPrecisionIn  * ratePrecisionIn;
+
+        if (numeratorPrecision >= denominatorPrecision) {
+            uint256 scalar = numeratorPrecision / denominatorPrecision;
+
+            if (!roundUp) return Math.mulDiv(amount, rateIn * scalar, rateOut);
+
+            return Math.mulDiv(amount, rateIn * scalar, rateOut, Math.Rounding.Ceil);
+        }
+
+        uint256 scalar = denominatorPrecision / numeratorPrecision;
+
+        if (!roundUp) return Math.mulDiv(
+            amount,
+            rateIn,
+            rateOut * scalar
+        );
+
+        return Math.mulDiv(
+            amount,
+            rateIn,
+            rateOut * scalar,
+            Math.Rounding.Ceil
+        );
+    }
+
     /// @dev Converts `amount` of `asset` into `quoteAsset` terms using rate providers.
     function _getSwapQuote(address asset, address quoteAsset, uint256 amount, bool roundUp)
-        internal view returns (uint256 quoteAmount)
-    {
-        if (asset == swapToken) {
-            if      (quoteAsset == collateralToken) revert InvalidSwap();
-            else if (quoteAsset == creditToken)     return _convertSwapToCreditToken(amount, roundUp);
-        }
-
-        else if (asset == collateralToken) {
-            if      (quoteAsset == swapToken)      revert InvalidSwap();
-            else if (quoteAsset == creditToken)    return _convertCollateralToCreditToken(amount, roundUp);
-        }
-
-        else if (asset == creditToken) {
-            if      (quoteAsset == swapToken)       return _convertCreditTokenToSwap(amount, roundUp);
-            else if (quoteAsset == collateralToken) return _convertCreditTokenToCollateral(amount, roundUp);
-        }
-
-        revert InvalidAsset();
-    }
-
-    /// @dev Converts swap token amount to equivalent credit token amount.
-    function _convertSwapToCreditToken(uint256 amount, bool roundUp)
         internal view returns (uint256)
     {
-        uint256 swapRate            = _getConversionRate(swapTokenRateProvider);
-        uint256 creditRate          = _getConversionRate(creditTokenRateProvider);
-        uint256 swapRatePrecision   = IRateProviderLike(swapTokenRateProvider).getRatePrecision();
-        uint256 creditRatePrecision = IRateProviderLike(creditTokenRateProvider).getRatePrecision();
+        _requireValidAsset(asset);
+        _requireValidAsset(quoteAsset);
 
-        if (!roundUp) {
-            return Math.mulDiv(
-                amount,
-                swapRate * _creditTokenPrecision * creditRatePrecision,
-                creditRate * _swapTokenPrecision * swapRatePrecision
-            );
-        }
+        if (asset == quoteAsset)                                       revert InvalidAsset();
+        if (asset == swapToken       && quoteAsset == collateralToken) revert InvalidSwap();
+        if (asset == collateralToken && quoteAsset == swapToken)       revert InvalidSwap();
 
-        return Math.mulDiv(
+        (uint256 rateIn,  uint256 ratePrecisionIn,  uint256 tokenPrecisionIn)  = _getTokenRateAndPrecision(asset);
+        (uint256 rateOut, uint256 ratePrecisionOut, uint256 tokenPrecisionOut) = _getTokenRateAndPrecision(quoteAsset);
+
+        return _convert(
             amount,
-            swapRate * _creditTokenPrecision * creditRatePrecision,
-            creditRate * _swapTokenPrecision * swapRatePrecision,
-            Math.Rounding.Ceil
-        );
-    }
-
-    /// @dev Converts credit token amount to equivalent swap token amount.
-    function _convertCreditTokenToSwap(uint256 amount, bool roundUp)
-        internal view returns (uint256)
-    {
-        uint256 swapRate            = _getConversionRate(swapTokenRateProvider);
-        uint256 creditRate          = _getConversionRate(creditTokenRateProvider);
-        uint256 swapRatePrecision   = IRateProviderLike(swapTokenRateProvider).getRatePrecision();
-        uint256 creditRatePrecision = IRateProviderLike(creditTokenRateProvider).getRatePrecision();
-
-        if (!roundUp) {
-            return Math.mulDiv(
-                amount,
-                creditRate * _swapTokenPrecision * swapRatePrecision,
-                swapRate * _creditTokenPrecision * creditRatePrecision
-            );
-        }
-
-        return Math.mulDiv(
-            amount,
-            creditRate * _swapTokenPrecision * swapRatePrecision,
-            swapRate * _creditTokenPrecision * creditRatePrecision,
-            Math.Rounding.Ceil
-        );
-    }
-
-    /// @dev Converts collateral token amount to equivalent credit token amount.
-    function _convertCollateralToCreditToken(uint256 amount, bool roundUp)
-        internal view returns (uint256)
-    {
-        uint256 collateralRate          = _getConversionRate(collateralTokenRateProvider);
-        uint256 creditRate              = _getConversionRate(creditTokenRateProvider);
-        uint256 collateralRatePrecision = IRateProviderLike(collateralTokenRateProvider).getRatePrecision();
-        uint256 creditRatePrecision     = IRateProviderLike(creditTokenRateProvider).getRatePrecision();
-
-        if (!roundUp) {
-            return Math.mulDiv(
-                amount,
-                collateralRate * _creditTokenPrecision * creditRatePrecision,
-                creditRate * _collateralTokenPrecision * collateralRatePrecision
-            );
-        }
-
-        return Math.mulDiv(
-            amount,
-            collateralRate * _creditTokenPrecision * creditRatePrecision,
-            creditRate * _collateralTokenPrecision * collateralRatePrecision,
-            Math.Rounding.Ceil
-        );
-    }
-
-    /// @dev Converts credit token amount to equivalent collateral token amount.
-    function _convertCreditTokenToCollateral(uint256 amount, bool roundUp)
-        internal view returns (uint256)
-    {
-        uint256 collateralRate          = _getConversionRate(collateralTokenRateProvider);
-        uint256 creditRate              = _getConversionRate(creditTokenRateProvider);
-        uint256 collateralRatePrecision = IRateProviderLike(collateralTokenRateProvider).getRatePrecision();
-        uint256 creditRatePrecision     = IRateProviderLike(creditTokenRateProvider).getRatePrecision();
-
-        if (!roundUp) {
-            return Math.mulDiv(
-                amount,
-                creditRate * _collateralTokenPrecision * collateralRatePrecision,
-                collateralRate * _creditTokenPrecision * creditRatePrecision
-            );
-        }
-
-        return Math.mulDiv(
-            amount,
-            creditRate * _collateralTokenPrecision * collateralRatePrecision,
-            collateralRate * _creditTokenPrecision * creditRatePrecision,
-            Math.Rounding.Ceil
+            rateIn,  ratePrecisionIn,  tokenPrecisionIn,
+            rateOut, ratePrecisionOut, tokenPrecisionOut,
+            roundUp
         );
     }
 
@@ -965,6 +896,23 @@ contract GroveBasin is IGroveBasin, AccessControl {
         if (asset != swapToken && asset != collateralToken && asset != creditToken) revert InvalidAsset();
     }
 
+    /// @dev Reverts if the global pause or the given key is active.
+    function _checkPaused(bytes4 key) internal view {
+        if (paused[bytes4(0)] || paused[key]) revert Paused();
+    }
+
+    /// @dev Returns the direction-specific pause key for a swap, or bytes4(0) if none applies.
+    function _getSwapPauseKey(address assetIn, address assetOut) internal view returns (bytes4) {
+        if (assetIn == creditToken) {
+            if (assetOut == collateralToken) return PAUSED_SWAP_CREDIT_TO_COLLATERAL;
+            if (assetOut == swapToken)       return PAUSED_SWAP_CREDIT_TO_SWAP;
+        } else if (assetOut == creditToken) {
+            if (assetIn == collateralToken) return PAUSED_SWAP_COLLATERAL_TO_CREDIT;
+            if (assetIn == swapToken)       return PAUSED_SWAP_SWAP_TO_CREDIT;
+        }
+        return bytes4(0);
+    }
+
     /// @dev Returns the address holding custody of `asset` (pocket for swap tokens, Basin otherwise).
     function _getAssetCustodian(address asset) internal view returns (address custodian) {
         custodian = asset == swapToken ? pocket : address(this);
@@ -988,20 +936,21 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function _initiateRedeem(address redeemer, uint256 creditTokenAmount) internal returns (bytes32 redeemRequestId) {
         if (!hasRole(REDEEMER_CONTRACT_ROLE, redeemer)) revert InvalidRedeemer();
 
-        uint256 collateralTokenAmount = _convertCreditTokenToCollateral(creditTokenAmount, false);
+        uint256 collateralTokenAmount = _getSwapQuote(creditToken, collateralToken, creditTokenAmount, false);
 
         RedeemRequest memory request = RedeemRequest({
-            blockNumber:           block.number,
-            redeemer:              redeemer,
-            creditTokenAmount:     creditTokenAmount,
+            blockNumber          : block.number,
+            redeemer             : redeemer,
+            creditTokenAmount    : creditTokenAmount,
             collateralTokenAmount: collateralTokenAmount
         });
 
         redeemRequestId = keccak256(abi.encode(request));
         if (redeemRequests[redeemRequestId].creditTokenAmount != 0) revert RequestAlreadyExists();
 
-        redeemRequests[redeemRequestId] = request;
-        pendingCreditTokenBalance += creditTokenAmount;
+        redeemRequests[redeemRequestId]  = request;
+        pendingCreditTokenBalance       += creditTokenAmount;
+        pendingRedemptions[redeemer]++;
 
         IERC20(creditToken).approve(redeemer, creditTokenAmount);
         ITokenRedeemer(redeemer).initiateRedeem(creditTokenAmount);
@@ -1018,6 +967,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         delete redeemRequests[redeemRequestId];
         pendingCreditTokenBalance -= request.creditTokenAmount;
+        pendingRedemptions[request.redeemer]--;
 
         uint256 collateralTokenReturned = ITokenRedeemer(request.redeemer).completeRedeem(request);
 
