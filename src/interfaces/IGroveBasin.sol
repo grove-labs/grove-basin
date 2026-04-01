@@ -185,7 +185,7 @@ interface IGroveBasin {
      *  @dev   Emitted when a credit token redemption is completed via a redeemer.
      *  @param redeemer Address of the redeemer contract.
      *  @param caller   Address of the caller that completed the redemption.
-     *  @param amount   Amount passed to the redeemer's completeRedeem.
+     *  @param amount   Amount of collateral tokens returned from the redeemer.
      */
     event RedeemCompleted(address indexed redeemer, address indexed caller, uint256 amount);
 
@@ -305,7 +305,7 @@ interface IGroveBasin {
 
     /**
      *  @dev    Returns the address of the pocket, an address that holds custody of the swap
-     *          token in the GroveBasin and can deploy it to yield-bearing strategies. Settable by the owner.
+     *          token in the GroveBasin and can deploy it to yield-bearing strategies. Settable by the manager admin.
      *  @return The address of the pocket.
      */
     function pocket() external view returns (address);
@@ -372,7 +372,7 @@ interface IGroveBasin {
 
     /**
      *  @dev    Returns the address of the single immutable liquidity provider that is the only
-     *          address allowed to deposit assets, including the initial seed deposit.
+     *          address allowed to call `deposit`.
      *  @return The address of the liquidity provider.
      */
     function liquidityProvider() external view returns (address);
@@ -816,16 +816,16 @@ interface IGroveBasin {
      *  @dev    View function that converts an amount of a given shares to the equivalent
      *          amount of assetValue.
      *  @param  numShares  Number of shares to convert to assetValue.
-     *  @return assetValue Value of assets in swap token denominated in 18 decimals.
+     *  @return assetValue Normalized USD value of assets in 1e18 precision.
      */
     function convertToAssetValue(uint256 numShares) external view returns (uint256);
 
     /**
-     *  @dev    View function that converts an amount of assetValue (18 decimal value denominated in
-     *          swap token and collateral token) to shares in the GroveBasin based on the current
-     *          exchange rate. Note that this rounds down on calculation so is intended to be used
-     *          for quoting the current exchange rate.
-     *  @param  assetValue 18 decimal value denominated in swap token (e.g., 1e6 swap token = 1e18)
+     *  @dev    View function that converts an amount of assetValue (normalized USD value in 1e18
+     *          precision) to shares in the GroveBasin based on the current exchange rate. Note that
+     *          this rounds down on calculation so is intended to be used for quoting the current
+     *          exchange rate.
+     *  @param  assetValue Normalized USD value in 1e18 precision.
      *  @return shares     Number of shares that the assetValue is equivalent to.
      */
     function convertToShares(uint256 assetValue) external view returns (uint256);
@@ -847,9 +847,9 @@ interface IGroveBasin {
     /**
      *  @dev View function that returns the total value of the balance of all assets currently held
      *       by the GroveBasin, including the estimated value of pending credit tokens from
-     *       redemptions, converted to swap token/collateral token terms denominated in 18 decimal
-     *       precision. Note: pendingCreditTokenBalance is an estimate of the value that Basin is
-     *       due to receive, not a firm amount.
+     *       redemptions, as a normalized USD value in 1e18 precision. Note:
+     *       pendingCreditTokenBalance is an estimate of the value that Basin is due to receive,
+     *       not a firm amount.
      */
     function totalAssets() external view returns (uint256);
 

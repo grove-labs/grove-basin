@@ -23,7 +23,7 @@ import { ChronicleRateProvider } from "src/rate-providers/ChronicleRateProvider.
  *             --broadcast \
  *             --sig "run(address)" 0x1234567890123456789012345678901234567890
  *
- *         For simpler usage, set the oracle address in the runDefault() function and run without parameters:
+ *         For simpler usage, set the oracle address in the run() function and run without parameters:
  *         forge script script/DeployChronicleRateProvider.s.sol:DeployChronicleRateProvider \
  *             --rpc-url $MAINNET_RPC_URL \
  *             --account grove-dev-deployer \
