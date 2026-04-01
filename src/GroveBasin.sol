@@ -784,9 +784,13 @@ contract GroveBasin is IGroveBasin, AccessControl {
         );
     }
 
-    /// @dev Converts `amount` of one token to another using their rates and precisions.
+    /// @dev Converts `amount` of tokenIn to tokenOut using their rates and precisions.
     ///      Consolidates the four precision values (all powers of 10) into a single net scalar
     ///      applied to either the numerator or denominator, keeping a single mulDiv call.
+    ///      
+    ///      result =  amount * rateIn  * tokenPrecisionOut * ratePrecisionOut
+    ///               --------------------------------------------------------
+    ///                         rateOut * tokenPrecisionIn  * ratePrecisionIn
     function _convert(
         uint256 amount,
         uint256 rateIn,
@@ -805,16 +809,25 @@ contract GroveBasin is IGroveBasin, AccessControl {
         if (numeratorPrecision >= denominatorPrecision) {
             uint256 scalar = numeratorPrecision / denominatorPrecision;
 
-            if (!roundUp) return Math.mulDiv(amount * scalar, rateIn, rateOut);
+            if (!roundUp) return Math.mulDiv(amount, rateIn * scalar, rateOut);
 
-            return Math.mulDiv(amount * scalar, rateIn, rateOut, Math.Rounding.Ceil);
+            return Math.mulDiv(amount, rateIn * scalar, rateOut, Math.Rounding.Ceil);
         }
 
         uint256 scalar = denominatorPrecision / numeratorPrecision;
 
-        if (!roundUp) return Math.mulDiv(amount, rateIn, rateOut * scalar);
+        if (!roundUp) return Math.mulDiv(
+            amount,
+            rateIn,
+            rateOut * scalar
+        );
 
-        return Math.mulDiv(amount, rateIn, rateOut * scalar, Math.Rounding.Ceil);
+        return Math.mulDiv(
+            amount,
+            rateIn,
+            rateOut * scalar,
+            Math.Rounding.Ceil
+        );
     }
 
     /// @dev Converts `amount` of `asset` into `quoteAsset` terms using rate providers.
@@ -824,7 +837,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         _requireValidAsset(asset);
         _requireValidAsset(quoteAsset);
 
-        if (asset == quoteAsset)                                      revert InvalidAsset();
+        if (asset == quoteAsset)                                       revert InvalidAsset();
         if (asset == swapToken       && quoteAsset == collateralToken) revert InvalidSwap();
         if (asset == collateralToken && quoteAsset == swapToken)       revert InvalidSwap();
 
