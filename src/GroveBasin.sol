@@ -7,9 +7,9 @@ import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
 import { AccessControl } from "openzeppelin-contracts/contracts/access/AccessControl.sol";
 import { Math }          from "openzeppelin-contracts/contracts/utils/math/Math.sol";
 
-import { IGroveBasin }             from "src/interfaces/IGroveBasin.sol";
-import { IGroveBasinPocket }       from "src/interfaces/IGroveBasinPocket.sol";
-import { IRateProviderLike }       from "src/interfaces/IRateProviderLike.sol";
+import { IGroveBasin }                   from "src/interfaces/IGroveBasin.sol";
+import { IGroveBasinPocket }             from "src/interfaces/IGroveBasinPocket.sol";
+import { IRateProviderLike }             from "src/interfaces/IRateProviderLike.sol";
 import { ITokenRedeemer, RedeemRequest } from "src/interfaces/ITokenRedeemer.sol";
 
 /**
@@ -42,10 +42,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
     bytes4 public constant PAUSED_SWAP_SWAP_TO_CREDIT       = bytes4(keccak256("PAUSED_SWAP_SWAP_TO_CREDIT"));
     bytes4 public constant PAUSED_DEPOSIT_CREDIT            = bytes4(keccak256("PAUSED_DEPOSIT_CREDIT"));
 
-    /// @dev Mapping of pause keys to pause state. Keys can be function selectors or arbitrary
-    ///      bytes4 values. bytes4(0) is reserved for global pause.
-    mapping(bytes4 => bool) public override paused;
-
     uint256 internal immutable _swapTokenPrecision;
     uint256 internal immutable _collateralTokenPrecision;
     uint256 internal immutable _creditTokenPrecision;
@@ -62,8 +58,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     address public override pocket;
 
-    uint256 public override stalenessThreshold;
     uint256 public override totalShares;
+    uint256 public override pendingCreditTokenBalance;
+
     uint256 public override maxSwapSize;
     uint256 public override maxSwapSizeLowerBound;
     uint256 public override maxSwapSizeUpperBound;
@@ -73,15 +70,18 @@ contract GroveBasin is IGroveBasin, AccessControl {
     uint256 public override minFee;
     uint256 public override maxFee;
 
+    uint256 public override stalenessThreshold;
     uint256 public override minStalenessThreshold;
     uint256 public override maxStalenessThreshold;
-    uint256 public override pendingCreditTokenBalance;
-
+    
     address public override feeClaimer;
 
-    mapping(address user       => uint256 shares)        public override shares;
-    mapping(bytes32 requestId  => RedeemRequest request)  public override redeemRequests;
-    mapping(address redeemer   => uint256 count)          public override pendingRedemptions;
+    /// @dev Mapping of pause keys to pause state. Keys can be function selectors or arbitrary
+    ///      bytes4 values. bytes4(0) is reserved for global pause.
+    mapping(bytes4 pauseKey   => bool isPaused)         public override paused;
+    mapping(address user      => uint256 shares)        public override shares;
+    mapping(bytes32 requestId => RedeemRequest request) public override redeemRequests;
+    mapping(address redeemer  => uint256 count)         public override pendingRedemptions;
 
     constructor(
         address owner_,
@@ -149,7 +149,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         maxSwapSizeLowerBound = 0;
         maxSwapSizeUpperBound = 1_000_000_000e18;
         minStalenessThreshold = 5 minutes;
-        maxStalenessThreshold = 48 hours;
+        maxStalenessThreshold = 2 weeks;
         stalenessThreshold    = minStalenessThreshold;
 
         _setRoleAdmin(MANAGER_ROLE,           MANAGER_ADMIN_ROLE);
@@ -968,17 +968,17 @@ contract GroveBasin is IGroveBasin, AccessControl {
         uint256 collateralTokenAmount = _getSwapQuote(creditToken, collateralToken, creditTokenAmount, false);
 
         RedeemRequest memory request = RedeemRequest({
-            blockNumber:           block.number,
-            redeemer:              redeemer,
-            creditTokenAmount:     creditTokenAmount,
+            blockNumber          : block.number,
+            redeemer             : redeemer,
+            creditTokenAmount    : creditTokenAmount,
             collateralTokenAmount: collateralTokenAmount
         });
 
         redeemRequestId = keccak256(abi.encode(request));
         if (redeemRequests[redeemRequestId].creditTokenAmount != 0) revert RequestAlreadyExists();
 
-        redeemRequests[redeemRequestId] = request;
-        pendingCreditTokenBalance += creditTokenAmount;
+        redeemRequests[redeemRequestId]  = request;
+        pendingCreditTokenBalance       += creditTokenAmount;
         pendingRedemptions[redeemer]++;
 
         IERC20(creditToken).approve(redeemer, creditTokenAmount);
