@@ -395,6 +395,13 @@ interface IGroveBasin {
     function paused(bytes4 sig) external view returns (bool);
 
     /**
+     *  @dev    Returns the role identifier for the pauser role. Addresses with this role
+     *          can call setPaused and revoke MANAGER_ROLE and REDEEMER_ROLE.
+     *  @return The bytes32 role identifier.
+     */
+    function PAUSER_ROLE() external view returns (bytes32);
+
+    /**
      *  @dev    Returns the role identifier for the redeemer role. Addresses with this role
      *          can call initiateRedeem.
      *  @return The bytes32 role identifier.
@@ -580,7 +587,7 @@ interface IGroveBasin {
     function setMaxSwapSize(uint256 newMaxSwapSize) external;
 
     /**
-     *  @dev   Sets or unsets a function pause flag by its selector. Callable only by MANAGER_ROLE.
+     *  @dev   Sets or unsets a function pause flag by its selector. Callable only by PAUSER_ROLE.
      *         Use bytes4(0) to set the global pause (pauses all pausable functions).
      *  @param sig   The function selector to pause/unpause (bytes4(0) for global pause).
      *  @param state Whether to pause the function.

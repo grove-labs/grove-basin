@@ -11,6 +11,7 @@ import { MockERC20, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 contract GroveBasinPauseTests is GroveBasinTestBase {
 
     address public manager  = makeAddr("manager");
+    address public pauser   = makeAddr("pauser");
     address public swapper  = makeAddr("swapper");
     address public receiver = makeAddr("receiver");
 
@@ -19,6 +20,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
 
         vm.startPrank(owner);
         groveBasin.grantRole(groveBasin.MANAGER_ROLE(), manager);
+        groveBasin.grantRole(groveBasin.PAUSER_ROLE(),  pauser);
         vm.stopPrank();
 
         _deposit(address(swapToken),       makeAddr("seeder"), 1_000e6);
@@ -30,32 +32,46 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
     /*** Access control tests                                                                   ***/
     /**********************************************************************************************/
 
-    function test_setPaused_notManager() public {
-        address nonManager = makeAddr("nonManager");
+    function test_setPaused_notPauser() public {
+        address nonPauser = makeAddr("nonPauser");
 
         vm.expectRevert(
             abi.encodeWithSignature(
                 "AccessControlUnauthorizedAccount(address,bytes32)",
-                nonManager,
-                groveBasin.MANAGER_ROLE()
+                nonPauser,
+                groveBasin.PAUSER_ROLE()
             )
         );
-        vm.prank(nonManager);
+        vm.prank(nonPauser);
         groveBasin.setPaused(groveBasin.swapExactIn.selector, true);
     }
 
-    function test_setPaused_globalNotManager() public {
-        address nonManager = makeAddr("nonManager");
+    function test_setPaused_globalNotPauser() public {
+        address nonPauser = makeAddr("nonPauser");
 
         vm.expectRevert(
             abi.encodeWithSignature(
                 "AccessControlUnauthorizedAccount(address,bytes32)",
-                nonManager,
-                groveBasin.MANAGER_ROLE()
+                nonPauser,
+                groveBasin.PAUSER_ROLE()
             )
         );
-        vm.prank(nonManager);
+        vm.prank(nonPauser);
         groveBasin.setPaused(bytes4(0), true);
+    }
+
+    function test_setPaused_managerCannotPause() public {
+        bytes32 pauserRole = groveBasin.PAUSER_ROLE();
+
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                manager,
+                pauserRole
+            )
+        );
+        vm.prank(manager);
+        groveBasin.setPaused(groveBasin.swapExactIn.selector, true);
     }
 
     /**********************************************************************************************/
@@ -66,12 +82,12 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         bytes4 sig = groveBasin.swapExactIn.selector;
         assertEq(groveBasin.paused(sig), false);
 
-        vm.prank(manager);
+        vm.prank(pauser);
         groveBasin.setPaused(sig, true);
 
         assertEq(groveBasin.paused(sig), true);
 
-        vm.prank(manager);
+        vm.prank(pauser);
         groveBasin.setPaused(sig, false);
 
         assertEq(groveBasin.paused(sig), false);
@@ -81,7 +97,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         bytes4 sig = groveBasin.swapExactOut.selector;
         assertEq(groveBasin.paused(sig), false);
 
-        vm.prank(manager);
+        vm.prank(pauser);
         groveBasin.setPaused(sig, true);
 
         assertEq(groveBasin.paused(sig), true);
@@ -91,7 +107,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         bytes4 sig = groveBasin.deposit.selector;
         assertEq(groveBasin.paused(sig), false);
 
-        vm.prank(manager);
+        vm.prank(pauser);
         groveBasin.setPaused(sig, true);
 
         assertEq(groveBasin.paused(sig), true);
@@ -101,7 +117,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         bytes4 sig = groveBasin.initiateRedeem.selector;
         assertEq(groveBasin.paused(sig), false);
 
-        vm.prank(manager);
+        vm.prank(pauser);
         groveBasin.setPaused(sig, true);
 
         assertEq(groveBasin.paused(sig), true);
@@ -111,12 +127,12 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         bytes4 globalSig = bytes4(0);
         assertEq(groveBasin.paused(globalSig), false);
 
-        vm.prank(manager);
+        vm.prank(pauser);
         groveBasin.setPaused(globalSig, true);
 
         assertEq(groveBasin.paused(globalSig), true);
 
-        vm.prank(manager);
+        vm.prank(pauser);
         groveBasin.setPaused(globalSig, false);
 
         assertEq(groveBasin.paused(globalSig), false);
@@ -132,7 +148,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         vm.expectEmit(true, false, false, true);
         emit IGroveBasin.PausedSet(sig, true);
 
-        vm.prank(manager);
+        vm.prank(pauser);
         groveBasin.setPaused(sig, true);
     }
 
@@ -142,7 +158,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         vm.expectEmit(true, false, false, true);
         emit IGroveBasin.PausedSet(globalSig, true);
 
-        vm.prank(manager);
+        vm.prank(pauser);
         groveBasin.setPaused(globalSig, true);
     }
 
@@ -151,7 +167,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
     /**********************************************************************************************/
 
     function test_swapExactIn_paused() public {
-        vm.prank(manager);
+        vm.prank(pauser);
         groveBasin.setPaused(groveBasin.swapExactIn.selector, true);
 
         vm.expectRevert(IGroveBasin.Paused.selector);
@@ -159,7 +175,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
     }
 
     function test_swapExactOut_paused() public {
-        vm.prank(manager);
+        vm.prank(pauser);
         groveBasin.setPaused(groveBasin.swapExactOut.selector, true);
 
         vm.expectRevert(IGroveBasin.Paused.selector);
@@ -167,7 +183,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
     }
 
     function test_swapExactIn_globalPaused() public {
-        vm.prank(manager);
+        vm.prank(pauser);
         groveBasin.setPaused(bytes4(0), true);
 
         vm.expectRevert(IGroveBasin.Paused.selector);
@@ -175,7 +191,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
     }
 
     function test_swapExactOut_globalPaused() public {
-        vm.prank(manager);
+        vm.prank(pauser);
         groveBasin.setPaused(bytes4(0), true);
 
         vm.expectRevert(IGroveBasin.Paused.selector);
@@ -189,10 +205,10 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
     function test_swapExactIn_unpaused() public {
         bytes4 sig = groveBasin.swapExactIn.selector;
 
-        vm.prank(manager);
+        vm.prank(pauser);
         groveBasin.setPaused(sig, true);
 
-        vm.prank(manager);
+        vm.prank(pauser);
         groveBasin.setPaused(sig, false);
 
         swapToken.mint(swapper, 100e6);
@@ -207,7 +223,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
     /**********************************************************************************************/
 
     function test_deposit_paused() public {
-        vm.prank(manager);
+        vm.prank(pauser);
         groveBasin.setPaused(groveBasin.deposit.selector, true);
 
         address user = groveBasin.liquidityProvider();
@@ -224,10 +240,10 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
     function test_deposit_unpaused() public {
         bytes4 sig = groveBasin.deposit.selector;
 
-        vm.prank(manager);
+        vm.prank(pauser);
         groveBasin.setPaused(sig, true);
 
-        vm.prank(manager);
+        vm.prank(pauser);
         groveBasin.setPaused(sig, false);
 
         address user = groveBasin.liquidityProvider();
@@ -244,7 +260,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
     /**********************************************************************************************/
 
     function test_initiateRedeem_paused() public {
-        vm.prank(manager);
+        vm.prank(pauser);
         groveBasin.setPaused(groveBasin.initiateRedeem.selector, true);
 
         address redeemer = makeAddr("redeemer");
@@ -256,6 +272,117 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         vm.prank(redeemer);
         vm.expectRevert(IGroveBasin.Paused.selector);
         groveBasin.initiateRedeem(makeAddr("redeemerContract"), 100e18);
+    }
+
+    /**********************************************************************************************/
+    /*** PAUSER_ROLE revoke MANAGER_ROLE and REDEEMER_ROLE tests                                ***/
+    /**********************************************************************************************/
+
+    function test_pauser_revokeManagerRole() public {
+        bytes32 managerRole = groveBasin.MANAGER_ROLE();
+        assertTrue(groveBasin.hasRole(managerRole, manager));
+
+        vm.prank(pauser);
+        groveBasin.revokeRole(managerRole, manager);
+
+        assertFalse(groveBasin.hasRole(managerRole, manager));
+    }
+
+    function test_pauser_revokeRedeemerRole() public {
+        bytes32 redeemerRole = groveBasin.REDEEMER_ROLE();
+        address redeemer = makeAddr("redeemer");
+        vm.prank(owner);
+        groveBasin.grantRole(redeemerRole, redeemer);
+        assertTrue(groveBasin.hasRole(redeemerRole, redeemer));
+
+        vm.prank(pauser);
+        groveBasin.revokeRole(redeemerRole, redeemer);
+
+        assertFalse(groveBasin.hasRole(redeemerRole, redeemer));
+    }
+
+    function test_pauser_cannotGrantManagerRole() public {
+        bytes32 managerRole = groveBasin.MANAGER_ROLE();
+        bytes32 managerAdminRole = groveBasin.MANAGER_ADMIN_ROLE();
+        address newManager = makeAddr("newManager");
+
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                pauser,
+                managerAdminRole
+            )
+        );
+        vm.prank(pauser);
+        groveBasin.grantRole(managerRole, newManager);
+    }
+
+    function test_pauser_cannotGrantRedeemerRole() public {
+        bytes32 redeemerRole = groveBasin.REDEEMER_ROLE();
+        bytes32 managerAdminRole = groveBasin.MANAGER_ADMIN_ROLE();
+        address newRedeemer = makeAddr("newRedeemer");
+
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                pauser,
+                managerAdminRole
+            )
+        );
+        vm.prank(pauser);
+        groveBasin.grantRole(redeemerRole, newRedeemer);
+    }
+
+    function test_pauser_cannotRevokeOtherRoles() public {
+        bytes32 redeemerContractRole = groveBasin.REDEEMER_CONTRACT_ROLE();
+        bytes32 managerAdminRole = groveBasin.MANAGER_ADMIN_ROLE();
+
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                pauser,
+                managerAdminRole
+            )
+        );
+        vm.prank(pauser);
+        groveBasin.revokeRole(redeemerContractRole, makeAddr("someone"));
+    }
+
+    /**********************************************************************************************/
+    /*** PAUSER_ROLE admin tests                                                                ***/
+    /**********************************************************************************************/
+
+    function test_pauserRole_adminIsManagerAdmin() public {
+        assertEq(groveBasin.getRoleAdmin(groveBasin.PAUSER_ROLE()), groveBasin.MANAGER_ADMIN_ROLE());
+    }
+
+    function test_managerAdmin_grantPauserRole() public {
+        bytes32 managerAdminRole = groveBasin.MANAGER_ADMIN_ROLE();
+        bytes32 pauserRole = groveBasin.PAUSER_ROLE();
+        address managerAdmin = makeAddr("managerAdmin");
+
+        vm.prank(owner);
+        groveBasin.grantRole(managerAdminRole, managerAdmin);
+
+        address newPauser = makeAddr("newPauser");
+        vm.prank(managerAdmin);
+        groveBasin.grantRole(pauserRole, newPauser);
+
+        assertTrue(groveBasin.hasRole(pauserRole, newPauser));
+    }
+
+    function test_managerAdmin_revokePauserRole() public {
+        bytes32 managerAdminRole = groveBasin.MANAGER_ADMIN_ROLE();
+        bytes32 pauserRole = groveBasin.PAUSER_ROLE();
+        address managerAdmin = makeAddr("managerAdmin");
+
+        vm.prank(owner);
+        groveBasin.grantRole(managerAdminRole, managerAdmin);
+
+        vm.prank(managerAdmin);
+        groveBasin.revokeRole(pauserRole, pauser);
+
+        assertFalse(groveBasin.hasRole(pauserRole, pauser));
     }
 
 }
