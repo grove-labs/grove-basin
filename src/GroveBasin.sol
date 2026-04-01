@@ -35,7 +35,15 @@ contract GroveBasin is IGroveBasin, AccessControl {
     bytes32 public constant override REDEEMER_ROLE           = keccak256("REDEEMER_ROLE");
     bytes32 public constant override REDEEMER_CONTRACT_ROLE  = keccak256("REDEEMER_CONTRACT_ROLE");
 
-    /// @dev Mapping of function selectors to pause state. bytes4(0) is reserved for global pause.
+    /// @dev Pause keys
+    bytes4 public constant PAUSED_SWAP_CREDIT_TO_COLLATERAL = bytes4(keccak256("PAUSED_SWAP_CREDIT_TO_COLLATERAL"));
+    bytes4 public constant PAUSED_SWAP_CREDIT_TO_SWAP       = bytes4(keccak256("PAUSED_SWAP_CREDIT_TO_SWAP"));
+    bytes4 public constant PAUSED_SWAP_COLLATERAL_TO_CREDIT = bytes4(keccak256("PAUSED_SWAP_COLLATERAL_TO_CREDIT"));
+    bytes4 public constant PAUSED_SWAP_SWAP_TO_CREDIT       = bytes4(keccak256("PAUSED_SWAP_SWAP_TO_CREDIT"));
+    bytes4 public constant PAUSED_DEPOSIT_CREDIT            = bytes4(keccak256("PAUSED_DEPOSIT_CREDIT"));
+
+    /// @dev Mapping of pause keys to pause state. Keys can be function selectors or arbitrary
+    ///      bytes4 values. bytes4(0) is reserved for global pause.
     mapping(bytes4 => bool) public override paused;
 
     uint256 internal immutable _swapTokenPrecision;
@@ -53,8 +61,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
     address public override creditTokenRateProvider;
 
     address public override pocket;
-
-    bool public override creditTokenDepositsDisabled;
 
     uint256 public override stalenessThreshold;
     uint256 public override totalShares;
@@ -75,12 +81,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     mapping(address user       => uint256 shares)        public override shares;
     mapping(bytes32 requestId  => RedeemRequest request)  public override redeemRequests;
-
-    /// @dev Modifier to check if the function is paused. Checks both global pause (bytes4(0)) and function-specific pause.
-    modifier whenNotPaused() {
-        if (paused[bytes4(0)] || paused[msg.sig]) revert Paused();
-        _;
-    }
 
     constructor(
         address owner_,
@@ -160,12 +160,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /**********************************************************************************************/
     /*** Manager admin functions                                                                ***/
     /**********************************************************************************************/
-
-    /// @inheritdoc IGroveBasin
-    function setCreditTokenDepositsDisabled(bool disabled) external override onlyRole(MANAGER_ADMIN_ROLE) {
-        creditTokenDepositsDisabled = disabled;
-        emit CreditTokenDepositsDisabledSet(disabled);
-    }
 
     /// @inheritdoc IGroveBasin
     function setRateProvider(address token, address newRateProvider) external override onlyRole(MANAGER_ADMIN_ROLE) {
@@ -328,7 +322,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /**********************************************************************************************/
 
     /// @inheritdoc IGroveBasin
-    function initiateRedeem(address redeemer, uint256 creditTokenAmount) external override whenNotPaused onlyRole(REDEEMER_ROLE) returns (bytes32 redeemRequestId) {
+    function initiateRedeem(address redeemer, uint256 creditTokenAmount) external override onlyRole(REDEEMER_ROLE) returns (bytes32 redeemRequestId) {
+        _checkPaused(msg.sig);
         return _initiateRedeem(redeemer, creditTokenAmount);
     }
 
@@ -362,9 +357,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     /// @inheritdoc IGroveBasin
-    function setPaused(bytes4 sig, bool state) external override onlyRole(PAUSER_ROLE) {
-        paused[sig] = state;
-        emit PausedSet(sig, state);
+    function setPaused(bytes4 key, bool state) external override onlyRole(PAUSER_ROLE) {
+        paused[key] = state;
+        emit PausedSet(key, state);
     }
 
     /// @inheritdoc IGroveBasin
@@ -408,8 +403,10 @@ contract GroveBasin is IGroveBasin, AccessControl {
         address receiver,
         uint256 referralCode
     )
-        external override whenNotPaused returns (uint256 amountOut)
+        external override returns (uint256 amountOut)
     {
+        _checkPaused(msg.sig);
+        _checkPaused(_getSwapPauseKey(assetIn, assetOut));
         if (amountIn == 0)          revert ZeroAmountIn();
         if (receiver == address(0)) revert ZeroReceiver();
 
@@ -440,8 +437,10 @@ contract GroveBasin is IGroveBasin, AccessControl {
         address receiver,
         uint256 referralCode
     )
-        external override whenNotPaused returns (uint256 amountIn)
+        external override returns (uint256 amountIn)
     {
+        _checkPaused(msg.sig);
+        _checkPaused(_getSwapPauseKey(assetIn, assetOut));
         if (amountOut == 0)         revert ZeroAmountOut();
         if (receiver == address(0)) revert ZeroReceiver();
 
@@ -487,8 +486,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     /// @inheritdoc IGroveBasin
     function deposit(address asset, address receiver, uint256 assetsToDeposit)
-        external override whenNotPaused returns (uint256 newShares)
+        external override returns (uint256 newShares)
     {
+        _checkPaused(msg.sig);
         if (assetsToDeposit == 0)            revert ZeroAmount();
         if (msg.sender != liquidityProvider) revert NotLiquidityProvider();
 
@@ -535,7 +535,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function previewDeposit(address asset, uint256 assetsToDeposit)
         public view override returns (uint256)
     {
-        if (asset == creditToken && creditTokenDepositsDisabled) revert CreditDepositsDisabled();
+        if (asset == creditToken) _checkPaused(PAUSED_DEPOSIT_CREDIT);
 
         // Convert amount to 1e18 precision denominated in value of USD then convert to shares.
         // NOTE: Don't need to check valid asset here since `_getAssetValue` will revert if invalid
@@ -963,6 +963,23 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /// @dev Reverts if `asset` is not one of the three supported tokens.
     function _requireValidAsset(address asset) internal view {
         if (asset != swapToken && asset != collateralToken && asset != creditToken) revert InvalidAsset();
+    }
+
+    /// @dev Reverts if the global pause or the given key is active.
+    function _checkPaused(bytes4 key) internal view {
+        if (paused[bytes4(0)] || paused[key]) revert Paused();
+    }
+
+    /// @dev Returns the direction-specific pause key for a swap, or bytes4(0) if none applies.
+    function _getSwapPauseKey(address assetIn, address assetOut) internal view returns (bytes4) {
+        if (assetIn == creditToken) {
+            if (assetOut == collateralToken) return PAUSED_SWAP_CREDIT_TO_COLLATERAL;
+            if (assetOut == swapToken)       return PAUSED_SWAP_CREDIT_TO_SWAP;
+        } else if (assetOut == creditToken) {
+            if (assetIn == collateralToken) return PAUSED_SWAP_COLLATERAL_TO_CREDIT;
+            if (assetIn == swapToken)       return PAUSED_SWAP_SWAP_TO_CREDIT;
+        }
+        return bytes4(0);
     }
 
     /// @dev Returns the address holding custody of `asset` (pocket for swap tokens, Basin otherwise).

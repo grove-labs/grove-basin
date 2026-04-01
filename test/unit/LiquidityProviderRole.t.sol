@@ -34,76 +34,54 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
     }
 
     /**********************************************************************************************/
-    /*** creditTokenDepositsDisabled                                                            ***/
+    /*** PAUSED_DEPOSIT_CREDIT                                                                  ***/
     /**********************************************************************************************/
 
-    function test_setCreditTokenDepositsDisabled_notManagerAdmin() public {
-        bytes32 managerAdminRole = groveBasin.MANAGER_ADMIN_ROLE();
-        vm.prank(notLp);
-        vm.expectRevert(
-            abi.encodeWithSignature(
-                "AccessControlUnauthorizedAccount(address,bytes32)",
-                notLp,
-                managerAdminRole
-            )
-        );
-        groveBasin.setCreditTokenDepositsDisabled(true);
+    function _pauseDepositCredit() internal {
+        bytes32 pauserRole = groveBasin.PAUSER_ROLE();
+        bytes4  key        = groveBasin.PAUSED_DEPOSIT_CREDIT();
+
+        vm.startPrank(owner);
+        groveBasin.grantRole(pauserRole, owner);
+        groveBasin.setPaused(key, true);
+        vm.stopPrank();
     }
 
-    function test_setCreditTokenDepositsDisabled() public {
-        assertFalse(groveBasin.creditTokenDepositsDisabled());
-
-        vm.prank(owner);
-        groveBasin.setCreditTokenDepositsDisabled(true);
-
-        assertTrue(groveBasin.creditTokenDepositsDisabled());
-
-        vm.prank(owner);
-        groveBasin.setCreditTokenDepositsDisabled(false);
-
-        assertFalse(groveBasin.creditTokenDepositsDisabled());
-    }
-
-    function test_deposit_creditToken_disabled() public {
-        vm.prank(owner);
-        groveBasin.setCreditTokenDepositsDisabled(true);
+    function test_deposit_creditToken_paused() public {
+        _pauseDepositCredit();
 
         creditToken.mint(lp, 100e18);
         vm.startPrank(lp);
         creditToken.approve(address(groveBasin), 100e18);
 
-        vm.expectRevert(IGroveBasin.CreditDepositsDisabled.selector);
+        vm.expectRevert(IGroveBasin.Paused.selector);
         groveBasin.deposit(address(creditToken), lp, 100e18);
         vm.stopPrank();
     }
 
-    function test_previewDeposit_creditToken_disabled() public {
-        vm.prank(owner);
-        groveBasin.setCreditTokenDepositsDisabled(true);
+    function test_previewDeposit_creditToken_paused() public {
+        _pauseDepositCredit();
 
-        vm.expectRevert(IGroveBasin.CreditDepositsDisabled.selector);
+        vm.expectRevert(IGroveBasin.Paused.selector);
         groveBasin.previewDeposit(address(creditToken), 100e18);
     }
 
-    function test_previewDeposit_swapToken_whenCreditTokenDisabled() public {
-        vm.prank(owner);
-        groveBasin.setCreditTokenDepositsDisabled(true);
+    function test_previewDeposit_swapToken_whenCreditDepositPaused() public {
+        _pauseDepositCredit();
 
         uint256 shares = groveBasin.previewDeposit(address(swapToken), 100e6);
         assertEq(shares, 100e18);
     }
 
-    function test_previewDeposit_collateralToken_whenCreditTokenDisabled() public {
-        vm.prank(owner);
-        groveBasin.setCreditTokenDepositsDisabled(true);
+    function test_previewDeposit_collateralToken_whenCreditDepositPaused() public {
+        _pauseDepositCredit();
 
         uint256 shares = groveBasin.previewDeposit(address(collateralToken), 100e18);
         assertEq(shares, 100e18);
     }
 
-    function test_deposit_swapToken_whenCreditTokenDisabled() public {
-        vm.prank(owner);
-        groveBasin.setCreditTokenDepositsDisabled(true);
+    function test_deposit_swapToken_whenCreditDepositPaused() public {
+        _pauseDepositCredit();
 
         swapToken.mint(lp, 100e6);
         vm.startPrank(lp);
@@ -114,9 +92,8 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         assertEq(shares, 100e18);
     }
 
-    function test_deposit_collateralToken_whenCreditTokenDisabled() public {
-        vm.prank(owner);
-        groveBasin.setCreditTokenDepositsDisabled(true);
+    function test_deposit_collateralToken_whenCreditDepositPaused() public {
+        _pauseDepositCredit();
 
         collateralToken.mint(lp, 100e18);
         vm.startPrank(lp);
@@ -127,12 +104,13 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         assertEq(shares, 100e18);
     }
 
-    function test_deposit_creditToken_reenabled() public {
-        vm.prank(owner);
-        groveBasin.setCreditTokenDepositsDisabled(true);
+    function test_deposit_creditToken_unpaused() public {
+        bytes4 key = groveBasin.PAUSED_DEPOSIT_CREDIT();
+
+        _pauseDepositCredit();
 
         vm.prank(owner);
-        groveBasin.setCreditTokenDepositsDisabled(false);
+        groveBasin.setPaused(key, false);
 
         creditToken.mint(lp, 100e18);
         vm.startPrank(lp);
