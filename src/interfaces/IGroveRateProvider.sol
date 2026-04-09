@@ -2,11 +2,11 @@
 pragma solidity ^0.8.24;
 
 /**
- * @title  IRateProviderLike
+ * @title  IGroveRateProvider
  * @notice Minimal interface for rate provider contracts that supply token-to-USD conversion
  *         rates in 1e27 precision.
  */
-interface IRateProviderLike {
+interface IGroveRateProvider {
 
     /**
      * @notice Returns the current conversion rate in 1e27 precision.

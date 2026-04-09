@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.24;
 
-import { IRateProviderLike } from "../interfaces/IRateProviderLike.sol";
+import { IGroveRateProvider } from "../interfaces/IGroveRateProvider.sol";
 
 /**
  * @title  FixedRateProvider
  * @notice Rate provider that returns a fixed, immutable conversion rate set at deployment.
  *         Always reports the current block timestamp as the rate age, so it never goes stale.
  */
-contract FixedRateProvider is IRateProviderLike {
+contract FixedRateProvider is IGroveRateProvider {
 
     error ZeroRate();
 
@@ -24,17 +24,17 @@ contract FixedRateProvider is IRateProviderLike {
         rate = rate_;
     }
 
-    /// @inheritdoc IRateProviderLike
+    /// @inheritdoc IGroveRateProvider
     function getConversionRate() external view override returns (uint256 rate_) {
         (rate_, ) = this.getConversionRateWithAge();
     }
 
-    /// @inheritdoc IRateProviderLike
+    /// @inheritdoc IGroveRateProvider
     function getConversionRateWithAge() external view override returns (uint256, uint256) {
         return (rate, block.timestamp);
     }
 
-    /// @inheritdoc IRateProviderLike
+    /// @inheritdoc IGroveRateProvider
     function getRatePrecision() external pure override returns (uint256) {
         return RATE_PRECISION;
     }

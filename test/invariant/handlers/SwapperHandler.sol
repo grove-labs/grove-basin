@@ -5,7 +5,7 @@ import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
 import { HandlerBase, GroveBasin } from "test/invariant/handlers/HandlerBase.sol";
 
-import { IRateProviderLike } from "src/interfaces/IRateProviderLike.sol";
+import { IGroveRateProvider } from "src/interfaces/IGroveRateProvider.sol";
 
 contract SwapperHandler is HandlerBase {
 
@@ -13,8 +13,8 @@ contract SwapperHandler is HandlerBase {
 
     address[] public swappers;
 
-    IRateProviderLike public swapTokenRateProvider;
-    IRateProviderLike public creditTokenRateProvider;
+    IGroveRateProvider public swapTokenRateProvider;
+    IGroveRateProvider public creditTokenRateProvider;
 
     mapping(address user => mapping(address asset => uint256 deposits)) public swapsIn;
     mapping(address user => mapping(address asset => uint256 deposits)) public swapsOut;
@@ -45,8 +45,8 @@ contract SwapperHandler is HandlerBase {
         assets[1] = collateralToken;
         assets[2] = creditToken;
 
-        swapTokenRateProvider   = IRateProviderLike(groveBasin.swapTokenRateProvider());
-        creditTokenRateProvider = IRateProviderLike(groveBasin.creditTokenRateProvider());
+        swapTokenRateProvider   = IGroveRateProvider(groveBasin.swapTokenRateProvider());
+        creditTokenRateProvider = IGroveRateProvider(groveBasin.creditTokenRateProvider());
 
         for (uint256 i = 0; i < swapperCount; i++) {
             swappers.push(makeAddr(string(abi.encodePacked("swapper-", vm.toString(i)))));

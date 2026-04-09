@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.24;
 
-import { Test } from "forge-std/Test.sol";
-
-import { MockRateProvider, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
+import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
 contract SwapTokenRateProviderTests is GroveBasinTestBase {
 

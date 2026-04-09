@@ -4,8 +4,6 @@ pragma solidity ^0.8.24;
 import { IERC20 }    from "erc20-helpers/interfaces/IERC20.sol";
 import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
 
-import { Math } from "openzeppelin-contracts/contracts/utils/math/Math.sol";
-
 import { IAsyncVaultLike }              from "src/interfaces/IAsyncVaultLike.sol";
 import { IGroveBasin }                 from "src/interfaces/IGroveBasin.sol";
 import { ITokenRedeemer, RedeemRequest } from "src/interfaces/ITokenRedeemer.sol";

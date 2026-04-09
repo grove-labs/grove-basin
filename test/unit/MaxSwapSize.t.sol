@@ -6,7 +6,7 @@ import "forge-std/Test.sol";
 import { GroveBasin }  from "src/GroveBasin.sol";
 import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
 
-import { MockERC20, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
+import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
 contract GroveBasinMaxSwapSizeSwapExactInTests is GroveBasinTestBase {
 

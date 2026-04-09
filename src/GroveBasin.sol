@@ -7,10 +7,10 @@ import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
 import { AccessControl } from "openzeppelin-contracts/contracts/access/AccessControl.sol";
 import { Math }          from "openzeppelin-contracts/contracts/utils/math/Math.sol";
 
-import { IGroveBasin }                   from "src/interfaces/IGroveBasin.sol";
-import { IGroveBasinPocket }             from "src/interfaces/IGroveBasinPocket.sol";
-import { IRateProviderLike }             from "src/interfaces/IRateProviderLike.sol";
-import { ITokenRedeemer, RedeemRequest } from "src/interfaces/ITokenRedeemer.sol";
+import { IGroveBasin }                   from "./interfaces/IGroveBasin.sol";
+import { IGroveBasinPocket }             from "./interfaces/IGroveBasinPocket.sol";
+import { IGroveRateProvider }             from "./interfaces/IGroveRateProvider.sol";
+import { ITokenRedeemer, RedeemRequest } from "./interfaces/ITokenRedeemer.sol";
 
 /**
  * @title  GroveBasin
@@ -134,9 +134,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
         ) revert ZeroRateProviderAddress();
 
         if (
-            IRateProviderLike(swapTokenRateProvider_).getConversionRate()       == 0 ||
-            IRateProviderLike(collateralTokenRateProvider_).getConversionRate() == 0 ||
-            IRateProviderLike(creditTokenRateProvider_).getConversionRate()     == 0
+            IGroveRateProvider(swapTokenRateProvider_).getConversionRate()       == 0 ||
+            IGroveRateProvider(collateralTokenRateProvider_).getConversionRate() == 0 ||
+            IGroveRateProvider(creditTokenRateProvider_).getConversionRate()     == 0
         ) revert RateProviderReturnsZero();
 
         swapTokenRateProvider       = swapTokenRateProvider_;
@@ -165,7 +165,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /// @inheritdoc IGroveBasin
     function setRateProvider(address token, address newRateProvider) external override onlyRole(MANAGER_ADMIN_ROLE) {
         if (newRateProvider == address(0))                               revert InvalidRateProvider();
-        if (IRateProviderLike(newRateProvider).getConversionRate() == 0) revert RateProviderReturnsZero();
+        if (IGroveRateProvider(newRateProvider).getConversionRate() == 0) revert RateProviderReturnsZero();
 
         address oldRateProvider;
 
@@ -724,20 +724,20 @@ contract GroveBasin is IGroveBasin, AccessControl {
         if (token == swapToken) {
             return (
                 _getConversionRate(swapTokenRateProvider),
-                IRateProviderLike(swapTokenRateProvider).getRatePrecision(),
+                IGroveRateProvider(swapTokenRateProvider).getRatePrecision(),
                 _swapTokenPrecision
             );
         }
         if (token == collateralToken) {
             return (
                 _getConversionRate(collateralTokenRateProvider),
-                IRateProviderLike(collateralTokenRateProvider).getRatePrecision(),
+                IGroveRateProvider(collateralTokenRateProvider).getRatePrecision(),
                 _collateralTokenPrecision
             );
         }
         return (
             _getConversionRate(creditTokenRateProvider),
-            IRateProviderLike(creditTokenRateProvider).getRatePrecision(),
+            IGroveRateProvider(creditTokenRateProvider).getRatePrecision(),
             _creditTokenPrecision
         );
     }
@@ -844,7 +844,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /// @dev Fetches the conversion rate from a rate provider and reverts if stale.
     function _getConversionRate(address rateProvider) internal view returns (uint256 rate) {
         uint256 lastUpdated;
-        (rate, lastUpdated) = IRateProviderLike(rateProvider).getConversionRateWithAge();
+        (rate, lastUpdated) = IGroveRateProvider(rateProvider).getConversionRateWithAge();
 
         if (block.timestamp - lastUpdated > stalenessThreshold) revert StaleRate();
     }

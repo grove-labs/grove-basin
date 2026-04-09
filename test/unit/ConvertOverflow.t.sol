@@ -3,9 +3,7 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 
-import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
-
-import { MockRateProvider, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
+import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
 contract GroveBasinConvertOverflowTests is GroveBasinTestBase {
 

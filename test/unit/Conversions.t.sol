@@ -6,7 +6,7 @@ import "forge-std/Test.sol";
 import { GroveBasin }  from "src/GroveBasin.sol";
 import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
 
-import { MockRateProvider, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
+import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
 contract GroveBasinConversionTestBase is GroveBasinTestBase {
 
