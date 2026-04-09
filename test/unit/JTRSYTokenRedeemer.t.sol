@@ -3,8 +3,6 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 
-import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
-
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
 import { GroveBasin }          from "src/GroveBasin.sol";

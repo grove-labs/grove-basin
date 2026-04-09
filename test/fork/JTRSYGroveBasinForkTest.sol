@@ -7,7 +7,6 @@ import { Ethereum } from "lib/grove-address-registry/src/Ethereum.sol";
 
 import { GroveBasin }        from "src/GroveBasin.sol";
 import { JTRSYTokenRedeemer } from "src/redeemers/JTRSYTokenRedeemer.sol";
-import { IAsyncVaultLike }   from "src/interfaces/IAsyncVaultLike.sol";
 
 import { JTRSYForkTestBase } from "test/fork/JTRSYForkTest.sol";
 

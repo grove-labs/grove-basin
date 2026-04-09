@@ -13,7 +13,6 @@ import { AaveV3UsdtPocket }   from "src/pockets/AaveV3UsdtPocket.sol";
 import { MorphoUsdtPocket }   from "src/pockets/MorphoUsdtPocket.sol";
 import { UsdsUsdcPocket }     from "src/pockets/UsdsUsdcPocket.sol";
 import { IGroveBasin }        from "src/interfaces/IGroveBasin.sol";
-import { IERC4626VaultLike }  from "src/interfaces/IERC4626VaultLike.sol";
 
 import { MockRateProvider }  from "test/mocks/MockRateProvider.sol";
 import { MockAaveV3Pool }   from  "test/mocks/MockAaveV3Pool.sol";

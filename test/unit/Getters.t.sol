@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 
 import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
 
-import { MockRateProvider, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
+import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
 import { GroveBasinHarness } from "test/unit/harnesses/GroveBasinHarness.sol";
 

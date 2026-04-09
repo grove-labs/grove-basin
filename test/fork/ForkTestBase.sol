@@ -6,7 +6,6 @@ import "forge-std/Test.sol";
 import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
 
 import { GroveBasin }        from "src/GroveBasin.sol";
-import { IRateProviderLike } from "src/interfaces/IRateProviderLike.sol";
 
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 

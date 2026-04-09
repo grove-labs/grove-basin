@@ -10,8 +10,6 @@ import { GroveBasin }        from "src/GroveBasin.sol";
 import { IGroveBasinPocket } from "src/interfaces/IGroveBasinPocket.sol";
 import { IRateProviderLike } from "src/interfaces/IRateProviderLike.sol";
 
-import { MockERC20 } from "erc20-helpers/MockERC20.sol";
-
 import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
 import { FeeSetterHandler }     from "test/invariant/handlers/FeeSetterHandler.sol";

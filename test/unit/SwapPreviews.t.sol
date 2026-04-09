@@ -6,7 +6,7 @@ import "forge-std/Test.sol";
 import { Math }        from "openzeppelin-contracts/contracts/utils/math/Math.sol";
 import { IGroveBasin }  from "src/interfaces/IGroveBasin.sol";
 
-import { MockRateProvider, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
+import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
 contract GroveBasinPreviewSwapExactIn_FailureTests is GroveBasinTestBase {
 

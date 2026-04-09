@@ -7,7 +7,7 @@ import { GroveBasin }        from "src/GroveBasin.sol";
 import { GroveBasinFactory } from "src/GroveBasinFactory.sol";
 import { IGroveBasin }       from "src/interfaces/IGroveBasin.sol";
 
-import { MockERC20, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
+import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
 contract DepositInitialTests is GroveBasinTestBase {
 

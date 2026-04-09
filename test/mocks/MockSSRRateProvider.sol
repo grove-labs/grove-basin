@@ -2,7 +2,6 @@
 pragma solidity ^0.8.24;
 
 import { SSRAuthOracle } from "lib/xchain-ssr-oracle/src/SSRAuthOracle.sol";
-import { ISSROracle }    from "lib/xchain-ssr-oracle/src/interfaces/ISSROracle.sol";
 
 import { IRateProviderLike } from "src/interfaces/IRateProviderLike.sol";
 

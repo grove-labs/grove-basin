@@ -9,7 +9,6 @@ import { GroveBasin }        from "src/GroveBasin.sol";
 import { AaveV3UsdtPocket }  from "src/pockets/AaveV3UsdtPocket.sol";
 import { MorphoUsdtPocket }  from "src/pockets/MorphoUsdtPocket.sol";
 import { UsdsUsdcPocket }    from "src/pockets/UsdsUsdcPocket.sol";
-import { IRateProviderLike } from "src/interfaces/IRateProviderLike.sol";
 
 import { MockRateProvider }  from "test/mocks/MockRateProvider.sol";
 import { MockPSM }           from "test/mocks/MockPSM.sol";

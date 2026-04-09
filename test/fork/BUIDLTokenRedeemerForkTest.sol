@@ -7,7 +7,6 @@ import { Ethereum } from "lib/grove-address-registry/src/Ethereum.sol";
 
 import { BUIDLTokenRedeemer } from "src/redeemers/BUIDLTokenRedeemer.sol";
 import { IGroveBasin }        from "src/interfaces/IGroveBasin.sol";
-import { ITokenRedeemer }     from "src/interfaces/ITokenRedeemer.sol";
 
 import { BUIDLForkTestBase, IBUIDLLike } from "test/fork/BUIDLForkTest.sol";
 
