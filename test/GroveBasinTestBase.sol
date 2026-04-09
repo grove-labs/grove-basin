@@ -6,7 +6,7 @@ import "forge-std/Test.sol";
 import { GroveBasin } from "src/GroveBasin.sol";
 
 import { IGroveBasinPocket } from "src/interfaces/IGroveBasinPocket.sol";
-import { IRateProviderLike } from "src/interfaces/IRateProviderLike.sol";
+import { IGroveRateProvider } from "src/interfaces/IGroveRateProvider.sol";
 import { UsdsUsdcPocket }    from "src/pockets/UsdsUsdcPocket.sol";
 
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
@@ -30,9 +30,9 @@ contract GroveBasinTestBase is Test {
 
     MockPSM public psm;
 
-    IRateProviderLike public swapTokenRateProvider;
-    IRateProviderLike public collateralTokenRateProvider;
-    IRateProviderLike public creditTokenRateProvider;
+    IGroveRateProvider public swapTokenRateProvider;
+    IGroveRateProvider public collateralTokenRateProvider;
+    IGroveRateProvider public creditTokenRateProvider;
 
     MockRateProvider public mockSwapTokenRateProvider;
     MockRateProvider public mockCollateralTokenRateProvider;
@@ -68,9 +68,9 @@ contract GroveBasinTestBase is Test {
         // NOTE: Using 1.25 for easy two way conversions
         mockCreditTokenRateProvider.__setConversionRate(1.25e27);
 
-        swapTokenRateProvider       = IRateProviderLike(address(mockSwapTokenRateProvider));
-        collateralTokenRateProvider = IRateProviderLike(address(mockCollateralTokenRateProvider));
-        creditTokenRateProvider     = IRateProviderLike(address(mockCreditTokenRateProvider));
+        swapTokenRateProvider       = IGroveRateProvider(address(mockSwapTokenRateProvider));
+        collateralTokenRateProvider = IGroveRateProvider(address(mockCollateralTokenRateProvider));
+        creditTokenRateProvider     = IGroveRateProvider(address(mockCreditTokenRateProvider));
 
         groveBasin = new GroveBasin(owner, lp, address(swapToken), address(collateralToken), address(creditToken), address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider));
 

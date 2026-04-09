@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.24;
 
-import { IRateProviderLike }     from "../interfaces/IRateProviderLike.sol";
+import { IGroveRateProvider }     from "../interfaces/IGroveRateProvider.sol";
 import { IChronicleOracleLike } from "../interfaces/IChronicleOracleLike.sol";
 
 /**
@@ -9,7 +9,7 @@ import { IChronicleOracleLike } from "../interfaces/IChronicleOracleLike.sol";
  * @notice Rate provider that fetches conversion rates from a Chronicle oracle, scaling the
  *         returned value from 1e18 (Chronicle precision) to 1e27 (rate provider precision).
  */
-contract ChronicleRateProvider is IRateProviderLike {
+contract ChronicleRateProvider is IGroveRateProvider {
 
     error ZeroOracle();
 
@@ -28,18 +28,18 @@ contract ChronicleRateProvider is IRateProviderLike {
         oracle = oracle_;
     }
 
-    /// @inheritdoc IRateProviderLike
+    /// @inheritdoc IGroveRateProvider
     function getConversionRate() external view override returns (uint256 rate) {
         (rate, ) = this.getConversionRateWithAge();
     }
 
-    /// @inheritdoc IRateProviderLike
+    /// @inheritdoc IGroveRateProvider
     function getConversionRateWithAge() external view override returns (uint256, uint256) {
         (uint256 val, uint256 age) = IChronicleOracleLike(oracle).readWithAge();
         return (val * RATE_PRECISION / CHRONICLE_PRECISION, age);
     }
 
-    /// @inheritdoc IRateProviderLike
+    /// @inheritdoc IGroveRateProvider
     function getRatePrecision() external pure override returns (uint256) {
         return RATE_PRECISION;
     }

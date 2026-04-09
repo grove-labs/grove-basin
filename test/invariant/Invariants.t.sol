@@ -8,7 +8,7 @@ import { ISSROracle }    from "lib/xchain-ssr-oracle/src/interfaces/ISSROracle.s
 
 import { GroveBasin }        from "src/GroveBasin.sol";
 import { IGroveBasinPocket } from "src/interfaces/IGroveBasinPocket.sol";
-import { IRateProviderLike } from "src/interfaces/IRateProviderLike.sol";
+import { IGroveRateProvider } from "src/interfaces/IGroveRateProvider.sol";
 
 import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
@@ -658,7 +658,7 @@ contract GroveBasinInvariants_TimeBasedRateSetting_NoTransfer is GroveBasinInvar
         // oracle.
         ssrOracle.grantRole(ssrOracle.DATA_PROVIDER_ROLE(), address(timeBasedRateHandler));
 
-        creditTokenRateProvider = IRateProviderLike(address(ssrRateProvider));
+        creditTokenRateProvider = IGroveRateProvider(address(ssrRateProvider));
 
         // Manually set initial values for the oracle through the handler to start
         timeBasedRateHandler.setRateData(1e27);
@@ -765,7 +765,7 @@ contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinIn
         // oracle.
         ssrOracle.grantRole(ssrOracle.DATA_PROVIDER_ROLE(), address(timeBasedRateHandler));
 
-        creditTokenRateProvider = IRateProviderLike(address(ssrRateProvider));
+        creditTokenRateProvider = IGroveRateProvider(address(ssrRateProvider));
 
         // Manually set initial values for the oracle through the handler to start
         timeBasedRateHandler.setRateData(1e27);

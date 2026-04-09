@@ -3,9 +3,9 @@ pragma solidity ^0.8.24;
 
 import { SSRAuthOracle } from "lib/xchain-ssr-oracle/src/SSRAuthOracle.sol";
 
-import { IRateProviderLike } from "src/interfaces/IRateProviderLike.sol";
+import { IGroveRateProvider } from "src/interfaces/IGroveRateProvider.sol";
 
-contract MockSSRRateProvider is IRateProviderLike {
+contract MockSSRRateProvider is IGroveRateProvider {
 
     uint256 public constant RATE_PRECISION = 1e27;
 
