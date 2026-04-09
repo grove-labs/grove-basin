@@ -7,10 +7,10 @@ import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
 import { AccessControl } from "openzeppelin-contracts/contracts/access/AccessControl.sol";
 import { Math }          from "openzeppelin-contracts/contracts/utils/math/Math.sol";
 
-import { IGroveBasin }                   from "src/interfaces/IGroveBasin.sol";
-import { IGroveBasinPocket }             from "src/interfaces/IGroveBasinPocket.sol";
-import { IRateProviderLike }             from "src/interfaces/IRateProviderLike.sol";
-import { ITokenRedeemer, RedeemRequest } from "src/interfaces/ITokenRedeemer.sol";
+import { IGroveBasin }                   from "./interfaces/IGroveBasin.sol";
+import { IGroveBasinPocket }             from "./interfaces/IGroveBasinPocket.sol";
+import { IRateProviderLike }             from "./interfaces/IRateProviderLike.sol";
+import { ITokenRedeemer, RedeemRequest } from "./interfaces/ITokenRedeemer.sol";
 
 /**
  * @title  GroveBasin
