@@ -109,7 +109,8 @@ contract UsdsUsdcPocket is BasePocket {
 
                 usds.safeApprove(psm, type(uint256).max);
 
-                convertedAmount = IPSMLike(psm).buyGem(address(this), remainder);
+                IPSMLike(psm).buyGem(address(this), remainder);
+                convertedAmount = remainder;
 
                 usds.safeApprove(psm, 0);
 

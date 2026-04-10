@@ -192,7 +192,7 @@ contract UsdsUsdcPocketManagerTests is UsdsUsdcPocketTestBase {
 
         vm.prank(manager);
         vm.expectEmit(address(pocket));
-        emit IGroveBasinPocket.LiquidityDrawn(address(usdc), 500e6, 500e18);
+        emit IGroveBasinPocket.LiquidityDrawn(address(usdc), 500e6, 500e6);
         pocket.withdrawLiquidity(500e6, address(usdc));
 
         assertEq(usdc.balanceOf(address(pocket)), 500e6);
@@ -386,7 +386,7 @@ contract UsdsUsdcPocketDrawLiquidityTests is UsdsUsdcPocketTestBase {
 
         vm.prank(address(groveBasin));
         vm.expectEmit(address(pocket));
-        emit IGroveBasinPocket.LiquidityDrawn(address(usdc), 500e6, 500e18);
+        emit IGroveBasinPocket.LiquidityDrawn(address(usdc), 500e6, 500e6);
         pocket.withdrawLiquidity(500e6, address(usdc));
     }
 
@@ -503,7 +503,7 @@ contract UsdsUsdcPocketEventTests is UsdsUsdcPocketTestBase {
 
         vm.prank(address(groveBasin));
         vm.expectEmit(address(pocket));
-        emit IGroveBasinPocket.LiquidityDrawn(address(usdc), 500e6, 500e18);
+        emit IGroveBasinPocket.LiquidityDrawn(address(usdc), 500e6, 500e6);
         pocket.withdrawLiquidity(500e6, address(usdc));
     }
 
@@ -512,7 +512,7 @@ contract UsdsUsdcPocketEventTests is UsdsUsdcPocketTestBase {
 
         vm.prank(manager);
         vm.expectEmit(address(pocket));
-        emit IGroveBasinPocket.LiquidityDrawn(address(usdc), 500e6, 500e18);
+        emit IGroveBasinPocket.LiquidityDrawn(address(usdc), 500e6, 500e6);
         pocket.withdrawLiquidity(500e6, address(usdc));
     }
 
