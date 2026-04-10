@@ -21,6 +21,7 @@ contract SetupJTRSYMorphoUsdtBasin is Script {
     address constant USDC_CHRONICLE_RATE_PROVIDER      = 0xE6305390428FD82eB437b50375b95B9550B90256;  // Fixed 1:1 ChronicleRateProvider for USDC
     address constant JTRSY_CHRONICLE_RATE_PROVIDER     = 0xdBCF3230ff0dbd62BE38956d1aAA845e97126Fe5;  // JTRSY ChronicleRateProvider
     address constant MORPHO_STEAKHOUSE_USDT_VAULT      = 0xbEef047a543E45807105E51A8BBEFCc5950fcfBa;  // Morpho Steakhouse USDT Vault
+    address constant JTRSY_TOKEN                       = 0x8c213ee79581Ff4984583C6a801e5263418C4b86;  // JTRSY share token (6 decimals)
 
     function run() external {
         vm.createSelectFork(getChain("mainnet").rpcUrl);
@@ -47,7 +48,7 @@ contract SetupJTRSYMorphoUsdtBasin is Script {
             liquidityProvider           : Ethereum.ALM_PROXY,
             swapToken                   : Ethereum.USDT,
             collateralToken             : Ethereum.USDC,
-            creditToken                 : Ethereum.SUSDS,
+            creditToken                 : JTRSY_TOKEN,
             swapTokenRateProvider       : USDT_CHRONICLE_RATE_PROVIDER,
             collateralTokenRateProvider : USDC_CHRONICLE_RATE_PROVIDER,
             creditTokenRateProvider     : JTRSY_CHRONICLE_RATE_PROVIDER
@@ -64,7 +65,7 @@ contract SetupJTRSYMorphoUsdtBasin is Script {
         GroveBasin(groveBasin).setPocket(address(pocket));
 
         JTRSYTokenRedeemer redeemer = new JTRSYTokenRedeemer(
-            Ethereum.SUSDS,
+            JTRSY_TOKEN,
             Ethereum.CENTRIFUGE_JTRSY,
             groveBasin
         );

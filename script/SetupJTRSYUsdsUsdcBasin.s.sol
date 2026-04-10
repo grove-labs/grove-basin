@@ -16,6 +16,8 @@ contract SetupJTRSYUsdsUsdcBasin is Script {
 
     address constant USDS_USDC_CHRONICLE_RATE_PROVIDER = 0xE6305390428FD82eB437b50375b95B9550B90256;  // Fixed 1:1 ChronicleRateProvider for USDS and USDC
     address constant JTRSY_CHRONICLE_RATE_PROVIDER     = 0xdBCF3230ff0dbd62BE38956d1aAA845e97126Fe5;  // JTRSY ChronicleRateProvider
+    address constant JTRSY_TOKEN                       = 0x8c213ee79581Ff4984583C6a801e5263418C4b86;  // JTRSY share token (6 decimals)
+    address constant USDS_PSM_WRAPPER                  = 0xA188EEC8F81263234dA3622A406892F3D630f98c;  // USDS PSM Wrapper
 
     function run() external {
         vm.createSelectFork(getChain("mainnet").rpcUrl);
@@ -42,7 +44,7 @@ contract SetupJTRSYUsdsUsdcBasin is Script {
             liquidityProvider           : Ethereum.ALM_PROXY,
             swapToken                   : Ethereum.USDS,
             collateralToken             : Ethereum.USDC,
-            creditToken                 : Ethereum.SUSDS,
+            creditToken                 : JTRSY_TOKEN,
             swapTokenRateProvider       : USDS_USDC_CHRONICLE_RATE_PROVIDER,
             collateralTokenRateProvider : USDS_USDC_CHRONICLE_RATE_PROVIDER,
             creditTokenRateProvider     : JTRSY_CHRONICLE_RATE_PROVIDER
@@ -54,14 +56,14 @@ contract SetupJTRSYUsdsUsdcBasin is Script {
             groveBasin,
             Ethereum.USDC,
             Ethereum.USDS,
-            Ethereum.PSM,
+            USDS_PSM_WRAPPER,
             Ethereum.GROVE_PROXY
         );
 
         GroveBasin(groveBasin).setPocket(address(pocket));
 
         JTRSYTokenRedeemer redeemer = new JTRSYTokenRedeemer(
-            Ethereum.SUSDS,
+            JTRSY_TOKEN,
             Ethereum.CENTRIFUGE_JTRSY,
             groveBasin
         );

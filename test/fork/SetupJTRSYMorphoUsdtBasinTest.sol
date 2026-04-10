@@ -40,7 +40,7 @@ contract SetupJTRSYMorphoUsdtBasinTest is Test, SetupJTRSYMorphoUsdtBasin {
     function test_deploy_basinTokens() public view {
         assertEq(groveBasin.swapToken(),       Ethereum.USDT);
         assertEq(groveBasin.collateralToken(), Ethereum.USDC);
-        assertEq(groveBasin.creditToken(),     Ethereum.SUSDS);
+        assertEq(groveBasin.creditToken(),     JTRSY_TOKEN);
     }
 
     function test_deploy_rateProviders() public view {
@@ -56,7 +56,7 @@ contract SetupJTRSYMorphoUsdtBasinTest is Test, SetupJTRSYMorphoUsdtBasin {
     }
 
     function test_deploy_redeemer() public view {
-        assertEq(redeemer.creditToken(),    Ethereum.SUSDS);
+        assertEq(redeemer.creditToken(),    JTRSY_TOKEN);
         assertEq(redeemer.vault(),          Ethereum.CENTRIFUGE_JTRSY);
         assertEq(address(redeemer.basin()), address(groveBasin));
         assertTrue(groveBasin.hasRole(groveBasin.REDEEMER_CONTRACT_ROLE(), address(redeemer)));
