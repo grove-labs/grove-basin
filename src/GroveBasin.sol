@@ -237,7 +237,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /// @inheritdoc IGroveBasin
     function setFeeBounds(uint256 newMinFee, uint256 newMaxFee) external override onlyRole(MANAGER_ADMIN_ROLE) {
         if (newMinFee > newMaxFee) revert MinFeeGreaterThanMaxFee();
-        if (newMaxFee > BPS)       revert MaxFeeExceedsBps();
+        if (newMaxFee >= BPS)       revert MaxFeeExceedsBps();
 
         uint256 oldMinFee = minFee;
         uint256 oldMaxFee = maxFee;
