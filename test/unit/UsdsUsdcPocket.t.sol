@@ -50,8 +50,8 @@ contract UsdsUsdcPocketTestBase is Test {
         groveBasin = new GroveBasin(
             owner,
             lp,
+            address(usds),
             address(usdc),
-            address(collateralToken),
             address(creditToken),
             address(swapTokenRateProvider),
             address(collateralTokenRateProvider),
@@ -107,6 +107,18 @@ contract UsdsUsdcPocketConstructorTests is UsdsUsdcPocketTestBase {
     function test_constructor_invalidPsm() public {
         vm.expectRevert(UsdsUsdcPocket.InvalidPsm.selector);
         new UsdsUsdcPocket(address(groveBasin), address(usdc), address(usds), address(0), groveProxy);
+    }
+
+    function test_constructor_swapTokenMismatch() public {
+        MockERC20 otherToken = new MockERC20("OTHER", "OTH", 18);
+        vm.expectRevert(UsdsUsdcPocket.SwapTokenMismatch.selector);
+        new UsdsUsdcPocket(address(groveBasin), address(usdc), address(otherToken), address(psm), groveProxy);
+    }
+
+    function test_constructor_collateralTokenMismatch() public {
+        MockERC20 otherToken = new MockERC20("OTHER", "OTH", 6);
+        vm.expectRevert(UsdsUsdcPocket.CollateralTokenMismatch.selector);
+        new UsdsUsdcPocket(address(groveBasin), address(otherToken), address(usds), address(psm), groveProxy);
     }
 
     function test_constructor_zeroGroveProxy() public {

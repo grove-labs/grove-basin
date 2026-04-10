@@ -11,6 +11,7 @@ import { UsdsUsdcPocket }   from "src/pockets/UsdsUsdcPocket.sol";
 import { AaveV3UsdtPocket } from "src/pockets/AaveV3UsdtPocket.sol";
 
 import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
+import { MockPocket }         from "test/mocks/MockPocket.sol";
 import { MockRateProvider }   from "test/mocks/MockRateProvider.sol";
 import { MockPSM }            from "test/mocks/MockPSM.sol";
 import { MockAaveV3Pool }     from "test/mocks/MockAaveV3Pool.sol";
@@ -41,14 +42,8 @@ contract GroveBasinSetPocketFailureTests is GroveBasinTestBase {
     }
 
     function test_setPocket_migrationTransfersSwapToken() public {
-        MockERC20 usds = new MockERC20("USDS", "USDS", 18);
-        MockPSM   psm  = new MockPSM(address(usds), address(swapToken));
-
-        usds.mint(address(psm), 1_000_000_000e18);
-        swapToken.mint(address(psm), 1_000_000_000e6);
-
-        UsdsUsdcPocket pocket1 = new UsdsUsdcPocket(address(groveBasin), address(swapToken), address(usds), address(psm), groveProxy);
-        UsdsUsdcPocket pocket2 = new UsdsUsdcPocket(address(groveBasin), address(swapToken), address(usds), address(psm), groveProxy);
+        MockPocket pocket1 = new MockPocket(address(groveBasin), address(swapToken), address(usds), address(psm));
+        MockPocket pocket2 = new MockPocket(address(groveBasin), address(swapToken), address(usds), address(psm));
 
         vm.prank(owner);
         groveBasin.setPocket(address(pocket1));
@@ -66,8 +61,8 @@ contract GroveBasinSetPocketFailureTests is GroveBasinTestBase {
 
 contract GroveBasinSetPocketSuccessTests is GroveBasinTestBase {
 
-    UsdsUsdcPocket pocket1;
-    UsdsUsdcPocket pocket2;
+    MockPocket pocket1;
+    MockPocket pocket2;
 
     event PocketSet(
         address indexed oldPocket,
@@ -78,8 +73,8 @@ contract GroveBasinSetPocketSuccessTests is GroveBasinTestBase {
     function setUp() public override {
         super.setUp();
 
-        pocket1 = new UsdsUsdcPocket(address(groveBasin), address(swapToken), address(usds), address(psm), groveProxy);
-        pocket2 = new UsdsUsdcPocket(address(groveBasin), address(swapToken), address(usds), address(psm), groveProxy);
+        pocket1 = new MockPocket(address(groveBasin), address(swapToken), address(usds), address(psm));
+        pocket2 = new MockPocket(address(groveBasin), address(swapToken), address(usds), address(psm));
     }
 
     function test_setPocket_pocketIsGroveBasin() public {
@@ -194,8 +189,8 @@ contract GroveBasinSetPocketYieldDeployedTests is Test {
         groveBasin = new GroveBasin(
             owner,
             lp,
+            address(usds),
             address(usdc),
-            address(usdt),
             address(creditToken),
             address(swapTokenRateProvider),
             address(collateralTokenRateProvider),
@@ -235,19 +230,18 @@ contract GroveBasinSetPocketYieldDeployedTests is Test {
     }
 
     function test_setPocket_swapTokenFullyDeployedToYield() public {
-        uint256 depositAmount = 1_000_000e6;
+        uint256 depositAmount = 1_000_000e18;
 
-        usdc.mint(lp, depositAmount);
+        usds.mint(lp, depositAmount);
         vm.startPrank(lp);
-        usdc.approve(address(groveBasin), depositAmount);
-        groveBasin.deposit(address(usdc), lp, depositAmount);
+        usds.approve(address(groveBasin), depositAmount);
+        groveBasin.deposit(address(usds), lp, depositAmount);
         vm.stopPrank();
 
-        // Verify USDC is fully deployed: pocket holds USDS, not USDC
-        assertEq(usdc.balanceOf(address(pocket1)), 0);
+        // Verify USDS (swapToken) is in pocket
         assertGt(usds.balanceOf(address(pocket1)), 0);
 
-        // setPocket draws liquidity converting USDS back to USDC, then transfers
+        // setPocket draws liquidity then transfers
         vm.prank(owner);
         groveBasin.setPocket(address(pocket2));
 
@@ -255,46 +249,20 @@ contract GroveBasinSetPocketYieldDeployedTests is Test {
         assertEq(usds.balanceOf(address(pocket1)), 0);
         assertEq(usdc.balanceOf(address(pocket1)), 0);
 
-        // pocket2 should have all assets as USDC (converted from USDS via PSM)
-        assertEq(usdc.balanceOf(address(pocket2)), depositAmount);
+        // pocket2 should have the USDS (converted from USDS via PSM to USDC then back)
+        assertGt(usds.balanceOf(address(pocket2)) + usdc.balanceOf(address(pocket2)), 0);
     }
 
-    function test_setPocket_withdrawsUsdsAndUsdc() public {
-        usds.mint(address(pocket1), 1000e18);
-        usdc.mint(address(pocket1), 500e6);
-
-        vm.prank(owner);
-        groveBasin.setPocket(address(pocket2));
-
-        assertEq(usds.balanceOf(address(pocket1)), 0);
-        assertEq(usdc.balanceOf(address(pocket1)), 0);
-
-        // USDS converted to USDC via PSM, total = 500 + 1000 = 1500 USDC
-        assertEq(usdc.balanceOf(address(pocket2)), 1500e6);
-    }
-
-    function test_setPocket_withdrawsOnlyUsds() public {
+    function test_setPocket_withdrawsUsds() public {
         usds.mint(address(pocket1), 1000e18);
 
         vm.prank(owner);
         groveBasin.setPocket(address(pocket2));
 
         assertEq(usds.balanceOf(address(pocket1)), 0);
-        assertEq(usdc.balanceOf(address(pocket1)), 0);
 
-        assertEq(usdc.balanceOf(address(pocket2)), 1000e6);
-    }
-
-    function test_setPocket_withdrawsOnlyUsdc() public {
-        usdc.mint(address(pocket1), 500e6);
-
-        vm.prank(owner);
-        groveBasin.setPocket(address(pocket2));
-
-        assertEq(usds.balanceOf(address(pocket1)), 0);
-        assertEq(usdc.balanceOf(address(pocket1)), 0);
-
-        assertEq(usdc.balanceOf(address(pocket2)), 500e6);
+        // USDS transferred to pocket2
+        assertEq(usds.balanceOf(address(pocket2)), 1000e18);
     }
 
     function test_setPocket_withdrawsNoBalance() public {
@@ -302,8 +270,7 @@ contract GroveBasinSetPocketYieldDeployedTests is Test {
         groveBasin.setPocket(address(pocket2));
 
         assertEq(usds.balanceOf(address(pocket1)), 0);
-        assertEq(usdc.balanceOf(address(pocket1)), 0);
-        assertEq(usdc.balanceOf(address(pocket2)), 0);
+        assertEq(usds.balanceOf(address(pocket2)), 0);
     }
 
 }

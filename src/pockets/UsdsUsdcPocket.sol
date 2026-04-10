@@ -25,6 +25,8 @@ contract UsdsUsdcPocket is BasePocket {
     error InvalidUsdc();
     error InvalidUsds();
     error InvalidPsm();
+    error SwapTokenMismatch();
+    error CollateralTokenMismatch();
 
     IERC20 public immutable usdc;
     IERC20 public immutable usds;
@@ -51,6 +53,10 @@ contract UsdsUsdcPocket is BasePocket {
         if (usdc_       == address(0)) revert InvalidUsdc();
         if (usds_       == address(0)) revert InvalidUsds();
         if (psm_        == address(0)) revert InvalidPsm();
+
+        if (_basin.swapToken()       != usds_) revert SwapTokenMismatch();
+        if (_basin.collateralToken() != usdc_) revert CollateralTokenMismatch();
+
         usdc       = IERC20(usdc_);
         usds       = IERC20(usds_);
         psm        = psm_;

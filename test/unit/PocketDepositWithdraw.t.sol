@@ -338,12 +338,12 @@ contract BasinUsdtCollateralPocketTests is Test {
         collateralTokenRateProvider.__setConversionRate(1e27);
         creditTokenRateProvider.__setConversionRate(1.25e27);
 
-        // swapToken = USDC, collateralToken = USDT
+        // swapToken = USDS, collateralToken = USDC
         groveBasin = new GroveBasin(
             owner,
             lp,
+            address(usds),
             address(usdc),
-            address(usdt),
             address(creditToken),
             address(swapTokenRateProvider),
             address(collateralTokenRateProvider),
@@ -375,48 +375,27 @@ contract BasinUsdtCollateralPocketTests is Test {
 
     }
 
-    function test_deposit_usdt_staysInBasin() public {
-        usdt.mint(lp, 100e6);
+    function test_deposit_usdc_staysInBasin() public {
+        usdc.mint(lp, 100e6);
 
         vm.startPrank(lp);
-        usdt.approve(address(groveBasin), 100e6);
+        usdc.approve(address(groveBasin), 100e6);
 
-        uint256 newShares = groveBasin.deposit(address(usdt), lp, 100e6);
+        uint256 newShares = groveBasin.deposit(address(usdc), lp, 100e6);
         vm.stopPrank();
 
         assertEq(newShares, 100e18);
 
-        // USDT (collateral) stays in basin, not sent to pocket
-        assertEq(usdt.balanceOf(lp),               0);
-        assertEq(usdt.balanceOf(address(groveBasin)),  100e6);
+        // USDC (collateral) stays in basin, not sent to pocket
+        assertEq(usdc.balanceOf(lp),                  0);
+        assertEq(usdc.balanceOf(address(groveBasin)), 100e6);
 
         assertEq(groveBasin.totalShares(), 100e18);
         assertEq(groveBasin.shares(lp),    100e18);
         assertEq(groveBasin.totalAssets(), 100e18);
     }
 
-    function test_withdraw_usdt_fromBasin() public {
-        usdt.mint(lp, 100e6);
-
-        vm.startPrank(lp);
-        usdt.approve(address(groveBasin), 100e6);
-        groveBasin.deposit(address(usdt), lp, 100e6);
-        vm.stopPrank();
-
-        // USDT stays in basin
-        assertEq(usdt.balanceOf(address(groveBasin)), 100e6);
-
-        vm.prank(lp);
-        uint256 amount = groveBasin.withdraw(address(usdt), lp, 100e6);
-
-        assertEq(amount, 100e6);
-        assertEq(usdt.balanceOf(lp), 100e6);
-
-        assertEq(groveBasin.totalShares(), 0);
-        assertEq(groveBasin.shares(lp),    0);
-    }
-
-    function test_deposit_usdc_thenWithdraw_usdc() public {
+    function test_withdraw_usdc_fromBasin() public {
         usdc.mint(lp, 100e6);
 
         vm.startPrank(lp);
@@ -424,15 +403,35 @@ contract BasinUsdtCollateralPocketTests is Test {
         groveBasin.deposit(address(usdc), lp, 100e6);
         vm.stopPrank();
 
-        // USDC went to pocket → converted to USDS via PSM
-        assertEq(usds.balanceOf(address(pocket)), 100e18);
-        assertEq(usdc.balanceOf(address(pocket)), 0);
+        // USDC stays in basin
+        assertEq(usdc.balanceOf(address(groveBasin)), 100e6);
 
         vm.prank(lp);
         uint256 amount = groveBasin.withdraw(address(usdc), lp, 100e6);
 
         assertEq(amount, 100e6);
         assertEq(usdc.balanceOf(lp), 100e6);
+
+        assertEq(groveBasin.totalShares(), 0);
+        assertEq(groveBasin.shares(lp),    0);
+    }
+
+    function test_deposit_usds_thenWithdraw_usds() public {
+        usds.mint(lp, 100e18);
+
+        vm.startPrank(lp);
+        usds.approve(address(groveBasin), 100e18);
+        groveBasin.deposit(address(usds), lp, 100e18);
+        vm.stopPrank();
+
+        // USDS (swapToken) went to pocket
+        assertEq(usds.balanceOf(address(pocket)), 100e18);
+
+        vm.prank(lp);
+        uint256 amount = groveBasin.withdraw(address(usds), lp, 100e18);
+
+        assertEq(amount, 100e18);
+        assertEq(usds.balanceOf(lp), 100e18);
 
         assertEq(groveBasin.totalShares(), 0);
         assertEq(groveBasin.shares(lp),    0);
