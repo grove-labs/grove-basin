@@ -952,9 +952,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
         pendingCreditTokenBalance       += creditTokenAmount;
         pendingRedemptions[redeemer]++;
 
-        IERC20(creditToken).approve(redeemer, creditTokenAmount);
+        IERC20(creditToken).safeApprove(redeemer, creditTokenAmount);
         ITokenRedeemer(redeemer).initiateRedeem(creditTokenAmount);
-        IERC20(creditToken).approve(redeemer, 0);
+        IERC20(creditToken).safeApprove(redeemer, 0);
 
         emit RedeemInitiated(redeemer, msg.sender, creditTokenAmount);
     }
