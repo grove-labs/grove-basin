@@ -11,10 +11,15 @@ contract MockPSM {
 
     address public usds;
     address public usdc;
+    uint256 public tout;
 
     constructor(address usds_, address usdc_) {
         usds = usds_;
         usdc = usdc_;
+    }
+
+    function __setTout(uint256 tout_) external {
+        tout = tout_;
     }
 
     function sellGem(address usr, uint256 gemAmt) external returns (uint256 usdsOutWad) {

@@ -27,6 +27,7 @@ contract UsdsUsdcPocket is BasePocket {
     error InvalidPsm();
     error SwapTokenMismatch();
     error CollateralTokenMismatch();
+    error NonZeroPsmTout();
 
     IERC20 public immutable usdc;
     IERC20 public immutable usds;
@@ -98,6 +99,8 @@ contract UsdsUsdcPocket is BasePocket {
         if (amount == 0) return 0;
 
         if (asset == address(usdc)) {
+            if (IPSMLike(psm).tout() != 0) revert NonZeroPsmTout();
+
             uint256 balance = usdc.balanceOf(address(this));
 
             uint256 convertedAmount;

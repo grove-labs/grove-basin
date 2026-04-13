@@ -391,6 +391,16 @@ contract UsdsUsdcPocketDrawLiquidityTests is UsdsUsdcPocketTestBase {
         pocket.withdrawLiquidity(500e6, address(usdc));
     }
 
+    function test_withdrawLiquidity_usdc_revertsIfToutNonZero() public {
+        usds.mint(address(pocket), 1000e18);
+
+        psm.__setTout(1);
+
+        vm.prank(address(groveBasin));
+        vm.expectRevert(UsdsUsdcPocket.NonZeroPsmTout.selector);
+        pocket.withdrawLiquidity(500e6, address(usdc));
+    }
+
     function test_withdrawLiquidity_unsupportedAsset_reverts() public {
         vm.prank(address(groveBasin));
         vm.expectRevert(IGroveBasinPocket.InvalidAsset.selector);
