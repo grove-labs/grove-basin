@@ -6,8 +6,10 @@ import "forge-std/Test.sol";
 import { GroveBasin }        from "src/GroveBasin.sol";
 import { GroveBasinFactory } from "src/GroveBasinFactory.sol";
 import { IGroveBasin }       from "src/interfaces/IGroveBasin.sol";
+import { IGroveBasinPocket } from "src/interfaces/IGroveBasinPocket.sol";
 
 import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
+import { MockPocket }         from "test/mocks/MockPocket.sol";
 
 contract DepositInitialTests is GroveBasinTestBase {
 
@@ -277,6 +279,48 @@ contract DepositInitialTests is GroveBasinTestBase {
         assertEq(newShares, amount * 125 / 100);
         assertEq(freshBasin.totalShares(),      amount * 125 / 100);
         assertEq(freshBasin.shares(address(0)), amount * 125 / 100);
+    }
+
+    function test_depositInitial_swapToken_pocketDepositFails_tokensRemainInPocket() public {
+        GroveBasin basinWithPocket = new GroveBasin(
+            owner, lp,
+            address(swapToken), address(collateralToken), address(creditToken),
+            address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider)
+        );
+
+        MockPocket failPocket = new MockPocket(
+            address(basinWithPocket),
+            address(swapToken),
+            address(usds),
+            address(psm)
+        );
+
+        vm.startPrank(owner);
+        basinWithPocket.grantRole(basinWithPocket.MANAGER_ADMIN_ROLE(), owner);
+        basinWithPocket.grantRole(basinWithPocket.MANAGER_ROLE(), owner);
+        basinWithPocket.setPocket(address(failPocket));
+        vm.stopPrank();
+
+        vm.mockCallRevert(
+            address(failPocket),
+            abi.encodeWithSelector(IGroveBasinPocket.depositLiquidity.selector),
+            "pocket deposit failed"
+        );
+
+        swapToken.mint(depositor, 100e6);
+        vm.startPrank(depositor);
+        swapToken.approve(address(basinWithPocket), 100e6);
+
+        vm.expectEmit(true, true, true, true);
+        emit IGroveBasin.DepositLiquidityFailed(address(failPocket), address(swapToken), 100e6);
+
+        uint256 newShares = basinWithPocket.depositInitial(address(swapToken), 100e6);
+        vm.stopPrank();
+
+        assertEq(newShares, 100e18);
+        assertEq(swapToken.balanceOf(address(failPocket)), 100e6);
+        assertEq(basinWithPocket.totalShares(), 100e18);
+        assertEq(basinWithPocket.shares(address(0)), 100e18);
     }
 
     /**********************************************************************************************/

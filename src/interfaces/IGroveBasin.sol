@@ -204,6 +204,15 @@ interface IGroveBasin {
     event FeeClaimerSet(address indexed oldFeeClaimer, address indexed newFeeClaimer);
 
     /**
+     *  @dev   Emitted when a pocket's depositLiquidity call fails. The tokens remain in the
+     *         pocket for the manager to deposit at a later time.
+     *  @param pocket Address of the pocket that failed.
+     *  @param asset  Address of the asset that was being deposited.
+     *  @param amount Amount that failed to deposit.
+     */
+    event DepositLiquidityFailed(address indexed pocket, address indexed asset, uint256 amount);
+
+    /**
      *  @dev   Emitted when a pause flag is set or unset.
      *  @param key    The pause key being toggled. Can be a function selector, an arbitrary
      *                bytes4 key, or bytes4(0) for the global pause.

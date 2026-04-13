@@ -862,9 +862,14 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     /// @dev Deposits swap token liquidity into the pocket if one is configured.
+    ///      Wrapped in try-catch so that if the pocket's deposit fails, the tokens
+    ///      remain in the pocket for the manager to deposit at a later time.
     function _depositLiquidityInPocket(uint256 amount, address asset) internal {
         if (asset == swapToken && _hasPocket()) {
-            IGroveBasinPocket(pocket).depositLiquidity(amount, asset);
+            try IGroveBasinPocket(pocket).depositLiquidity(amount, asset) {}
+            catch {
+                emit DepositLiquidityFailed(pocket, asset, amount);
+            }
         }
     }
 
