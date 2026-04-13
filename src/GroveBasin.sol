@@ -471,8 +471,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function depositInitial(address asset, uint256 assetsToDeposit)
         external override returns (uint256 newShares)
     {
-        if (totalShares != 0)     revert AlreadySeeded();
-        if (assetsToDeposit == 0) revert ZeroAmount();
+        if (totalShares != 0)                                 revert AlreadySeeded();
+        if (assetsToDeposit < 10 ** IERC20(asset).decimals()) revert InsufficientInitialDeposit();
 
         newShares = previewDeposit(asset, assetsToDeposit);
 

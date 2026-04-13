@@ -34,6 +34,7 @@ interface IGroveBasin {
     error ZeroAmountOut();
     error AmountInTooHigh();
     error AlreadySeeded();
+    error InsufficientInitialDeposit();
     error ZeroAmount();
     error NoNewShares();
     error NotLiquidityProvider();

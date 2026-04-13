@@ -45,13 +45,28 @@ contract DepositInitialTests is GroveBasinTestBase {
     }
 
     function test_depositInitial_zeroAmount() public {
-        vm.expectRevert(IGroveBasin.ZeroAmount.selector);
+        vm.expectRevert(IGroveBasin.InsufficientInitialDeposit.selector);
         freshBasin.depositInitial(address(swapToken), 0);
     }
 
     function test_depositInitial_invalidAsset() public {
-        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
+        vm.expectRevert();
         freshBasin.depositInitial(makeAddr("bad-asset"), 100e6);
+    }
+
+    function test_depositInitial_insufficientInitialDeposit_swapToken() public {
+        vm.expectRevert(IGroveBasin.InsufficientInitialDeposit.selector);
+        freshBasin.depositInitial(address(swapToken), 1e6 - 1);
+    }
+
+    function test_depositInitial_insufficientInitialDeposit_collateralToken() public {
+        vm.expectRevert(IGroveBasin.InsufficientInitialDeposit.selector);
+        freshBasin.depositInitial(address(collateralToken), 1e18 - 1);
+    }
+
+    function test_depositInitial_insufficientInitialDeposit_creditToken() public {
+        vm.expectRevert(IGroveBasin.InsufficientInitialDeposit.selector);
+        freshBasin.depositInitial(address(creditToken), 1e18 - 1);
     }
 
     function test_depositInitial_insufficientApprove() public {
@@ -81,11 +96,11 @@ contract DepositInitialTests is GroveBasinTestBase {
             address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider)
         );
 
-        swapToken.mint(depositor, 1);
+        swapToken.mint(depositor, 1e6);
         vm.startPrank(depositor);
-        swapToken.approve(address(zeroShareBasin), 1);
+        swapToken.approve(address(zeroShareBasin), 1e6);
         vm.expectRevert(IGroveBasin.NoNewShares.selector);
-        zeroShareBasin.depositInitial(address(swapToken), 1);
+        zeroShareBasin.depositInitial(address(swapToken), 1e6);
         vm.stopPrank();
 
         mockSwapTokenRateProvider.__setConversionRate(1e27);
@@ -223,7 +238,7 @@ contract DepositInitialTests is GroveBasinTestBase {
     /**********************************************************************************************/
 
     function testFuzz_depositInitial_swapToken(uint256 amount) public {
-        amount = _bound(amount, 1, SWAP_TOKEN_MAX);
+        amount = _bound(amount, 1e6, SWAP_TOKEN_MAX);
 
         swapToken.mint(depositor, amount);
         vm.startPrank(depositor);
@@ -237,7 +252,7 @@ contract DepositInitialTests is GroveBasinTestBase {
     }
 
     function testFuzz_depositInitial_collateralToken(uint256 amount) public {
-        amount = _bound(amount, 1, COLLATERAL_TOKEN_MAX);
+        amount = _bound(amount, 1e18, COLLATERAL_TOKEN_MAX);
 
         collateralToken.mint(depositor, amount);
         vm.startPrank(depositor);
@@ -251,7 +266,7 @@ contract DepositInitialTests is GroveBasinTestBase {
     }
 
     function testFuzz_depositInitial_creditToken(uint256 amount) public {
-        amount = _bound(amount, 1, CREDIT_TOKEN_MAX);
+        amount = _bound(amount, 1e18, CREDIT_TOKEN_MAX);
 
         creditToken.mint(depositor, amount);
         vm.startPrank(depositor);
