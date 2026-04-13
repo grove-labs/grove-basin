@@ -68,6 +68,7 @@ contract BUIDLTokenRedeemerConstructorTests is BUIDLTokenRedeemerTestBase {
         assertEq(redeemer.redemptionAddress(), redemptionAddress);
         assertEq(redeemer.vault(),             redemptionAddress);
         assertEq(address(redeemer.basin()),    address(basin));
+        assertEq(redeemer.redemptionActive(),  false);
     }
 
     function test_constructor_invalidCreditToken() public {
@@ -169,16 +170,16 @@ contract BUIDLTokenRedeemerInitiateRedeemTests is BUIDLTokenRedeemerTestBase {
         assertEq(creditToken.balanceOf(redemptionAddress), amount);
         assertEq(creditToken.balanceOf(address(redeemer)), 0);
         assertEq(creditToken.balanceOf(basin),             9_000e18);
+        assertEq(redeemer.redemptionActive(),              true);
     }
 
-    function test_initiateRedeem_multipleAmounts() public {
-        vm.startPrank(basin);
+    function test_initiateRedeem_revertsIfRedemptionAlreadyActive() public {
+        vm.prank(basin);
         redeemer.initiateRedeem(100e18);
-        assertEq(creditToken.balanceOf(redemptionAddress), 100e18);
 
+        vm.prank(basin);
+        vm.expectRevert(BUIDLTokenRedeemer.RedemptionAlreadyActive.selector);
         redeemer.initiateRedeem(200e18);
-        assertEq(creditToken.balanceOf(redemptionAddress), 300e18);
-        vm.stopPrank();
     }
 
     function test_initiateRedeem_emitsEvent() public {
@@ -232,7 +233,7 @@ contract BUIDLTokenRedeemerCompleteRedeemTests is BUIDLTokenRedeemerTestBase {
         });
     }
 
-    function test_completeRedeem_sendsCollateralToCaller() public {
+    function test_completeRedeem_transfersEntireBalance() public {
         uint256 collateralTokenAmount = 1000e18;
 
         collateralToken.mint(address(redeemer), collateralTokenAmount);
@@ -248,54 +249,88 @@ contract BUIDLTokenRedeemerCompleteRedeemTests is BUIDLTokenRedeemerTestBase {
 
         assertEq(assets,                                   collateralTokenAmount);
         assertEq(callerBalanceAfter - callerBalanceBefore, collateralTokenAmount);
+        assertEq(collateralToken.balanceOf(address(redeemer)), 0);
     }
 
-    function test_completeRedeem_usesBalanceWhenLess() public {
-        uint256 collateralTokenAmount = 1000e18;
-        uint256 redeemerBalance       = 800e18;
+    function test_completeRedeem_transfersEntireBalanceEvenWhenMoreThanRequested() public {
+        uint256 redeemerBalance = 1500e18;
 
         collateralToken.mint(address(redeemer), redeemerBalance);
 
-        RedeemRequest memory request = _makeRequest(1000e18, collateralTokenAmount);
+        RedeemRequest memory request = _makeRequest(1000e18, 1000e18);
 
         vm.prank(basin);
         uint256 assets = redeemer.completeRedeem(request);
 
         assertEq(assets, redeemerBalance);
+        assertEq(collateralToken.balanceOf(address(redeemer)), 0);
     }
 
-    function test_completeRedeem_usesAmountWhenLess() public {
-        uint256 collateralTokenAmount = 500e18;
-        uint256 redeemerBalance       = 1000e18;
+    function test_completeRedeem_revertsIfZeroBalance() public {
+        RedeemRequest memory request = _makeRequest(1000e18, 1000e18);
 
-        collateralToken.mint(address(redeemer), redeemerBalance);
+        vm.prank(basin);
+        vm.expectRevert(BUIDLTokenRedeemer.NoCollateralBalance.selector);
+        redeemer.completeRedeem(request);
+    }
 
-        RedeemRequest memory request = _makeRequest(500e18, collateralTokenAmount);
+    function test_completeRedeem_resetsRedemptionActive() public {
+        creditToken.mint(basin, 10_000e18);
+        vm.prank(basin);
+        creditToken.approve(address(redeemer), type(uint256).max);
 
+        vm.prank(basin);
+        redeemer.initiateRedeem(1000e18);
+        assertEq(redeemer.redemptionActive(), true);
+
+        collateralToken.mint(address(redeemer), 1000e18);
+
+        RedeemRequest memory request = _makeRequest(1000e18, 1000e18);
+
+        vm.prank(basin);
+        redeemer.completeRedeem(request);
+        assertEq(redeemer.redemptionActive(), false);
+    }
+
+    function test_completeRedeem_allowsNewRedemptionAfterComplete() public {
+        creditToken.mint(basin, 10_000e18);
+        vm.prank(basin);
+        creditToken.approve(address(redeemer), type(uint256).max);
+
+        // First cycle
+        vm.prank(basin);
+        redeemer.initiateRedeem(1000e18);
+
+        collateralToken.mint(address(redeemer), 1000e18);
+
+        RedeemRequest memory request = _makeRequest(1000e18, 1000e18);
+        vm.prank(basin);
+        redeemer.completeRedeem(request);
+
+        // Second cycle should succeed
+        vm.prank(basin);
+        redeemer.initiateRedeem(500e18);
+        assertEq(redeemer.redemptionActive(), true);
+    }
+
+    function test_completeRedeem_resetWithSmallUsdcTransfer() public {
+        creditToken.mint(basin, 10_000e18);
+        vm.prank(basin);
+        creditToken.approve(address(redeemer), type(uint256).max);
+
+        vm.prank(basin);
+        redeemer.initiateRedeem(1000e18);
+        assertEq(redeemer.redemptionActive(), true);
+
+        // Someone sends a tiny amount of USDC to reset
+        collateralToken.mint(address(redeemer), 100);
+
+        RedeemRequest memory request = _makeRequest(1000e18, 1000e18);
         vm.prank(basin);
         uint256 assets = redeemer.completeRedeem(request);
 
-        assertEq(assets, collateralTokenAmount);
-    }
-
-    function test_completeRedeem_multipleCompletes() public {
-        collateralToken.mint(address(redeemer), 1000e18);
-
-        RedeemRequest memory request1 = _makeRequest(400e18, 400e18);
-        RedeemRequest memory request2 = _makeRequest(300e18, 300e18);
-
-        vm.startPrank(basin);
-        redeemer.completeRedeem(request1);
-
-        uint256 balanceAfterFirst = collateralToken.balanceOf(basin);
-
-        redeemer.completeRedeem(request2);
-
-        uint256 balanceAfterSecond = collateralToken.balanceOf(basin);
-        vm.stopPrank();
-
-        assertEq(balanceAfterFirst,                        400e18);
-        assertEq(balanceAfterSecond - balanceAfterFirst,   300e18);
+        assertEq(assets, 100);
+        assertEq(redeemer.redemptionActive(), false);
     }
 
     function test_completeRedeem_emitsEvent() public {
