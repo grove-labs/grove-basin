@@ -29,6 +29,8 @@ contract UsdsUsdcPocket is BasePocket {
     error CollateralTokenMismatch();
     error NonZeroPsmTout();
 
+    event Swept(uint256 amount);
+
     IERC20 public immutable usdc;
     IERC20 public immutable usds;
 
@@ -67,7 +69,6 @@ contract UsdsUsdcPocket is BasePocket {
         _usdcPrecision = 10 ** IERC20(usdc_).decimals();
 
         IERC20(usds_).safeApprove(basin_, type(uint256).max);
-        IERC20(usdc_).safeApprove(basin_, type(uint256).max);
 
         if (groveProxy_ != address(0)) {
             // Allows Sky spells to withdraw USDS from this pocket
@@ -120,19 +121,26 @@ contract UsdsUsdcPocket is BasePocket {
                 emit LiquidityDrawn(asset, amount, 0);
             }
 
+            usdc.safeTransfer(address(_basin), amount);
+
             return amount;
         } else if (asset == address(usds)) {
             return amount;
         } else revert InvalidAsset();
     }
 
+    function sweep() external onlyBasinOrManager {
+        uint256 balance = usdc.balanceOf(address(this));
+        if (balance > 0) {
+            usdc.safeTransfer(address(_basin), balance);
+        }
+        emit Swept(balance);
+    }
+
     /// @inheritdoc IGroveBasinPocket
     function availableBalance(address asset) external view override returns (uint256) {
         if (asset == address(usds)) {
             return usds.balanceOf(address(this));
-        } else if (asset == address(usdc)) {
-            return usdc.balanceOf(address(this))
-                + usds.balanceOf(address(this)) * _usdcPrecision / _usdsPrecision;
         }
         return IERC20(asset).balanceOf(address(this));
     }

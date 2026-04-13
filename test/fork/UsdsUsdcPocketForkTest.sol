@@ -157,8 +157,9 @@ contract UsdsUsdcPocketForkTest_DrawLiquidityUsdc is UsdsUsdcPocketForkTestBase 
         vm.prank(address(groveBasin));
         pocket.withdrawLiquidity(1000e6, Ethereum.USDC);
 
-        assertEq(IERC20(Ethereum.USDC).balanceOf(address(pocket)), 1000e6);
-        assertEq(IERC20(Ethereum.USDS).balanceOf(address(pocket)), 9000e18);
+        assertEq(IERC20(Ethereum.USDC).balanceOf(address(pocket)),    0);
+        assertEq(IERC20(Ethereum.USDC).balanceOf(address(groveBasin)), 1000e6);
+        assertEq(IERC20(Ethereum.USDS).balanceOf(address(pocket)),    9000e18);
     }
 
     function test_withdrawLiquidity_usdc_existingBalancePartialSwap() public {
@@ -168,8 +169,9 @@ contract UsdsUsdcPocketForkTest_DrawLiquidityUsdc is UsdsUsdcPocketForkTestBase 
         vm.prank(address(groveBasin));
         pocket.withdrawLiquidity(1000e6, Ethereum.USDC);
 
-        assertEq(IERC20(Ethereum.USDC).balanceOf(address(pocket)), 1000e6);
-        assertEq(IERC20(Ethereum.USDS).balanceOf(address(pocket)), 9400e18);
+        assertEq(IERC20(Ethereum.USDC).balanceOf(address(pocket)),    0);
+        assertEq(IERC20(Ethereum.USDC).balanceOf(address(groveBasin)), 1000e6);
+        assertEq(IERC20(Ethereum.USDS).balanceOf(address(pocket)),    9400e18);
     }
 
     function test_withdrawLiquidity_usdc_fullBalanceNoSwap() public {
@@ -179,8 +181,9 @@ contract UsdsUsdcPocketForkTest_DrawLiquidityUsdc is UsdsUsdcPocketForkTestBase 
         vm.prank(address(groveBasin));
         pocket.withdrawLiquidity(1000e6, Ethereum.USDC);
 
-        assertEq(IERC20(Ethereum.USDC).balanceOf(address(pocket)), 5000e6);
-        assertEq(IERC20(Ethereum.USDS).balanceOf(address(pocket)), 10_000e18);
+        assertEq(IERC20(Ethereum.USDC).balanceOf(address(pocket)),    4000e6);
+        assertEq(IERC20(Ethereum.USDC).balanceOf(address(groveBasin)), 1000e6);
+        assertEq(IERC20(Ethereum.USDS).balanceOf(address(pocket)),    10_000e18);
     }
 
 }
