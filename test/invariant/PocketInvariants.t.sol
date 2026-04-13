@@ -35,7 +35,6 @@ contract PocketInvariantTest is Test {
     MockERC20 public swapToken;
     MockERC20 public collateralToken;
     MockERC20 public creditToken;
-    MockERC20 public usds;
 
     MockRateProvider public swapTokenRateProvider;
     MockRateProvider public collateralTokenRateProvider;
@@ -50,8 +49,6 @@ contract PocketInvariantTest is Test {
         swapToken       = new MockERC20("swapToken",       "swapToken",       6);
         collateralToken = new MockERC20("collateralToken", "collateralToken", 18);
         creditToken     = new MockERC20("creditToken",     "creditToken",     18);
-
-        usds = new MockERC20("USDS", "USDS", 18);
 
         swapTokenRateProvider       = new MockRateProvider();
         collateralTokenRateProvider = new MockRateProvider();
@@ -72,15 +69,17 @@ contract PocketInvariantTest is Test {
             address(creditTokenRateProvider)
         );
 
-        psm = new MockPSM(address(usds), address(swapToken));
+        // UsdsUsdcPocket enforces basin.swapToken == usds_ and basin.collateralToken == usdc_.
+        // Pass basin's swapToken as usds_ and collateralToken as usdc_ to satisfy the check.
+        psm = new MockPSM(address(swapToken), address(collateralToken));
 
-        usds.mint(address(psm), type(uint128).max);
         swapToken.mint(address(psm), type(uint128).max);
+        collateralToken.mint(address(psm), type(uint128).max);
 
         pocket = new UsdsUsdcPocket(
             address(groveBasin),
+            address(collateralToken),
             address(swapToken),
-            address(usds),
             address(psm),
             groveProxy
         );

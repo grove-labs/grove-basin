@@ -158,4 +158,21 @@ contract GroveBasinCompleteRedeemInvalidRedeemerTests is GroveBasinTestBase {
         groveBasin.removeTokenRedeemer(address(redeemer));
     }
 
+    function test_completeRedeem_invalidRedeemer() public {
+        uint256 amount = 1000e18;
+
+        bytes32 redeemerContractRole = groveBasin.REDEEMER_CONTRACT_ROLE();
+
+        vm.prank(owner);
+        bytes32 redeemRequestId = groveBasin.initiateRedeem(address(redeemer), amount);
+
+        // Revoke the redeemer contract role directly, bypassing removeTokenRedeemer
+        vm.prank(owner);
+        groveBasin.revokeRole(redeemerContractRole, address(redeemer));
+
+        vm.prank(owner);
+        vm.expectRevert(IGroveBasin.InvalidRedeemer.selector);
+        groveBasin.completeRedeem(redeemRequestId);
+    }
+
 }

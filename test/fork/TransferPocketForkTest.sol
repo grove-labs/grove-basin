@@ -956,13 +956,14 @@ abstract contract TransferPocketForkTestBase_USDC is Test {
         collateralTokenRateProvider.__setConversionRate(1e27);
         creditTokenRateProvider.__setConversionRate(1e27);
 
-        // swapToken = USDC, collateralToken = USDT, creditToken = USDS
+        // swapToken = USDS, collateralToken = USDC, creditToken = USDT
+        // UsdsUsdcPocket enforces basin.swapToken == usds and basin.collateralToken == usdc
         groveBasin = new GroveBasin(
             owner,
             lp,
+            Ethereum.USDS,
             Ethereum.USDC,
             Ethereum.USDT,
-            Ethereum.USDS,
             address(swapTokenRateProvider),
             address(collateralTokenRateProvider),
             address(creditTokenRateProvider)
@@ -1014,23 +1015,23 @@ abstract contract TransferPocketForkTestBase_USDC is Test {
 
 contract TransferPocketForkTest_NoPocketToUsdc is TransferPocketForkTestBase_USDC {
 
-    function test_setPocket_noPocketToUsdc_transfersUsdc() public {
-        deal(Ethereum.USDC, address(groveBasin), 10_000e6);
+    function test_setPocket_noPocketToUsdc_transfersUsds() public {
+        deal(Ethereum.USDS, address(groveBasin), 10_000e18);
 
         uint256 totalAssetsBefore = groveBasin.totalAssets();
 
         UsdsUsdcPocket usdcPocket = _createUsdcPocket();
 
         vm.expectEmit(true, true, false, true);
-        emit IGroveBasin.PocketSet(address(groveBasin), address(usdcPocket), 10_000e6);
+        emit IGroveBasin.PocketSet(address(groveBasin), address(usdcPocket), 10_000e18);
 
         vm.prank(owner);
         groveBasin.setPocket(address(usdcPocket));
 
         uint256 totalAssetsAfter = groveBasin.totalAssets();
 
-        assertEq(IERC20(Ethereum.USDC).balanceOf(address(groveBasin)), 0);
-        assertEq(usdcPocket.availableBalance(Ethereum.USDC), 10_000e6);
+        assertEq(IERC20(Ethereum.USDS).balanceOf(address(groveBasin)), 0);
+        assertEq(usdcPocket.availableBalance(Ethereum.USDS), 10_000e18);
         assertEq(totalAssetsAfter, totalAssetsBefore);
         assertEq(groveBasin.pocket(), address(usdcPocket));
     }
@@ -1049,28 +1050,26 @@ contract TransferPocketForkTest_UsdcToUsdc is TransferPocketForkTestBase_USDC {
         vm.prank(owner);
         groveBasin.setPocket(address(pocket1));
 
-        // Fund the pocket with USDC and USDS
-        deal(Ethereum.USDC, address(pocket1), 1000e6);
+        // Fund the pocket with USDS (the basin's swapToken)
         deal(Ethereum.USDS, address(pocket1), 5000e18);
 
         uint256 totalAssetsBefore = groveBasin.totalAssets();
 
         UsdsUsdcPocket pocket2 = _createUsdcPocket();
 
-        // USDS is converted to USDC via PSM, so total = 1000 + 5000 = 6000 USDC
+        // setPocket transfers the basin's swapToken (USDS)
         vm.expectEmit(true, true, false, true);
-        emit IGroveBasin.PocketSet(address(pocket1), address(pocket2), 6000e6);
+        emit IGroveBasin.PocketSet(address(pocket1), address(pocket2), 5000e18);
 
         vm.prank(owner);
         groveBasin.setPocket(address(pocket2));
 
         uint256 totalAssetsAfter = groveBasin.totalAssets();
 
-        // Old pocket: zero USDC and zero USDS
-        assertEq(IERC20(Ethereum.USDC).balanceOf(address(pocket1)), 0);
+        // Old pocket: zero USDS
         assertEq(IERC20(Ethereum.USDS).balanceOf(address(pocket1)), 0);
-        // New pocket has the full balance (as USDC since PSM converted USDS→USDC)
-        assertEq(IERC20(Ethereum.USDC).balanceOf(address(pocket2)), 6000e6);
+        // New pocket has the full balance as USDS
+        assertEq(IERC20(Ethereum.USDS).balanceOf(address(pocket2)), 5000e18);
         assertEq(totalAssetsAfter, totalAssetsBefore);
     }
 
