@@ -25,6 +25,8 @@ contract SetupJTRSYMorphoUsdtBasinTest is Test, SetupJTRSYMorphoUsdtBasin {
 
         deal(Ethereum.USDT, address(this), 1e6);
 
+        vm.setEnv("DEPLOYER", vm.toString(address(this)));
+
         (address groveBasin_, address pocket_, address redeemer_) = this.deploy();
 
         groveBasin = GroveBasin(groveBasin_);

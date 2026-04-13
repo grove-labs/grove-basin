@@ -36,7 +36,9 @@ contract SetupJTRSYMorphoUsdtBasin is Script {
     }
 
     function deploy() public returns (address groveBasin, address pocket_, address redeemer_) {
-        require(IERC20(Ethereum.USDT).balanceOf(msg.sender) >= 1e6, "insufficient-usdt-balance");
+        address deployer = vm.envAddress("DEPLOYER");
+
+        require(IERC20(Ethereum.USDT).balanceOf(deployer) >= 1e6, "insufficient-usdt-balance");
 
         GroveBasinFactory factory = new GroveBasinFactory();
 
@@ -44,7 +46,7 @@ contract SetupJTRSYMorphoUsdtBasin is Script {
         IERC20(Ethereum.USDT).safeApprove(address(factory), seedAmount);
 
         groveBasin = factory.deploy({
-            owner                       : msg.sender,
+            owner                       : deployer,
             liquidityProvider           : Ethereum.ALM_PROXY,
             swapToken                   : Ethereum.USDT,
             collateralToken             : Ethereum.USDC,
@@ -54,7 +56,7 @@ contract SetupJTRSYMorphoUsdtBasin is Script {
             creditTokenRateProvider     : JTRSY_CHRONICLE_RATE_PROVIDER
         });
 
-        GroveBasin(groveBasin).grantRole(GroveBasin(groveBasin).MANAGER_ADMIN_ROLE(), msg.sender);
+        GroveBasin(groveBasin).grantRole(GroveBasin(groveBasin).MANAGER_ADMIN_ROLE(), deployer);
 
         MorphoUsdtPocket pocket = new MorphoUsdtPocket(
             groveBasin,

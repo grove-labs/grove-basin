@@ -24,6 +24,8 @@ contract SetupJTRSYUsdsUsdcBasinTest is Test, SetupJTRSYUsdsUsdcBasin {
 
         deal(Ethereum.USDS, address(this), 1e18);
 
+        vm.setEnv("DEPLOYER", vm.toString(address(this)));
+
         (address groveBasin_, address pocket_, address redeemer_) = this.deploy();
 
         groveBasin = GroveBasin(groveBasin_);
