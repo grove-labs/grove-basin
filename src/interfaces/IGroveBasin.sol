@@ -21,6 +21,7 @@ interface IGroveBasin {
     error InvalidThresholdBounds();
     error MinFeeGreaterThanMaxFee();
     error MaxFeeExceedsBps();
+    error CurrentFeeOutOfNewBounds();
     error InvalidPocket();
     error InvalidRedeemer();
     error RedeemerAlreadyAdded();
@@ -528,8 +529,8 @@ interface IGroveBasin {
 
     /**
      *  @dev    Sets the fee bounds for both purchase and redemption fees. Callable only by
-     *          MANAGER_ADMIN_ROLE. If current fees are outside the new bounds,
-     *          they are clamped to the nearest bound.
+     *          MANAGER_ADMIN_ROLE. Reverts if current fees are outside the new bounds;
+     *          OWNER_ROLE must adjust fees first.
      *  @param  newMinFee New minimum fee in BPS.
      *  @param  newMaxFee New maximum fee in BPS.
      */

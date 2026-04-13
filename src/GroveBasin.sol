@@ -239,6 +239,11 @@ contract GroveBasin is IGroveBasin, AccessControl {
         if (newMinFee > newMaxFee) revert MinFeeGreaterThanMaxFee();
         if (newMaxFee >= BPS)       revert MaxFeeExceedsBps();
 
+        if (
+            purchaseFee    < newMinFee || purchaseFee    > newMaxFee ||
+            redemptionFee  < newMinFee || redemptionFee  > newMaxFee
+        ) revert CurrentFeeOutOfNewBounds();
+
         uint256 oldMinFee = minFee;
         uint256 oldMaxFee = maxFee;
 
@@ -246,20 +251,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
         maxFee = newMaxFee;
 
         emit FeeBoundsSet(oldMinFee, oldMaxFee, newMinFee, newMaxFee);
-
-        uint256 purchaseFee_ = purchaseFee;
-        if (purchaseFee_ < newMinFee) {
-            _setPurchaseFee(newMinFee);
-        } else if (purchaseFee_ > newMaxFee) {
-            _setPurchaseFee(newMaxFee);
-        }
-
-        uint256 redemptionFee_ = redemptionFee;
-        if (redemptionFee_ < newMinFee) {
-            _setRedemptionFee(newMinFee);
-        } else if (redemptionFee_ > newMaxFee) {
-            _setRedemptionFee(newMaxFee);
-        }
     }
 
     /// @inheritdoc IGroveBasin

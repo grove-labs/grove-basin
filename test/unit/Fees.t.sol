@@ -49,6 +49,52 @@ contract GroveBasinSetFeeBoundsFailureTests is GroveBasinTestBase {
         groveBasin.setFeeBounds(0, 10_000);
     }
 
+    function test_setFeeBounds_revertsWhenPurchaseFeeBelowMin() public {
+        vm.startPrank(owner);
+        groveBasin.setFeeBounds(0, 500);
+        groveBasin.setPurchaseFee(200);
+        vm.expectRevert(IGroveBasin.CurrentFeeOutOfNewBounds.selector);
+        groveBasin.setFeeBounds(300, 500);
+        vm.stopPrank();
+    }
+
+    function test_setFeeBounds_revertsWhenPurchaseFeeAboveMax() public {
+        vm.startPrank(owner);
+        groveBasin.setFeeBounds(0, 500);
+        groveBasin.setPurchaseFee(400);
+        vm.expectRevert(IGroveBasin.CurrentFeeOutOfNewBounds.selector);
+        groveBasin.setFeeBounds(0, 300);
+        vm.stopPrank();
+    }
+
+    function test_setFeeBounds_revertsWhenRedemptionFeeBelowMin() public {
+        vm.startPrank(owner);
+        groveBasin.setFeeBounds(0, 500);
+        groveBasin.setRedemptionFee(100);
+        vm.expectRevert(IGroveBasin.CurrentFeeOutOfNewBounds.selector);
+        groveBasin.setFeeBounds(200, 500);
+        vm.stopPrank();
+    }
+
+    function test_setFeeBounds_revertsWhenRedemptionFeeAboveMax() public {
+        vm.startPrank(owner);
+        groveBasin.setFeeBounds(0, 500);
+        groveBasin.setRedemptionFee(400);
+        vm.expectRevert(IGroveBasin.CurrentFeeOutOfNewBounds.selector);
+        groveBasin.setFeeBounds(0, 300);
+        vm.stopPrank();
+    }
+
+    function test_setFeeBounds_revertsWhenBothFeesOutOfBounds() public {
+        vm.startPrank(owner);
+        groveBasin.setFeeBounds(0, 500);
+        groveBasin.setPurchaseFee(100);
+        groveBasin.setRedemptionFee(400);
+        vm.expectRevert(IGroveBasin.CurrentFeeOutOfNewBounds.selector);
+        groveBasin.setFeeBounds(200, 300);
+        vm.stopPrank();
+    }
+
 }
 
 contract GroveBasinSetFeeBoundsSuccessTests is GroveBasinTestBase {
@@ -125,58 +171,6 @@ contract GroveBasinSetFeeBoundsSuccessTests is GroveBasinTestBase {
 
         assertEq(groveBasin.minFee(), 200);
         assertEq(groveBasin.maxFee(), 300);
-    }
-
-    function test_setFeeBounds_clampsPurchaseFeeToMin() public {
-        vm.startPrank(owner);
-        groveBasin.setFeeBounds(0, 500);
-        groveBasin.setPurchaseFee(200);
-        groveBasin.setFeeBounds(300, 500);
-        vm.stopPrank();
-
-        assertEq(groveBasin.purchaseFee(), 300);
-    }
-
-    function test_setFeeBounds_clampsPurchaseFeeToMax() public {
-        vm.startPrank(owner);
-        groveBasin.setFeeBounds(0, 500);
-        groveBasin.setPurchaseFee(400);
-        groveBasin.setFeeBounds(0, 300);
-        vm.stopPrank();
-
-        assertEq(groveBasin.purchaseFee(), 300);
-    }
-
-    function test_setFeeBounds_clampsRedemptionFeeToMin() public {
-        vm.startPrank(owner);
-        groveBasin.setFeeBounds(0, 500);
-        groveBasin.setRedemptionFee(100);
-        groveBasin.setFeeBounds(200, 500);
-        vm.stopPrank();
-
-        assertEq(groveBasin.redemptionFee(), 200);
-    }
-
-    function test_setFeeBounds_clampsRedemptionFeeToMax() public {
-        vm.startPrank(owner);
-        groveBasin.setFeeBounds(0, 500);
-        groveBasin.setRedemptionFee(400);
-        groveBasin.setFeeBounds(0, 300);
-        vm.stopPrank();
-
-        assertEq(groveBasin.redemptionFee(), 300);
-    }
-
-    function test_setFeeBounds_clampsBothFees() public {
-        vm.startPrank(owner);
-        groveBasin.setFeeBounds(0, 500);
-        groveBasin.setPurchaseFee(100);
-        groveBasin.setRedemptionFee(400);
-        groveBasin.setFeeBounds(200, 300);
-        vm.stopPrank();
-
-        assertEq(groveBasin.purchaseFee(),   200);
-        assertEq(groveBasin.redemptionFee(), 300);
     }
 
 }
