@@ -90,9 +90,7 @@ contract UsdsUsdcPocket is BasePocket {
 
             emit LiquidityDeposited(asset, amount, convertedAmount);
             return convertedAmount;
-        }
-
-        return 0;
+        } else revert InvalidAsset();
     }
 
     /// @inheritdoc IGroveBasinPocket
@@ -120,9 +118,9 @@ contract UsdsUsdcPocket is BasePocket {
             }
 
             return amount;
-        }
-
-        return 0;
+        } else if (asset == address(usds)) {
+            return amount;
+        } else revert InvalidAsset();
     }
 
     /// @inheritdoc IGroveBasinPocket

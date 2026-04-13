@@ -333,8 +333,9 @@ contract UsdsUsdcPocketDepositLiquidityTests is UsdsUsdcPocketTestBase {
         assertEq(usds.balanceOf(address(pocket)), 1000e18);
     }
 
-    function test_depositLiquidity_unsupportedAsset_noOp() public {
+    function test_depositLiquidity_unsupportedAsset_reverts() public {
         vm.prank(address(groveBasin));
+        vm.expectRevert(IGroveBasinPocket.InvalidAsset.selector);
         pocket.depositLiquidity(100e18, address(collateralToken));
     }
 
@@ -390,9 +391,19 @@ contract UsdsUsdcPocketDrawLiquidityTests is UsdsUsdcPocketTestBase {
         pocket.withdrawLiquidity(500e6, address(usdc));
     }
 
-    function test_withdrawLiquidity_unsupportedAsset_noOp() public {
+    function test_withdrawLiquidity_unsupportedAsset_reverts() public {
         vm.prank(address(groveBasin));
+        vm.expectRevert(IGroveBasinPocket.InvalidAsset.selector);
         pocket.withdrawLiquidity(100e18, address(collateralToken));
+    }
+
+    function test_withdrawLiquidity_usds_returnsAmount() public {
+        usds.mint(address(pocket), 1000e18);
+
+        vm.prank(address(groveBasin));
+        uint256 result = pocket.withdrawLiquidity(500e18, address(usds));
+
+        assertEq(result, 500e18);
     }
 
 }
