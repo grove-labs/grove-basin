@@ -68,6 +68,14 @@ contract JTRSYTokenRedeemerConstructorTests is Test {
         new JTRSYTokenRedeemer(address(creditToken), address(wrongVault), address(basin));
     }
 
+    function test_constructor_shareMismatch() public {
+        MockERC20 wrongShare = new MockERC20("wrongShare", "wrongShare", 18);
+        MockAsyncVault wrongVault = new MockAsyncVault(address(collateralToken), address(wrongShare));
+
+        vm.expectRevert(JTRSYTokenRedeemer.ShareMismatch.selector);
+        new JTRSYTokenRedeemer(address(creditToken), address(wrongVault), address(basin));
+    }
+
     function _deployBasin(address collateralToken_, address creditToken_) internal returns (GroveBasin) {
         MockERC20 swapToken_ = new MockERC20("swapToken", "swapToken", 6);
 

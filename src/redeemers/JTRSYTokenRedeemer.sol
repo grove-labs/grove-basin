@@ -26,6 +26,7 @@ contract JTRSYTokenRedeemer is ITokenRedeemer {
 
     error InvalidVault();
     error CollateralAssetMismatch();
+    error ShareMismatch();
 
     /**********************************************************************************************/
     /*** State variables and immutables                                                         ***/
@@ -58,6 +59,7 @@ contract JTRSYTokenRedeemer is ITokenRedeemer {
 
         if (IGroveBasin(basin_).creditToken() != creditToken_)                        revert CreditTokenMismatch();
         if (IGroveBasin(basin_).collateralToken() != IAsyncVaultLike(vault_).asset()) revert CollateralAssetMismatch();
+        if (IAsyncVaultLike(vault_).share() != creditToken_)                          revert ShareMismatch();
 
         creditToken = creditToken_;
         vault       = vault_;
