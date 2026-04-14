@@ -35,6 +35,22 @@ contract GroveBasinInitiateRedeemTests is GroveBasinTestBase {
 /*** CompleteRedeem tests                                                                   ***/
 /**********************************************************************************************/
 
+contract GroveBasinInitiateRedeemZeroAmountTests is GroveBasinTestBase {
+
+    function test_initiateRedeem_zeroAmount() public {
+        address redeemer = makeAddr("redeemer");
+
+        vm.startPrank(owner);
+        groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), redeemer);
+        vm.stopPrank();
+
+        vm.prank(redeemer);
+        vm.expectRevert(IGroveBasin.ZeroAmount.selector);
+        groveBasin.initiateRedeem(makeAddr("redeemerContract"), 0);
+    }
+
+}
+
 contract GroveBasinInitiateRedeemInvalidRedeemerContractTests is GroveBasinTestBase {
 
     function test_initiateRedeem_invalidRedeemerContract() public {
