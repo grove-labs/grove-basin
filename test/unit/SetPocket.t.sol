@@ -15,6 +15,7 @@ import { MockPocket }         from "test/mocks/MockPocket.sol";
 import { MockRateProvider }   from "test/mocks/MockRateProvider.sol";
 import { MockPSM }            from "test/mocks/MockPSM.sol";
 import { MockAaveV3Pool }     from "test/mocks/MockAaveV3Pool.sol";
+import { MockAToken }         from "test/mocks/MockAToken.sol";
 
 contract GroveBasinSetPocketFailureTests is GroveBasinTestBase {
 
@@ -285,10 +286,10 @@ contract GroveBasinSetPocketUsdtWithdrawalTests is Test {
     AaveV3UsdtPocket public pocket1;
     AaveV3UsdtPocket public pocket2;
 
-    MockERC20 public usdt;
-    MockERC20 public aUsdt;
-    MockERC20 public collateralToken;
-    MockERC20 public creditToken;
+    MockERC20  public usdt;
+    MockAToken public aUsdt;
+    MockERC20  public collateralToken;
+    MockERC20  public creditToken;
 
     MockRateProvider public swapTokenRateProvider;
     MockRateProvider public collateralTokenRateProvider;
@@ -298,7 +299,7 @@ contract GroveBasinSetPocketUsdtWithdrawalTests is Test {
 
     function setUp() public {
         usdt            = new MockERC20("USDT",       "USDT",   6);
-        aUsdt           = new MockERC20("aUSDT",      "aUSDT",  6);
+        aUsdt           = new MockAToken("aUSDT",     "aUSDT",  6, address(usdt));
         collateralToken = new MockERC20("COLLATERAL", "COL",    18);
         creditToken     = new MockERC20("CREDIT",     "CREDIT", 18);
 
