@@ -322,6 +322,38 @@ contract MorphoUsdtPocketWithdrawLiquidityTests is MorphoUsdtPocketTestBase {
         pocket.withdrawLiquidity(500e6, address(usdt));
     }
 
+    function test_withdrawLiquidity_fullWithdrawal_redeemsBurnsAllShares() public {
+        usdt.mint(address(pocket), 1000e6);
+        vm.prank(address(groveBasin));
+        pocket.depositLiquidity(1000e6, address(usdt));
+
+        assertEq(vault.balanceOf(address(pocket)), 1000e6);
+
+        uint256 availableBalance = pocket.availableBalance(address(usdt));
+
+        vm.prank(address(groveBasin));
+        pocket.withdrawLiquidity(availableBalance, address(usdt));
+
+        assertEq(vault.balanceOf(address(pocket)), 0);
+        assertEq(usdt.balanceOf(address(pocket)),  availableBalance);
+    }
+
+    function test_withdrawLiquidity_fullWithdrawal_nonOneToOneRate_noDust() public {
+        usdt.mint(address(pocket), 1000e6);
+        vm.prank(address(groveBasin));
+        pocket.depositLiquidity(1000e6, address(usdt));
+
+        vault.setExchangeRate(3, 2);
+
+        uint256 availableBalance = pocket.availableBalance(address(usdt));
+
+        vm.prank(address(groveBasin));
+        pocket.withdrawLiquidity(availableBalance, address(usdt));
+
+        assertEq(vault.balanceOf(address(pocket)), 0);
+        assertEq(usdt.balanceOf(address(pocket)),  availableBalance);
+    }
+
     function test_withdrawLiquidity_existingBalanceCoversAll_emitsZeroConverted() public {
         usdt.mint(address(pocket), 1000e6);
 

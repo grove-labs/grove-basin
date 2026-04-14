@@ -76,9 +76,15 @@ contract MorphoUsdtPocket is BasePocket {
         uint256 convertedAmount;
 
         if (balance < amount) {
-            uint256 remainder = amount - balance;
+            uint256 remainder   = amount - balance;
+            uint256 vaultShares = IERC4626VaultLike(vault).balanceOf(address(this));
+            uint256 vaultAssets = IERC4626VaultLike(vault).convertToAssets(vaultShares);
 
-            IERC4626VaultLike(vault).withdraw(remainder, address(this), address(this));
+            if (remainder >= vaultAssets) {
+                IERC4626VaultLike(vault).redeem(vaultShares, address(this), address(this));
+            } else {
+                IERC4626VaultLike(vault).withdraw(remainder, address(this), address(this));
+            }
             convertedAmount = remainder;
         }
 
