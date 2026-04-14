@@ -53,17 +53,6 @@ contract MockERC4626Vault is IERC4626VaultLike {
         underlying.safeTransfer(receiver, assets);
     }
 
-    function redeem(uint256 shares, address receiver, address owner_) external override returns (uint256 assets) {
-        require(balanceOf[owner_] >= shares, "MockERC4626Vault/insufficient-shares");
-
-        assets = shares * rateNumerator / rateDenominator;
-
-        balanceOf[owner_] -= shares;
-        totalShares       -= shares;
-
-        underlying.safeTransfer(receiver, assets);
-    }
-
     function convertToAssets(uint256 shares) external view override returns (uint256) {
         return shares * rateNumerator / rateDenominator;
     }
