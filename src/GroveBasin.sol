@@ -164,7 +164,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     /// @inheritdoc IGroveBasin
     function setRateProvider(address token, address newRateProvider) external override onlyRole(MANAGER_ADMIN_ROLE) {
-        if (newRateProvider == address(0))                               revert InvalidRateProvider();
+        if (newRateProvider == address(0))                                revert InvalidRateProvider();
         if (IGroveRateProvider(newRateProvider).getConversionRate() == 0) revert RateProviderReturnsZero();
 
         address oldRateProvider;
@@ -571,7 +571,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         if (_getAssetValue(assetIn, amountIn, false) > maxSwapSize) revert SwapSizeExceeded();
 
-        amountOut = _getSwapQuote(assetIn, assetOut, amountIn, false);
+        amountOut  = _getSwapQuote(assetIn, assetOut, amountIn, false);
         amountOut -= previewSwapExactInFee(assetOut, amountOut);
     }
 
@@ -790,7 +790,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         _requireValidAsset(asset);
         _requireValidAsset(quoteAsset);
 
-        if (asset == quoteAsset)                                            revert InvalidAsset();
+        if (asset == quoteAsset)                               revert InvalidAsset();
         if (asset != creditToken && quoteAsset != creditToken) revert InvalidSwap();
 
         (uint256 rateIn,  uint256 ratePrecisionIn,  uint256 tokenPrecisionIn)  = _getTokenRateAndPrecision(asset);
@@ -961,7 +961,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /// @dev Completes an async redemption, decreasing the pending credit token balance.
     function _completeRedeem(bytes32 redeemRequestId) internal {
         RedeemRequest memory request = redeemRequests[redeemRequestId];
-        if (request.creditTokenAmount == 0) revert InvalidRedeemRequest();
+
+        if (request.creditTokenAmount == 0)                     revert InvalidRedeemRequest();
         if (!hasRole(REDEEMER_CONTRACT_ROLE, request.redeemer)) revert InvalidRedeemer();
 
         delete redeemRequests[redeemRequestId];
@@ -990,7 +991,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         if (newPurchaseFee < minFee || newPurchaseFee > maxFee) revert PurchaseFeeOutOfBounds();
 
         uint256 oldPurchaseFee = purchaseFee;
-        purchaseFee = newPurchaseFee;
+        purchaseFee          = newPurchaseFee;
 
         emit PurchaseFeeSet(oldPurchaseFee, newPurchaseFee);
     }
@@ -1000,7 +1001,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         if (newRedemptionFee < minFee || newRedemptionFee > maxFee) revert RedemptionFeeOutOfBounds();
 
         uint256 oldRedemptionFee = redemptionFee;
-        redemptionFee = newRedemptionFee;
+        redemptionFee            = newRedemptionFee;
 
         emit RedemptionFeeSet(oldRedemptionFee, newRedemptionFee);
     }
