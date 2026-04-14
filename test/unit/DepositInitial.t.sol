@@ -31,6 +31,21 @@ contract DepositInitialTests is GroveBasinTestBase {
     /*** Revert tests                                                                           ***/
     /**********************************************************************************************/
 
+    function test_depositInitial_globalPaused() public {
+        vm.startPrank(owner);
+        freshBasin.grantRole(freshBasin.MANAGER_ADMIN_ROLE(), owner);
+        freshBasin.grantRole(freshBasin.PAUSER_ROLE(), owner);
+        freshBasin.setPaused(bytes4(0), true);
+        vm.stopPrank();
+
+        swapToken.mint(depositor, 100e6);
+        vm.startPrank(depositor);
+        swapToken.approve(address(freshBasin), 100e6);
+        vm.expectRevert(IGroveBasin.Paused.selector);
+        freshBasin.depositInitial(address(swapToken), 100e6);
+        vm.stopPrank();
+    }
+
     function test_depositInitial_alreadySeeded() public {
         swapToken.mint(depositor, 100e6);
         vm.startPrank(depositor);
