@@ -785,9 +785,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
         _requireValidAsset(asset);
         _requireValidAsset(quoteAsset);
 
-        if (asset == quoteAsset)                                       revert InvalidAsset();
-        if (asset == swapToken       && quoteAsset == collateralToken) revert InvalidSwap();
-        if (asset == collateralToken && quoteAsset == swapToken)       revert InvalidSwap();
+        if (asset == quoteAsset)                                            revert InvalidAsset();
+        if (asset != creditToken && quoteAsset != creditToken) revert InvalidSwap();
 
         (uint256 rateIn,  uint256 ratePrecisionIn,  uint256 tokenPrecisionIn)  = _getTokenRateAndPrecision(asset);
         (uint256 rateOut, uint256 ratePrecisionOut, uint256 tokenPrecisionOut) = _getTokenRateAndPrecision(quoteAsset);
