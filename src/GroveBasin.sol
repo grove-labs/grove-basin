@@ -566,6 +566,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function previewSwapExactIn(address assetIn, address assetOut, uint256 amountIn)
         public view override returns (uint256 amountOut)
     {
+        _checkPaused(_getSwapPauseKey(assetIn, assetOut));
+
         if (_getAssetValue(assetIn, amountIn, false) > maxSwapSize) revert SwapSizeExceeded();
 
         amountOut = _getSwapQuote(assetIn, assetOut, amountIn, false);
@@ -576,6 +578,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function previewSwapExactOut(address assetIn, address assetOut, uint256 amountOut)
         public view override returns (uint256 amountIn)
     {
+        _checkPaused(_getSwapPauseKey(assetIn, assetOut));
+
         amountOut += previewSwapExactOutFee(assetOut, amountOut);
         amountIn   = _getSwapQuote(assetOut, assetIn, amountOut, true);
 

@@ -45,6 +45,31 @@ contract GroveBasinPreviewSwapExactIn_FailureTests is GroveBasinTestBase {
         groveBasin.previewSwapExactIn(address(swapToken), address(collateralToken), 1);
     }
 
+    function test_previewSwapExactIn_globalPaused() public {
+        address pauser = makeAddr("pauser");
+        vm.startPrank(owner);
+        groveBasin.grantRole(groveBasin.PAUSER_ROLE(), pauser);
+        vm.stopPrank();
+        vm.prank(pauser);
+        groveBasin.setPaused(bytes4(0), true);
+
+        vm.expectRevert(IGroveBasin.Paused.selector);
+        groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), 1e6);
+    }
+
+    function test_previewSwapExactIn_directionPaused() public {
+        address pauser = makeAddr("pauser");
+        vm.startPrank(owner);
+        groveBasin.grantRole(groveBasin.PAUSER_ROLE(), pauser);
+        vm.stopPrank();
+        vm.startPrank(pauser);
+        groveBasin.setPaused(groveBasin.PAUSED_SWAP_SWAP_TO_CREDIT(), true);
+        vm.stopPrank();
+
+        vm.expectRevert(IGroveBasin.Paused.selector);
+        groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), 1e6);
+    }
+
 }
 
 contract GroveBasinPreviewSwapExactOut_FailureTests is GroveBasinTestBase {
@@ -82,6 +107,31 @@ contract GroveBasinPreviewSwapExactOut_FailureTests is GroveBasinTestBase {
     function test_previewSwapExactOut_swapTokenToCollateralToken() public {
         vm.expectRevert(IGroveBasin.InvalidSwap.selector);
         groveBasin.previewSwapExactOut(address(swapToken), address(collateralToken), 1);
+    }
+
+    function test_previewSwapExactOut_globalPaused() public {
+        address pauser = makeAddr("pauser");
+        vm.startPrank(owner);
+        groveBasin.grantRole(groveBasin.PAUSER_ROLE(), pauser);
+        vm.stopPrank();
+        vm.prank(pauser);
+        groveBasin.setPaused(bytes4(0), true);
+
+        vm.expectRevert(IGroveBasin.Paused.selector);
+        groveBasin.previewSwapExactOut(address(swapToken), address(creditToken), 1e18);
+    }
+
+    function test_previewSwapExactOut_directionPaused() public {
+        address pauser = makeAddr("pauser");
+        vm.startPrank(owner);
+        groveBasin.grantRole(groveBasin.PAUSER_ROLE(), pauser);
+        vm.stopPrank();
+        vm.startPrank(pauser);
+        groveBasin.setPaused(groveBasin.PAUSED_SWAP_SWAP_TO_CREDIT(), true);
+        vm.stopPrank();
+
+        vm.expectRevert(IGroveBasin.Paused.selector);
+        groveBasin.previewSwapExactOut(address(swapToken), address(creditToken), 1e18);
     }
 
 }
