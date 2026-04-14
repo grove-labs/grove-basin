@@ -540,7 +540,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function previewWithdraw(address asset, uint256 maxAssetsToWithdraw)
         public view override returns (uint256 sharesToBurn, uint256 assetsWithdrawn)
     {
-        _requireValidAsset(asset);
         uint256 assetBalance = _getAvailableBalance(asset);
 
         assetsWithdrawn = assetBalance < maxAssetsToWithdraw

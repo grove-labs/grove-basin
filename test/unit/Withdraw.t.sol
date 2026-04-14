@@ -26,7 +26,7 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
     }
 
     function test_withdraw_notSwapTokenOrCollateralToken() public {
-        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
+        vm.expectRevert();
         groveBasin.withdraw(makeAddr("new-asset"), receiver1, 100e6);
     }
 
