@@ -261,6 +261,21 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         assertEq(groveBasin.paused(key), false);
     }
 
+    function test_setPaused_withdrawCredit() public {
+        bytes4 key = groveBasin.PAUSED_WITHDRAW_CREDIT();
+        assertEq(groveBasin.paused(key), false);
+
+        vm.prank(pauser);
+        groveBasin.setPaused(key, true);
+
+        assertEq(groveBasin.paused(key), true);
+
+        vm.prank(pauser);
+        groveBasin.setPaused(key, false);
+
+        assertEq(groveBasin.paused(key), false);
+    }
+
     function test_setPaused_arbitraryKey() public {
         bytes4 key = bytes4(keccak256("CUSTOM_KEY"));
         assertEq(groveBasin.paused(key), false);
@@ -639,6 +654,90 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         groveBasin.revokeRole(pauserRole, pauser);
 
         assertFalse(groveBasin.hasRole(pauserRole, pauser));
+    }
+
+    /**********************************************************************************************/
+    /*** Withdraw credit pause enforcement tests                                                ***/
+    /**********************************************************************************************/
+
+    function _depositForWithdrawCreditUser() internal {
+        _deposit(address(swapToken),       swapper, 100e6);
+        _deposit(address(collateralToken), swapper, 100e18);
+        _deposit(address(creditToken),     swapper, 100e18);
+    }
+
+    function _pauseWithdrawCredit() internal {
+        bytes4 key = groveBasin.PAUSED_WITHDRAW_CREDIT();
+        vm.prank(pauser);
+        groveBasin.setPaused(key, true);
+    }
+
+    function test_withdraw_creditToken_paused() public {
+        _depositForWithdrawCreditUser();
+        _pauseWithdrawCredit();
+
+        vm.prank(swapper);
+        vm.expectRevert(IGroveBasin.Paused.selector);
+        groveBasin.withdraw(address(creditToken), receiver, 100e18);
+    }
+
+    function test_previewWithdraw_creditToken_paused() public {
+        _depositForWithdrawCreditUser();
+        _pauseWithdrawCredit();
+
+        vm.expectRevert(IGroveBasin.Paused.selector);
+        groveBasin.previewWithdraw(address(creditToken), 100e18);
+    }
+
+    function test_previewWithdraw_swapToken_whenCreditWithdrawPaused() public {
+        _depositForWithdrawCreditUser();
+        _pauseWithdrawCredit();
+
+        vm.prank(swapper);
+        ( uint256 sharesToBurn, uint256 assetsWithdrawn ) = groveBasin.previewWithdraw(address(swapToken), 100e6);
+        assertGt(sharesToBurn, 0);
+        assertGt(assetsWithdrawn, 0);
+    }
+
+    function test_previewWithdraw_collateralToken_whenCreditWithdrawPaused() public {
+        _depositForWithdrawCreditUser();
+        _pauseWithdrawCredit();
+
+        vm.prank(swapper);
+        ( uint256 sharesToBurn, uint256 assetsWithdrawn ) = groveBasin.previewWithdraw(address(collateralToken), 100e18);
+        assertGt(sharesToBurn, 0);
+        assertGt(assetsWithdrawn, 0);
+    }
+
+    function test_withdraw_swapToken_whenCreditWithdrawPaused() public {
+        _depositForWithdrawCreditUser();
+        _pauseWithdrawCredit();
+
+        vm.prank(swapper);
+        uint256 amount = groveBasin.withdraw(address(swapToken), receiver, 100e6);
+        assertGt(amount, 0);
+    }
+
+    function test_withdraw_collateralToken_whenCreditWithdrawPaused() public {
+        _depositForWithdrawCreditUser();
+        _pauseWithdrawCredit();
+
+        vm.prank(swapper);
+        uint256 amount = groveBasin.withdraw(address(collateralToken), receiver, 100e18);
+        assertGt(amount, 0);
+    }
+
+    function test_withdraw_creditToken_unpaused() public {
+        _depositForWithdrawCreditUser();
+        _pauseWithdrawCredit();
+
+        bytes4 key = groveBasin.PAUSED_WITHDRAW_CREDIT();
+        vm.prank(pauser);
+        groveBasin.setPaused(key, false);
+
+        vm.prank(swapper);
+        uint256 amount = groveBasin.withdraw(address(creditToken), receiver, 100e18);
+        assertGt(amount, 0);
     }
 
 }

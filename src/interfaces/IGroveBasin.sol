@@ -406,6 +406,12 @@ interface IGroveBasin {
     function PAUSED_DEPOSIT_CREDIT() external view returns (bytes4);
 
     /**
+     *  @dev    Pause key for credit token withdrawals.
+     *  @return The bytes4 pause key.
+     */
+    function PAUSED_WITHDRAW_CREDIT() external view returns (bytes4);
+
+    /**
      *  @dev    Returns whether a specific pause key is active. Pause keys can be function
      *          selectors or arbitrary bytes4 keys. Use bytes4(0) to check the global pause.
      *  @param  key The pause key (function selector, arbitrary key, or bytes4(0) for global pause).
