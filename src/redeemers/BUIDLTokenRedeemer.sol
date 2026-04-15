@@ -4,6 +4,8 @@ pragma solidity ^0.8.24;
 import { IERC20 }    from "erc20-helpers/interfaces/IERC20.sol";
 import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
 
+import { IAccessControl } from "openzeppelin-contracts/contracts/access/IAccessControl.sol";
+
 import { IGroveBasin }                 from "src/interfaces/IGroveBasin.sol";
 import { ITokenRedeemer, RedeemRequest } from "src/interfaces/ITokenRedeemer.sol";
 
@@ -101,6 +103,17 @@ contract BUIDLTokenRedeemer is ITokenRedeemer {
 
         IERC20(collateralToken).safeTransfer(address(basin), collateralTokenReturned);
         emit RedeemCompleted(collateralTokenReturned);
+    }
+
+    /// @inheritdoc ITokenRedeemer
+    function sweep(address token, uint256 amount) external override {
+        if (!IAccessControl(address(basin)).hasRole(basin.MANAGER_ROLE(), msg.sender)) revert NotAuthorized();
+        if (token != creditToken && token != collateralToken)                          revert InvalidToken();
+
+        if (amount == 0) revert ZeroBalance();
+
+        IERC20(token).safeTransfer(address(basin), amount);
+        emit Swept(token, amount);
     }
 
 }
