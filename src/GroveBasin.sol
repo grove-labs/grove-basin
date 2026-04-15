@@ -151,7 +151,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         maxSwapSizeUpperBound = 1_000_000_000e18;
         minStalenessThreshold = 5 minutes;
         maxStalenessThreshold = 2 weeks;
-        stalenessThreshold    = minStalenessThreshold;
+        stalenessThreshold    = 1 weeks;
 
         _setRoleAdmin(MANAGER_ROLE,           MANAGER_ADMIN_ROLE);
         _setRoleAdmin(PAUSER_ROLE,            MANAGER_ADMIN_ROLE);
