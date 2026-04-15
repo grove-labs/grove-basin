@@ -14,6 +14,7 @@ import { AaveV3UsdtPocket }    from "src/pockets/AaveV3UsdtPocket.sol";
 
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 import { MockAaveV3Pool }  from "test/mocks/MockAaveV3Pool.sol";
+import { MockAToken }      from "test/mocks/MockAToken.sol";
 
 abstract contract AaveV3UsdtPocketForkTestBase is Test {
 
@@ -28,7 +29,7 @@ abstract contract AaveV3UsdtPocketForkTestBase is Test {
     MockRateProvider public collateralTokenRateProvider;
     MockRateProvider public creditTokenRateProvider;
 
-    MockERC20      public mockAUsdt;
+    MockAToken     public mockAUsdt;
     MockAaveV3Pool public mockAaveV3Pool;
 
     function setUp() public virtual {
@@ -54,7 +55,7 @@ abstract contract AaveV3UsdtPocketForkTestBase is Test {
             address(creditTokenRateProvider)
         );
 
-        mockAUsdt      = new MockERC20("aUSDT", "aUSDT", 6);
+        mockAUsdt      = new MockAToken("aUSDT", "aUSDT", 6, Ethereum.USDT);
         mockAaveV3Pool = new MockAaveV3Pool(address(mockAUsdt), Ethereum.USDT);
 
         deal(Ethereum.USDT, address(mockAaveV3Pool), 10_000_000e6);

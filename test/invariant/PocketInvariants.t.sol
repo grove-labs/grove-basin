@@ -12,6 +12,7 @@ import { UsdsUsdcPocket }    from "src/pockets/UsdsUsdcPocket.sol";
 
 import { MockRateProvider }  from "test/mocks/MockRateProvider.sol";
 import { MockPSM }           from "test/mocks/MockPSM.sol";
+import { MockAToken }        from "test/mocks/MockAToken.sol";
 import { MockAaveV3Pool }    from "test/mocks/MockAaveV3Pool.sol";
 import { MockERC4626Vault }  from "test/mocks/MockERC4626Vault.sol";
 
@@ -170,7 +171,7 @@ contract AaveV3PocketInvariantTest is Test {
     MockERC20 public collateralToken;
     MockERC20 public creditToken;
 
-    MockERC20 public aToken;
+    MockAToken public aToken;
 
     MockRateProvider public swapTokenRateProvider;
     MockRateProvider public collateralTokenRateProvider;
@@ -186,7 +187,7 @@ contract AaveV3PocketInvariantTest is Test {
         collateralToken = new MockERC20("collateralToken", "collateralToken", 18);
         creditToken     = new MockERC20("creditToken",     "creditToken",     18);
 
-        aToken = new MockERC20("aToken", "aToken", 6);
+        aToken = new MockAToken("aToken", "aToken", 6, address(swapToken));
 
         swapTokenRateProvider       = new MockRateProvider();
         collateralTokenRateProvider = new MockRateProvider();

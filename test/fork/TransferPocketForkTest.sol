@@ -16,6 +16,7 @@ import { IGroveBasin }        from "src/interfaces/IGroveBasin.sol";
 
 import { MockRateProvider }  from "test/mocks/MockRateProvider.sol";
 import { MockAaveV3Pool }   from  "test/mocks/MockAaveV3Pool.sol";
+import { MockAToken }       from  "test/mocks/MockAToken.sol";
 import { MockERC4626Vault } from  "test/mocks/MockERC4626Vault.sol";
 import { MockPSM }          from  "test/mocks/MockPSM.sol";
 
@@ -37,7 +38,7 @@ abstract contract TransferPocketForkTestBase is Test {
     MockRateProvider public swapTokenRateProvider;
     MockRateProvider public collateralTokenRateProvider;
     MockRateProvider public creditTokenRateProvider;
-    MockERC20        public mockAUsdt;
+    MockAToken       public mockAUsdt;
     MockAaveV3Pool   public mockAaveV3Pool;
     MockERC4626Vault public mockVault;
 
@@ -65,7 +66,7 @@ abstract contract TransferPocketForkTestBase is Test {
         );
 
         // Set up mock Aave
-        mockAUsdt      = new MockERC20("aUSDT", "aUSDT", 6);
+        mockAUsdt      = new MockAToken("aUSDT", "aUSDT", 6, Ethereum.USDT);
         mockAaveV3Pool = new MockAaveV3Pool(address(mockAUsdt), Ethereum.USDT);
 
         deal(Ethereum.USDT, address(mockAaveV3Pool), 1_000_000_000e6);
