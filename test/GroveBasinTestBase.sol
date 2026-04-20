@@ -5,12 +5,12 @@ import "forge-std/Test.sol";
 
 import { GroveBasin } from "src/GroveBasin.sol";
 
-import { IGroveBasinPocket } from "src/interfaces/IGroveBasinPocket.sol";
+import { IGroveBasinPocket }  from "src/interfaces/IGroveBasinPocket.sol";
 import { IGroveRateProvider } from "src/interfaces/IGroveRateProvider.sol";
-import { UsdsUsdcPocket }    from "src/pockets/UsdsUsdcPocket.sol";
 
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
+import { MockPocket }       from "test/mocks/MockPocket.sol";
 import { MockPSM }          from "test/mocks/MockPSM.sol";
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 
@@ -78,12 +78,11 @@ contract GroveBasinTestBase is Test {
         usds.mint(address(psm), type(uint128).max);
         swapToken.mint(address(psm), type(uint128).max);
 
-        pocket = address(new UsdsUsdcPocket(
+        pocket = address(new MockPocket(
             address(groveBasin),
             address(swapToken),
             address(usds),
-            address(psm),
-            groveProxy
+            address(psm)
         ));
 
         vm.startPrank(owner);

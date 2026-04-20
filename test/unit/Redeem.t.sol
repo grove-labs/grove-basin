@@ -35,6 +35,22 @@ contract GroveBasinInitiateRedeemTests is GroveBasinTestBase {
 /*** CompleteRedeem tests                                                                   ***/
 /**********************************************************************************************/
 
+contract GroveBasinInitiateRedeemZeroAmountTests is GroveBasinTestBase {
+
+    function test_initiateRedeem_zeroAmount() public {
+        address redeemer = makeAddr("redeemer");
+
+        vm.startPrank(owner);
+        groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), redeemer);
+        vm.stopPrank();
+
+        vm.prank(redeemer);
+        vm.expectRevert(IGroveBasin.ZeroAmount.selector);
+        groveBasin.initiateRedeem(makeAddr("redeemerContract"), 0);
+    }
+
+}
+
 contract GroveBasinInitiateRedeemInvalidRedeemerContractTests is GroveBasinTestBase {
 
     function test_initiateRedeem_invalidRedeemerContract() public {
@@ -156,6 +172,23 @@ contract GroveBasinCompleteRedeemInvalidRedeemerTests is GroveBasinTestBase {
         vm.prank(owner);
         vm.expectRevert(IGroveBasin.PendingRedemptions.selector);
         groveBasin.removeTokenRedeemer(address(redeemer));
+    }
+
+    function test_completeRedeem_invalidRedeemer() public {
+        uint256 amount = 1000e18;
+
+        bytes32 redeemerContractRole = groveBasin.REDEEMER_CONTRACT_ROLE();
+
+        vm.prank(owner);
+        bytes32 redeemRequestId = groveBasin.initiateRedeem(address(redeemer), amount);
+
+        // Revoke the redeemer contract role directly, bypassing removeTokenRedeemer
+        vm.prank(owner);
+        groveBasin.revokeRole(redeemerContractRole, address(redeemer));
+
+        vm.prank(owner);
+        vm.expectRevert(IGroveBasin.InvalidRedeemer.selector);
+        groveBasin.completeRedeem(redeemRequestId);
     }
 
 }

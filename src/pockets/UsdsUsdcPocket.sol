@@ -25,6 +25,11 @@ contract UsdsUsdcPocket is BasePocket {
     error InvalidUsdc();
     error InvalidUsds();
     error InvalidPsm();
+    error SwapTokenMismatch();
+    error CollateralTokenMismatch();
+    error NonZeroPsmTout();
+
+    event Swept(uint256 amount);
 
     IERC20 public immutable usdc;
     IERC20 public immutable usds;
@@ -51,6 +56,10 @@ contract UsdsUsdcPocket is BasePocket {
         if (usdc_       == address(0)) revert InvalidUsdc();
         if (usds_       == address(0)) revert InvalidUsds();
         if (psm_        == address(0)) revert InvalidPsm();
+
+        if (_basin.swapToken()       != usds_) revert SwapTokenMismatch();
+        if (_basin.collateralToken() != usdc_) revert CollateralTokenMismatch();
+
         usdc       = IERC20(usdc_);
         usds       = IERC20(usds_);
         psm        = psm_;
@@ -60,7 +69,6 @@ contract UsdsUsdcPocket is BasePocket {
         _usdcPrecision = 10 ** IERC20(usdc_).decimals();
 
         IERC20(usds_).safeApprove(basin_, type(uint256).max);
-        IERC20(usdc_).safeApprove(basin_, type(uint256).max);
 
         if (groveProxy_ != address(0)) {
             // Allows Sky spells to withdraw USDS from this pocket
@@ -84,9 +92,7 @@ contract UsdsUsdcPocket is BasePocket {
 
             emit LiquidityDeposited(asset, amount, convertedAmount);
             return convertedAmount;
-        }
-
-        return 0;
+        } else revert InvalidAsset();
     }
 
     /// @inheritdoc IGroveBasinPocket
@@ -94,6 +100,8 @@ contract UsdsUsdcPocket is BasePocket {
         if (amount == 0) return 0;
 
         if (asset == address(usdc)) {
+            if (IPSMLike(psm).tout() != 0) revert NonZeroPsmTout();
+
             uint256 balance = usdc.balanceOf(address(this));
 
             uint256 convertedAmount;
@@ -103,28 +111,35 @@ contract UsdsUsdcPocket is BasePocket {
 
                 usds.safeApprove(psm, type(uint256).max);
 
-                convertedAmount = IPSMLike(psm).buyGem(address(this), remainder);
+                IPSMLike(psm).buyGem(address(this), remainder);
 
                 usds.safeApprove(psm, 0);
 
-                emit LiquidityDrawn(asset, amount, convertedAmount);
+                emit LiquidityDrawn(asset, amount, remainder);
             } else {
                 emit LiquidityDrawn(asset, amount, 0);
             }
 
-            return amount;
-        }
+            usdc.safeTransfer(address(_basin), amount);
 
-        return 0;
+            return amount;
+        } else if (asset == address(usds)) {
+            return amount;
+        } else revert InvalidAsset();
+    }
+
+    function sweep() external onlyBasinOrManager {
+        uint256 balance = usdc.balanceOf(address(this));
+        if (balance > 0) {
+            usdc.safeTransfer(address(_basin), balance);
+        }
+        emit Swept(balance);
     }
 
     /// @inheritdoc IGroveBasinPocket
     function availableBalance(address asset) external view override returns (uint256) {
         if (asset == address(usds)) {
             return usds.balanceOf(address(this));
-        } else if (asset == address(usdc)) {
-            return usdc.balanceOf(address(this))
-                + usds.balanceOf(address(this)) * _usdcPrecision / _usdsPrecision;
         }
         return IERC20(asset).balanceOf(address(this));
     }

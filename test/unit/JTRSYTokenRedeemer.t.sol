@@ -68,6 +68,14 @@ contract JTRSYTokenRedeemerConstructorTests is Test {
         new JTRSYTokenRedeemer(address(creditToken), address(wrongVault), address(basin));
     }
 
+    function test_constructor_shareMismatch() public {
+        MockERC20 wrongShare = new MockERC20("wrongShare", "wrongShare", 18);
+        MockAsyncVault wrongVault = new MockAsyncVault(address(collateralToken), address(wrongShare));
+
+        vm.expectRevert(JTRSYTokenRedeemer.ShareMismatch.selector);
+        new JTRSYTokenRedeemer(address(creditToken), address(wrongVault), address(basin));
+    }
+
     function _deployBasin(address collateralToken_, address creditToken_) internal returns (GroveBasin) {
         MockERC20 swapToken_ = new MockERC20("swapToken", "swapToken", 6);
 
@@ -353,6 +361,116 @@ contract JTRSYTokenRedeemerCompleteRedeemTests is Test {
         vm.prank(notBasin);
         vm.expectRevert(ITokenRedeemer.OnlyBasin.selector);
         redeemer.completeRedeem(request);
+    }
+
+}
+
+/**********************************************************************************************/
+/*** Sweep tests                                                                            ***/
+/**********************************************************************************************/
+
+contract JTRSYTokenRedeemerSweepTests is Test {
+
+    MockERC20            public creditToken;
+    MockERC20            public collateralToken;
+    MockAsyncVault       public vault;
+    JTRSYTokenRedeemer   public redeemer;
+    GroveBasin           public basin;
+    address              public manager;
+
+    function setUp() public {
+        creditToken     = new MockERC20("creditToken",     "creditToken",     18);
+        collateralToken = new MockERC20("collateralToken", "collateralToken", 18);
+        vault           = new MockAsyncVault(address(collateralToken), address(creditToken));
+        manager         = makeAddr("manager");
+
+        MockERC20 swapToken = new MockERC20("swapToken", "swapToken", 6);
+
+        MockRateProvider swapRp       = new MockRateProvider();
+        MockRateProvider collateralRp = new MockRateProvider();
+        MockRateProvider creditRp     = new MockRateProvider();
+
+        swapRp.__setConversionRate(1e27);
+        collateralRp.__setConversionRate(1e27);
+        creditRp.__setConversionRate(1e27);
+
+        basin = new GroveBasin(
+            address(this),
+            address(this),
+            address(swapToken),
+            address(collateralToken),
+            address(creditToken),
+            address(swapRp),
+            address(collateralRp),
+            address(creditRp)
+        );
+
+        basin.grantRole(basin.MANAGER_ADMIN_ROLE(), address(this));
+        basin.grantRole(basin.MANAGER_ROLE(),       manager);
+
+        redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(basin));
+    }
+
+    function test_sweep_creditToken() public {
+        creditToken.mint(address(redeemer), 500e18);
+
+        vm.prank(manager);
+        redeemer.sweep(address(creditToken), 500e18);
+
+        assertEq(creditToken.balanceOf(address(redeemer)), 0);
+        assertEq(creditToken.balanceOf(address(basin)),    500e18);
+    }
+
+    function test_sweep_collateralToken() public {
+        collateralToken.mint(address(redeemer), 300e18);
+
+        vm.prank(manager);
+        redeemer.sweep(address(collateralToken), 300e18);
+
+        assertEq(collateralToken.balanceOf(address(redeemer)), 0);
+        assertEq(collateralToken.balanceOf(address(basin)),    300e18);
+    }
+
+    function test_sweep_partialAmount() public {
+        creditToken.mint(address(redeemer), 500e18);
+
+        vm.prank(manager);
+        redeemer.sweep(address(creditToken), 200e18);
+
+        assertEq(creditToken.balanceOf(address(redeemer)), 300e18);
+        assertEq(creditToken.balanceOf(address(basin)),    200e18);
+    }
+
+    function test_sweep_emitsEvent() public {
+        creditToken.mint(address(redeemer), 500e18);
+
+        vm.expectEmit(address(redeemer));
+        emit ITokenRedeemer.Swept(address(creditToken), 500e18);
+
+        vm.prank(manager);
+        redeemer.sweep(address(creditToken), 500e18);
+    }
+
+    function test_sweep_notAuthorized() public {
+        address notManager = makeAddr("notManager");
+
+        vm.prank(notManager);
+        vm.expectRevert(ITokenRedeemer.NotAuthorized.selector);
+        redeemer.sweep(address(creditToken), 100e18);
+    }
+
+    function test_sweep_invalidToken() public {
+        address randomToken = makeAddr("randomToken");
+
+        vm.prank(manager);
+        vm.expectRevert(ITokenRedeemer.InvalidToken.selector);
+        redeemer.sweep(randomToken, 100e18);
+    }
+
+    function test_sweep_zeroAmount() public {
+        vm.prank(manager);
+        vm.expectRevert(ITokenRedeemer.ZeroBalance.selector);
+        redeemer.sweep(address(creditToken), 0);
     }
 
 }

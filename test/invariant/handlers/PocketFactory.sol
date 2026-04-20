@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.24;
 
-import { MockERC20 } from "erc20-helpers/MockERC20.sol";
-
 import { AaveV3UsdtPocket } from "src/pockets/AaveV3UsdtPocket.sol";
 import { MorphoUsdtPocket } from "src/pockets/MorphoUsdtPocket.sol";
 
+import { MockAToken }       from "test/mocks/MockAToken.sol";
 import { MockAaveV3Pool }   from "test/mocks/MockAaveV3Pool.sol";
 import { MockERC4626Vault } from "test/mocks/MockERC4626Vault.sol";
 
@@ -15,7 +14,7 @@ contract PocketFactory {
         address groveBasin,
         address swapToken
     ) external returns (address) {
-        MockERC20 mockAToken = new MockERC20("aToken", "aToken", 6);
+        MockAToken mockAToken = new MockAToken("aToken", "aToken", 6, swapToken);
         MockAaveV3Pool pool  = new MockAaveV3Pool(address(mockAToken), swapToken);
 
         mockAToken.mint(address(pool), type(uint128).max);

@@ -21,6 +21,7 @@ interface IGroveBasin {
     error InvalidThresholdBounds();
     error MinFeeGreaterThanMaxFee();
     error MaxFeeExceedsBps();
+    error CurrentFeeOutOfNewBounds();
     error InvalidPocket();
     error InvalidRedeemer();
     error RedeemerAlreadyAdded();
@@ -34,6 +35,7 @@ interface IGroveBasin {
     error ZeroAmountOut();
     error AmountInTooHigh();
     error AlreadySeeded();
+    error InsufficientInitialDeposit();
     error ZeroAmount();
     error NoNewShares();
     error NotLiquidityProvider();
@@ -200,6 +202,15 @@ interface IGroveBasin {
      *  @param newFeeClaimer New fee claimer address.
      */
     event FeeClaimerSet(address indexed oldFeeClaimer, address indexed newFeeClaimer);
+
+    /**
+     *  @dev   Emitted when a pocket's depositLiquidity call fails. The tokens remain in the
+     *         pocket for the manager to deposit at a later time.
+     *  @param pocket Address of the pocket that failed.
+     *  @param asset  Address of the asset that was being deposited.
+     *  @param amount Amount that failed to deposit.
+     */
+    event DepositLiquidityFailed(address indexed pocket, address indexed asset, uint256 amount);
 
     /**
      *  @dev   Emitted when a pause flag is set or unset.
@@ -533,8 +544,8 @@ interface IGroveBasin {
 
     /**
      *  @dev    Sets the fee bounds for both purchase and redemption fees. Callable only by
-     *          MANAGER_ADMIN_ROLE. If current fees are outside the new bounds,
-     *          they are clamped to the nearest bound.
+     *          MANAGER_ADMIN_ROLE. Reverts if current fees are outside the new bounds;
+     *          OWNER_ROLE must adjust fees first.
      *  @param  newMinFee New minimum fee in BPS.
      *  @param  newMaxFee New maximum fee in BPS.
      */

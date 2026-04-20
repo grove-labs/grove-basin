@@ -24,6 +24,8 @@ contract SetupJTRSYUsdsUsdcBasinTest is Test, SetupJTRSYUsdsUsdcBasin {
 
         deal(Ethereum.USDS, address(this), 1e18);
 
+        vm.setEnv("DEPLOYER", vm.toString(address(this)));
+
         (address groveBasin_, address pocket_, address redeemer_) = this.deploy();
 
         groveBasin = GroveBasin(groveBasin_);
@@ -39,7 +41,7 @@ contract SetupJTRSYUsdsUsdcBasinTest is Test, SetupJTRSYUsdsUsdcBasin {
     function test_deploy_basinTokens() public view {
         assertEq(groveBasin.swapToken(),       Ethereum.USDS);
         assertEq(groveBasin.collateralToken(), Ethereum.USDC);
-        assertEq(groveBasin.creditToken(),     Ethereum.SUSDS);
+        assertEq(groveBasin.creditToken(),     JTRSY_TOKEN);
     }
 
     function test_deploy_rateProviders() public view {
@@ -52,12 +54,12 @@ contract SetupJTRSYUsdsUsdcBasinTest is Test, SetupJTRSYUsdsUsdcBasin {
         assertEq(groveBasin.pocket(),    address(pocket));
         assertEq(address(pocket.usdc()), Ethereum.USDC);
         assertEq(address(pocket.usds()), Ethereum.USDS);
-        assertEq(pocket.psm(),           Ethereum.PSM);
+        assertEq(pocket.psm(),           USDS_PSM_WRAPPER);
         assertEq(pocket.groveProxy(),    Ethereum.GROVE_PROXY);
     }
 
     function test_deploy_redeemer() public view {
-        assertEq(redeemer.creditToken(),    Ethereum.SUSDS);
+        assertEq(redeemer.creditToken(),    JTRSY_TOKEN);
         assertEq(redeemer.vault(),          Ethereum.CENTRIFUGE_JTRSY);
         assertEq(address(redeemer.basin()), address(groveBasin));
         assertTrue(groveBasin.hasRole(groveBasin.REDEEMER_CONTRACT_ROLE(), address(redeemer)));

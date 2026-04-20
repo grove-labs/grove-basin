@@ -151,7 +151,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         maxSwapSizeUpperBound = 1_000_000_000e18;
         minStalenessThreshold = 5 minutes;
         maxStalenessThreshold = 2 weeks;
-        stalenessThreshold    = minStalenessThreshold;
+        stalenessThreshold    = 1 weeks;
 
         _setRoleAdmin(MANAGER_ROLE,           MANAGER_ADMIN_ROLE);
         _setRoleAdmin(PAUSER_ROLE,            MANAGER_ADMIN_ROLE);
@@ -165,7 +165,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     /// @inheritdoc IGroveBasin
     function setRateProvider(address token, address newRateProvider) external override onlyRole(MANAGER_ADMIN_ROLE) {
-        if (newRateProvider == address(0))                               revert InvalidRateProvider();
+        if (newRateProvider == address(0))                                revert InvalidRateProvider();
         if (IGroveRateProvider(newRateProvider).getConversionRate() == 0) revert RateProviderReturnsZero();
 
         address oldRateProvider;
@@ -238,7 +238,12 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /// @inheritdoc IGroveBasin
     function setFeeBounds(uint256 newMinFee, uint256 newMaxFee) external override onlyRole(MANAGER_ADMIN_ROLE) {
         if (newMinFee > newMaxFee) revert MinFeeGreaterThanMaxFee();
-        if (newMaxFee > BPS)       revert MaxFeeExceedsBps();
+        if (newMaxFee >= BPS)       revert MaxFeeExceedsBps();
+
+        if (
+            purchaseFee    < newMinFee || purchaseFee    > newMaxFee ||
+            redemptionFee  < newMinFee || redemptionFee  > newMaxFee
+        ) revert CurrentFeeOutOfNewBounds();
 
         uint256 oldMinFee = minFee;
         uint256 oldMaxFee = maxFee;
@@ -247,20 +252,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
         maxFee = newMaxFee;
 
         emit FeeBoundsSet(oldMinFee, oldMaxFee, newMinFee, newMaxFee);
-
-        uint256 purchaseFee_ = purchaseFee;
-        if (purchaseFee_ < newMinFee) {
-            _setPurchaseFee(newMinFee);
-        } else if (purchaseFee_ > newMaxFee) {
-            _setPurchaseFee(newMaxFee);
-        }
-
-        uint256 redemptionFee_ = redemptionFee;
-        if (redemptionFee_ < newMinFee) {
-            _setRedemptionFee(newMinFee);
-        } else if (redemptionFee_ > newMaxFee) {
-            _setRedemptionFee(newMaxFee);
-        }
     }
 
     /// @inheritdoc IGroveBasin
@@ -472,8 +463,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function depositInitial(address asset, uint256 assetsToDeposit)
         external override returns (uint256 newShares)
     {
-        if (totalShares != 0)     revert AlreadySeeded();
-        if (assetsToDeposit == 0) revert ZeroAmount();
+        _checkPaused(bytes4(0));
+        if (totalShares != 0)                                 revert AlreadySeeded();
+        if (assetsToDeposit < 10 ** IERC20(asset).decimals()) revert InsufficientInitialDeposit();
 
         newShares = previewDeposit(asset, assetsToDeposit);
 
@@ -551,7 +543,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         public view override returns (uint256 sharesToBurn, uint256 assetsWithdrawn)
     {
         if (asset == creditToken) _checkPaused(PAUSED_WITHDRAW_CREDIT);
-        _requireValidAsset(asset);
+
         uint256 assetBalance = _getAvailableBalance(asset);
 
         assetsWithdrawn = assetBalance < maxAssetsToWithdraw
@@ -578,9 +570,11 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function previewSwapExactIn(address assetIn, address assetOut, uint256 amountIn)
         public view override returns (uint256 amountOut)
     {
+        _checkPaused(_getSwapPauseKey(assetIn, assetOut));
+
         if (_getAssetValue(assetIn, amountIn, false) > maxSwapSize) revert SwapSizeExceeded();
 
-        amountOut = _getSwapQuote(assetIn, assetOut, amountIn, false);
+        amountOut  = _getSwapQuote(assetIn, assetOut, amountIn, false);
         amountOut -= previewSwapExactInFee(assetOut, amountOut);
     }
 
@@ -588,6 +582,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function previewSwapExactOut(address assetIn, address assetOut, uint256 amountOut)
         public view override returns (uint256 amountIn)
     {
+        _checkPaused(_getSwapPauseKey(assetIn, assetOut));
+
         amountOut += previewSwapExactOutFee(assetOut, amountOut);
         amountIn   = _getSwapQuote(assetOut, assetIn, amountOut, true);
 
@@ -797,9 +793,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
         _requireValidAsset(asset);
         _requireValidAsset(quoteAsset);
 
-        if (asset == quoteAsset)                                       revert InvalidAsset();
-        if (asset == swapToken       && quoteAsset == collateralToken) revert InvalidSwap();
-        if (asset == collateralToken && quoteAsset == swapToken)       revert InvalidSwap();
+        if (asset == quoteAsset)                               revert InvalidAsset();
+        if (asset != creditToken && quoteAsset != creditToken) revert InvalidSwap();
 
         (uint256 rateIn,  uint256 ratePrecisionIn,  uint256 tokenPrecisionIn)  = _getTokenRateAndPrecision(asset);
         (uint256 rateOut, uint256 ratePrecisionOut, uint256 tokenPrecisionOut) = _getTokenRateAndPrecision(quoteAsset);
@@ -866,16 +861,20 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
             if (basinBalance < amount) {
                 uint256 deficit = amount - basinBalance;
-                uint256 drawn = IGroveBasinPocket(pocket).withdrawLiquidity(deficit, asset);
-                IERC20(asset).safeTransferFrom(pocket, address(this), drawn);
+                IGroveBasinPocket(pocket).withdrawLiquidity(deficit, asset);
             }
         }
     }
 
     /// @dev Deposits swap token liquidity into the pocket if one is configured.
+    ///      Wrapped in try-catch so that if the pocket's deposit fails, the tokens
+    ///      remain in the pocket for the manager to deposit at a later time.
     function _depositLiquidityInPocket(uint256 amount, address asset) internal {
         if (asset == swapToken && _hasPocket()) {
-            IGroveBasinPocket(pocket).depositLiquidity(amount, asset);
+            try IGroveBasinPocket(pocket).depositLiquidity(amount, asset) {}
+            catch {
+                emit DepositLiquidityFailed(pocket, asset, amount);
+            }
         }
     }
 
@@ -936,6 +935,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     /// @dev Approves and sends credit tokens to the redeemer to initiate an async redemption.
     function _initiateRedeem(address redeemer, uint256 creditTokenAmount) internal returns (bytes32 redeemRequestId) {
+        if (creditTokenAmount == 0)                     revert ZeroAmount();
         if (!hasRole(REDEEMER_CONTRACT_ROLE, redeemer)) revert InvalidRedeemer();
 
         uint256 collateralTokenAmount = _getSwapQuote(creditToken, collateralToken, creditTokenAmount, false);
@@ -954,9 +954,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
         pendingCreditTokenBalance       += creditTokenAmount;
         pendingRedemptions[redeemer]++;
 
-        IERC20(creditToken).approve(redeemer, creditTokenAmount);
+        IERC20(creditToken).safeApprove(redeemer, creditTokenAmount);
         ITokenRedeemer(redeemer).initiateRedeem(creditTokenAmount);
-        IERC20(creditToken).approve(redeemer, 0);
+        IERC20(creditToken).safeApprove(redeemer, 0);
 
         emit RedeemInitiated(redeemer, msg.sender, creditTokenAmount);
     }
@@ -964,7 +964,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /// @dev Completes an async redemption, decreasing the pending credit token balance.
     function _completeRedeem(bytes32 redeemRequestId) internal {
         RedeemRequest memory request = redeemRequests[redeemRequestId];
-        if (request.creditTokenAmount == 0) revert InvalidRedeemRequest();
+
+        if (request.creditTokenAmount == 0)                     revert InvalidRedeemRequest();
         if (!hasRole(REDEEMER_CONTRACT_ROLE, request.redeemer)) revert InvalidRedeemer();
 
         delete redeemRequests[redeemRequestId];
@@ -993,7 +994,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         if (newPurchaseFee < minFee || newPurchaseFee > maxFee) revert PurchaseFeeOutOfBounds();
 
         uint256 oldPurchaseFee = purchaseFee;
-        purchaseFee = newPurchaseFee;
+        purchaseFee          = newPurchaseFee;
 
         emit PurchaseFeeSet(oldPurchaseFee, newPurchaseFee);
     }
@@ -1003,7 +1004,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         if (newRedemptionFee < minFee || newRedemptionFee > maxFee) revert RedemptionFeeOutOfBounds();
 
         uint256 oldRedemptionFee = redemptionFee;
-        redemptionFee = newRedemptionFee;
+        redemptionFee            = newRedemptionFee;
 
         emit RedemptionFeeSet(oldRedemptionFee, newRedemptionFee);
     }

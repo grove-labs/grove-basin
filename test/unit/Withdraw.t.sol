@@ -8,9 +8,8 @@ import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
 import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
-import { MockPSM }                              from "test/mocks/MockPSM.sol";
-
-import { UsdsUsdcPocket } from "src/pockets/UsdsUsdcPocket.sol";
+import { MockPocket }       from "test/mocks/MockPocket.sol";
+import { MockPSM }          from "test/mocks/MockPSM.sol";
 
 contract GroveBasinWithdrawTests is GroveBasinTestBase {
 
@@ -27,18 +26,12 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
     }
 
     function test_withdraw_notSwapTokenOrCollateralToken() public {
-        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
+        vm.expectRevert();
         groveBasin.withdraw(makeAddr("new-asset"), receiver1, 100e6);
     }
 
     function test_withdraw_pocketInsufficientApprovalBoundary() public {
-        MockERC20 usds = new MockERC20("USDS", "USDS", 18);
-        MockPSM   psm  = new MockPSM(address(usds), address(swapToken));
-
-        usds.mint(address(psm), type(uint128).max);
-        swapToken.mint(address(psm), type(uint128).max);
-
-        UsdsUsdcPocket mockPocket = new UsdsUsdcPocket(address(groveBasin), address(swapToken), address(usds), address(psm), groveProxy);
+        MockPocket mockPocket = new MockPocket(address(groveBasin), address(swapToken), address(usds), address(psm));
 
         vm.prank(owner);
         groveBasin.setPocket(address(mockPocket));

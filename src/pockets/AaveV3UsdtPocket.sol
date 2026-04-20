@@ -7,6 +7,7 @@ import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
 
 import { BasePocket }        from "src/pockets/BasePocket.sol";
 import { IAaveV3PoolLike }   from "src/interfaces/IAaveV3PoolLike.sol";
+import { IATokenLike }       from "src/interfaces/IATokenLike.sol";
 import { IGroveBasinPocket } from "src/interfaces/IGroveBasinPocket.sol";
 
 /**
@@ -26,6 +27,7 @@ contract AaveV3UsdtPocket is BasePocket {
     error InvalidUsdt();
     error InvalidAUsdt();
     error InvalidAaveV3Pool();
+    error UnderlyingAssetMismatch();
     error NoWithdrawMaxUint();
 
     IERC20 public immutable usdt;
@@ -48,6 +50,8 @@ contract AaveV3UsdtPocket is BasePocket {
         if (usdt_       == address(0)) revert InvalidUsdt();
         if (aUsdt_      == address(0)) revert InvalidAUsdt();
         if (aaveV3Pool_ == address(0)) revert InvalidAaveV3Pool();
+
+        if (IATokenLike(aUsdt_).UNDERLYING_ASSET_ADDRESS() != usdt_) revert UnderlyingAssetMismatch();
 
         usdt       = IERC20(usdt_);
         aUsdt      = IERC20(aUsdt_);

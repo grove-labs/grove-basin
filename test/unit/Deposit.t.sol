@@ -3,8 +3,9 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 
-import { GroveBasin }  from "src/GroveBasin.sol";
-import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
+import { GroveBasin }        from "src/GroveBasin.sol";
+import { IGroveBasin }       from "src/interfaces/IGroveBasin.sol";
+import { IGroveBasinPocket } from "src/interfaces/IGroveBasinPocket.sol";
 
 import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
@@ -496,6 +497,31 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
         assertApproxEqAbs(groveBasin.convertToAssetValue(groveBasin.shares(receiver2)), receiver2NewValue,              1000);
 
         assertApproxEqAbs(groveBasin.totalAssets(), totalValue + receiver2NewValue, 1000);
+    }
+
+    function test_deposit_swapToken_pocketDepositFails_tokensRemainInPocket() public {
+        swapToken.mint(lp, 100e6);
+
+        vm.mockCallRevert(
+            pocket,
+            abi.encodeWithSelector(IGroveBasinPocket.depositLiquidity.selector),
+            "pocket deposit failed"
+        );
+
+        vm.startPrank(lp);
+        swapToken.approve(address(groveBasin), 100e6);
+
+        vm.expectEmit(true, true, true, true);
+        emit IGroveBasin.DepositLiquidityFailed(pocket, address(swapToken), 100e6);
+
+        uint256 newShares = groveBasin.deposit(address(swapToken), receiver1, 100e6);
+        vm.stopPrank();
+
+        assertEq(newShares, 100e18);
+
+        assertEq(swapToken.balanceOf(pocket), 100e6);
+        assertEq(groveBasin.totalShares(),    100e18);
+        assertEq(groveBasin.shares(receiver1), 100e18);
     }
 
 }

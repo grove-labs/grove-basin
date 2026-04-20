@@ -206,7 +206,7 @@ contract BUIDLTokenRedeemerForkTest_FullFlow is BUIDLTokenRedeemerForkTestBase {
         );
     }
 
-    function test_fullFlow_multipleRedemptions() public {
+    function test_fullFlow_sequentialRedemptions() public {
         uint256 depositAmount = 10_000e6;
         _deposit(Ethereum.BUIDL, makeAddr("lp"), depositAmount);
 
@@ -215,19 +215,19 @@ contract BUIDLTokenRedeemerForkTest_FullFlow is BUIDLTokenRedeemerForkTestBase {
         bytes32 requestId1 = groveBasin.initiateRedeem(address(redeemer), 1_000e6);
         assertEq(groveBasin.pendingCreditTokenBalance(), 1_000e6);
 
-        vm.roll(block.number + 1);
-
-        // Second redemption on different block
-        vm.prank(owner);
-        bytes32 requestId2 = groveBasin.initiateRedeem(address(redeemer), 2_000e6);
-        assertEq(groveBasin.pendingCreditTokenBalance(), 3_000e6);
-
         // Complete first request
         deal(Ethereum.USDC, address(redeemer), 1_000e6);
 
         vm.prank(owner);
         groveBasin.completeRedeem(requestId1);
 
+        assertEq(groveBasin.pendingCreditTokenBalance(), 0);
+
+        vm.roll(block.number + 1);
+
+        // Second redemption after first completes
+        vm.prank(owner);
+        bytes32 requestId2 = groveBasin.initiateRedeem(address(redeemer), 2_000e6);
         assertEq(groveBasin.pendingCreditTokenBalance(), 2_000e6);
 
         // Complete second request

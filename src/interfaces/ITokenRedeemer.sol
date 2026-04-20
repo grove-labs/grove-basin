@@ -17,8 +17,11 @@ interface ITokenRedeemer {
     /**********************************************************************************************/
 
     error OnlyBasin();
+    error NotAuthorized();
     error InvalidCreditToken();
     error InvalidBasin();
+    error InvalidToken();
+    error ZeroBalance();
     error CreditTokenMismatch();
 
     /**********************************************************************************************/
@@ -36,6 +39,13 @@ interface ITokenRedeemer {
      *  @param collateralTokenAmount Amount of collateral assets received from the vault.
      */
     event RedeemCompleted(uint256 collateralTokenAmount);
+
+    /**
+     *  @dev   Emitted when tokens are swept from the redeemer to the basin.
+     *  @param token  Address of the token swept.
+     *  @param amount Amount of tokens swept.
+     */
+    event Swept(address indexed token, uint256 amount);
 
     /**********************************************************************************************/
     /*** State variables and immutables                                                         ***/
@@ -85,5 +95,13 @@ interface ITokenRedeemer {
      *  @return collateralTokenReturned Amount of collateral assets sent back to the caller.
      */
     function completeRedeem(RedeemRequest calldata request) external returns (uint256 collateralTokenReturned);
+
+    /**
+     *  @dev   Transfers tokens to the basin. The token must be the credit token or the collateral
+     *         token. Callable only by MANAGER_ROLE holders. Reverts if amount is zero.
+     *  @param token  Address of the token to sweep (must be creditToken or collateralToken).
+     *  @param amount Amount of tokens to sweep.
+     */
+    function sweep(address token, uint256 amount) external;
 
 }

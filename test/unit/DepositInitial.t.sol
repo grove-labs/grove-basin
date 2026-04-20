@@ -6,8 +6,10 @@ import "forge-std/Test.sol";
 import { GroveBasin }        from "src/GroveBasin.sol";
 import { GroveBasinFactory } from "src/GroveBasinFactory.sol";
 import { IGroveBasin }       from "src/interfaces/IGroveBasin.sol";
+import { IGroveBasinPocket } from "src/interfaces/IGroveBasinPocket.sol";
 
 import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
+import { MockPocket }         from "test/mocks/MockPocket.sol";
 
 contract DepositInitialTests is GroveBasinTestBase {
 
@@ -29,6 +31,21 @@ contract DepositInitialTests is GroveBasinTestBase {
     /*** Revert tests                                                                           ***/
     /**********************************************************************************************/
 
+    function test_depositInitial_globalPaused() public {
+        vm.startPrank(owner);
+        freshBasin.grantRole(freshBasin.MANAGER_ADMIN_ROLE(), owner);
+        freshBasin.grantRole(freshBasin.PAUSER_ROLE(), owner);
+        freshBasin.setPaused(bytes4(0), true);
+        vm.stopPrank();
+
+        swapToken.mint(depositor, 100e6);
+        vm.startPrank(depositor);
+        swapToken.approve(address(freshBasin), 100e6);
+        vm.expectRevert(IGroveBasin.Paused.selector);
+        freshBasin.depositInitial(address(swapToken), 100e6);
+        vm.stopPrank();
+    }
+
     function test_depositInitial_alreadySeeded() public {
         swapToken.mint(depositor, 100e6);
         vm.startPrank(depositor);
@@ -45,13 +62,28 @@ contract DepositInitialTests is GroveBasinTestBase {
     }
 
     function test_depositInitial_zeroAmount() public {
-        vm.expectRevert(IGroveBasin.ZeroAmount.selector);
+        vm.expectRevert(IGroveBasin.InsufficientInitialDeposit.selector);
         freshBasin.depositInitial(address(swapToken), 0);
     }
 
     function test_depositInitial_invalidAsset() public {
-        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
+        vm.expectRevert();
         freshBasin.depositInitial(makeAddr("bad-asset"), 100e6);
+    }
+
+    function test_depositInitial_insufficientInitialDeposit_swapToken() public {
+        vm.expectRevert(IGroveBasin.InsufficientInitialDeposit.selector);
+        freshBasin.depositInitial(address(swapToken), 1e6 - 1);
+    }
+
+    function test_depositInitial_insufficientInitialDeposit_collateralToken() public {
+        vm.expectRevert(IGroveBasin.InsufficientInitialDeposit.selector);
+        freshBasin.depositInitial(address(collateralToken), 1e18 - 1);
+    }
+
+    function test_depositInitial_insufficientInitialDeposit_creditToken() public {
+        vm.expectRevert(IGroveBasin.InsufficientInitialDeposit.selector);
+        freshBasin.depositInitial(address(creditToken), 1e18 - 1);
     }
 
     function test_depositInitial_insufficientApprove() public {
@@ -81,11 +113,11 @@ contract DepositInitialTests is GroveBasinTestBase {
             address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider)
         );
 
-        swapToken.mint(depositor, 1);
+        swapToken.mint(depositor, 1e6);
         vm.startPrank(depositor);
-        swapToken.approve(address(zeroShareBasin), 1);
+        swapToken.approve(address(zeroShareBasin), 1e6);
         vm.expectRevert(IGroveBasin.NoNewShares.selector);
-        zeroShareBasin.depositInitial(address(swapToken), 1);
+        zeroShareBasin.depositInitial(address(swapToken), 1e6);
         vm.stopPrank();
 
         mockSwapTokenRateProvider.__setConversionRate(1e27);
@@ -223,7 +255,7 @@ contract DepositInitialTests is GroveBasinTestBase {
     /**********************************************************************************************/
 
     function testFuzz_depositInitial_swapToken(uint256 amount) public {
-        amount = _bound(amount, 1, SWAP_TOKEN_MAX);
+        amount = _bound(amount, 1e6, SWAP_TOKEN_MAX);
 
         swapToken.mint(depositor, amount);
         vm.startPrank(depositor);
@@ -237,7 +269,7 @@ contract DepositInitialTests is GroveBasinTestBase {
     }
 
     function testFuzz_depositInitial_collateralToken(uint256 amount) public {
-        amount = _bound(amount, 1, COLLATERAL_TOKEN_MAX);
+        amount = _bound(amount, 1e18, COLLATERAL_TOKEN_MAX);
 
         collateralToken.mint(depositor, amount);
         vm.startPrank(depositor);
@@ -251,7 +283,7 @@ contract DepositInitialTests is GroveBasinTestBase {
     }
 
     function testFuzz_depositInitial_creditToken(uint256 amount) public {
-        amount = _bound(amount, 1, CREDIT_TOKEN_MAX);
+        amount = _bound(amount, 1e18, CREDIT_TOKEN_MAX);
 
         creditToken.mint(depositor, amount);
         vm.startPrank(depositor);
@@ -262,6 +294,48 @@ contract DepositInitialTests is GroveBasinTestBase {
         assertEq(newShares, amount * 125 / 100);
         assertEq(freshBasin.totalShares(),      amount * 125 / 100);
         assertEq(freshBasin.shares(address(0)), amount * 125 / 100);
+    }
+
+    function test_depositInitial_swapToken_pocketDepositFails_tokensRemainInPocket() public {
+        GroveBasin basinWithPocket = new GroveBasin(
+            owner, lp,
+            address(swapToken), address(collateralToken), address(creditToken),
+            address(swapTokenRateProvider), address(collateralTokenRateProvider), address(creditTokenRateProvider)
+        );
+
+        MockPocket failPocket = new MockPocket(
+            address(basinWithPocket),
+            address(swapToken),
+            address(usds),
+            address(psm)
+        );
+
+        vm.startPrank(owner);
+        basinWithPocket.grantRole(basinWithPocket.MANAGER_ADMIN_ROLE(), owner);
+        basinWithPocket.grantRole(basinWithPocket.MANAGER_ROLE(), owner);
+        basinWithPocket.setPocket(address(failPocket));
+        vm.stopPrank();
+
+        vm.mockCallRevert(
+            address(failPocket),
+            abi.encodeWithSelector(IGroveBasinPocket.depositLiquidity.selector),
+            "pocket deposit failed"
+        );
+
+        swapToken.mint(depositor, 100e6);
+        vm.startPrank(depositor);
+        swapToken.approve(address(basinWithPocket), 100e6);
+
+        vm.expectEmit(true, true, true, true);
+        emit IGroveBasin.DepositLiquidityFailed(address(failPocket), address(swapToken), 100e6);
+
+        uint256 newShares = basinWithPocket.depositInitial(address(swapToken), 100e6);
+        vm.stopPrank();
+
+        assertEq(newShares, 100e18);
+        assertEq(swapToken.balanceOf(address(failPocket)), 100e6);
+        assertEq(basinWithPocket.totalShares(), 100e18);
+        assertEq(basinWithPocket.shares(address(0)), 100e18);
     }
 
     /**********************************************************************************************/

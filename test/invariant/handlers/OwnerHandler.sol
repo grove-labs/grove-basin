@@ -81,7 +81,16 @@ contract OwnerHandler is HandlerBase {
         } else if (pocketType == 1) {
             newPocket = _createMorphoPocket();
         } else {
-            newPocket = _createUsdsUsdcPocket();
+            // UsdsUsdcPocket requires basin.swapToken == usds and basin.collateralToken == usdc.
+            // Fall back to Aave pocket if the basin's token config doesn't match.
+            if (
+                groveBasin.swapToken() != address(usds)
+                || groveBasin.collateralToken() != address(swapToken)
+            ) {
+                newPocket = _createAavePocket();
+            } else {
+                newPocket = _createUsdsUsdcPocket();
+            }
         }
 
         // Avoid "same pocket" error

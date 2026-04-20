@@ -223,11 +223,11 @@ contract GroveBasinSetStalenessThresholdSuccessTests is GroveBasinTestBase {
     }
 
     function test_setStalenessThreshold() public {
-        assertEq(groveBasin.stalenessThreshold(), 5 minutes);
+        assertEq(groveBasin.stalenessThreshold(), 1 weeks);
 
         vm.prank(manager);
         vm.expectEmit(address(groveBasin));
-        emit StalenessThresholdSet(5 minutes, 1 hours);
+        emit StalenessThresholdSet(1 weeks, 1 hours);
         groveBasin.setStalenessThreshold(1 hours);
 
         assertEq(groveBasin.stalenessThreshold(), 1 hours);
@@ -305,11 +305,13 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
             address(creditTokenRateProvider)
         );
 
-        assertEq(freshBasin.stalenessThreshold(), 5 minutes);
+        assertEq(freshBasin.stalenessThreshold(), 1 weeks);
 
         collateralToken.mint(address(freshBasin), 1e18);
 
         mockSwapTokenRateProvider.__setLastUpdated(1);
+
+        vm.warp(1 weeks + 2);
 
         vm.expectRevert(IGroveBasin.StaleRate.selector);
         freshBasin.totalAssets();
@@ -530,6 +532,8 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
         );
 
         mockSwapTokenRateProvider.__setLastUpdated(1);
+
+        vm.warp(1 weeks + 2);
 
         vm.expectRevert(IGroveBasin.StaleRate.selector);
         harness.getConversionRate(address(swapTokenRateProvider));

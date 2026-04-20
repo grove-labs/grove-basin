@@ -11,6 +11,7 @@ import { IGroveBasinPocket }    from "src/interfaces/IGroveBasinPocket.sol";
 
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 import { MockAaveV3Pool }  from "test/mocks/MockAaveV3Pool.sol";
+import { MockAToken }      from "test/mocks/MockAToken.sol";
 
 contract AaveV3UsdtPocketTestBase is Test {
 
@@ -21,8 +22,8 @@ contract AaveV3UsdtPocketTestBase is Test {
     GroveBasin       public groveBasin;
     AaveV3UsdtPocket public pocket;
 
-    MockERC20 public usdt;
-    MockERC20 public aUsdt;
+    MockERC20  public usdt;
+    MockAToken public aUsdt;
     MockERC20 public collateralToken;
     MockERC20 public creditToken;
 
@@ -34,7 +35,7 @@ contract AaveV3UsdtPocketTestBase is Test {
 
     function setUp() public virtual {
         usdt            = new MockERC20("USDT",       "USDT",    6);
-        aUsdt           = new MockERC20("aUSDT",      "aUSDT",   6);
+        aUsdt           = new MockAToken("aUSDT",      "aUSDT",   6, address(usdt));
         collateralToken = new MockERC20("COLLATERAL", "COL",    18);
         creditToken     = new MockERC20("CREDIT",     "CREDIT", 18);
 
@@ -108,6 +109,14 @@ contract AaveV3UsdtPocketConstructorTests is AaveV3UsdtPocketTestBase {
     function test_constructor_invalidAaveV3Pool() public {
         vm.expectRevert(AaveV3UsdtPocket.InvalidAaveV3Pool.selector);
         new AaveV3UsdtPocket(address(groveBasin), address(usdt), address(aUsdt), address(0));
+    }
+
+    function test_constructor_underlyingAssetMismatch() public {
+        MockERC20 otherToken = new MockERC20("OTHER", "OTH", 6);
+        MockAToken wrongAToken = new MockAToken("aOTHER", "aOTH", 6, address(otherToken));
+
+        vm.expectRevert(AaveV3UsdtPocket.UnderlyingAssetMismatch.selector);
+        new AaveV3UsdtPocket(address(groveBasin), address(usdt), address(wrongAToken), address(aaveV3Pool));
     }
 
     function test_constructor_success() public view {

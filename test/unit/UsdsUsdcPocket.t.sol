@@ -50,8 +50,8 @@ contract UsdsUsdcPocketTestBase is Test {
         groveBasin = new GroveBasin(
             owner,
             lp,
+            address(usds),
             address(usdc),
-            address(collateralToken),
             address(creditToken),
             address(swapTokenRateProvider),
             address(collateralTokenRateProvider),
@@ -109,6 +109,18 @@ contract UsdsUsdcPocketConstructorTests is UsdsUsdcPocketTestBase {
         new UsdsUsdcPocket(address(groveBasin), address(usdc), address(usds), address(0), groveProxy);
     }
 
+    function test_constructor_swapTokenMismatch() public {
+        MockERC20 otherToken = new MockERC20("OTHER", "OTH", 18);
+        vm.expectRevert(UsdsUsdcPocket.SwapTokenMismatch.selector);
+        new UsdsUsdcPocket(address(groveBasin), address(usdc), address(otherToken), address(psm), groveProxy);
+    }
+
+    function test_constructor_collateralTokenMismatch() public {
+        MockERC20 otherToken = new MockERC20("OTHER", "OTH", 6);
+        vm.expectRevert(UsdsUsdcPocket.CollateralTokenMismatch.selector);
+        new UsdsUsdcPocket(address(groveBasin), address(otherToken), address(usds), address(psm), groveProxy);
+    }
+
     function test_constructor_zeroGroveProxy() public {
         UsdsUsdcPocket p = new UsdsUsdcPocket(address(groveBasin), address(usdc), address(usds), address(psm), address(0));
         assertEq(p.groveProxy(), address(0));
@@ -122,7 +134,7 @@ contract UsdsUsdcPocketConstructorTests is UsdsUsdcPocketTestBase {
         assertEq(pocket.groveProxy(),    groveProxy);
 
         assertEq(usds.allowance(address(pocket), address(groveBasin)), type(uint256).max);
-        assertEq(usdc.allowance(address(pocket), address(groveBasin)), type(uint256).max);
+        assertEq(usdc.allowance(address(pocket), address(groveBasin)), 0);
         assertEq(usds.allowance(address(pocket), groveProxy),         type(uint256).max);
     }
 
@@ -180,11 +192,12 @@ contract UsdsUsdcPocketManagerTests is UsdsUsdcPocketTestBase {
 
         vm.prank(manager);
         vm.expectEmit(address(pocket));
-        emit IGroveBasinPocket.LiquidityDrawn(address(usdc), 500e6, 500e18);
+        emit IGroveBasinPocket.LiquidityDrawn(address(usdc), 500e6, 500e6);
         pocket.withdrawLiquidity(500e6, address(usdc));
 
-        assertEq(usdc.balanceOf(address(pocket)), 500e6);
-        assertEq(usds.balanceOf(address(pocket)), 500e18);
+        assertEq(usdc.balanceOf(address(pocket)),    0);
+        assertEq(usdc.balanceOf(address(groveBasin)), 500e6);
+        assertEq(usds.balanceOf(address(pocket)),    500e18);
     }
 
     function test_depositLiquidity_manager_zeroAmount() public {
@@ -278,7 +291,8 @@ contract UsdsUsdcPocketBasinIndependenceTests is UsdsUsdcPocketTestBase {
         vm.prank(address(groveBasin));
         pocket.withdrawLiquidity(500e6, address(usdc));
 
-        assertEq(usdc.balanceOf(address(pocket)), 500e6);
+        assertEq(usdc.balanceOf(address(pocket)),    0);
+        assertEq(usdc.balanceOf(address(groveBasin)), 500e6);
     }
 
     function test_basin_doesNotNeedManagerRole() public view {
@@ -321,8 +335,9 @@ contract UsdsUsdcPocketDepositLiquidityTests is UsdsUsdcPocketTestBase {
         assertEq(usds.balanceOf(address(pocket)), 1000e18);
     }
 
-    function test_depositLiquidity_unsupportedAsset_noOp() public {
+    function test_depositLiquidity_unsupportedAsset_reverts() public {
         vm.prank(address(groveBasin));
+        vm.expectRevert(IGroveBasinPocket.InvalidAsset.selector);
         pocket.depositLiquidity(100e18, address(collateralToken));
     }
 
@@ -345,7 +360,8 @@ contract UsdsUsdcPocketDrawLiquidityTests is UsdsUsdcPocketTestBase {
         vm.prank(address(groveBasin));
         pocket.withdrawLiquidity(500e6, address(usdc));
 
-        assertEq(usdc.balanceOf(address(pocket)), 1000e6);
+        assertEq(usdc.balanceOf(address(pocket)),    500e6);
+        assertEq(usdc.balanceOf(address(groveBasin)), 500e6);
     }
 
     function test_withdrawLiquidity_usdc_partialBalanceSwapsRemainder() public {
@@ -355,8 +371,9 @@ contract UsdsUsdcPocketDrawLiquidityTests is UsdsUsdcPocketTestBase {
         vm.prank(address(groveBasin));
         pocket.withdrawLiquidity(500e6, address(usdc));
 
-        assertEq(usdc.balanceOf(address(pocket)), 500e6);
-        assertEq(usds.balanceOf(address(pocket)), 800e18);
+        assertEq(usdc.balanceOf(address(pocket)),    0);
+        assertEq(usdc.balanceOf(address(groveBasin)), 500e6);
+        assertEq(usds.balanceOf(address(pocket)),    800e18);
     }
 
     function test_withdrawLiquidity_usdc_noBalanceSwapsAll() public {
@@ -365,8 +382,9 @@ contract UsdsUsdcPocketDrawLiquidityTests is UsdsUsdcPocketTestBase {
         vm.prank(address(groveBasin));
         pocket.withdrawLiquidity(500e6, address(usdc));
 
-        assertEq(usdc.balanceOf(address(pocket)), 500e6);
-        assertEq(usds.balanceOf(address(pocket)), 500e18);
+        assertEq(usdc.balanceOf(address(pocket)),    0);
+        assertEq(usdc.balanceOf(address(groveBasin)), 500e6);
+        assertEq(usds.balanceOf(address(pocket)),    500e18);
     }
 
     function test_withdrawLiquidity_usdc_emitsEvent() public {
@@ -374,13 +392,35 @@ contract UsdsUsdcPocketDrawLiquidityTests is UsdsUsdcPocketTestBase {
 
         vm.prank(address(groveBasin));
         vm.expectEmit(address(pocket));
-        emit IGroveBasinPocket.LiquidityDrawn(address(usdc), 500e6, 500e18);
+        emit IGroveBasinPocket.LiquidityDrawn(address(usdc), 500e6, 500e6);
+        pocket.withdrawLiquidity(500e6, address(usdc));
+
+        assertEq(usdc.balanceOf(address(groveBasin)), 500e6);
+    }
+
+    function test_withdrawLiquidity_usdc_revertsIfToutNonZero() public {
+        usds.mint(address(pocket), 1000e18);
+
+        psm.__setTout(1);
+
+        vm.prank(address(groveBasin));
+        vm.expectRevert(UsdsUsdcPocket.NonZeroPsmTout.selector);
         pocket.withdrawLiquidity(500e6, address(usdc));
     }
 
-    function test_withdrawLiquidity_unsupportedAsset_noOp() public {
+    function test_withdrawLiquidity_unsupportedAsset_reverts() public {
         vm.prank(address(groveBasin));
+        vm.expectRevert(IGroveBasinPocket.InvalidAsset.selector);
         pocket.withdrawLiquidity(100e18, address(collateralToken));
+    }
+
+    function test_withdrawLiquidity_usds_returnsAmount() public {
+        usds.mint(address(pocket), 1000e18);
+
+        vm.prank(address(groveBasin));
+        uint256 result = pocket.withdrawLiquidity(500e18, address(usds));
+
+        assertEq(result, 500e18);
     }
 
 }
@@ -435,20 +475,9 @@ contract UsdsUsdcPocketApprovalCleanupTests is UsdsUsdcPocketTestBase {
 
 contract UsdsUsdcPocketAvailableBalanceTests is UsdsUsdcPocketTestBase {
 
-    function test_availableBalance_usdc_usdcOnly() public {
+    function test_availableBalance_usdc() public {
         usdc.mint(address(pocket), 1000e6);
         assertEq(pocket.availableBalance(address(usdc)), 1000e6);
-    }
-
-    function test_availableBalance_usdc_usdsOnly() public {
-        usds.mint(address(pocket), 1000e18);
-        assertEq(pocket.availableBalance(address(usdc)), 1000e6);
-    }
-
-    function test_availableBalance_usdc_combined() public {
-        usdc.mint(address(pocket), 500e6);
-        usds.mint(address(pocket), 1000e18);
-        assertEq(pocket.availableBalance(address(usdc)), 1500e6);
     }
 
     function test_availableBalance_usds() public {
@@ -458,6 +487,51 @@ contract UsdsUsdcPocketAvailableBalanceTests is UsdsUsdcPocketTestBase {
 
     function test_availableBalance_unsupportedAsset() public {
         assertEq(pocket.availableBalance(address(collateralToken)), 0);
+    }
+
+}
+
+/**********************************************************************************************/
+/*** sweep tests                                                                            ***/
+/**********************************************************************************************/
+
+contract UsdsUsdcPocketSweepTests is UsdsUsdcPocketTestBase {
+
+    function test_sweep_notAuthorized() public {
+        vm.expectRevert(IGroveBasinPocket.NotAuthorized.selector);
+        pocket.sweep();
+    }
+
+    function test_sweep_transfersUsdcToBasin() public {
+        usdc.mint(address(pocket), 1000e6);
+
+        vm.prank(manager);
+        vm.expectEmit(address(pocket));
+        emit UsdsUsdcPocket.Swept(1000e6);
+        pocket.sweep();
+
+        assertEq(usdc.balanceOf(address(pocket)),    0);
+        assertEq(usdc.balanceOf(address(groveBasin)), 1000e6);
+    }
+
+    function test_sweep_zeroBalance() public {
+        vm.prank(manager);
+        vm.expectEmit(address(pocket));
+        emit UsdsUsdcPocket.Swept(0);
+        pocket.sweep();
+
+        assertEq(usdc.balanceOf(address(pocket)),    0);
+        assertEq(usdc.balanceOf(address(groveBasin)), 0);
+    }
+
+    function test_sweep_basin_canCall() public {
+        usdc.mint(address(pocket), 500e6);
+
+        vm.prank(address(groveBasin));
+        pocket.sweep();
+
+        assertEq(usdc.balanceOf(address(pocket)),    0);
+        assertEq(usdc.balanceOf(address(groveBasin)), 500e6);
     }
 
 }
@@ -491,8 +565,10 @@ contract UsdsUsdcPocketEventTests is UsdsUsdcPocketTestBase {
 
         vm.prank(address(groveBasin));
         vm.expectEmit(address(pocket));
-        emit IGroveBasinPocket.LiquidityDrawn(address(usdc), 500e6, 500e18);
+        emit IGroveBasinPocket.LiquidityDrawn(address(usdc), 500e6, 500e6);
         pocket.withdrawLiquidity(500e6, address(usdc));
+
+        assertEq(usdc.balanceOf(address(groveBasin)), 500e6);
     }
 
     function test_withdrawLiquidity_manager_emitsEvent() public {
@@ -500,8 +576,10 @@ contract UsdsUsdcPocketEventTests is UsdsUsdcPocketTestBase {
 
         vm.prank(manager);
         vm.expectEmit(address(pocket));
-        emit IGroveBasinPocket.LiquidityDrawn(address(usdc), 500e6, 500e18);
+        emit IGroveBasinPocket.LiquidityDrawn(address(usdc), 500e6, 500e6);
         pocket.withdrawLiquidity(500e6, address(usdc));
+
+        assertEq(usdc.balanceOf(address(groveBasin)), 500e6);
     }
 
 }

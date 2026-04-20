@@ -4,6 +4,8 @@ pragma solidity ^0.8.24;
 import { IERC20 }    from "erc20-helpers/interfaces/IERC20.sol";
 import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
 
+import { IAccessControl } from "openzeppelin-contracts/contracts/access/IAccessControl.sol";
+
 import { IAsyncVaultLike }              from "src/interfaces/IAsyncVaultLike.sol";
 import { IGroveBasin }                 from "src/interfaces/IGroveBasin.sol";
 import { ITokenRedeemer, RedeemRequest } from "src/interfaces/ITokenRedeemer.sol";
@@ -26,6 +28,7 @@ contract JTRSYTokenRedeemer is ITokenRedeemer {
 
     error InvalidVault();
     error CollateralAssetMismatch();
+    error ShareMismatch();
 
     /**********************************************************************************************/
     /*** State variables and immutables                                                         ***/
@@ -58,6 +61,7 @@ contract JTRSYTokenRedeemer is ITokenRedeemer {
 
         if (IGroveBasin(basin_).creditToken() != creditToken_)                        revert CreditTokenMismatch();
         if (IGroveBasin(basin_).collateralToken() != IAsyncVaultLike(vault_).asset()) revert CollateralAssetMismatch();
+        if (IAsyncVaultLike(vault_).share() != creditToken_)                          revert ShareMismatch();
 
         creditToken = creditToken_;
         vault       = vault_;
@@ -74,14 +78,29 @@ contract JTRSYTokenRedeemer is ITokenRedeemer {
     function initiateRedeem(uint256 creditTokenAmount) external override onlyBasin {
         IERC20(creditToken).safeTransferFrom(address(basin), address(this), creditTokenAmount);
         IAsyncVaultLike(vault).requestRedeem(creditTokenAmount, address(this), address(this));
+
         emit RedeemInitiated(creditTokenAmount);
     }
 
     /// @inheritdoc ITokenRedeemer
     function completeRedeem(RedeemRequest calldata request) external override onlyBasin returns (uint256 collateralTokenReturned) {
         collateralTokenReturned = IAsyncVaultLike(vault).redeem(request.creditTokenAmount, address(this), address(this));
+
         IERC20(IAsyncVaultLike(vault).asset()).safeTransfer(address(basin), collateralTokenReturned);
+
         emit RedeemCompleted(collateralTokenReturned);
+    }
+
+    /// @inheritdoc ITokenRedeemer
+    function sweep(address token, uint256 amount) external override {
+        if (!IAccessControl(address(basin)).hasRole(basin.MANAGER_ROLE(), msg.sender)) revert NotAuthorized();
+        if (token != creditToken && token != basin.collateralToken())                  revert InvalidToken();
+
+        if (amount == 0) revert ZeroBalance();
+
+        IERC20(token).safeTransfer(address(basin), amount);
+        
+        emit Swept(token, amount);
     }
 
 }
