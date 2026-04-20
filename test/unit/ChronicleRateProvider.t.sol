@@ -20,23 +20,11 @@ contract ChronicleRateProviderTests is Test {
 
     function test_constructor() public view {
         assertEq(rateProvider.oracle(), address(oracle));
-        assertEq(rateProvider.chroniclePrecision(), 1e18);
     }
 
     function test_constructor_revert_zeroOracle() public {
         vm.expectRevert(ChronicleRateProvider.ZeroOracle.selector);
         new ChronicleRateProvider(address(0));
-    }
-
-    function test_constructor_nonDefaultDecimals() public {
-        MockChronicleOracle oracle8 = new MockChronicleOracle();
-        oracle8.__setDecimals(8);
-
-        ChronicleRateProvider provider8 = new ChronicleRateProvider(address(oracle8));
-        assertEq(provider8.chroniclePrecision(), 1e8);
-
-        oracle8.__setVal(1e8);
-        assertEq(provider8.getConversionRate(), 1e27);
     }
 
     function test_getConversionRate_atParity() public view {

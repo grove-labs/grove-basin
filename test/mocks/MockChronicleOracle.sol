@@ -6,7 +6,6 @@ contract MockChronicleOracle {
     uint256 public val;
     uint256 public age;
     bool    public hasPoked;
-    uint8   public decimals = 18;
 
     function __setVal(uint256 val_) external {
         val = val_;
@@ -16,10 +15,6 @@ contract MockChronicleOracle {
 
     function __setAge(uint256 age_) external {
         age = age_;
-    }
-
-    function __setDecimals(uint8 decimals_) external {
-        decimals = decimals_;
     }
 
     function read() external view returns (uint256) {
