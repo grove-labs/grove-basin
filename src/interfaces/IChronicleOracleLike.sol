@@ -19,7 +19,4 @@ interface IChronicleOracleLike {
     /// @notice Returns the current oracle value and age, or (false, 0, 0) if unavailable.
     function tryReadWithAge() external view returns (bool ok, uint256 val, uint256 age);
 
-    /// @notice Returns the number of decimals of the oracle's value.
-    function decimals() external view returns (uint8);
-
 }
