@@ -860,6 +860,16 @@ interface IGroveBasin {
     /**********************************************************************************************/
 
     /**
+     *  @dev    Returns the USD value of `amount` of `asset` in 1e18 precision.
+     *          Reverts with `InvalidAsset` if `asset` is not one of the supported tokens.
+     *  @param  asset   Address of the ERC-20 asset to value.
+     *  @param  amount  Amount of the asset in asset-native units.
+     *  @param  roundUp Whether to round up the result.
+     *  @return The normalized USD value in 1e18 precision.
+     */
+    function getAssetValue(address asset, uint256 amount, bool roundUp) external view returns (uint256);
+
+    /**
      *  @dev View function that returns the total value of the balance of all assets currently held
      *       by the GroveBasin, including the estimated value of pending credit tokens from
      *       redemptions, as a normalized USD value in 1e18 precision. Note:
