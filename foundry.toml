@@ -41,6 +41,9 @@ remappings = [
     "openzeppelin-contracts/=lib/openzeppelin-contracts/contracts/",
 ]
 
+[rpc_endpoints]
+mainnet = "${MAINNET_RPC_URL}"
+
 [etherscan]
 mainnet = { key = "${MAINNET_API_KEY}" }
 optimism = { key = "${OPTIMISMSCAN_API_KEY}" }

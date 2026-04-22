@@ -292,7 +292,7 @@ assetsWithdrawn = assetBalance < maxAssetsToWithdraw
 **Example**
 
 ```solidity
-return convertToShares(_getAssetValue(asset, assetsToDeposit, false));  // Round down
+return convertToShares(getAssetValue(asset, assetsToDeposit, false));  // Round down
 ```
 
 If multiple similar lines exist, align the `//` columns:

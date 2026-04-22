@@ -676,6 +676,10 @@ contract GroveBasin is IGroveBasin, AccessControl {
                 );
     }
 
+    function getAssetValue(address asset, uint256 amount, bool roundUp) external view returns (uint256) {
+        return _getAssetValue(asset, amount, roundUp);
+    }
+
     /**********************************************************************************************/
     /*** AccessControl overrides                                                                ***/
     /**********************************************************************************************/
