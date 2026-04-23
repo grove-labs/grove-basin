@@ -331,6 +331,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     /// @inheritdoc IGroveBasin
     function completeRedeem(bytes32 redeemRequestId) external override onlyRole(REDEEMER_ROLE) {
+        _checkPaused(msg.sig);
         _completeRedeem(redeemRequestId);
     }
 

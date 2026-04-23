@@ -122,6 +122,16 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         assertEq(groveBasin.paused(sig), true);
     }
 
+    function test_setPaused_completeRedeem() public {
+        bytes4 sig = groveBasin.completeRedeem.selector;
+        assertEq(groveBasin.paused(sig), false);
+
+        vm.prank(pauser);
+        groveBasin.setPaused(sig, true);
+
+        assertEq(groveBasin.paused(sig), true);
+    }
+
     function test_setPaused_global() public {
         bytes4 globalSig = bytes4(0);
         assertEq(groveBasin.paused(globalSig), false);
@@ -543,6 +553,40 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         vm.prank(redeemer);
         vm.expectRevert(IGroveBasin.Paused.selector);
         groveBasin.initiateRedeem(makeAddr("redeemerContract"), 100e18);
+    }
+
+    /**********************************************************************************************/
+    /*** CompleteRedeem pause enforcement tests                                                 ***/
+    /**********************************************************************************************/
+
+    function test_completeRedeem_paused() public {
+        vm.prank(pauser);
+        groveBasin.setPaused(groveBasin.completeRedeem.selector, true);
+
+        address redeemer = makeAddr("redeemer");
+
+        bytes32 redeemerRole = groveBasin.REDEEMER_ROLE();
+        vm.prank(owner);
+        groveBasin.grantRole(redeemerRole, redeemer);
+
+        vm.prank(redeemer);
+        vm.expectRevert(IGroveBasin.Paused.selector);
+        groveBasin.completeRedeem(bytes32(uint256(1)));
+    }
+
+    function test_completeRedeem_globalPaused() public {
+        vm.prank(pauser);
+        groveBasin.setPaused(bytes4(0), true);
+
+        address redeemer = makeAddr("redeemer");
+
+        bytes32 redeemerRole = groveBasin.REDEEMER_ROLE();
+        vm.prank(owner);
+        groveBasin.grantRole(redeemerRole, redeemer);
+
+        vm.prank(redeemer);
+        vm.expectRevert(IGroveBasin.Paused.selector);
+        groveBasin.completeRedeem(bytes32(uint256(1)));
     }
 
     /**********************************************************************************************/
