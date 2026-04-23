@@ -824,14 +824,15 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /**********************************************************************************************/
 
     /// @dev Converts a fee amount in `asset` terms to shares and assigns them to the fee claimer.
+    ///      Rounds down to protect existing shareholders from dilution.
     function _accrueFeeShares(address asset, uint256 feeAmount) internal {
         if (feeAmount == 0) return;
 
         address feeClaimer_ = feeClaimer;
         if (feeClaimer_ == address(0)) return;
 
-        uint256 feeValue  = _getAssetValue(asset, feeAmount, true);
-        uint256 feeShares = _convertToSharesRoundUp(feeValue);
+        uint256 feeValue  = _getAssetValue(asset, feeAmount, false);
+        uint256 feeShares = convertToShares(feeValue);
 
         if (feeShares == 0) return;
 
