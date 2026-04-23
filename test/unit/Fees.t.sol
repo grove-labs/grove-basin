@@ -421,6 +421,16 @@ contract GroveBasinPreviewSwapFeeTests is GroveBasinTestBase {
         assertEq(fee, 200e6);
     }
 
+    function test_previewSwapExactInFee_invalidAsset() public {
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
+        groveBasin.previewSwapExactInFee(makeAddr("unsupported"), 10_000e18);
+    }
+
+    function test_previewSwapExactOutFee_invalidAsset() public {
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
+        groveBasin.previewSwapExactOutFee(makeAddr("unsupported"), 10_000e18);
+    }
+
     function test_previewSwapExactInFee_roundsUpFavoringProtocol() public {
         vm.prank(owner);
         groveBasin.setPurchaseFee(100);  // 1%

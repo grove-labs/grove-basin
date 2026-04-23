@@ -611,6 +611,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function previewSwapExactInFee(address assetOut, uint256 amountOut)
         public view returns (uint256)
     {
+        _requireValidAsset(assetOut);
         if (assetOut == creditToken) {
             return _calculateFee(amountOut, purchaseFee);
         }
@@ -621,6 +622,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function previewSwapExactOutFee(address assetOut, uint256 amountOut)
         public view returns (uint256)
     {
+        _requireValidAsset(assetOut);
         if (assetOut == creditToken) {
             return _getGrossAmountFromNet(amountOut, purchaseFee) - amountOut;
         }
