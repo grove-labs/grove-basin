@@ -68,7 +68,6 @@ contract AaveV3UsdtPocket is BasePocket {
 
         emit LiquidityDeposited(asset, amount, amount);
 
-        usdt.safeApprove(aaveV3Pool, 0);
         usdt.safeApprove(aaveV3Pool, amount);
         IAaveV3PoolLike(aaveV3Pool).supply(address(usdt), amount, address(this), 0);
 

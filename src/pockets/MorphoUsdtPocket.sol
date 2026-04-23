@@ -57,7 +57,6 @@ contract MorphoUsdtPocket is BasePocket {
 
         if (asset != address(usdt)) revert InvalidAsset();
 
-        usdt.safeApprove(vault, 0);
         usdt.safeApprove(vault, amount);
         IERC4626VaultLike(vault).deposit(amount, address(this));
 
