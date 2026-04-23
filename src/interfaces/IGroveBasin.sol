@@ -14,7 +14,7 @@ interface IGroveBasin {
     error PrecisionTooHigh();
     error ZeroRateProviderAddress();
     error RateProviderReturnsZero();
-    error InvalidRateProvider();
+
     error InvalidToken();
     error InvalidSwapSizeBounds();
     error MinThresholdZero();

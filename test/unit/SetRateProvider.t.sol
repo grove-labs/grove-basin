@@ -22,9 +22,9 @@ contract GroveBasinSetRateProviderFailureTests is GroveBasinTestBase {
         groveBasin.setRateProvider(address(swapToken), newProvider);
     }
 
-    function test_setRateProvider_invalidRateProvider() public {
+    function test_setRateProvider_zeroRateProviderAddress() public {
         vm.prank(owner);
-        vm.expectRevert(IGroveBasin.InvalidRateProvider.selector);
+        vm.expectRevert(IGroveBasin.ZeroRateProviderAddress.selector);
         groveBasin.setRateProvider(address(swapToken), address(0));
     }
 

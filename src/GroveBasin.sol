@@ -165,7 +165,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     /// @inheritdoc IGroveBasin
     function setRateProvider(address token, address newRateProvider) external override onlyRole(MANAGER_ADMIN_ROLE) {
-        if (newRateProvider == address(0))                                revert InvalidRateProvider();
+        if (newRateProvider == address(0))                                revert ZeroRateProviderAddress();
         if (IGroveRateProvider(newRateProvider).getConversionRate() == 0) revert RateProviderReturnsZero();
 
         address oldRateProvider;
