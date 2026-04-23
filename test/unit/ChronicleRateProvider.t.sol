@@ -102,4 +102,20 @@ contract ChronicleRateProviderTests is Test {
         assertEq(rateProvider.getConversionRate(), 0.99e27);
     }
 
+    function test_getConversionRate_consistentWithGetConversionRateWithAge() public {
+        oracle.__setVal(1.23e18);
+        uint256 rate = rateProvider.getConversionRate();
+        (uint256 rateWithAge, ) = rateProvider.getConversionRateWithAge();
+        assertEq(rate, rateWithAge);
+    }
+
+    function testFuzz_getConversionRate_consistentWithGetConversionRateWithAge(uint256 chronicleVal) public {
+        chronicleVal = bound(chronicleVal, 1, type(uint128).max);
+        oracle.__setVal(chronicleVal);
+
+        uint256 rate = rateProvider.getConversionRate();
+        (uint256 rateWithAge, ) = rateProvider.getConversionRateWithAge();
+        assertEq(rate, rateWithAge);
+    }
+
 }

@@ -64,4 +64,19 @@ contract FixedRateProviderTests is Test {
         assertEq(provider2.getConversionRate(), 0.5e27);
     }
 
+    function test_getConversionRate_consistentWithGetConversionRateWithAge() public view {
+        uint256 rate = rateProvider.getConversionRate();
+        (uint256 rateWithAge, ) = rateProvider.getConversionRateWithAge();
+        assertEq(rate, rateWithAge);
+    }
+
+    function testFuzz_getConversionRate_consistentWithGetConversionRateWithAge(uint256 rate_) public {
+        rate_ = bound(rate_, 1, type(uint256).max);
+        FixedRateProvider provider = new FixedRateProvider(rate_);
+
+        uint256 rateVal = provider.getConversionRate();
+        (uint256 rateWithAge, ) = provider.getConversionRateWithAge();
+        assertEq(rateVal, rateWithAge);
+    }
+
 }

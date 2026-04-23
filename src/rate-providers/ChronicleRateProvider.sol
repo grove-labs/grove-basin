@@ -30,11 +30,15 @@ contract ChronicleRateProvider is IGroveRateProvider {
 
     /// @inheritdoc IGroveRateProvider
     function getConversionRate() external view override returns (uint256 rate) {
-        (rate, ) = this.getConversionRateWithAge();
+        (rate, ) = _getConversionRateWithAge();
     }
 
     /// @inheritdoc IGroveRateProvider
     function getConversionRateWithAge() external view override returns (uint256, uint256) {
+        return _getConversionRateWithAge();
+    }
+
+    function _getConversionRateWithAge() internal view returns (uint256, uint256) {
         (uint256 val, uint256 age) = IChronicleOracleLike(oracle).readWithAge();
         return (val * RATE_PRECISION / CHRONICLE_PRECISION, age);
     }
