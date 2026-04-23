@@ -28,6 +28,7 @@ contract AaveV3UsdtPocket is BasePocket {
     error InvalidAUsdt();
     error InvalidAaveV3Pool();
     error UnderlyingAssetMismatch();
+    error SwapTokenMismatch();
     error NoWithdrawMaxUint();
 
     IERC20 public immutable usdt;
@@ -52,6 +53,8 @@ contract AaveV3UsdtPocket is BasePocket {
         if (aaveV3Pool_ == address(0)) revert InvalidAaveV3Pool();
 
         if (IATokenLike(aUsdt_).UNDERLYING_ASSET_ADDRESS() != usdt_) revert UnderlyingAssetMismatch();
+
+        if (_basin.swapToken() != usdt_) revert SwapTokenMismatch();
 
         usdt       = IERC20(usdt_);
         aUsdt      = IERC20(aUsdt_);

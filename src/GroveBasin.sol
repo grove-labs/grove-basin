@@ -201,7 +201,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
         emit MaxSwapSizeBoundsSet(oldLowerBound, oldUpperBound, newLowerBound, newUpperBound);
 
         uint256 currentMaxSwapSize = maxSwapSize;
-        uint256 newMaxSwapSize    = currentMaxSwapSize;
+        uint256 newMaxSwapSize     = currentMaxSwapSize;
+
         if (currentMaxSwapSize < newLowerBound) {
             newMaxSwapSize = newLowerBound;
             maxSwapSize    = newLowerBound;
@@ -230,6 +231,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         uint256 threshold    = stalenessThreshold;
         uint256 newThreshold = threshold;
+
         if (threshold < newMinThreshold) {
             newThreshold       = newMinThreshold;
             stalenessThreshold = newMinThreshold;
@@ -265,6 +267,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         address pocket_ = pocket;
 
         if (newPocket == address(0) || newPocket == pocket_) revert InvalidPocket();
+        if (newPocket != address(this) && IGroveBasinPocket(newPocket).basin() != address(this)) revert InvalidPocket();
 
         _withdrawLiquidityInPocket(_getAvailableBalance(swapToken), swapToken);
 

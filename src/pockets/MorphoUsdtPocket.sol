@@ -27,6 +27,7 @@ contract MorphoUsdtPocket is BasePocket {
 
     error InvalidUsdt();
     error InvalidVault();
+    error SwapTokenMismatch();
 
     IERC20 public immutable usdt;
 
@@ -44,6 +45,8 @@ contract MorphoUsdtPocket is BasePocket {
     ) BasePocket(basin_) {
         if (usdt_  == address(0)) revert InvalidUsdt();
         if (vault_ == address(0)) revert InvalidVault();
+
+        if (_basin.swapToken() != usdt_) revert SwapTokenMismatch();
 
         usdt  = IERC20(usdt_);
         vault = vault_;

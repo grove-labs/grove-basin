@@ -6,12 +6,14 @@ import "forge-std/Test.sol";
 import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
 
 import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
+import { MockPocket }         from "test/mocks/MockPocket.sol";
 
 import { GroveBasinHarness } from "test/unit/harnesses/GroveBasinHarness.sol";
 
 contract GroveBasinHarnessTests is GroveBasinTestBase {
 
     GroveBasinHarness groveBasinHarness;
+    MockPocket        harnessPocket;
 
     function setUp() public override {
         super.setUp();
@@ -26,9 +28,16 @@ contract GroveBasinHarnessTests is GroveBasinTestBase {
             address(creditTokenRateProvider)
         );
 
+        harnessPocket = new MockPocket(
+            address(groveBasinHarness),
+            address(swapToken),
+            address(usds),
+            address(psm)
+        );
+
         vm.startPrank(owner);
         groveBasinHarness.grantRole(groveBasinHarness.MANAGER_ADMIN_ROLE(), owner);
-        groveBasinHarness.setPocket(address(groveBasin));
+        groveBasinHarness.setPocket(address(harnessPocket));
         vm.stopPrank();
     }
 
@@ -221,7 +230,7 @@ contract GroveBasinHarnessTests is GroveBasinTestBase {
     }
 
     function test_getAssetCustodian() public view {
-        assertEq(groveBasinHarness.getAssetCustodian(address(swapToken)),  address(groveBasin));
+        assertEq(groveBasinHarness.getAssetCustodian(address(swapToken)),  address(harnessPocket));
         assertEq(groveBasinHarness.getAssetCustodian(address(collateralToken)),  address(groveBasinHarness));
         assertEq(groveBasinHarness.getAssetCustodian(address(creditToken)), address(groveBasinHarness));
     }

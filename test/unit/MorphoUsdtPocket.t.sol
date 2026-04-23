@@ -100,6 +100,24 @@ contract MorphoUsdtPocketConstructorTests is MorphoUsdtPocketTestBase {
         new MorphoUsdtPocket(address(groveBasin), address(usdt), address(0));
     }
 
+    function test_constructor_swapTokenMismatch() public {
+        MockERC20 otherSwap = new MockERC20("OTHER", "OTH", 6);
+
+        GroveBasin mismatchedBasin = new GroveBasin(
+            owner,
+            lp,
+            address(otherSwap),
+            address(collateralToken),
+            address(creditToken),
+            address(swapTokenRateProvider),
+            address(collateralTokenRateProvider),
+            address(creditTokenRateProvider)
+        );
+
+        vm.expectRevert(MorphoUsdtPocket.SwapTokenMismatch.selector);
+        new MorphoUsdtPocket(address(mismatchedBasin), address(usdt), address(vault));
+    }
+
     function test_constructor_success() public view {
         assertEq(pocket.basin(), address(groveBasin));
         assertEq(address(pocket.usdt()), address(usdt));
