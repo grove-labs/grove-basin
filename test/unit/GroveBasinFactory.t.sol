@@ -139,7 +139,19 @@ contract GroveBasinFactoryTests is GroveBasinTestBase {
 
     function test_deploy_multipleDeployments() public {
         address basin1 = _deploy();
-        address basin2 = _deploy();
+
+        _mintAndApprove();
+        address basin2 = factory.deploy(
+            bytes32(uint256(1)),
+            owner,
+            lp,
+            address(swapToken),
+            address(collateralToken),
+            address(creditToken),
+            address(swapTokenRateProvider),
+            address(collateralTokenRateProvider),
+            address(creditTokenRateProvider)
+        );
 
         assertTrue(basin1 != basin2);
 
@@ -147,6 +159,23 @@ contract GroveBasinFactoryTests is GroveBasinTestBase {
         assertEq(GroveBasin(basin2).totalShares(),      1e18);
         assertEq(GroveBasin(basin1).shares(address(0)), 1e18);
         assertEq(GroveBasin(basin2).shares(address(0)), 1e18);
+    }
+
+    function test_deploy_sameSaltReverts() public {
+        _deploy();
+        _mintAndApprove();
+
+        vm.expectRevert();
+        factory.deploy(
+            owner,
+            lp,
+            address(swapToken),
+            address(collateralToken),
+            address(creditToken),
+            address(swapTokenRateProvider),
+            address(collateralTokenRateProvider),
+            address(creditTokenRateProvider)
+        );
     }
 
 }
