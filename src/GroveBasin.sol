@@ -413,7 +413,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         if (amountIn == 0)          revert ZeroAmountIn();
         if (receiver == address(0)) revert ZeroReceiver();
 
-        if (_getAssetValue(assetIn, amountIn, false) > maxSwapSize) revert SwapSizeExceeded();
+        if (_getAssetValue(assetIn, amountIn, true) > maxSwapSize) revert SwapSizeExceeded();
 
         uint256 grossOut = _getSwapQuote(assetIn, assetOut, amountIn, false);
         uint256 fee      = previewSwapExactInFee(assetOut, grossOut);
@@ -451,8 +451,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         amountIn = _getSwapQuote(assetOut, assetIn, amountOut + fee, true);
 
-        if (_getAssetValue(assetIn, amountIn, false) > maxSwapSize) revert SwapSizeExceeded();
-        if (amountIn > maxAmountIn)                                 revert AmountInTooHigh();
+        if (_getAssetValue(assetIn, amountIn, true) > maxSwapSize) revert SwapSizeExceeded();
+        if (amountIn > maxAmountIn)                                revert AmountInTooHigh();
 
         _accrueFeeShares(assetOut, fee);
 
@@ -580,7 +580,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     {
         _checkPaused(_getSwapPauseKey(assetIn, assetOut));
 
-        if (_getAssetValue(assetIn, amountIn, false) > maxSwapSize) revert SwapSizeExceeded();
+        if (_getAssetValue(assetIn, amountIn, true) > maxSwapSize) revert SwapSizeExceeded();
 
         amountOut  = _getSwapQuote(assetIn, assetOut, amountIn, false);
         amountOut -= previewSwapExactInFee(assetOut, amountOut);
@@ -595,7 +595,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         amountOut += previewSwapExactOutFee(assetOut, amountOut);
         amountIn   = _getSwapQuote(assetOut, assetIn, amountOut, true);
 
-        if (_getAssetValue(assetIn, amountIn, false) > maxSwapSize) revert SwapSizeExceeded();
+        if (_getAssetValue(assetIn, amountIn, true) > maxSwapSize) revert SwapSizeExceeded();
     }
     
     /// @dev Returns the fee that will be deducted from a gross output amount (ExactIn). Rounds up.

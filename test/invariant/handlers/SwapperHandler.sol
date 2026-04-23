@@ -489,8 +489,8 @@ contract SwapperHandler is HandlerBase {
 
         if (maxSwapSize_ == 0) return 0;
 
-        // Use output value as proxy since preview reverts when exceeding max swap size.
-        uint256 outValue = _getAssetValue(assetOut, amountOut);
+        // Use the contract's rounding-up valuation to match the swap check
+        uint256 outValue = groveBasin.getAssetValue(assetOut, amountOut, true);
 
         // Cap the output amount so its value fits within maxSwapSize.
         // The input value (rounded up) will be approximately equal.
@@ -520,12 +520,20 @@ contract SwapperHandler is HandlerBase {
 
         if (maxSwapSize_ == 0) return 0;
 
-        uint256 value = _getAssetValue(asset, amount);
+        // Use the contract's rounding-up valuation to match the swap check
+        uint256 value = groveBasin.getAssetValue(asset, amount, true);
 
         if (value <= maxSwapSize_) return amount;
 
         // Scale down amount to fit within maxSwapSize
-        return amount * maxSwapSize_ / value;
+        amount = amount * maxSwapSize_ / value;
+
+        // Verify the scaled amount passes the contract's ceil check
+        if (amount > 0 && groveBasin.getAssetValue(asset, amount, true) > maxSwapSize_) {
+            amount -= 1;
+        }
+
+        return amount;
     }
 
 }
