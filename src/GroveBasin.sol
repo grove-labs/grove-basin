@@ -368,8 +368,15 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     /// @inheritdoc IGroveBasin
     function setPaused(bytes4 key, bool state) external override onlyRole(PAUSER_ROLE) {
-        paused[key] = state;
-        emit PausedSet(key, state);
+        if (!state) revert OnlyManagerAdminCanUnpause();
+        paused[key] = true;
+        emit PausedSet(key, true);
+    }
+
+    /// @inheritdoc IGroveBasin
+    function setUnpaused(bytes4 key) external override onlyRole(MANAGER_ADMIN_ROLE) {
+        paused[key] = false;
+        emit PausedSet(key, false);
     }
 
     /**********************************************************************************************/

@@ -27,6 +27,7 @@ interface IGroveBasin {
     error RedeemerAlreadyAdded();
     error SwapSizeOutOfBounds();
     error Paused();
+    error OnlyManagerAdminCanUnpause();
     error ThresholdOutOfBounds();
     error SameThreshold();
     error ZeroAmountIn();
@@ -624,12 +625,19 @@ interface IGroveBasin {
     function setMaxSwapSize(uint256 newMaxSwapSize) external;
 
     /**
-     *  @dev   Sets or unsets a pause flag. Pause keys can be function selectors or arbitrary
+     *  @dev   Sets a pause flag. Pause keys can be function selectors or arbitrary
      *         bytes4 keys. Use bytes4(0) to set the global pause (pauses all pausable functions).
+     *         Only allows pausing (state == true). Reverts if state is false.
      *  @param key   The pause key (function selector, arbitrary key, or bytes4(0) for global pause).
-     *  @param state Whether to pause the key.
+     *  @param state Must be true. Use setUnpaused to unpause.
      */
     function setPaused(bytes4 key, bool state) external;
+
+    /**
+     *  @dev   Unsets a pause flag. Callable only by MANAGER_ADMIN_ROLE.
+     *  @param key The pause key to unpause (function selector, arbitrary key, or bytes4(0) for global pause).
+     */
+    function setUnpaused(bytes4 key) external;
 
     /**
      *  @dev   Sets the staleness threshold in seconds. Must be within
