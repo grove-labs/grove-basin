@@ -83,6 +83,18 @@ contract GroveBasinSetMaxSwapSizeBoundsClampTests is GroveBasinTestBase {
         assertEq(groveBasin.maxSwapSizeUpperBound(), 200e18);
     }
 
+    function test_setMaxSwapSizeBounds_noClampEmitsSameValue() public {
+        vm.prank(owner);
+        groveBasin.setMaxSwapSize(500e18);
+
+        vm.prank(owner);
+        vm.expectEmit(address(groveBasin));
+        emit MaxSwapSizeSet(500e18, 500e18);
+        groveBasin.setMaxSwapSizeBounds(100e18, 1_000e18);
+
+        assertEq(groveBasin.maxSwapSize(), 500e18);
+    }
+
 }
 
 contract GroveBasinSetMaxSwapSizeSuccessTests is GroveBasinTestBase {

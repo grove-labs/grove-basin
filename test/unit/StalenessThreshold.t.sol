@@ -181,6 +181,18 @@ contract GroveBasinSetStalenessThresholdBoundsSuccessTests is GroveBasinTestBase
         assertEq(groveBasin.stalenessThreshold(), 1 hours);
     }
 
+    function test_setStalenessThresholdBounds_noClampEmitsSameValue() public {
+        vm.prank(manager);
+        groveBasin.setStalenessThreshold(1 hours);
+
+        vm.prank(owner);
+        vm.expectEmit(address(groveBasin));
+        emit StalenessThresholdSet(1 hours, 1 hours);
+        groveBasin.setStalenessThresholdBounds(30 minutes, 2 hours);
+
+        assertEq(groveBasin.stalenessThreshold(), 1 hours);
+    }
+
     function test_setStalenessThresholdBounds_equalMinMax() public {
         vm.prank(owner);
         groveBasin.setStalenessThresholdBounds(1 hours, 1 hours);
