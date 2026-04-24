@@ -376,13 +376,13 @@ contract JTRSYTokenRedeemerSweepTests is Test {
     MockAsyncVault       public vault;
     JTRSYTokenRedeemer   public redeemer;
     GroveBasin           public basin;
-    address              public manager;
+    address              public managerAdmin;
 
     function setUp() public {
         creditToken     = new MockERC20("creditToken",     "creditToken",     18);
         collateralToken = new MockERC20("collateralToken", "collateralToken", 18);
         vault           = new MockAsyncVault(address(collateralToken), address(creditToken));
-        manager         = makeAddr("manager");
+        managerAdmin    = makeAddr("managerAdmin");
 
         MockERC20 swapToken = new MockERC20("swapToken", "swapToken", 6);
 
@@ -406,7 +406,7 @@ contract JTRSYTokenRedeemerSweepTests is Test {
         );
 
         basin.grantRole(basin.MANAGER_ADMIN_ROLE(), address(this));
-        basin.grantRole(basin.MANAGER_ROLE(),       manager);
+        basin.grantRole(basin.MANAGER_ADMIN_ROLE(), managerAdmin);
 
         redeemer = new JTRSYTokenRedeemer(address(creditToken), address(vault), address(basin));
     }
@@ -414,7 +414,7 @@ contract JTRSYTokenRedeemerSweepTests is Test {
     function test_sweep_creditToken() public {
         creditToken.mint(address(redeemer), 500e18);
 
-        vm.prank(manager);
+        vm.prank(managerAdmin);
         redeemer.sweep(address(creditToken), 500e18);
 
         assertEq(creditToken.balanceOf(address(redeemer)), 0);
@@ -424,7 +424,7 @@ contract JTRSYTokenRedeemerSweepTests is Test {
     function test_sweep_collateralToken() public {
         collateralToken.mint(address(redeemer), 300e18);
 
-        vm.prank(manager);
+        vm.prank(managerAdmin);
         redeemer.sweep(address(collateralToken), 300e18);
 
         assertEq(collateralToken.balanceOf(address(redeemer)), 0);
@@ -434,7 +434,7 @@ contract JTRSYTokenRedeemerSweepTests is Test {
     function test_sweep_partialAmount() public {
         creditToken.mint(address(redeemer), 500e18);
 
-        vm.prank(manager);
+        vm.prank(managerAdmin);
         redeemer.sweep(address(creditToken), 200e18);
 
         assertEq(creditToken.balanceOf(address(redeemer)), 300e18);
@@ -447,14 +447,23 @@ contract JTRSYTokenRedeemerSweepTests is Test {
         vm.expectEmit(address(redeemer));
         emit ITokenRedeemer.Swept(address(creditToken), 500e18);
 
-        vm.prank(manager);
+        vm.prank(managerAdmin);
         redeemer.sweep(address(creditToken), 500e18);
     }
 
     function test_sweep_notAuthorized() public {
-        address notManager = makeAddr("notManager");
+        address notManagerAdmin = makeAddr("notManagerAdmin");
 
-        vm.prank(notManager);
+        vm.prank(notManagerAdmin);
+        vm.expectRevert(ITokenRedeemer.NotAuthorized.selector);
+        redeemer.sweep(address(creditToken), 100e18);
+    }
+
+    function test_sweep_managerRoleNotAuthorized() public {
+        address manager = makeAddr("manager");
+        basin.grantRole(basin.MANAGER_ROLE(), manager);
+
+        vm.prank(manager);
         vm.expectRevert(ITokenRedeemer.NotAuthorized.selector);
         redeemer.sweep(address(creditToken), 100e18);
     }
@@ -462,13 +471,13 @@ contract JTRSYTokenRedeemerSweepTests is Test {
     function test_sweep_invalidToken() public {
         address randomToken = makeAddr("randomToken");
 
-        vm.prank(manager);
+        vm.prank(managerAdmin);
         vm.expectRevert(ITokenRedeemer.InvalidToken.selector);
         redeemer.sweep(randomToken, 100e18);
     }
 
     function test_sweep_zeroAmount() public {
-        vm.prank(manager);
+        vm.prank(managerAdmin);
         vm.expectRevert(ITokenRedeemer.ZeroBalance.selector);
         redeemer.sweep(address(creditToken), 0);
     }

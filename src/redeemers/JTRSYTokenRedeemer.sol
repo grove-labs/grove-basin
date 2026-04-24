@@ -93,8 +93,8 @@ contract JTRSYTokenRedeemer is ITokenRedeemer {
 
     /// @inheritdoc ITokenRedeemer
     function sweep(address token, uint256 amount) external override {
-        if (!IAccessControl(address(basin)).hasRole(basin.MANAGER_ROLE(), msg.sender)) revert NotAuthorized();
-        if (token != creditToken && token != basin.collateralToken())                  revert InvalidToken();
+        if (!IAccessControl(address(basin)).hasRole(basin.MANAGER_ADMIN_ROLE(), msg.sender)) revert NotAuthorized();
+        if (token != creditToken && token != basin.collateralToken())                        revert InvalidToken();
 
         if (amount == 0) revert ZeroBalance();
 
