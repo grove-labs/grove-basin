@@ -14,7 +14,7 @@ interface IGroveBasin {
     error PrecisionTooHigh();
     error ZeroRateProviderAddress();
     error RateProviderReturnsZero();
-    error InvalidRateProvider();
+
     error InvalidToken();
     error InvalidSwapSizeBounds();
     error MinThresholdZero();
@@ -624,12 +624,18 @@ interface IGroveBasin {
     function setMaxSwapSize(uint256 newMaxSwapSize) external;
 
     /**
-     *  @dev   Sets or unsets a pause flag. Pause keys can be function selectors or arbitrary
+     *  @dev   Sets a pause flag. Pause keys can be function selectors or arbitrary
      *         bytes4 keys. Use bytes4(0) to set the global pause (pauses all pausable functions).
-     *  @param key   The pause key (function selector, arbitrary key, or bytes4(0) for global pause).
-     *  @param state Whether to pause the key.
+     *         Use setUnpaused to unpause.
+     *  @param key The pause key (function selector, arbitrary key, or bytes4(0) for global pause).
      */
-    function setPaused(bytes4 key, bool state) external;
+    function setPaused(bytes4 key) external;
+
+    /**
+     *  @dev   Unsets a pause flag. Callable only by MANAGER_ADMIN_ROLE.
+     *  @param key The pause key to unpause (function selector, arbitrary key, or bytes4(0) for global pause).
+     */
+    function setUnpaused(bytes4 key) external;
 
     /**
      *  @dev   Sets the staleness threshold in seconds. Must be within

@@ -421,6 +421,16 @@ contract GroveBasinPreviewSwapFeeTests is GroveBasinTestBase {
         assertEq(fee, 200e6);
     }
 
+    function test_previewSwapExactInFee_invalidAsset() public {
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
+        groveBasin.previewSwapExactInFee(makeAddr("unsupported"), 10_000e18);
+    }
+
+    function test_previewSwapExactOutFee_invalidAsset() public {
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
+        groveBasin.previewSwapExactOutFee(makeAddr("unsupported"), 10_000e18);
+    }
+
     function test_previewSwapExactInFee_roundsUpFavoringProtocol() public {
         vm.prank(owner);
         groveBasin.setPurchaseFee(100);  // 1%
@@ -1157,11 +1167,13 @@ contract GroveBasinFeeShareAccrualTests is GroveBasinTestBase {
         assertGt(groveBasin.shares(feeClaimer), firstShares);
     }
 
-    function test_accrueFeeShares_roundsUpFavoringProtocol() public {
+    function test_accrueFeeShares_roundsDownFavoringLPs() public {
         _deposit(address(collateralToken), makeAddr("bigLp"), 1e18);
 
-        // Inflate totalAssets relative to totalShares so floor-division would give 0 shares
+        // Inflate totalAssets relative to totalShares so floor-division gives 0 shares
         mockCollateralTokenRateProvider.__setConversionRate(1e45);
+
+        uint256 totalSharesBefore = groveBasin.totalShares();
 
         swapToken.mint(swapper, 1);
         vm.startPrank(swapper);
@@ -1169,9 +1181,10 @@ contract GroveBasinFeeShareAccrualTests is GroveBasinTestBase {
         groveBasin.swapExactIn(address(swapToken), address(creditToken), 1, 0, swapper, 0);
         vm.stopPrank();
 
-        // A fee was charged (grossOut > amountOut), so the fee claimer must receive shares.
-        // Rounding should favor the protocol (ceil), not the user (floor).
-        assertGt(groveBasin.shares(feeClaimer), 0, "Fee shares should round up, not down to zero");
+        // Rounding down protects existing LPs from dilution: no fee shares minted when
+        // the fee value is too small to produce at least 1 share via floor division.
+        assertEq(groveBasin.shares(feeClaimer), 0, "Fee shares should round down to zero to protect LPs");
+        assertEq(groveBasin.totalShares(), totalSharesBefore, "No new shares should be minted");
     }
 
     function test_feeSharesNotAccrued_noFeeClaimerSet() public {

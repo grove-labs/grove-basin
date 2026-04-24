@@ -26,11 +26,15 @@ contract FixedRateProvider is IGroveRateProvider {
 
     /// @inheritdoc IGroveRateProvider
     function getConversionRate() external view override returns (uint256 rate_) {
-        (rate_, ) = this.getConversionRateWithAge();
+        (rate_, ) = _getConversionRateWithAge();
     }
 
     /// @inheritdoc IGroveRateProvider
     function getConversionRateWithAge() external view override returns (uint256, uint256) {
+        return _getConversionRateWithAge();
+    }
+
+    function _getConversionRateWithAge() internal view returns (uint256, uint256) {
         return (rate, block.timestamp);
     }
 

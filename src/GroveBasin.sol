@@ -165,7 +165,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     /// @inheritdoc IGroveBasin
     function setRateProvider(address token, address newRateProvider) external override onlyRole(MANAGER_ADMIN_ROLE) {
-        if (newRateProvider == address(0))                                revert InvalidRateProvider();
+        if (newRateProvider == address(0))                                revert ZeroRateProviderAddress();
         if (IGroveRateProvider(newRateProvider).getConversionRate() == 0) revert RateProviderReturnsZero();
 
         address oldRateProvider;
@@ -201,13 +201,17 @@ contract GroveBasin is IGroveBasin, AccessControl {
         emit MaxSwapSizeBoundsSet(oldLowerBound, oldUpperBound, newLowerBound, newUpperBound);
 
         uint256 currentMaxSwapSize = maxSwapSize;
+        uint256 newMaxSwapSize     = currentMaxSwapSize;
+
         if (currentMaxSwapSize < newLowerBound) {
-            maxSwapSize = newLowerBound;    
+            newMaxSwapSize = newLowerBound;
+            maxSwapSize    = newLowerBound;
         } else if (currentMaxSwapSize > newUpperBound) {
-            maxSwapSize = newUpperBound;
+            newMaxSwapSize = newUpperBound;
+            maxSwapSize    = newUpperBound;
         }
 
-        emit MaxSwapSizeSet(currentMaxSwapSize, maxSwapSize);
+        emit MaxSwapSizeSet(currentMaxSwapSize, newMaxSwapSize);
     }
 
     /// @inheritdoc IGroveBasin
@@ -225,14 +229,18 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         emit StalenessThresholdBoundsSet(oldMinThreshold, oldMaxThreshold, newMinThreshold, newMaxThreshold);
 
-        uint256 threshold = stalenessThreshold;
+        uint256 threshold    = stalenessThreshold;
+        uint256 newThreshold = threshold;
+
         if (threshold < newMinThreshold) {
+            newThreshold       = newMinThreshold;
             stalenessThreshold = newMinThreshold;
         } else if (threshold > newMaxThreshold) {
+            newThreshold       = newMaxThreshold;
             stalenessThreshold = newMaxThreshold;
         }
 
-        emit StalenessThresholdSet(threshold, stalenessThreshold);
+        emit StalenessThresholdSet(threshold, newThreshold);
     }
 
     /// @inheritdoc IGroveBasin
@@ -259,6 +267,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         address pocket_ = pocket;
 
         if (newPocket == address(0) || newPocket == pocket_) revert InvalidPocket();
+        if (newPocket != address(this) && IGroveBasinPocket(newPocket).basin() != address(this)) revert InvalidPocket();
 
         _withdrawLiquidityInPocket(_getAvailableBalance(swapToken), swapToken);
 
@@ -331,6 +340,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     /// @inheritdoc IGroveBasin
     function completeRedeem(bytes32 redeemRequestId) external override onlyRole(REDEEMER_ROLE) {
+        _checkPaused(msg.sig);
         _completeRedeem(redeemRequestId);
     }
 
@@ -366,9 +376,15 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /**********************************************************************************************/
 
     /// @inheritdoc IGroveBasin
-    function setPaused(bytes4 key, bool state) external override onlyRole(PAUSER_ROLE) {
-        paused[key] = state;
-        emit PausedSet(key, state);
+    function setPaused(bytes4 key) external override onlyRole(PAUSER_ROLE) {
+        paused[key] = true;
+        emit PausedSet(key, true);
+    }
+
+    /// @inheritdoc IGroveBasin
+    function setUnpaused(bytes4 key) external override onlyRole(MANAGER_ADMIN_ROLE) {
+        paused[key] = false;
+        emit PausedSet(key, false);
     }
 
     /**********************************************************************************************/
@@ -405,7 +421,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         if (amountIn == 0)          revert ZeroAmountIn();
         if (receiver == address(0)) revert ZeroReceiver();
 
-        if (_getAssetValue(assetIn, amountIn, false) > maxSwapSize) revert SwapSizeExceeded();
+        if (_getAssetValue(assetIn, amountIn, true) > maxSwapSize) revert SwapSizeExceeded();
 
         uint256 grossOut = _getSwapQuote(assetIn, assetOut, amountIn, false);
         uint256 fee      = previewSwapExactInFee(assetOut, grossOut);
@@ -443,8 +459,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         amountIn = _getSwapQuote(assetOut, assetIn, amountOut + fee, true);
 
-        if (_getAssetValue(assetIn, amountIn, false) > maxSwapSize) revert SwapSizeExceeded();
-        if (amountIn > maxAmountIn)                                 revert AmountInTooHigh();
+        if (_getAssetValue(assetIn, amountIn, true) > maxSwapSize) revert SwapSizeExceeded();
+        if (amountIn > maxAmountIn)                                revert AmountInTooHigh();
 
         _accrueFeeShares(assetOut, fee);
 
@@ -572,7 +588,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     {
         _checkPaused(_getSwapPauseKey(assetIn, assetOut));
 
-        if (_getAssetValue(assetIn, amountIn, false) > maxSwapSize) revert SwapSizeExceeded();
+        if (_getAssetValue(assetIn, amountIn, true) > maxSwapSize) revert SwapSizeExceeded();
 
         amountOut  = _getSwapQuote(assetIn, assetOut, amountIn, false);
         amountOut -= previewSwapExactInFee(assetOut, amountOut);
@@ -587,13 +603,14 @@ contract GroveBasin is IGroveBasin, AccessControl {
         amountOut += previewSwapExactOutFee(assetOut, amountOut);
         amountIn   = _getSwapQuote(assetOut, assetIn, amountOut, true);
 
-        if (_getAssetValue(assetIn, amountIn, false) > maxSwapSize) revert SwapSizeExceeded();
+        if (_getAssetValue(assetIn, amountIn, true) > maxSwapSize) revert SwapSizeExceeded();
     }
     
     /// @dev Returns the fee that will be deducted from a gross output amount (ExactIn). Rounds up.
     function previewSwapExactInFee(address assetOut, uint256 amountOut)
         public view returns (uint256)
     {
+        _requireValidAsset(assetOut);
         if (assetOut == creditToken) {
             return _calculateFee(amountOut, purchaseFee);
         }
@@ -604,6 +621,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function previewSwapExactOutFee(address assetOut, uint256 amountOut)
         public view returns (uint256)
     {
+        _requireValidAsset(assetOut);
         if (assetOut == creditToken) {
             return _getGrossAmountFromNet(amountOut, purchaseFee) - amountOut;
         }
@@ -816,14 +834,15 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /**********************************************************************************************/
 
     /// @dev Converts a fee amount in `asset` terms to shares and assigns them to the fee claimer.
+    ///      Rounds down to protect existing shareholders from dilution.
     function _accrueFeeShares(address asset, uint256 feeAmount) internal {
         if (feeAmount == 0) return;
 
         address feeClaimer_ = feeClaimer;
         if (feeClaimer_ == address(0)) return;
 
-        uint256 feeValue  = _getAssetValue(asset, feeAmount, true);
-        uint256 feeShares = _convertToSharesRoundUp(feeValue);
+        uint256 feeValue  = _getAssetValue(asset, feeAmount, false);
+        uint256 feeShares = convertToShares(feeValue);
 
         if (feeShares == 0) return;
 

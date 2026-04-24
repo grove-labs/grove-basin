@@ -119,6 +119,24 @@ contract AaveV3UsdtPocketConstructorTests is AaveV3UsdtPocketTestBase {
         new AaveV3UsdtPocket(address(groveBasin), address(usdt), address(wrongAToken), address(aaveV3Pool));
     }
 
+    function test_constructor_swapTokenMismatch() public {
+        MockERC20 otherSwap = new MockERC20("OTHER", "OTH", 6);
+
+        GroveBasin mismatchedBasin = new GroveBasin(
+            owner,
+            lp,
+            address(otherSwap),
+            address(collateralToken),
+            address(creditToken),
+            address(swapTokenRateProvider),
+            address(collateralTokenRateProvider),
+            address(creditTokenRateProvider)
+        );
+
+        vm.expectRevert(AaveV3UsdtPocket.SwapTokenMismatch.selector);
+        new AaveV3UsdtPocket(address(mismatchedBasin), address(usdt), address(aUsdt), address(aaveV3Pool));
+    }
+
     function test_constructor_success() public view {
         assertEq(pocket.basin(),          address(groveBasin));
         assertEq(address(pocket.usdt()),  address(usdt));

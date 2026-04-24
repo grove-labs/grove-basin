@@ -98,7 +98,8 @@ interface ITokenRedeemer {
 
     /**
      *  @dev   Transfers tokens to the basin. The token must be the credit token or the collateral
-     *         token. Callable only by MANAGER_ROLE holders. Reverts if amount is zero.
+     *         token. Callable only by MANAGER_ADMIN_ROLE holders. Reverts if amount is zero.
+     *         Should only be called when there are no pending redemptions.
      *  @param token  Address of the token to sweep (must be creditToken or collateralToken).
      *  @param amount Amount of tokens to sweep.
      */

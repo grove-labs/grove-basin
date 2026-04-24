@@ -42,7 +42,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
             )
         );
         vm.prank(nonPauser);
-        groveBasin.setPaused(groveBasin.swapExactIn.selector, true);
+        groveBasin.setPaused(groveBasin.swapExactIn.selector);
     }
 
     function test_setPaused_globalNotPauser() public {
@@ -56,7 +56,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
             )
         );
         vm.prank(nonPauser);
-        groveBasin.setPaused(bytes4(0), true);
+        groveBasin.setPaused(bytes4(0));
     }
 
     function test_setPaused_managerCannotPause() public {
@@ -70,7 +70,54 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
             )
         );
         vm.prank(manager);
-        groveBasin.setPaused(groveBasin.swapExactIn.selector, true);
+        groveBasin.setPaused(groveBasin.swapExactIn.selector);
+    }
+
+    function test_setUnpaused_notManagerAdmin() public {
+        bytes4 sig = groveBasin.swapExactIn.selector;
+
+        vm.prank(pauser);
+        groveBasin.setPaused(sig);
+
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                pauser,
+                groveBasin.MANAGER_ADMIN_ROLE()
+            )
+        );
+        vm.prank(pauser);
+        groveBasin.setUnpaused(sig);
+    }
+
+    function test_setUnpaused_managerCannotUnpause() public {
+        bytes4 sig = groveBasin.swapExactIn.selector;
+
+        vm.prank(pauser);
+        groveBasin.setPaused(sig);
+
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                manager,
+                groveBasin.MANAGER_ADMIN_ROLE()
+            )
+        );
+        vm.prank(manager);
+        groveBasin.setUnpaused(sig);
+    }
+
+    function test_setUnpaused_event() public {
+        bytes4 sig = groveBasin.swapExactIn.selector;
+
+        vm.prank(pauser);
+        groveBasin.setPaused(sig);
+
+        vm.expectEmit(true, false, false, true);
+        emit IGroveBasin.PausedSet(sig, false);
+
+        vm.prank(owner);
+        groveBasin.setUnpaused(sig);
     }
 
     /**********************************************************************************************/
@@ -82,12 +129,12 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         assertEq(groveBasin.paused(sig), false);
 
         vm.prank(pauser);
-        groveBasin.setPaused(sig, true);
+        groveBasin.setPaused(sig);
 
         assertEq(groveBasin.paused(sig), true);
 
-        vm.prank(pauser);
-        groveBasin.setPaused(sig, false);
+        vm.prank(owner);
+        groveBasin.setUnpaused(sig);
 
         assertEq(groveBasin.paused(sig), false);
     }
@@ -97,7 +144,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         assertEq(groveBasin.paused(sig), false);
 
         vm.prank(pauser);
-        groveBasin.setPaused(sig, true);
+        groveBasin.setPaused(sig);
 
         assertEq(groveBasin.paused(sig), true);
     }
@@ -107,7 +154,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         assertEq(groveBasin.paused(sig), false);
 
         vm.prank(pauser);
-        groveBasin.setPaused(sig, true);
+        groveBasin.setPaused(sig);
 
         assertEq(groveBasin.paused(sig), true);
     }
@@ -117,7 +164,17 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         assertEq(groveBasin.paused(sig), false);
 
         vm.prank(pauser);
-        groveBasin.setPaused(sig, true);
+        groveBasin.setPaused(sig);
+
+        assertEq(groveBasin.paused(sig), true);
+    }
+
+    function test_setPaused_completeRedeem() public {
+        bytes4 sig = groveBasin.completeRedeem.selector;
+        assertEq(groveBasin.paused(sig), false);
+
+        vm.prank(pauser);
+        groveBasin.setPaused(sig);
 
         assertEq(groveBasin.paused(sig), true);
     }
@@ -127,12 +184,12 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         assertEq(groveBasin.paused(globalSig), false);
 
         vm.prank(pauser);
-        groveBasin.setPaused(globalSig, true);
+        groveBasin.setPaused(globalSig);
 
         assertEq(groveBasin.paused(globalSig), true);
 
-        vm.prank(pauser);
-        groveBasin.setPaused(globalSig, false);
+        vm.prank(owner);
+        groveBasin.setUnpaused(globalSig);
 
         assertEq(groveBasin.paused(globalSig), false);
     }
@@ -148,7 +205,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         emit IGroveBasin.PausedSet(sig, true);
 
         vm.prank(pauser);
-        groveBasin.setPaused(sig, true);
+        groveBasin.setPaused(sig);
     }
 
     function test_setPaused_globalEvent() public {
@@ -158,7 +215,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         emit IGroveBasin.PausedSet(globalSig, true);
 
         vm.prank(pauser);
-        groveBasin.setPaused(globalSig, true);
+        groveBasin.setPaused(globalSig);
     }
 
     /**********************************************************************************************/
@@ -167,7 +224,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
 
     function test_swapExactIn_paused() public {
         vm.prank(pauser);
-        groveBasin.setPaused(groveBasin.swapExactIn.selector, true);
+        groveBasin.setPaused(groveBasin.swapExactIn.selector);
 
         vm.expectRevert(IGroveBasin.Paused.selector);
         groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, receiver, 0);
@@ -175,7 +232,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
 
     function test_swapExactOut_paused() public {
         vm.prank(pauser);
-        groveBasin.setPaused(groveBasin.swapExactOut.selector, true);
+        groveBasin.setPaused(groveBasin.swapExactOut.selector);
 
         vm.expectRevert(IGroveBasin.Paused.selector);
         groveBasin.swapExactOut(address(swapToken), address(creditToken), 80e18, type(uint256).max, receiver, 0);
@@ -183,7 +240,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
 
     function test_swapExactIn_globalPaused() public {
         vm.prank(pauser);
-        groveBasin.setPaused(bytes4(0), true);
+        groveBasin.setPaused(bytes4(0));
 
         vm.expectRevert(IGroveBasin.Paused.selector);
         groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, receiver, 0);
@@ -191,7 +248,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
 
     function test_swapExactOut_globalPaused() public {
         vm.prank(pauser);
-        groveBasin.setPaused(bytes4(0), true);
+        groveBasin.setPaused(bytes4(0));
 
         vm.expectRevert(IGroveBasin.Paused.selector);
         groveBasin.swapExactOut(address(creditToken), address(swapToken), 100e6, type(uint256).max, receiver, 0);
@@ -206,12 +263,12 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         assertEq(groveBasin.paused(key), false);
 
         vm.prank(pauser);
-        groveBasin.setPaused(key, true);
+        groveBasin.setPaused(key);
 
         assertEq(groveBasin.paused(key), true);
 
-        vm.prank(pauser);
-        groveBasin.setPaused(key, false);
+        vm.prank(owner);
+        groveBasin.setUnpaused(key);
 
         assertEq(groveBasin.paused(key), false);
     }
@@ -221,7 +278,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         assertEq(groveBasin.paused(key), false);
 
         vm.prank(pauser);
-        groveBasin.setPaused(key, true);
+        groveBasin.setPaused(key);
 
         assertEq(groveBasin.paused(key), true);
     }
@@ -231,7 +288,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         assertEq(groveBasin.paused(key), false);
 
         vm.prank(pauser);
-        groveBasin.setPaused(key, true);
+        groveBasin.setPaused(key);
 
         assertEq(groveBasin.paused(key), true);
     }
@@ -241,7 +298,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         assertEq(groveBasin.paused(key), false);
 
         vm.prank(pauser);
-        groveBasin.setPaused(key, true);
+        groveBasin.setPaused(key);
 
         assertEq(groveBasin.paused(key), true);
     }
@@ -251,12 +308,12 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         assertEq(groveBasin.paused(key), false);
 
         vm.prank(pauser);
-        groveBasin.setPaused(key, true);
+        groveBasin.setPaused(key);
 
         assertEq(groveBasin.paused(key), true);
 
-        vm.prank(pauser);
-        groveBasin.setPaused(key, false);
+        vm.prank(owner);
+        groveBasin.setUnpaused(key);
 
         assertEq(groveBasin.paused(key), false);
     }
@@ -266,12 +323,12 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         assertEq(groveBasin.paused(key), false);
 
         vm.prank(pauser);
-        groveBasin.setPaused(key, true);
+        groveBasin.setPaused(key);
 
         assertEq(groveBasin.paused(key), true);
 
-        vm.prank(pauser);
-        groveBasin.setPaused(key, false);
+        vm.prank(owner);
+        groveBasin.setUnpaused(key);
 
         assertEq(groveBasin.paused(key), false);
     }
@@ -281,12 +338,12 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         assertEq(groveBasin.paused(key), false);
 
         vm.prank(pauser);
-        groveBasin.setPaused(key, true);
+        groveBasin.setPaused(key);
 
         assertEq(groveBasin.paused(key), true);
 
-        vm.prank(pauser);
-        groveBasin.setPaused(key, false);
+        vm.prank(owner);
+        groveBasin.setUnpaused(key);
 
         assertEq(groveBasin.paused(key), false);
     }
@@ -298,7 +355,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         emit IGroveBasin.PausedSet(key, true);
 
         vm.prank(pauser);
-        groveBasin.setPaused(key, true);
+        groveBasin.setPaused(key);
     }
 
     /**********************************************************************************************/
@@ -309,7 +366,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         bytes4 key = groveBasin.PAUSED_SWAP_CREDIT_TO_COLLATERAL();
 
         vm.prank(pauser);
-        groveBasin.setPaused(key, true);
+        groveBasin.setPaused(key);
 
         creditToken.mint(swapper, 100e18);
         vm.prank(swapper);
@@ -324,7 +381,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         bytes4 key = groveBasin.PAUSED_SWAP_CREDIT_TO_COLLATERAL();
 
         vm.prank(pauser);
-        groveBasin.setPaused(key, true);
+        groveBasin.setPaused(key);
 
         creditToken.mint(swapper, 200e18);
         vm.prank(swapper);
@@ -339,7 +396,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         bytes4 key = groveBasin.PAUSED_SWAP_CREDIT_TO_SWAP();
 
         vm.prank(pauser);
-        groveBasin.setPaused(key, true);
+        groveBasin.setPaused(key);
 
         creditToken.mint(swapper, 100e18);
         vm.prank(swapper);
@@ -354,7 +411,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         bytes4 key = groveBasin.PAUSED_SWAP_CREDIT_TO_SWAP();
 
         vm.prank(pauser);
-        groveBasin.setPaused(key, true);
+        groveBasin.setPaused(key);
 
         creditToken.mint(swapper, 200e18);
         vm.prank(swapper);
@@ -369,7 +426,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         bytes4 key = groveBasin.PAUSED_SWAP_COLLATERAL_TO_CREDIT();
 
         vm.prank(pauser);
-        groveBasin.setPaused(key, true);
+        groveBasin.setPaused(key);
 
         collateralToken.mint(swapper, 100e18);
         vm.prank(swapper);
@@ -384,7 +441,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         bytes4 key = groveBasin.PAUSED_SWAP_COLLATERAL_TO_CREDIT();
 
         vm.prank(pauser);
-        groveBasin.setPaused(key, true);
+        groveBasin.setPaused(key);
 
         collateralToken.mint(swapper, 200e18);
         vm.prank(swapper);
@@ -399,7 +456,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         bytes4 key = groveBasin.PAUSED_SWAP_SWAP_TO_CREDIT();
 
         vm.prank(pauser);
-        groveBasin.setPaused(key, true);
+        groveBasin.setPaused(key);
 
         swapToken.mint(swapper, 100e6);
         vm.prank(swapper);
@@ -414,7 +471,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         bytes4 key = groveBasin.PAUSED_SWAP_SWAP_TO_CREDIT();
 
         vm.prank(pauser);
-        groveBasin.setPaused(key, true);
+        groveBasin.setPaused(key);
 
         swapToken.mint(swapper, 200e6);
         vm.prank(swapper);
@@ -429,7 +486,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         bytes4 key = groveBasin.PAUSED_SWAP_SWAP_TO_CREDIT();
 
         vm.prank(pauser);
-        groveBasin.setPaused(key, true);
+        groveBasin.setPaused(key);
 
         // credit -> swap should still work
         creditToken.mint(swapper, 100e18);
@@ -443,7 +500,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         bytes4 key = groveBasin.PAUSED_SWAP_CREDIT_TO_SWAP();
 
         vm.prank(pauser);
-        groveBasin.setPaused(key, true);
+        groveBasin.setPaused(key);
 
         // swap -> credit should still work
         swapToken.mint(swapper, 100e6);
@@ -457,10 +514,10 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         bytes4 key = groveBasin.PAUSED_SWAP_SWAP_TO_CREDIT();
 
         vm.prank(pauser);
-        groveBasin.setPaused(key, true);
+        groveBasin.setPaused(key);
 
-        vm.prank(pauser);
-        groveBasin.setPaused(key, false);
+        vm.prank(owner);
+        groveBasin.setUnpaused(key);
 
         swapToken.mint(swapper, 100e6);
         vm.startPrank(swapper);
@@ -477,10 +534,10 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         bytes4 sig = groveBasin.swapExactIn.selector;
 
         vm.prank(pauser);
-        groveBasin.setPaused(sig, true);
+        groveBasin.setPaused(sig);
 
-        vm.prank(pauser);
-        groveBasin.setPaused(sig, false);
+        vm.prank(owner);
+        groveBasin.setUnpaused(sig);
 
         swapToken.mint(swapper, 100e6);
         vm.startPrank(swapper);
@@ -495,7 +552,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
 
     function test_deposit_paused() public {
         vm.prank(pauser);
-        groveBasin.setPaused(groveBasin.deposit.selector, true);
+        groveBasin.setPaused(groveBasin.deposit.selector);
 
         address user = groveBasin.liquidityProvider();
 
@@ -512,10 +569,10 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         bytes4 sig = groveBasin.deposit.selector;
 
         vm.prank(pauser);
-        groveBasin.setPaused(sig, true);
+        groveBasin.setPaused(sig);
 
-        vm.prank(pauser);
-        groveBasin.setPaused(sig, false);
+        vm.prank(owner);
+        groveBasin.setUnpaused(sig);
 
         address user = groveBasin.liquidityProvider();
 
@@ -532,7 +589,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
 
     function test_initiateRedeem_paused() public {
         vm.prank(pauser);
-        groveBasin.setPaused(groveBasin.initiateRedeem.selector, true);
+        groveBasin.setPaused(groveBasin.initiateRedeem.selector);
 
         address redeemer = makeAddr("redeemer");
 
@@ -543,6 +600,40 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         vm.prank(redeemer);
         vm.expectRevert(IGroveBasin.Paused.selector);
         groveBasin.initiateRedeem(makeAddr("redeemerContract"), 100e18);
+    }
+
+    /**********************************************************************************************/
+    /*** CompleteRedeem pause enforcement tests                                                 ***/
+    /**********************************************************************************************/
+
+    function test_completeRedeem_paused() public {
+        vm.prank(pauser);
+        groveBasin.setPaused(groveBasin.completeRedeem.selector);
+
+        address redeemer = makeAddr("redeemer");
+
+        bytes32 redeemerRole = groveBasin.REDEEMER_ROLE();
+        vm.prank(owner);
+        groveBasin.grantRole(redeemerRole, redeemer);
+
+        vm.prank(redeemer);
+        vm.expectRevert(IGroveBasin.Paused.selector);
+        groveBasin.completeRedeem(bytes32(uint256(1)));
+    }
+
+    function test_completeRedeem_globalPaused() public {
+        vm.prank(pauser);
+        groveBasin.setPaused(bytes4(0));
+
+        address redeemer = makeAddr("redeemer");
+
+        bytes32 redeemerRole = groveBasin.REDEEMER_ROLE();
+        vm.prank(owner);
+        groveBasin.grantRole(redeemerRole, redeemer);
+
+        vm.prank(redeemer);
+        vm.expectRevert(IGroveBasin.Paused.selector);
+        groveBasin.completeRedeem(bytes32(uint256(1)));
     }
 
     /**********************************************************************************************/
@@ -669,7 +760,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
     function _pauseWithdrawCredit() internal {
         bytes4 key = groveBasin.PAUSED_WITHDRAW_CREDIT();
         vm.prank(pauser);
-        groveBasin.setPaused(key, true);
+        groveBasin.setPaused(key);
     }
 
     function test_withdraw_creditToken_paused() public {
@@ -732,8 +823,8 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         _pauseWithdrawCredit();
 
         bytes4 key = groveBasin.PAUSED_WITHDRAW_CREDIT();
-        vm.prank(pauser);
-        groveBasin.setPaused(key, false);
+        vm.prank(owner);
+        groveBasin.setUnpaused(key);
 
         vm.prank(swapper);
         uint256 amount = groveBasin.withdraw(address(creditToken), receiver, 100e18);

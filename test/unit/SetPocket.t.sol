@@ -42,6 +42,30 @@ contract GroveBasinSetPocketFailureTests is GroveBasinTestBase {
         groveBasin.setPocket(pocket);
     }
 
+    function test_setPocket_pocketBasinMismatch() public {
+        GroveBasin otherBasin = new GroveBasin(
+            owner,
+            makeAddr("lp2"),
+            address(swapToken),
+            address(collateralToken),
+            address(creditToken),
+            address(swapTokenRateProvider),
+            address(collateralTokenRateProvider),
+            address(creditTokenRateProvider)
+        );
+
+        MockPocket mismatchedPocket = new MockPocket(
+            address(otherBasin),
+            address(swapToken),
+            address(usds),
+            address(psm)
+        );
+
+        vm.prank(owner);
+        vm.expectRevert(IGroveBasin.InvalidPocket.selector);
+        groveBasin.setPocket(address(mismatchedPocket));
+    }
+
     function test_setPocket_migrationTransfersSwapToken() public {
         MockPocket pocket1 = new MockPocket(address(groveBasin), address(swapToken), address(usds), address(psm));
         MockPocket pocket2 = new MockPocket(address(groveBasin), address(swapToken), address(usds), address(psm));

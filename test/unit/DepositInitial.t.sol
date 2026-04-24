@@ -35,7 +35,7 @@ contract DepositInitialTests is GroveBasinTestBase {
         vm.startPrank(owner);
         freshBasin.grantRole(freshBasin.MANAGER_ADMIN_ROLE(), owner);
         freshBasin.grantRole(freshBasin.PAUSER_ROLE(), owner);
-        freshBasin.setPaused(bytes4(0), true);
+        freshBasin.setPaused(bytes4(0));
         vm.stopPrank();
 
         swapToken.mint(depositor, 100e6);

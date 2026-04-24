@@ -29,6 +29,7 @@ contract JTRSYTokenRedeemer is ITokenRedeemer {
     error InvalidVault();
     error CollateralAssetMismatch();
     error ShareMismatch();
+    error RedemptionAlreadyActive();
 
     /**********************************************************************************************/
     /*** State variables and immutables                                                         ***/
@@ -42,6 +43,9 @@ contract JTRSYTokenRedeemer is ITokenRedeemer {
 
     /// @inheritdoc ITokenRedeemer
     IGroveBasin public immutable override basin;
+
+    /// @dev Whether a redemption is currently in flight. Only one allowed at a time.
+    bool public redemptionActive;
 
     /// @dev Restricts access to the basin contract.
     modifier onlyBasin() {
@@ -76,6 +80,10 @@ contract JTRSYTokenRedeemer is ITokenRedeemer {
 
     /// @inheritdoc ITokenRedeemer
     function initiateRedeem(uint256 creditTokenAmount) external override onlyBasin {
+        if (redemptionActive) revert RedemptionAlreadyActive();
+
+        redemptionActive = true;
+
         IERC20(creditToken).safeTransferFrom(address(basin), address(this), creditTokenAmount);
         IAsyncVaultLike(vault).requestRedeem(creditTokenAmount, address(this), address(this));
 
@@ -86,6 +94,8 @@ contract JTRSYTokenRedeemer is ITokenRedeemer {
     function completeRedeem(RedeemRequest calldata request) external override onlyBasin returns (uint256 collateralTokenReturned) {
         collateralTokenReturned = IAsyncVaultLike(vault).redeem(request.creditTokenAmount, address(this), address(this));
 
+        redemptionActive = false;
+
         IERC20(IAsyncVaultLike(vault).asset()).safeTransfer(address(basin), collateralTokenReturned);
 
         emit RedeemCompleted(collateralTokenReturned);
@@ -93,8 +103,8 @@ contract JTRSYTokenRedeemer is ITokenRedeemer {
 
     /// @inheritdoc ITokenRedeemer
     function sweep(address token, uint256 amount) external override {
-        if (!IAccessControl(address(basin)).hasRole(basin.MANAGER_ROLE(), msg.sender)) revert NotAuthorized();
-        if (token != creditToken && token != basin.collateralToken())                  revert InvalidToken();
+        if (!IAccessControl(address(basin)).hasRole(basin.MANAGER_ADMIN_ROLE(), msg.sender)) revert NotAuthorized();
+        if (token != creditToken && token != basin.collateralToken())                        revert InvalidToken();
 
         if (amount == 0) revert ZeroBalance();
 

@@ -51,7 +51,7 @@ contract GroveBasinPreviewSwapExactIn_FailureTests is GroveBasinTestBase {
         groveBasin.grantRole(groveBasin.PAUSER_ROLE(), pauser);
         vm.stopPrank();
         vm.prank(pauser);
-        groveBasin.setPaused(bytes4(0), true);
+        groveBasin.setPaused(bytes4(0));
 
         vm.expectRevert(IGroveBasin.Paused.selector);
         groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), 1e6);
@@ -63,7 +63,7 @@ contract GroveBasinPreviewSwapExactIn_FailureTests is GroveBasinTestBase {
         groveBasin.grantRole(groveBasin.PAUSER_ROLE(), pauser);
         vm.stopPrank();
         vm.startPrank(pauser);
-        groveBasin.setPaused(groveBasin.PAUSED_SWAP_SWAP_TO_CREDIT(), true);
+        groveBasin.setPaused(groveBasin.PAUSED_SWAP_SWAP_TO_CREDIT());
         vm.stopPrank();
 
         vm.expectRevert(IGroveBasin.Paused.selector);
@@ -115,7 +115,7 @@ contract GroveBasinPreviewSwapExactOut_FailureTests is GroveBasinTestBase {
         groveBasin.grantRole(groveBasin.PAUSER_ROLE(), pauser);
         vm.stopPrank();
         vm.prank(pauser);
-        groveBasin.setPaused(bytes4(0), true);
+        groveBasin.setPaused(bytes4(0));
 
         vm.expectRevert(IGroveBasin.Paused.selector);
         groveBasin.previewSwapExactOut(address(swapToken), address(creditToken), 1e18);
@@ -127,7 +127,7 @@ contract GroveBasinPreviewSwapExactOut_FailureTests is GroveBasinTestBase {
         groveBasin.grantRole(groveBasin.PAUSER_ROLE(), pauser);
         vm.stopPrank();
         vm.startPrank(pauser);
-        groveBasin.setPaused(groveBasin.PAUSED_SWAP_SWAP_TO_CREDIT(), true);
+        groveBasin.setPaused(groveBasin.PAUSED_SWAP_SWAP_TO_CREDIT());
         vm.stopPrank();
 
         vm.expectRevert(IGroveBasin.Paused.selector);

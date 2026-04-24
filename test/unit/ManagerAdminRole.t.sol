@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
+import { MockPocket }        from "test/mocks/MockPocket.sol";
 import { MockRateProvider }  from "test/mocks/MockRateProvider.sol";
 
 contract GroveBasinManagerAdminRoleTests is GroveBasinTestBase {
@@ -110,7 +111,7 @@ contract GroveBasinManagerAdminRoleTests is GroveBasinTestBase {
     /**********************************************************************************************/
 
     function test_managerAdmin_setPocket() public {
-        address newPocket = address(new MockRateProvider());
+        address newPocket = address(new MockPocket(address(groveBasin), address(swapToken), address(usds), address(psm)));
 
         vm.prank(managerAdmin);
         groveBasin.setPocket(newPocket);
@@ -208,7 +209,7 @@ contract GroveBasinManagerAdminRoleTests is GroveBasinTestBase {
     }
 
     function test_admin_setPocket() public {
-        address newPocket = address(new MockRateProvider());
+        address newPocket = address(new MockPocket(address(groveBasin), address(swapToken), address(usds), address(psm)));
 
         vm.prank(owner);
         groveBasin.setPocket(newPocket);

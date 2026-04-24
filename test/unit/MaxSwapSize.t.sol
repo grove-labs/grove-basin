@@ -292,8 +292,8 @@ contract GroveBasinMaxSwapSizeFuzzTests is GroveBasinTestBase {
         vm.prank(owner);
         groveBasin.setMaxSwapSize(maxSwapSize);
 
-        // credit token value = amountIn * 1.25e27 / 1e27 = amountIn * 1.25
-        uint256 swapValue = amountIn * 1.25e27 / 1e27;
+        // credit token value = amountIn * 1.25e27 / 1e27 = amountIn * 1.25, rounded up
+        uint256 swapValue = (amountIn * 1.25e27 + 1e27 - 1) / 1e27;
 
         creditToken.mint(swapper, amountIn);
 

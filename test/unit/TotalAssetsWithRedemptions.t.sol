@@ -91,18 +91,28 @@ contract TotalAssetsWithRedemptionsTests is GroveBasinTestBase {
     function test_totalAssets_multipleInitiateRedeems() public {
         creditToken.mint(address(groveBasin), 2000e18);
 
-        vm.startPrank(owner);
-        groveBasin.initiateRedeem(address(redeemer), 500e18);
+        vm.prank(owner);
+        bytes32 requestId1 = groveBasin.initiateRedeem(address(redeemer), 500e18);
 
+        // pendingCreditTokenBalance = 500e18
+        assertEq(groveBasin.pendingCreditTokenBalance(), 500e18);
+
+        // Complete the first redemption before initiating a second
+        collateralToken.mint(address(vault), 500e18);
         vm.roll(block.number + 1);
+        groveBasin.completeRedeem(requestId1);
+
+        assertEq(groveBasin.pendingCreditTokenBalance(), 0);
+
+        vm.prank(owner);
         groveBasin.initiateRedeem(address(redeemer), 300e18);
-        vm.stopPrank();
 
-        // pendingCreditTokenBalance = 500e18 + 300e18 = 800e18
-        assertEq(groveBasin.pendingCreditTokenBalance(), 800e18);
+        // pendingCreditTokenBalance = 300e18
+        assertEq(groveBasin.pendingCreditTokenBalance(), 300e18);
 
-        // 1200e18 credit in basin + 800e18 pending = 2000e18 total credit, value = 2500e18
-        assertEq(groveBasin.totalAssets(), 2500e18);
+        // 1200e18 credit in basin + 300e18 pending = 1500e18 total credit, value = 1875e18
+        // plus 500e18 collateral from the completed redemption
+        assertEq(groveBasin.totalAssets(), 2375e18);
     }
 
     function test_totalAssets_conversionRateChange() public {
