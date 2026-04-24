@@ -443,15 +443,14 @@ contract CreditTokenBalanceTrackingTests is GroveBasinTestBase {
         bytes32 requestId1 = groveBasin.initiateRedeem(address(redeemer), 500e18);
         assertEq(groveBasin.pendingCreditTokenBalance(), 500e18);
 
+        // Complete first request before initiating second (only 1 redemption at a time)
+        groveBasin.completeRedeem(requestId1);
+        assertEq(groveBasin.pendingCreditTokenBalance(), 0);
+
         vm.roll(block.number + 1);
 
         vm.prank(owner);
         bytes32 requestId2 = groveBasin.initiateRedeem(address(redeemer), 500e18);
-        assertEq(groveBasin.pendingCreditTokenBalance(), 1000e18);
-
-        // Complete first request
-        groveBasin.completeRedeem(requestId1);
-
         assertEq(groveBasin.pendingCreditTokenBalance(), 500e18);
 
         // Complete second request
