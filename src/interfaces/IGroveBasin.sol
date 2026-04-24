@@ -27,7 +27,6 @@ interface IGroveBasin {
     error RedeemerAlreadyAdded();
     error SwapSizeOutOfBounds();
     error Paused();
-    error OnlyManagerAdminCanUnpause();
     error ThresholdOutOfBounds();
     error SameThreshold();
     error ZeroAmountIn();
@@ -627,11 +626,10 @@ interface IGroveBasin {
     /**
      *  @dev   Sets a pause flag. Pause keys can be function selectors or arbitrary
      *         bytes4 keys. Use bytes4(0) to set the global pause (pauses all pausable functions).
-     *         Only allows pausing (state == true). Reverts if state is false.
-     *  @param key   The pause key (function selector, arbitrary key, or bytes4(0) for global pause).
-     *  @param state Must be true. Use setUnpaused to unpause.
+     *         Use setUnpaused to unpause.
+     *  @param key The pause key (function selector, arbitrary key, or bytes4(0) for global pause).
      */
-    function setPaused(bytes4 key, bool state) external;
+    function setPaused(bytes4 key) external;
 
     /**
      *  @dev   Unsets a pause flag. Callable only by MANAGER_ADMIN_ROLE.

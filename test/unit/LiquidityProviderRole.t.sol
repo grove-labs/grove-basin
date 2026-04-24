@@ -43,7 +43,7 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
 
         vm.startPrank(owner);
         groveBasin.grantRole(pauserRole, owner);
-        groveBasin.setPaused(key, true);
+        groveBasin.setPaused(key);
         vm.stopPrank();
     }
 
