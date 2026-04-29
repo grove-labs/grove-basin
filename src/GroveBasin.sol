@@ -587,6 +587,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         public view override returns (uint256 amountOut)
     {
         _checkPaused(_getSwapPauseKey(assetIn, assetOut));
+        _checkPaused(IGroveBasin.swapExactIn.selector);
 
         if (_getAssetValue(assetIn, amountIn, true) > maxSwapSize) revert SwapSizeExceeded();
 
@@ -599,6 +600,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         public view override returns (uint256 amountIn)
     {
         _checkPaused(_getSwapPauseKey(assetIn, assetOut));
+        _checkPaused(IGroveBasin.swapExactOut.selector);
 
         amountOut += previewSwapExactOutFee(assetOut, amountOut);
         amountIn   = _getSwapQuote(assetOut, assetIn, amountOut, true);
