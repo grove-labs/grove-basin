@@ -95,8 +95,6 @@ contract UsdsUsdcPocket is BasePocket {
 
             uint256 balance = usdc.balanceOf(address(this));
 
-            uint256 convertedAmount;
-
             if (balance < amount) {
                 uint256 remainder = amount - balance;
 

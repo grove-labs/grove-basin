@@ -791,15 +791,17 @@ contract GroveBasin is IGroveBasin, AccessControl {
         uint256 numeratorPrecision   = tokenPrecisionOut * ratePrecisionOut;
         uint256 denominatorPrecision = tokenPrecisionIn  * ratePrecisionIn;
 
+        uint256 scalar;
+
         if (numeratorPrecision >= denominatorPrecision) {
-            uint256 scalar = numeratorPrecision / denominatorPrecision;
+            scalar = numeratorPrecision / denominatorPrecision;
 
             if (!roundUp) return Math.mulDiv(amount, rateIn * scalar, rateOut);
 
             return Math.mulDiv(amount, rateIn * scalar, rateOut, Math.Rounding.Ceil);
         }
 
-        uint256 scalar = denominatorPrecision / numeratorPrecision;
+        scalar = denominatorPrecision / numeratorPrecision;
 
         if (!roundUp) return Math.mulDiv(
             amount,
