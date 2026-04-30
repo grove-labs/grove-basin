@@ -547,7 +547,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function previewDeposit(address asset, uint256 assetsToDeposit)
         public view override returns (uint256)
     {
+        _checkPaused(IGroveBasin.deposit.selector);
         if (asset == creditToken) _checkPaused(PAUSED_DEPOSIT_CREDIT);
+        if (assetsToDeposit == 0) revert ZeroAmount();
 
         // Convert amount to 1e18 precision denominated in value of USD then convert to shares.
         // NOTE: Don't need to check valid asset here since `_getAssetValue` will revert if invalid
@@ -559,6 +561,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         public view override returns (uint256 sharesToBurn, uint256 assetsWithdrawn)
     {
         if (asset == creditToken) _checkPaused(PAUSED_WITHDRAW_CREDIT);
+        if (maxAssetsToWithdraw == 0) revert ZeroAmount();
 
         uint256 assetBalance = _getAvailableBalance(asset);
 
@@ -588,6 +591,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     {
         _checkPaused(_getSwapPauseKey(assetIn, assetOut));
         _checkPaused(IGroveBasin.swapExactIn.selector);
+        if (amountIn == 0) revert ZeroAmountIn();
 
         if (_getAssetValue(assetIn, amountIn, true) > maxSwapSize) revert SwapSizeExceeded();
 
@@ -601,6 +605,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     {
         _checkPaused(_getSwapPauseKey(assetIn, assetOut));
         _checkPaused(IGroveBasin.swapExactOut.selector);
+        if (amountOut == 0) revert ZeroAmountOut();
 
         amountOut += previewSwapExactOutFee(assetOut, amountOut);
         amountIn   = _getSwapQuote(assetOut, assetIn, amountOut, true);

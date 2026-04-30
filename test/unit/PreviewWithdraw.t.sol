@@ -5,7 +5,8 @@ import "forge-std/Test.sol";
 
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
-import { GroveBasin } from "src/GroveBasin.sol";
+import { GroveBasin }  from "src/GroveBasin.sol";
+import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
 
 import { MockRateProvider, GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
 
@@ -14,6 +15,11 @@ contract GroveBasinPreviewWithdraw_FailureTests is GroveBasinTestBase {
     function test_previewWithdraw_invalidAsset() public {
         vm.expectRevert();
         groveBasin.previewWithdraw(makeAddr("other-token"), 1);
+    }
+
+    function test_previewWithdraw_zeroAmount() public {
+        vm.expectRevert(IGroveBasin.ZeroAmount.selector);
+        groveBasin.previewWithdraw(address(collateralToken), 0);
     }
 
 }
@@ -165,9 +171,9 @@ contract GroveBasinPreviewWithdraw_SuccessFuzzTests is GroveBasinTestBase {
 
         // Only covering case of amount being below underlying to focus on value conversion
         // and avoid reimplementation of contract logic for dealing with capping amounts
-        params.previewAmount1 = _bound(params.previewAmount1, 0, params.amount1);
-        params.previewAmount2 = _bound(params.previewAmount2, 0, params.amount2);
-        params.previewAmount3 = _bound(params.previewAmount3, 0, params.amount3);
+        params.previewAmount1 = _bound(params.previewAmount1, 1, params.amount1);
+        params.previewAmount2 = _bound(params.previewAmount2, 1, params.amount2);
+        params.previewAmount3 = _bound(params.previewAmount3, 1, params.amount3);
 
         _deposit(address(collateralToken),  address(this), params.amount1);
         _deposit(address(swapToken),  address(this), params.amount2);
