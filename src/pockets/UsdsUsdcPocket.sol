@@ -28,6 +28,7 @@ contract UsdsUsdcPocket is BasePocket {
     error SwapTokenMismatch();
     error CollateralTokenMismatch();
     error NonZeroPsmTout();
+    error InsufficientLiquidity();
 
     event Swept(uint256 amount);
 
@@ -113,6 +114,8 @@ contract UsdsUsdcPocket is BasePocket {
 
             return amount;
         } else if (asset == address(usds)) {
+            if (usds.balanceOf(address(this)) < amount) revert InsufficientLiquidity();
+            
             return amount;
         } else revert InvalidAsset();
     }

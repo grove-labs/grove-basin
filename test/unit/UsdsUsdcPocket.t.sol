@@ -413,6 +413,14 @@ contract UsdsUsdcPocketDrawLiquidityTests is UsdsUsdcPocketTestBase {
         assertEq(result, 500e18);
     }
 
+    function test_withdrawLiquidity_usds_insufficientLiquidity() public {
+        usds.mint(address(pocket), 100e18);
+
+        vm.prank(address(groveBasin));
+        vm.expectRevert(UsdsUsdcPocket.InsufficientLiquidity.selector);
+        pocket.withdrawLiquidity(500e18, address(usds));
+    }
+
 }
 
 /**********************************************************************************************/
