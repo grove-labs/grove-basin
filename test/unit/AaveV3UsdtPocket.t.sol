@@ -6,6 +6,7 @@ import "forge-std/Test.sol";
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
 import { GroveBasin }           from "src/GroveBasin.sol";
+import { IGroveBasin }          from "src/interfaces/IGroveBasin.sol";
 import { AaveV3UsdtPocket }     from "src/pockets/AaveV3UsdtPocket.sol";
 import { IGroveBasinPocket }    from "src/interfaces/IGroveBasinPocket.sol";
 
@@ -319,10 +320,10 @@ contract AaveV3UsdtPocketDepositLiquidityTests is AaveV3UsdtPocketTestBase {
         assertEq(aUsdt.balanceOf(address(pocket)), 1000e6);
     }
 
-    function test_depositLiquidity_invalidAsset() public {
+    function test_depositLiquidity_invalidAsset_returnsZero() public {
         vm.prank(address(groveBasin));
-        vm.expectRevert(IGroveBasinPocket.InvalidAsset.selector);
-        pocket.depositLiquidity(100e6, address(collateralToken));
+        uint256 result = pocket.depositLiquidity(100e6, address(collateralToken));
+        assertEq(result, 0);
     }
 
 }
@@ -385,10 +386,10 @@ contract AaveV3UsdtPocketDrawLiquidityTests is AaveV3UsdtPocketTestBase {
         pocket.withdrawLiquidity(500e6, address(usdt));
     }
 
-    function test_withdrawLiquidity_invalidAsset() public {
+    function test_withdrawLiquidity_invalidAsset_returnsZero() public {
         vm.prank(address(groveBasin));
-        vm.expectRevert(IGroveBasinPocket.InvalidAsset.selector);
-        pocket.withdrawLiquidity(100e6, address(collateralToken));
+        uint256 result = pocket.withdrawLiquidity(100e6, address(collateralToken));
+        assertEq(result, 0);
     }
 
 }
@@ -461,6 +462,126 @@ contract AaveV3UsdtPocketEventTests is AaveV3UsdtPocketTestBase {
         vm.expectEmit(address(pocket));
         emit IGroveBasinPocket.LiquidityDrawn(address(usdt), 500e6, 500e6);
         pocket.withdrawLiquidity(500e6, address(usdt));
+    }
+
+}
+
+/**********************************************************************************************/
+/*** Collateral deficit tests                                                               ***/
+/**********************************************************************************************/
+
+contract AaveV3UsdtPocketCollateralDeficitTestBase is AaveV3UsdtPocketTestBase {
+
+    address public swapper = makeAddr("swapper");
+
+    function setUp() public override {
+        super.setUp();
+
+        // Seed the basin so totalShares > 0
+        usdt.mint(lp, 1_000e6);
+        vm.startPrank(lp);
+        usdt.approve(address(groveBasin), 1_000e6);
+        groveBasin.depositInitial(address(usdt), 1_000e6);
+        vm.stopPrank();
+
+        // Deposit a small amount of collateral token
+        collateralToken.mint(lp, 10e18);
+        vm.startPrank(lp);
+        collateralToken.approve(address(groveBasin), 10e18);
+        groveBasin.deposit(address(collateralToken), lp, 10e18);
+        vm.stopPrank();
+
+        // Deposit credit tokens so swaps can pull them
+        creditToken.mint(lp, 10_000e18);
+        vm.startPrank(lp);
+        creditToken.approve(address(groveBasin), 10_000e18);
+        groveBasin.deposit(address(creditToken), lp, 10_000e18);
+        vm.stopPrank();
+    }
+
+}
+
+contract AaveV3UsdtPocketCollateralDeficitSwapExactInTests is AaveV3UsdtPocketCollateralDeficitTestBase {
+
+    function test_swapExactIn_creditToCollateral_insufficientCollateral() public {
+        creditToken.mint(swapper, 100e18);
+
+        vm.startPrank(swapper);
+        creditToken.approve(address(groveBasin), 100e18);
+
+        vm.expectRevert(IGroveBasin.InsufficientFunds.selector);
+        groveBasin.swapExactIn(address(creditToken), address(collateralToken), 100e18, 0, swapper, 0);
+        vm.stopPrank();
+    }
+
+    function test_swapExactIn_creditToCollateral_sufficientCollateral() public {
+        creditToken.mint(swapper, 1e18);
+
+        vm.startPrank(swapper);
+        creditToken.approve(address(groveBasin), 1e18);
+
+        uint256 amountOut = groveBasin.swapExactIn(
+            address(creditToken), address(collateralToken), 1e18, 0, swapper, 0
+        );
+
+        assertEq(amountOut, 1.25e18);
+        assertEq(collateralToken.balanceOf(swapper), 1.25e18);
+        vm.stopPrank();
+    }
+
+    function test_swapExactIn_creditToCollateral_partialDeficit() public {
+        creditToken.mint(swapper, 16e18);
+
+        vm.startPrank(swapper);
+        creditToken.approve(address(groveBasin), 16e18);
+
+        vm.expectRevert(IGroveBasin.InsufficientFunds.selector);
+        groveBasin.swapExactIn(address(creditToken), address(collateralToken), 16e18, 0, swapper, 0);
+        vm.stopPrank();
+    }
+
+}
+
+contract AaveV3UsdtPocketCollateralDeficitSwapExactOutTests is AaveV3UsdtPocketCollateralDeficitTestBase {
+
+    function test_swapExactOut_creditToCollateral_insufficientCollateral() public {
+        creditToken.mint(swapper, 200e18);
+
+        vm.startPrank(swapper);
+        creditToken.approve(address(groveBasin), 200e18);
+
+        vm.expectRevert(IGroveBasin.InsufficientFunds.selector);
+        groveBasin.swapExactOut(
+            address(creditToken), address(collateralToken), 125e18, 200e18, swapper, 0
+        );
+        vm.stopPrank();
+    }
+
+    function test_swapExactOut_creditToCollateral_sufficientCollateral() public {
+        creditToken.mint(swapper, 10e18);
+
+        vm.startPrank(swapper);
+        creditToken.approve(address(groveBasin), 10e18);
+
+        uint256 amountIn = groveBasin.swapExactOut(
+            address(creditToken), address(collateralToken), 1.25e18, 10e18, swapper, 0
+        );
+
+        assertEq(amountIn, 1e18);
+        assertEq(collateralToken.balanceOf(swapper), 1.25e18);
+        vm.stopPrank();
+    }
+
+}
+
+contract AaveV3UsdtPocketCollateralDeficitWithdrawTests is AaveV3UsdtPocketCollateralDeficitTestBase {
+
+    function test_withdraw_collateral_capsToAvailableBalance() public {
+        vm.prank(lp);
+        uint256 withdrawn = groveBasin.withdraw(address(collateralToken), lp, 1_000e18);
+
+        assertEq(withdrawn, 10e18);
+        assertEq(collateralToken.balanceOf(lp), 10e18);
     }
 
 }

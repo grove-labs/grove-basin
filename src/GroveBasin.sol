@@ -893,7 +893,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
             if (basinBalance < amount) {
                 uint256 deficit = amount - basinBalance;
-                IGroveBasinPocket(pocket).withdrawLiquidity(deficit, asset);
+                uint256 withdrawn = IGroveBasinPocket(pocket).withdrawLiquidity(deficit, asset);
+
+                if (withdrawn < deficit) revert InsufficientFunds();
             }
         }
     }

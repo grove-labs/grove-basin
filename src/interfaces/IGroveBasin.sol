@@ -48,6 +48,7 @@ interface IGroveBasin {
     error RequestAlreadyExists();
     error InvalidRedeemRequest();
     error PendingRedemptions();
+    error InsufficientFunds();
 
     /**********************************************************************************************/
     /*** Events                                                                                 ***/
