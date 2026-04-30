@@ -62,9 +62,9 @@ The `depositInitial` function is provided for this purpose -- it mints shares to
 ### Roles
 
 - **`OWNER_ROLE`**: Equivalent to `DEFAULT_ADMIN_ROLE`. Can set purchase and redemption fees within bounds, and manage all other roles.
-- **`MANAGER_ADMIN_ROLE`**: Can set rate providers, swap size bounds, staleness threshold bounds, fee bounds, pocket, fee claimer, and add/remove token redeemers. Admin of `MANAGER_ROLE`, `PAUSER_ROLE`, `REDEEMER_ROLE`, and `REDEEMER_CONTRACT_ROLE`.
+- **`MANAGER_ADMIN_ROLE`**: Can set rate providers, swap size bounds, staleness threshold bounds, fee bounds, pocket, fee claimer, unpause individual functions or the entire contract, and add/remove token redeemers. Admin of `MANAGER_ROLE`, `PAUSER_ROLE`, `REDEEMER_ROLE`, and `REDEEMER_CONTRACT_ROLE`.
 - **`MANAGER_ROLE`**: Can set max swap size and staleness threshold within their respective bounds.
-- **`PAUSER_ROLE`**: Can pause/unpause individual functions or the entire contract. Can also revoke `MANAGER_ROLE` and `REDEEMER_ROLE`.
+- **`PAUSER_ROLE`**: Can pause individual functions or the entire contract. Can also revoke `MANAGER_ROLE` and `REDEEMER_ROLE`.
 - **`REDEEMER_ROLE`**: Can initiate and complete credit token redemptions.
 - **`REDEEMER_CONTRACT_ROLE`**: Granted to token redeemer contracts that handle the actual redemption logic.
 
@@ -81,6 +81,7 @@ The `depositInitial` function is provided for this purpose -- it mints shares to
 - **`addTokenRedeemer`**: Adds a token redeemer contract, granting it `REDEEMER_CONTRACT_ROLE` and calling its `setUp` function. Only callable by `MANAGER_ADMIN_ROLE`.
 - **`removeTokenRedeemer`**: Removes a token redeemer contract, revoking `REDEEMER_CONTRACT_ROLE` and calling its `tearDown` function. Only callable by `MANAGER_ADMIN_ROLE`.
 - **`setFeeClaimer`**: Sets the address that accrues fee shares on swaps. Only callable by `MANAGER_ADMIN_ROLE`.
+- **`setUnpaused`**: Unsets a pause flag. Supports global pause (`bytes4(0)`) and per-function/per-direction pause keys. Only callable by `MANAGER_ADMIN_ROLE`.
 
 #### Owner Functions
 
@@ -94,7 +95,7 @@ The `depositInitial` function is provided for this purpose -- it mints shares to
 
 #### Pauser Functions
 
-- **`setPaused`**: Sets or unsets a pause flag. Supports global pause (`bytes4(0)`) and per-function/per-direction pause keys. Only callable by `PAUSER_ROLE`.
+- **`setPaused`**: Sets a pause flag. Supports global pause (`bytes4(0)`) and per-function/per-direction pause keys. Only callable by `PAUSER_ROLE`.
 
 #### Swap Functions
 
