@@ -58,7 +58,10 @@ contract MorphoUsdtPocket is BasePocket {
     function depositLiquidity(uint256 amount, address asset) external override onlyBasinOrManager returns (uint256) {
         if (amount == 0) return 0;
 
-        if (asset != address(usdt)) revert InvalidAsset();
+        // Return 0 since this pocket only supports USDT
+        if (asset != address(usdt)) {
+            return 0;
+        }
 
         usdt.safeApprove(vault, amount);
         IERC4626VaultLike(vault).deposit(amount, address(this));
@@ -71,7 +74,10 @@ contract MorphoUsdtPocket is BasePocket {
     function withdrawLiquidity(uint256 amount, address asset) external override onlyBasinOrManager returns (uint256) {
         if (amount == 0) return 0;
 
-        if (asset != address(usdt)) revert InvalidAsset();
+        // Return 0 since this pocket only supports USDT
+        if (asset != address(usdt)) {
+            return 0;
+        }
 
         uint256 balance = usdt.balanceOf(address(this));
 

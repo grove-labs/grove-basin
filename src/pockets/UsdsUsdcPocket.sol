@@ -28,6 +28,7 @@ contract UsdsUsdcPocket is BasePocket {
     error SwapTokenMismatch();
     error CollateralTokenMismatch();
     error NonZeroPsmTout();
+    error InsufficientLiquidity();
 
     event Swept(uint256 amount);
 
@@ -83,15 +84,6 @@ contract UsdsUsdcPocket is BasePocket {
         if (asset == address(usds)) {
             emit LiquidityDeposited(asset, amount, 0);
             return amount;
-        } else if (asset == address(usdc)) {
-            usdc.safeApprove(psm, amount);
-
-            uint256 convertedAmount = IPSMLike(psm).sellGem(address(this), amount);
-
-            usdc.safeApprove(psm, 0);
-
-            emit LiquidityDeposited(asset, amount, convertedAmount);
-            return convertedAmount;
         } else revert InvalidAsset();
     }
 
@@ -103,8 +95,6 @@ contract UsdsUsdcPocket is BasePocket {
             if (IPSMLike(psm).tout() != 0) revert NonZeroPsmTout();
 
             uint256 balance = usdc.balanceOf(address(this));
-
-            uint256 convertedAmount;
 
             if (balance < amount) {
                 uint256 remainder = amount - balance;
@@ -124,6 +114,8 @@ contract UsdsUsdcPocket is BasePocket {
 
             return amount;
         } else if (asset == address(usds)) {
+            if (usds.balanceOf(address(this)) < amount) revert InsufficientLiquidity();
+            
             return amount;
         } else revert InvalidAsset();
     }

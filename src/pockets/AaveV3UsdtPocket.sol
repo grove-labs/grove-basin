@@ -67,7 +67,10 @@ contract AaveV3UsdtPocket is BasePocket {
     function depositLiquidity(uint256 amount, address asset) external override onlyBasinOrManager returns (uint256) {
         if (amount == 0) return 0;
 
-        if (asset != address(usdt)) revert InvalidAsset();
+        // Return 0 since this pocket only supports USDT
+        if (asset != address(usdt)) {
+            return 0;
+        }
 
         emit LiquidityDeposited(asset, amount, amount);
 
@@ -80,8 +83,11 @@ contract AaveV3UsdtPocket is BasePocket {
     /// @inheritdoc IGroveBasinPocket
     function withdrawLiquidity(uint256 amount, address asset) external override onlyBasinOrManager returns (uint256) {
         if (amount == 0) return 0;
-
-        if (asset != address(usdt)) revert InvalidAsset();
+        
+        // Return 0 since this pocket only supports USDT
+        if (asset != address(usdt)) {
+            return 0;
+        }
         
         // Aave lets users withdraw their whole balance by passing in the max value
         // This check ensures the amount returned and emitted in logs is valid and

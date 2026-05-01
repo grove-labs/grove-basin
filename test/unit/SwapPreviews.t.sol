@@ -70,6 +70,23 @@ contract GroveBasinPreviewSwapExactIn_FailureTests is GroveBasinTestBase {
         groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), 1e6);
     }
 
+    function test_previewSwapExactIn_selectorPaused() public {
+        address pauser = makeAddr("pauser");
+        vm.startPrank(owner);
+        groveBasin.grantRole(groveBasin.PAUSER_ROLE(), pauser);
+        vm.stopPrank();
+        vm.prank(pauser);
+        groveBasin.setPaused(IGroveBasin.swapExactIn.selector);
+
+        vm.expectRevert(IGroveBasin.Paused.selector);
+        groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), 1e6);
+    }
+
+    function test_previewSwapExactIn_zeroAmountIn() public {
+        vm.expectRevert(IGroveBasin.ZeroAmountIn.selector);
+        groveBasin.previewSwapExactIn(address(swapToken), address(creditToken), 0);
+    }
+
 }
 
 contract GroveBasinPreviewSwapExactOut_FailureTests is GroveBasinTestBase {
@@ -132,6 +149,23 @@ contract GroveBasinPreviewSwapExactOut_FailureTests is GroveBasinTestBase {
 
         vm.expectRevert(IGroveBasin.Paused.selector);
         groveBasin.previewSwapExactOut(address(swapToken), address(creditToken), 1e18);
+    }
+
+    function test_previewSwapExactOut_selectorPaused() public {
+        address pauser = makeAddr("pauser");
+        vm.startPrank(owner);
+        groveBasin.grantRole(groveBasin.PAUSER_ROLE(), pauser);
+        vm.stopPrank();
+        vm.prank(pauser);
+        groveBasin.setPaused(IGroveBasin.swapExactOut.selector);
+
+        vm.expectRevert(IGroveBasin.Paused.selector);
+        groveBasin.previewSwapExactOut(address(swapToken), address(creditToken), 1e18);
+    }
+
+    function test_previewSwapExactOut_zeroAmountOut() public {
+        vm.expectRevert(IGroveBasin.ZeroAmountOut.selector);
+        groveBasin.previewSwapExactOut(address(swapToken), address(creditToken), 0);
     }
 
 }

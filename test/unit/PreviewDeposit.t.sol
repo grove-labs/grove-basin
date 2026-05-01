@@ -14,6 +14,23 @@ contract GroveBasinPreviewDeposit_FailureTests is GroveBasinTestBase {
         groveBasin.previewDeposit(makeAddr("other-token"), 1);
     }
 
+    function test_previewDeposit_zeroAmount() public {
+        vm.expectRevert(IGroveBasin.ZeroAmount.selector);
+        groveBasin.previewDeposit(address(collateralToken), 0);
+    }
+
+    function test_previewDeposit_depositSelectorPaused() public {
+        address pauser = makeAddr("pauser");
+        vm.startPrank(owner);
+        groveBasin.grantRole(groveBasin.PAUSER_ROLE(), pauser);
+        vm.stopPrank();
+        vm.prank(pauser);
+        groveBasin.setPaused(IGroveBasin.deposit.selector);
+
+        vm.expectRevert(IGroveBasin.Paused.selector);
+        groveBasin.previewDeposit(address(collateralToken), 1e18);
+    }
+
 }
 
 contract GroveBasinPreviewDeposit_SuccessTests is GroveBasinTestBase {
@@ -31,7 +48,7 @@ contract GroveBasinPreviewDeposit_SuccessTests is GroveBasinTestBase {
     }
 
     function testFuzz_previewDeposit_collateralToken_firstDeposit(uint256 amount) public view {
-        amount = _bound(amount, 0, COLLATERAL_TOKEN_MAX);
+        amount = _bound(amount, 1, COLLATERAL_TOKEN_MAX);
         assertEq(groveBasin.previewDeposit(address(collateralToken), amount), amount);
     }
 
@@ -46,7 +63,7 @@ contract GroveBasinPreviewDeposit_SuccessTests is GroveBasinTestBase {
     }
 
     function testFuzz_previewDeposit_swapToken_firstDeposit(uint256 amount) public view {
-        amount = _bound(amount, 0, SWAP_TOKEN_MAX);
+        amount = _bound(amount, 1, SWAP_TOKEN_MAX);
         assertEq(groveBasin.previewDeposit(address(swapToken), amount), amount * 1e12);
     }
 
@@ -63,7 +80,7 @@ contract GroveBasinPreviewDeposit_SuccessTests is GroveBasinTestBase {
     }
 
     function testFuzz_previewDeposit_creditToken_firstDeposit(uint256 amount) public view {
-        amount = _bound(amount, 0, CREDIT_TOKEN_MAX);
+        amount = _bound(amount, 1, CREDIT_TOKEN_MAX);
         assertEq(groveBasin.previewDeposit(address(creditToken), amount), amount * 1.25e27 / 1e27);
     }
 
@@ -100,7 +117,7 @@ contract GroveBasinPreviewDeposit_SuccessTests is GroveBasinTestBase {
         amount2        = _bound(amount2,        1,       SWAP_TOKEN_MAX);
         amount3        = _bound(amount3,        1,       CREDIT_TOKEN_MAX);
         conversionRate = _bound(conversionRate, 1.00e27, 1000e27);
-        previewAmount  = _bound(previewAmount,  0,       COLLATERAL_TOKEN_MAX);
+        previewAmount  = _bound(previewAmount,  1,       COLLATERAL_TOKEN_MAX);
 
         _assertOneToOne();
 
@@ -120,7 +137,9 @@ contract GroveBasinPreviewDeposit_SuccessTests is GroveBasinTestBase {
         uint256 swapTokenPreviewAmount = previewAmount / 1e12;
 
         assertEq(groveBasin.previewDeposit(address(collateralToken), previewAmount),          previewAmount                           * totalSharesMinted / totalValue);
-        assertEq(groveBasin.previewDeposit(address(swapToken),       swapTokenPreviewAmount), swapTokenPreviewAmount * 1e12           * totalSharesMinted / totalValue);  // Divide then multiply to replicate rounding
+        if (swapTokenPreviewAmount > 0) {
+            assertEq(groveBasin.previewDeposit(address(swapToken),       swapTokenPreviewAmount), swapTokenPreviewAmount * 1e12           * totalSharesMinted / totalValue);  // Divide then multiply to replicate rounding
+        }
         assertEq(groveBasin.previewDeposit(address(creditToken),     previewAmount),          (previewAmount * conversionRate / 1e27) * totalSharesMinted / totalValue);
     }
 
