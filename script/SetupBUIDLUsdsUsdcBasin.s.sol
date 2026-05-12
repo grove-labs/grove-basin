@@ -9,29 +9,30 @@ import { Ethereum } from "lib/grove-address-registry/src/Ethereum.sol";
 
 import { GroveBasin }          from "src/GroveBasin.sol";
 import { GroveBasinFactory }   from "src/GroveBasinFactory.sol";
-import { JTRSYTokenRedeemer }  from "src/redeemers/JTRSYTokenRedeemer.sol";
+import { BUIDLTokenRedeemer }  from "src/redeemers/BUIDLTokenRedeemer.sol";
 import { UsdsUsdcPocket }      from "src/pockets/UsdsUsdcPocket.sol";
 
-contract SetupJTRSYUsdsUsdcBasin is Script {
+contract SetupBUIDLUsdsUsdcBasin is Script {
 
     address constant USDS_USDC_FIXED_RATE_PROVIDER = 0x7928A185B8137D1CD2a0996a810A04dB2837419D;  // Fixed 1:1 ChronicleRateProvider for USDS and USDC
-    address constant JTRSY_CHRONICLE_RATE_PROVIDER     = 0x29209ceCFeFa6f675E6f1f829320D67cE2b025E5;  // JTRSY ChronicleRateProvider
-    address constant JTRSY_TOKEN                       = 0x8c213ee79581Ff4984583C6a801e5263418C4b86;  // JTRSY share token (6 decimals)
+    address constant BUIDL_CHRONICLE_RATE_PROVIDER     = 0x69a171853575FFD41574EA80Abfc6337AcbC4d43;  // BUIDL ChronicleRateProvider
     address constant USDS_PSM_WRAPPER                  = 0xA188EEC8F81263234dA3622A406892F3D630f98c;  // USDS PSM Wrapper
     address constant GROVE_BASIN_FACTORY               = 0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a;  // GroveBasinFactory
-    address constant JTRSY_ADMIN_TIMELOCK              = 0xA52dC9876aB4A9DB6dAfbb83410554086054d140;  // JTRSY Admin TimelockController
+    address constant BUIDL_ADMIN_TIMELOCK              = 0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34;  // BUIDL Admin TimelockController
+    address constant BUIDL_TOKEN                       = 0x7712c34205737192402172409a8F7ccef8aA2AEc;  // BUIDL (note: not BUIDLI)
+    address constant SECURITIZE_REDEEMER_ADDRESS       = address(0);  // TODO: Set Secuitize Redeemer address
+    address constant BUIDL_REDEMPTION_ADDRESS          = address(0);  // TODO: Set BUIDL Redemption Address
 
     function run() external {
         vm.startBroadcast();
-        (address groveBasin, address pocket_, address redeemer_) = deploy();
+        (address groveBasin, address pocket_) = deploy();
         vm.stopBroadcast();
 
-        console.log("GroveBasin deployed at:",         groveBasin);
-        console.log("UsdsUsdcPocket deployed at:",     pocket_);
-        console.log("JTRSYTokenRedeemer deployed at:", redeemer_);
+        console.log("GroveBasin deployed at:",          groveBasin);
+        console.log("UsdsUsdcPocket deployed at:",      pocket_);
     }
 
-    function deploy() public returns (address groveBasin, address pocket_, address redeemer_) {
+    function deploy() public returns (address groveBasin, address pocket_) {
         address deployer = vm.envAddress("DEPLOYER");
 
         require(IERC20(Ethereum.USDS).balanceOf(msg.sender) >= 10 ** IERC20(Ethereum.USDS).decimals(), "insufficient-usds-balance");
@@ -46,10 +47,10 @@ contract SetupJTRSYUsdsUsdcBasin is Script {
             liquidityProvider           : Ethereum.ALM_PROXY,
             swapToken                   : Ethereum.USDS,
             collateralToken             : Ethereum.USDC,
-            creditToken                 : JTRSY_TOKEN,
+            creditToken                 : BUIDL_TOKEN,
             swapTokenRateProvider       : USDS_USDC_FIXED_RATE_PROVIDER,
             collateralTokenRateProvider : USDS_USDC_FIXED_RATE_PROVIDER,
-            creditTokenRateProvider     : JTRSY_CHRONICLE_RATE_PROVIDER
+            creditTokenRateProvider     : BUIDL_CHRONICLE_RATE_PROVIDER
         });
 
         GroveBasin basin = GroveBasin(groveBasin);
@@ -67,17 +68,26 @@ contract SetupJTRSYUsdsUsdcBasin is Script {
 
         basin.setPocket(address(pocket));
 
-        JTRSYTokenRedeemer redeemer = new JTRSYTokenRedeemer(
-            JTRSY_TOKEN,
-            Ethereum.CENTRIFUGE_JTRSY,
-            groveBasin
-        );
+        if (BUIDL_REDEMPTION_ADDRESS != address(0)) {
+            BUIDLTokenRedeemer redeemer = new BUIDLTokenRedeemer(
+                BUIDL_TOKEN,
+                BUIDL_REDEMPTION_ADDRESS,
+                groveBasin
+            );
 
-        basin.addTokenRedeemer(address(redeemer));
+            basin.addTokenRedeemer(address(redeemer));
+        } else {
+            console.log("BUIDL_REDEMPTION_ADDRESS is not set, skipping BUIDLTokenRedeemer deployment");
+        }
 
         basin.grantRole(basin.MANAGER_ROLE(),  Ethereum.ALM_RELAYER);
         basin.grantRole(basin.PAUSER_ROLE(),   Ethereum.ALM_FREEZER);
-        basin.grantRole(basin.REDEEMER_ROLE(), 0xb6e8D3E47c4FC5606E6C24D097Dd1791885Ce05a);
+
+        if (SECURITIZE_REDEEMER_ADDRESS != address(0)) {
+            basin.grantRole(basin.REDEEMER_ROLE(), SECURITIZE_REDEEMER_ADDRESS);
+        } else {
+            console.log("SECURITIZE_REDEEMER_ADDRESS is not set, skipping grant redeemer role to SECURITIZE_REDEEMER_ADDRESS");
+        }
 
         basin.grantRole(basin.PAUSER_ROLE(), deployer);
 
@@ -90,11 +100,10 @@ contract SetupJTRSYUsdsUsdcBasin is Script {
 
         basin.revokeRole(basin.PAUSER_ROLE(), deployer);
 
-        basin.grantRole(basin.OWNER_ROLE(),  JTRSY_ADMIN_TIMELOCK);
+        basin.grantRole(basin.OWNER_ROLE(),  BUIDL_ADMIN_TIMELOCK);
         basin.revokeRole(basin.OWNER_ROLE(), deployer);
 
-        pocket_   = address(pocket);
-        redeemer_ = address(redeemer);
+        pocket_ = address(pocket);
     }
 
 }
