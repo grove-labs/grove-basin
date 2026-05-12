@@ -6,7 +6,6 @@ out/
 /broadcast
 
 # Docs
-docs/
 
 # Dotenv file
 .env
