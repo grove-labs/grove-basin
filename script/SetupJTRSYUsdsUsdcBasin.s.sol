@@ -12,6 +12,8 @@ import { GroveBasinFactory }  from "src/GroveBasinFactory.sol";
 import { JTRSYTokenRedeemer } from "src/redeemers/JTRSYTokenRedeemer.sol";
 import { UsdsUsdcPocket }     from "src/pockets/UsdsUsdcPocket.sol";
 
+import { BasinSetup } from "script/lib/BasinSetup.sol";
+
 contract SetupJTRSYUsdsUsdcBasin is Script {
 
     address constant USDS_USDC_FIXED_RATE_PROVIDER = 0x7928A185B8137D1CD2a0996a810A04dB2837419D;  // Fixed 1:1 ChronicleRateProvider for USDS and USDC
@@ -76,23 +78,12 @@ contract SetupJTRSYUsdsUsdcBasin is Script {
 
         basin.addTokenRedeemer(address(redeemer));
 
-        basin.grantRole(basin.MANAGER_ROLE(),  Ethereum.ALM_RELAYER);
-        basin.grantRole(basin.PAUSER_ROLE(),   Ethereum.ALM_FREEZER);
-        basin.grantRole(basin.REDEEMER_ROLE(), JTRSY_REDEEMER_ADDRESS);
-
-        basin.grantRole(basin.PAUSER_ROLE(), deployer);
-
-        basin.setPaused(basin.PAUSED_SWAP_SWAP_TO_CREDIT());
-        basin.setPaused(basin.PAUSED_SWAP_COLLATERAL_TO_CREDIT());
-        basin.setPaused(basin.PAUSED_DEPOSIT_CREDIT());
-        basin.setPaused(basin.PAUSED_WITHDRAW_CREDIT());
-
-        basin.setFeeBounds(0, 500);
-
-        basin.revokeRole(basin.PAUSER_ROLE(), deployer);
-
-        basin.grantRole(basin.OWNER_ROLE(),  JTRSY_ADMIN_TIMELOCK);
-        basin.revokeRole(basin.OWNER_ROLE(), deployer);
+        BasinSetup.performBasinInit({
+            basin          : basin,
+            deployer       : deployer,
+            issuerRedeemer : JTRSY_REDEEMER_ADDRESS,
+            adminTimelock  : JTRSY_ADMIN_TIMELOCK
+        });
 
         pocket_   = address(pocket);
         redeemer_ = address(redeemer);
