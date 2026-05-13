@@ -20,8 +20,8 @@ contract SetupBUIDLUsdsUsdcBasin is Script {
     address constant GROVE_BASIN_FACTORY               = 0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a;  // GroveBasinFactory
     address constant BUIDL_ADMIN_TIMELOCK              = 0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34;  // BUIDL Admin TimelockController
     address constant BUIDL_TOKEN                       = 0x7712c34205737192402172409a8F7ccef8aA2AEc;  // BUIDL (note: not BUIDLI)
-    address constant SECURITIZE_REDEEMER_ADDRESS       = address(0);  // TODO: Set Secuitize Redeemer address
-    address constant BUIDL_REDEMPTION_ADDRESS          = address(0);  // TODO: Set BUIDL Redemption Address
+    address constant SECURITIZE_REDEEMER_ADDRESS       = 0xdfC603076EA75895DD4d59c6e2ee5038f881CB74;  // Securitize redeemer address
+    address constant BUIDL_REDEMPTION_ADDRESS          = 0x0d671C15Aa427fFc31C3A484C3ACdd8043F73052;  // Set BUIDL primary redemption Address
 
     function run() external {
         vm.startBroadcast();
@@ -30,6 +30,34 @@ contract SetupBUIDLUsdsUsdcBasin is Script {
 
         console.log("GroveBasin deployed at:",          groveBasin);
         console.log("UsdsUsdcPocket deployed at:",      pocket_);
+    }
+
+    function deployRedeemerContractAndGrantRedeemerRole(address groveBasin) external {
+        vm.startBroadcast();
+        GroveBasin basin = GroveBasin(groveBasin);
+
+        if (BUIDL_REDEMPTION_ADDRESS != address(0)) {
+            BUIDLTokenRedeemer redeemer = new BUIDLTokenRedeemer(
+                BUIDL_TOKEN,
+                BUIDL_REDEMPTION_ADDRESS,
+                groveBasin
+            );
+
+            basin.addTokenRedeemer(address(redeemer));
+
+            console.log("BUIDLTokenRedeemer deployed at: %s with redemption address: %s", address(redeemer), BUIDL_REDEMPTION_ADDRESS);
+        } else {
+            console.log("BUIDL_REDEMPTION_ADDRESS is not set, skipping BUIDLTokenRedeemer deployment");
+        }
+
+        if (SECURITIZE_REDEEMER_ADDRESS != address(0)) {
+            basin.grantRole(basin.REDEEMER_ROLE(), SECURITIZE_REDEEMER_ADDRESS);
+
+            console.log("Granted redeemer role: ", SECURITIZE_REDEEMER_ADDRESS);
+        } else {
+            console.log("SECURITIZE_REDEEMER_ADDRESS is not set, skipping grant redeemer role to SECURITIZE_REDEEMER_ADDRESS");
+        }
+        vm.stopBroadcast();
     }
 
     function deploy() public returns (address groveBasin, address pocket_) {
