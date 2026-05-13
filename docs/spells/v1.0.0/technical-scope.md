@@ -33,7 +33,7 @@
     - Ownership, roles, privilege callers: None — factory has no access control.
     - Deployment command:
         ```
-        forge create src/GroveBasinFactory.sol:GroveBasinFactory --account grove-basin-deployer --rpc-url mainnet
+        forge create src/GroveBasinFactory.sol:GroveBasinFactory --account grove-basin-deployer --rpc-url mainnet --broadcast
         ```
     - Source code is verified on the block explorer: [Yes](https://etherscan.io/address/0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a#code)
     - The deployer no longer has a privileged role: N/A — factory has no roles.
@@ -75,8 +75,8 @@
         - Compilation optimizations match optimizer=true, runs=180, source solc 0.8.24.
         - Constructor arguments:
             1. `oracle`
-                - Argument value: `0x8c68E0CacB61a065b99E2104457aCC829d61cbB0` (Chronicle BUIDL/USD oracle)
-                - External source: Resolved on-chain via `oracle()` on the deployed contract
+                - Argument value: `0x8c68E0CacB61a065b99E2104457aCC829d61cbB0` (Chronicle BUIDL/USD oracle router)
+                - External source: [Chronicle Labs Dashboard](https://chroniclelabs.org/dashboard/proofofasset/blackrock-buidl)
     - Additional parameters configured on the contract by a privileged actor: None — ChronicleRateProvider is immutable.
     - Ownership, roles, privilege callers: None — no access control.
     - Deployment command:
@@ -99,8 +99,8 @@
         - Compilation optimizations match optimizer=true, runs=180, source solc 0.8.24.
         - Constructor arguments:
             1. `oracle`
-                - Argument value: `0xE980a33EFA3EDDaa689eCbdCE4B2278D4DB94471` (Chronicle JTRSY/USD oracle)
-                - External source: Resolved on-chain via `oracle()` on the deployed contract
+                - Argument value: `0xE980a33EFA3EDDaa689eCbdCE4B2278D4DB94471` (Chronicle JTRSY/USD oracle router)
+                - External source: [Chronicle Labs Dashboard](https://chroniclelabs.org/dashboard/proofofasset/janus-henderson-anemoy-treasury-fund)
     - Additional parameters configured on the contract by a privileged actor: None — ChronicleRateProvider is immutable.
     - Ownership, roles, privilege callers: None — no access control.
     - Deployment command:
@@ -235,7 +235,7 @@
             --broadcast --slow --verify
         ```
     - Source code is verified on the block explorer: [Yes](https://etherscan.io/address/0x1FA4dB8D545Cbd22b7bbA2084348A2E6ef36E363#code)
-    - The deployer no longer has a privileged role: No — deployer retains `MANAGER_ADMIN_ROLE`. `OWNER_ROLE` was transferred to the JTRSY Admin TimelockController.
+    - The deployer no longer has a privileged role: TODO — deployer to give up `MANAGER_ADMIN_ROLE` after test transaction from Anemoy
 
 8. **JTRSY UsdsUsdcPocket**
     - Chain name: Ethereum Mainnet
@@ -352,7 +352,7 @@
             --broadcast --slow --verify
         ```
     - Source code is verified on the block explorer: [Yes](https://etherscan.io/address/0x10b3d3A96646720f8B3a29229cF96d513f3C84F1#code)
-    - The deployer no longer has a privileged role: No — deployer retains `MANAGER_ADMIN_ROLE`. `OWNER_ROLE` was transferred to the BUIDL Admin TimelockController.
+    - The deployer no longer has a privileged role: TODO — deployer to give up `MANAGER_ADMIN_ROLE` after redeemer address, redemption vault address, and test admin transaction from Securitize.
 
 11. **BUIDL UsdsUsdcPocket**
     - Chain name: Ethereum Mainnet
