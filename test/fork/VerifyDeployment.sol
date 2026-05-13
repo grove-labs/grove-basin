@@ -15,7 +15,7 @@ import { BUIDLTokenRedeemer }    from "src/redeemers/BUIDLTokenRedeemer.sol";
 import { FixedRateProvider }     from "src/rate-providers/FixedRateProvider.sol";
 import { ChronicleRateProvider } from "src/rate-providers/ChronicleRateProvider.sol";
 import { IChronicleOracleLike }  from "src/interfaces/IChronicleOracleLike.sol";
-import { ITokenRedeemer }       from "src/interfaces/ITokenRedeemer.sol";
+import { ITokenRedeemer }        from "src/interfaces/ITokenRedeemer.sol";
 
 library Deployments {
 
@@ -31,6 +31,7 @@ library Deployments {
     /**********************************************************************************************/
     /*** JTRSY Basin                                                                            ***/
     /**********************************************************************************************/
+
     address internal constant JTRSY_TIMELOCK                = 0xA52dC9876aB4A9DB6dAfbb83410554086054d140;
     address internal constant JTRSY_BASIN                   = 0x1FA4dB8D545Cbd22b7bbA2084348A2E6ef36E363;
     address internal constant JTRSY_TOKEN_REDEEMER          = 0x212697f0A9Fc218210D98cd1A159dc8D8A87b8A8;
@@ -45,10 +46,10 @@ library Deployments {
     address internal constant JTRSY_TOKEN       = 0x8c213ee79581Ff4984583C6a801e5263418C4b86;
     address internal constant FULL_RESTRICTIONS = 0x8E680873b4C77e6088b4Ba0aBD59d100c3D224a4;
 
-
     /**********************************************************************************************/
     /*** BUIDL Basin                                                                            ***/
     /**********************************************************************************************/
+
     address internal constant BUIDL_TIMELOCK                = 0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34;
     address internal constant BUIDL_BASIN                   = 0x10b3d3A96646720f8B3a29229cF96d513f3C84F1;
     address internal constant BUIDL_USDS_USDC_POCKET        = 0x621727A05db6AeB33118b3F9DE3EAf2d8Fc86aDA;
@@ -58,10 +59,11 @@ library Deployments {
     // Issuer provided
     address internal constant SECURITIZE_ISSUER_MULTISIG    = address(0);  // TODO: add securitize owner
     address internal constant SECURITIZE_REDEEMER           = address(0);  // TODO: add securitize owner
-    address internal constant SECURITIZE_REDEMPTION_ADDRESS = address(0); // TODO: add securitize redemption address
+    address internal constant SECURITIZE_REDEMPTION_ADDRESS = address(0);  // TODO: add securitize redemption address
 
     // External
     address internal constant BUIDL_TOKEN = 0x7712c34205737192402172409a8F7ccef8aA2AEc;
+
 }
 
 
@@ -89,11 +91,13 @@ interface IBUIDLLike {
 }
 
 contract NoOpFallback {
+
     fallback() external payable {
         assembly {
             return(0, 256)
         }
     }
+
 }
 
 /**********************************************************************************************/
@@ -275,11 +279,11 @@ abstract contract Verify_Timelock is UsdsUsdcBasinDeploymentForkTestBase {
 
     function test_timelock_onlyAdminIsSelf() public view {
         TimelockController tl = _timelock();
-        assertTrue(tl.hasRole(tl.DEFAULT_ADMIN_ROLE(), address(tl)),             "timelock should be its own DEFAULT_ADMIN");
-        assertFalse(tl.hasRole(tl.DEFAULT_ADMIN_ROLE(), Deployments.DEPLOYER),   "deployer should not have DEFAULT_ADMIN_ROLE");
-        assertFalse(tl.hasRole(tl.DEFAULT_ADMIN_ROLE(), _issuerMultisigAddr()),  "issuer multisig should not have DEFAULT_ADMIN_ROLE");
-        assertFalse(tl.hasRole(tl.DEFAULT_ADMIN_ROLE(), Ethereum.GROVE_PROXY),   "GROVE_PROXY should not have DEFAULT_ADMIN_ROLE");
-        assertFalse(tl.hasRole(tl.DEFAULT_ADMIN_ROLE(), Ethereum.ALM_FREEZER),   "ALM_FREEZER should not have DEFAULT_ADMIN_ROLE");
+        assertTrue(tl.hasRole(tl.DEFAULT_ADMIN_ROLE(), address(tl)),            "timelock should be its own DEFAULT_ADMIN");
+        assertFalse(tl.hasRole(tl.DEFAULT_ADMIN_ROLE(), Deployments.DEPLOYER),  "deployer should not have DEFAULT_ADMIN_ROLE");
+        assertFalse(tl.hasRole(tl.DEFAULT_ADMIN_ROLE(), _issuerMultisigAddr()), "issuer multisig should not have DEFAULT_ADMIN_ROLE");
+        assertFalse(tl.hasRole(tl.DEFAULT_ADMIN_ROLE(), Ethereum.GROVE_PROXY),  "GROVE_PROXY should not have DEFAULT_ADMIN_ROLE");
+        assertFalse(tl.hasRole(tl.DEFAULT_ADMIN_ROLE(), Ethereum.ALM_FREEZER),  "ALM_FREEZER should not have DEFAULT_ADMIN_ROLE");
     }
 
     function test_timelock_delay() public view {
@@ -288,7 +292,7 @@ abstract contract Verify_Timelock is UsdsUsdcBasinDeploymentForkTestBase {
 
     function test_timelock_onlyProposerIsIssuerMultisig() public view {
         TimelockController tl = _timelock();
-        assertTrue(tl.hasRole(tl.PROPOSER_ROLE(), _issuerMultisigAddr()),  "issuer multisig should have PROPOSER_ROLE");
+        assertTrue(tl.hasRole(tl.PROPOSER_ROLE(), _issuerMultisigAddr()), "issuer multisig should have PROPOSER_ROLE");
         assertFalse(tl.hasRole(tl.PROPOSER_ROLE(), Deployments.DEPLOYER), "deployer should not have PROPOSER_ROLE");
         assertFalse(tl.hasRole(tl.PROPOSER_ROLE(), Ethereum.GROVE_PROXY), "GROVE_PROXY should not have PROPOSER_ROLE");
         assertFalse(tl.hasRole(tl.PROPOSER_ROLE(), Ethereum.ALM_FREEZER), "ALM_FREEZER should not have PROPOSER_ROLE");
@@ -296,18 +300,18 @@ abstract contract Verify_Timelock is UsdsUsdcBasinDeploymentForkTestBase {
 
     function test_timelock_onlyExecutorIsGroveProxy() public view {
         TimelockController tl = _timelock();
-        assertTrue(tl.hasRole(tl.EXECUTOR_ROLE(), Ethereum.GROVE_PROXY),    "GROVE_PROXY should have EXECUTOR_ROLE");
-        assertFalse(tl.hasRole(tl.EXECUTOR_ROLE(), Deployments.DEPLOYER),   "deployer should not have EXECUTOR_ROLE");
-        assertFalse(tl.hasRole(tl.EXECUTOR_ROLE(), _issuerMultisigAddr()),  "issuer multisig should not have EXECUTOR_ROLE");
-        assertFalse(tl.hasRole(tl.EXECUTOR_ROLE(), Ethereum.ALM_FREEZER),   "ALM_FREEZER should not have EXECUTOR_ROLE");
+        assertTrue(tl.hasRole(tl.EXECUTOR_ROLE(), Ethereum.GROVE_PROXY),   "GROVE_PROXY should have EXECUTOR_ROLE");
+        assertFalse(tl.hasRole(tl.EXECUTOR_ROLE(), Deployments.DEPLOYER),  "deployer should not have EXECUTOR_ROLE");
+        assertFalse(tl.hasRole(tl.EXECUTOR_ROLE(), _issuerMultisigAddr()), "issuer multisig should not have EXECUTOR_ROLE");
+        assertFalse(tl.hasRole(tl.EXECUTOR_ROLE(), Ethereum.ALM_FREEZER),  "ALM_FREEZER should not have EXECUTOR_ROLE");
     }
 
     function test_timelock_cancellerIsFreezerAndIssuer() public view {
         TimelockController tl = _timelock();
-        assertTrue(tl.hasRole(tl.CANCELLER_ROLE(), Ethereum.ALM_FREEZER),    "ALM_FREEZER should have CANCELLER_ROLE");
-        assertTrue(tl.hasRole(tl.CANCELLER_ROLE(), _issuerMultisigAddr()),   "issuer multisig should have CANCELLER_ROLE");
-        assertFalse(tl.hasRole(tl.CANCELLER_ROLE(), Deployments.DEPLOYER),   "deployer should not have CANCELLER_ROLE");
-        assertFalse(tl.hasRole(tl.CANCELLER_ROLE(), Ethereum.GROVE_PROXY),   "GROVE_PROXY should not have CANCELLER_ROLE");
+        assertTrue(tl.hasRole(tl.CANCELLER_ROLE(), Ethereum.ALM_FREEZER),  "ALM_FREEZER should have CANCELLER_ROLE");
+        assertTrue(tl.hasRole(tl.CANCELLER_ROLE(), _issuerMultisigAddr()), "issuer multisig should have CANCELLER_ROLE");
+        assertFalse(tl.hasRole(tl.CANCELLER_ROLE(), Deployments.DEPLOYER), "deployer should not have CANCELLER_ROLE");
+        assertFalse(tl.hasRole(tl.CANCELLER_ROLE(), Ethereum.GROVE_PROXY), "GROVE_PROXY should not have CANCELLER_ROLE");
     }
 
     function test_timelock_deployerHasNoRoles() public view {
@@ -651,12 +655,12 @@ abstract contract Verify_Basin is UsdsUsdcBasinDeploymentForkTestBase {
     /*** Deployer ***/
 
     function test_basin_deployerDoesNotHaveOtherRoles() public view {
-        assertFalse(basin.hasRole(basin.OWNER_ROLE(),              Deployments.DEPLOYER), "deployer should not have OWNER_ROLE");
-        assertFalse(basin.hasRole(basin.MANAGER_ADMIN_ROLE(),      Deployments.DEPLOYER), "deployer should not have MANAGER_ADMIN_ROLE");
-        assertFalse(basin.hasRole(basin.MANAGER_ROLE(),            Deployments.DEPLOYER), "deployer should not have MANAGER_ROLE");
-        assertFalse(basin.hasRole(basin.PAUSER_ROLE(),             Deployments.DEPLOYER), "deployer should not have PAUSER_ROLE");
-        assertFalse(basin.hasRole(basin.REDEEMER_ROLE(),           Deployments.DEPLOYER), "deployer should not have REDEEMER_ROLE");
-        assertFalse(basin.hasRole(basin.REDEEMER_CONTRACT_ROLE(),  Deployments.DEPLOYER), "deployer should not have REDEEMER_CONTRACT_ROLE");
+        assertFalse(basin.hasRole(basin.OWNER_ROLE(),             Deployments.DEPLOYER), "deployer should not have OWNER_ROLE");
+        assertFalse(basin.hasRole(basin.MANAGER_ADMIN_ROLE(),     Deployments.DEPLOYER), "deployer should not have MANAGER_ADMIN_ROLE");
+        assertFalse(basin.hasRole(basin.MANAGER_ROLE(),           Deployments.DEPLOYER), "deployer should not have MANAGER_ROLE");
+        assertFalse(basin.hasRole(basin.PAUSER_ROLE(),            Deployments.DEPLOYER), "deployer should not have PAUSER_ROLE");
+        assertFalse(basin.hasRole(basin.REDEEMER_ROLE(),          Deployments.DEPLOYER), "deployer should not have REDEEMER_ROLE");
+        assertFalse(basin.hasRole(basin.REDEEMER_CONTRACT_ROLE(), Deployments.DEPLOYER), "deployer should not have REDEEMER_CONTRACT_ROLE");
     }
 
     /*** Redeemer roles ***/
@@ -757,6 +761,7 @@ abstract contract Verify_Actions is UsdsUsdcBasinDeploymentForkTestBase {
         assertTrue(basin.paused(basin.PAUSED_SWAP_SWAP_TO_CREDIT()));
         assertTrue(basin.paused(basin.PAUSED_DEPOSIT_CREDIT()));
         assertTrue(basin.paused(basin.PAUSED_WITHDRAW_CREDIT()));
+
         assertFalse(basin.hasRole(managerRole, Ethereum.ALM_RELAYER));
         assertFalse(basin.hasRole(redeemerRole, testRedeemer));
     }
@@ -940,13 +945,13 @@ abstract contract Verify_RelayerManager is UsdsUsdcBasinDeploymentForkTestBase {
 /*** Burn address                                                                           ***/
 /**********************************************************************************************/
 
-contract JTRSYUsdsUsdcDeploymentForkTest_BurnAddress      is JTRSYUsdsUsdcDeploymentForkTestBase, Verify_BurnAddress {}
-contract JTRSYUsdsUsdcDeploymentForkTest_Timelock         is JTRSYUsdsUsdcDeploymentForkTestBase, Verify_Timelock {}
-contract JTRSYUsdsUsdcDeploymentForkTest_RateProviders    is JTRSYUsdsUsdcDeploymentForkTestBase, Verify_RateProviders {}
-contract JTRSYUsdsUsdcDeploymentForkTest_Pocket           is JTRSYUsdsUsdcDeploymentForkTestBase, Verify_Pocket {}
-contract JTRSYUsdsUsdcDeploymentForkTest_Basin            is JTRSYUsdsUsdcDeploymentForkTestBase, Verify_Basin {}
-contract JTRSYUsdsUsdcDeploymentForkTest_Actions          is JTRSYUsdsUsdcDeploymentForkTestBase, Verify_Actions {}
-contract JTRSYUsdsUsdcDeploymentForkTest_RelayerManager   is JTRSYUsdsUsdcDeploymentForkTestBase, Verify_RelayerManager {}
+contract JTRSYUsdsUsdcDeploymentForkTest_BurnAddress    is JTRSYUsdsUsdcDeploymentForkTestBase, Verify_BurnAddress {}
+contract JTRSYUsdsUsdcDeploymentForkTest_Timelock       is JTRSYUsdsUsdcDeploymentForkTestBase, Verify_Timelock {}
+contract JTRSYUsdsUsdcDeploymentForkTest_RateProviders  is JTRSYUsdsUsdcDeploymentForkTestBase, Verify_RateProviders {}
+contract JTRSYUsdsUsdcDeploymentForkTest_Pocket         is JTRSYUsdsUsdcDeploymentForkTestBase, Verify_Pocket {}
+contract JTRSYUsdsUsdcDeploymentForkTest_Basin          is JTRSYUsdsUsdcDeploymentForkTestBase, Verify_Basin {}
+contract JTRSYUsdsUsdcDeploymentForkTest_Actions        is JTRSYUsdsUsdcDeploymentForkTestBase, Verify_Actions {}
+contract JTRSYUsdsUsdcDeploymentForkTest_RelayerManager is JTRSYUsdsUsdcDeploymentForkTestBase, Verify_RelayerManager {}
 
 contract JTRSYUsdsUsdcDeploymentForkTest_Redeemer is JTRSYUsdsUsdcDeploymentForkTestBase, Verify_Redeemer {
 
@@ -966,13 +971,13 @@ contract JTRSYUsdsUsdcDeploymentForkTest_Redeemer is JTRSYUsdsUsdcDeploymentFork
 /*** Burn address                                                                           ***/
 /**********************************************************************************************/
 
-contract BUIDLUsdsUsdcDeploymentForkTest_BurnAddress      is BUIDLUsdsUsdcDeploymentForkTestBase, Verify_BurnAddress {}
-contract BUIDLUsdsUsdcDeploymentForkTest_Timelock         is BUIDLUsdsUsdcDeploymentForkTestBase, Verify_Timelock {}
-contract BUIDLUsdsUsdcDeploymentForkTest_RateProviders    is BUIDLUsdsUsdcDeploymentForkTestBase, Verify_RateProviders {}
-contract BUIDLUsdsUsdcDeploymentForkTest_Pocket           is BUIDLUsdsUsdcDeploymentForkTestBase, Verify_Pocket {}
-contract BUIDLUsdsUsdcDeploymentForkTest_Basin            is BUIDLUsdsUsdcDeploymentForkTestBase, Verify_Basin {}
-contract BUIDLUsdsUsdcDeploymentForkTest_Actions          is BUIDLUsdsUsdcDeploymentForkTestBase, Verify_Actions {}
-contract BUIDLUsdsUsdcDeploymentForkTest_RelayerManager   is BUIDLUsdsUsdcDeploymentForkTestBase, Verify_RelayerManager {}
+contract BUIDLUsdsUsdcDeploymentForkTest_BurnAddress    is BUIDLUsdsUsdcDeploymentForkTestBase, Verify_BurnAddress {}
+contract BUIDLUsdsUsdcDeploymentForkTest_Timelock       is BUIDLUsdsUsdcDeploymentForkTestBase, Verify_Timelock {}
+contract BUIDLUsdsUsdcDeploymentForkTest_RateProviders  is BUIDLUsdsUsdcDeploymentForkTestBase, Verify_RateProviders {}
+contract BUIDLUsdsUsdcDeploymentForkTest_Pocket         is BUIDLUsdsUsdcDeploymentForkTestBase, Verify_Pocket {}
+contract BUIDLUsdsUsdcDeploymentForkTest_Basin          is BUIDLUsdsUsdcDeploymentForkTestBase, Verify_Basin {}
+contract BUIDLUsdsUsdcDeploymentForkTest_Actions        is BUIDLUsdsUsdcDeploymentForkTestBase, Verify_Actions {}
+contract BUIDLUsdsUsdcDeploymentForkTest_RelayerManager is BUIDLUsdsUsdcDeploymentForkTestBase, Verify_RelayerManager {}
 
 contract BUIDLUsdsUsdcDeploymentForkTest_Redeemer is BUIDLUsdsUsdcDeploymentForkTestBase, Verify_Redeemer {
 

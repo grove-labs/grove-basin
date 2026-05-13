@@ -7,21 +7,21 @@ import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
 
 import { Ethereum } from "lib/grove-address-registry/src/Ethereum.sol";
 
-import { GroveBasin }          from "src/GroveBasin.sol";
-import { GroveBasinFactory }   from "src/GroveBasinFactory.sol";
-import { BUIDLTokenRedeemer }  from "src/redeemers/BUIDLTokenRedeemer.sol";
-import { UsdsUsdcPocket }      from "src/pockets/UsdsUsdcPocket.sol";
+import { GroveBasin }         from "src/GroveBasin.sol";
+import { GroveBasinFactory }  from "src/GroveBasinFactory.sol";
+import { BUIDLTokenRedeemer } from "src/redeemers/BUIDLTokenRedeemer.sol";
+import { UsdsUsdcPocket }     from "src/pockets/UsdsUsdcPocket.sol";
 
 contract SetupBUIDLUsdsUsdcBasin is Script {
 
     address constant USDS_USDC_FIXED_RATE_PROVIDER = 0x7928A185B8137D1CD2a0996a810A04dB2837419D;  // Fixed 1:1 ChronicleRateProvider for USDS and USDC
-    address constant BUIDL_CHRONICLE_RATE_PROVIDER     = 0x69a171853575FFD41574EA80Abfc6337AcbC4d43;  // BUIDL ChronicleRateProvider
-    address constant USDS_PSM_WRAPPER                  = 0xA188EEC8F81263234dA3622A406892F3D630f98c;  // USDS PSM Wrapper
-    address constant GROVE_BASIN_FACTORY               = 0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a;  // GroveBasinFactory
-    address constant BUIDL_ADMIN_TIMELOCK              = 0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34;  // BUIDL Admin TimelockController
-    address constant BUIDL_TOKEN                       = 0x7712c34205737192402172409a8F7ccef8aA2AEc;  // BUIDL (note: not BUIDLI)
-    address constant SECURITIZE_REDEEMER_ADDRESS       = 0xdfC603076EA75895DD4d59c6e2ee5038f881CB74;  // Securitize redeemer address
-    address constant BUIDL_REDEMPTION_ADDRESS          = 0x0d671C15Aa427fFc31C3A484C3ACdd8043F73052;  // Set BUIDL primary redemption Address
+    address constant BUIDL_CHRONICLE_RATE_PROVIDER = 0x69a171853575FFD41574EA80Abfc6337AcbC4d43
+    address constant USDS_PSM_WRAPPER              = 0xA188EEC8F81263234dA3622A406892F3D630f98c
+    address constant GROVE_BASIN_FACTORY           = 0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a
+    address constant BUIDL_ADMIN_TIMELOCK          = 0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34
+    address constant BUIDL_TOKEN                   = 0x7712c34205737192402172409a8F7ccef8aA2AEc
+    address constant SECURITIZE_REDEEMER_ADDRESS   = 0xdfC603076EA75895DD4d59c6e2ee5038f881CB74
+    address constant BUIDL_REDEMPTION_ADDRESS      = 0x0d671C15Aa427fFc31C3A484C3ACdd8043F73052
 
     function run() external {
         vm.startBroadcast();

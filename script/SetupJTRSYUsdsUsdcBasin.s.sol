@@ -7,19 +7,20 @@ import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
 
 import { Ethereum } from "lib/grove-address-registry/src/Ethereum.sol";
 
-import { GroveBasin }          from "src/GroveBasin.sol";
-import { GroveBasinFactory }   from "src/GroveBasinFactory.sol";
-import { JTRSYTokenRedeemer }  from "src/redeemers/JTRSYTokenRedeemer.sol";
-import { UsdsUsdcPocket }      from "src/pockets/UsdsUsdcPocket.sol";
+import { GroveBasin }         from "src/GroveBasin.sol";
+import { GroveBasinFactory }  from "src/GroveBasinFactory.sol";
+import { JTRSYTokenRedeemer } from "src/redeemers/JTRSYTokenRedeemer.sol";
+import { UsdsUsdcPocket }     from "src/pockets/UsdsUsdcPocket.sol";
 
 contract SetupJTRSYUsdsUsdcBasin is Script {
 
     address constant USDS_USDC_FIXED_RATE_PROVIDER = 0x7928A185B8137D1CD2a0996a810A04dB2837419D;  // Fixed 1:1 ChronicleRateProvider for USDS and USDC
-    address constant JTRSY_CHRONICLE_RATE_PROVIDER     = 0x29209ceCFeFa6f675E6f1f829320D67cE2b025E5;  // JTRSY ChronicleRateProvider
-    address constant JTRSY_TOKEN                       = 0x8c213ee79581Ff4984583C6a801e5263418C4b86;  // JTRSY share token (6 decimals)
-    address constant USDS_PSM_WRAPPER                  = 0xA188EEC8F81263234dA3622A406892F3D630f98c;  // USDS PSM Wrapper
-    address constant GROVE_BASIN_FACTORY               = 0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a;  // GroveBasinFactory
-    address constant JTRSY_ADMIN_TIMELOCK              = 0xA52dC9876aB4A9DB6dAfbb83410554086054d140;  // JTRSY Admin TimelockController
+    address constant JTRSY_CHRONICLE_RATE_PROVIDER = 0x29209ceCFeFa6f675E6f1f829320D67cE2b025E5;
+    address constant JTRSY_TOKEN                   = 0x8c213ee79581Ff4984583C6a801e5263418C4b86;
+    address constant USDS_PSM_WRAPPER              = 0xA188EEC8F81263234dA3622A406892F3D630f98c;
+    address constant GROVE_BASIN_FACTORY           = 0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a;
+    address constant JTRSY_ADMIN_TIMELOCK          = 0xA52dC9876aB4A9DB6dAfbb83410554086054d140;
+    address constant JTRSY_REDEEMER_ADDRESS        = 0xb6e8D3E47c4FC5606E6C24D097Dd1791885Ce05a;
 
     function run() external {
         vm.startBroadcast();
@@ -77,7 +78,7 @@ contract SetupJTRSYUsdsUsdcBasin is Script {
 
         basin.grantRole(basin.MANAGER_ROLE(),  Ethereum.ALM_RELAYER);
         basin.grantRole(basin.PAUSER_ROLE(),   Ethereum.ALM_FREEZER);
-        basin.grantRole(basin.REDEEMER_ROLE(), 0xb6e8D3E47c4FC5606E6C24D097Dd1791885Ce05a);
+        basin.grantRole(basin.REDEEMER_ROLE(), JTRSY_REDEEMER_ADDRESS);
 
         basin.grantRole(basin.PAUSER_ROLE(), deployer);
 
