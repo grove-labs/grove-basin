@@ -275,47 +275,47 @@ abstract contract Verify_Timelock is UsdsUsdcBasinDeploymentForkTestBase {
 
     function test_timelock_onlyAdminIsSelf() public view {
         TimelockController tl = _timelock();
-        assertTrue(tl.hasRole(tl.DEFAULT_ADMIN_ROLE(), address(tl)));
-        assertFalse(tl.hasRole(tl.DEFAULT_ADMIN_ROLE(), Deployments.DEPLOYER));
-        assertFalse(tl.hasRole(tl.DEFAULT_ADMIN_ROLE(), _issuerMultisigAddr()));
-        assertFalse(tl.hasRole(tl.DEFAULT_ADMIN_ROLE(), Ethereum.GROVE_PROXY));
-        assertFalse(tl.hasRole(tl.DEFAULT_ADMIN_ROLE(), Ethereum.ALM_FREEZER));
+        assertTrue(tl.hasRole(tl.DEFAULT_ADMIN_ROLE(), address(tl)),             "timelock should be its own DEFAULT_ADMIN");
+        assertFalse(tl.hasRole(tl.DEFAULT_ADMIN_ROLE(), Deployments.DEPLOYER),   "deployer should not have DEFAULT_ADMIN_ROLE");
+        assertFalse(tl.hasRole(tl.DEFAULT_ADMIN_ROLE(), _issuerMultisigAddr()),  "issuer multisig should not have DEFAULT_ADMIN_ROLE");
+        assertFalse(tl.hasRole(tl.DEFAULT_ADMIN_ROLE(), Ethereum.GROVE_PROXY),   "GROVE_PROXY should not have DEFAULT_ADMIN_ROLE");
+        assertFalse(tl.hasRole(tl.DEFAULT_ADMIN_ROLE(), Ethereum.ALM_FREEZER),   "ALM_FREEZER should not have DEFAULT_ADMIN_ROLE");
     }
 
     function test_timelock_delay() public view {
-        assertEq(_timelock().getMinDelay(), 7 days);
+        assertEq(_timelock().getMinDelay(), 7 days, "timelock min delay should be 7 days");
     }
 
     function test_timelock_onlyProposerIsIssuerMultisig() public view {
         TimelockController tl = _timelock();
-        assertTrue(tl.hasRole(tl.PROPOSER_ROLE(), _issuerMultisigAddr()));
-        assertFalse(tl.hasRole(tl.PROPOSER_ROLE(), Deployments.DEPLOYER));
-        assertFalse(tl.hasRole(tl.PROPOSER_ROLE(), Ethereum.GROVE_PROXY));
-        assertFalse(tl.hasRole(tl.PROPOSER_ROLE(), Ethereum.ALM_FREEZER));
+        assertTrue(tl.hasRole(tl.PROPOSER_ROLE(), _issuerMultisigAddr()),  "issuer multisig should have PROPOSER_ROLE");
+        assertFalse(tl.hasRole(tl.PROPOSER_ROLE(), Deployments.DEPLOYER), "deployer should not have PROPOSER_ROLE");
+        assertFalse(tl.hasRole(tl.PROPOSER_ROLE(), Ethereum.GROVE_PROXY), "GROVE_PROXY should not have PROPOSER_ROLE");
+        assertFalse(tl.hasRole(tl.PROPOSER_ROLE(), Ethereum.ALM_FREEZER), "ALM_FREEZER should not have PROPOSER_ROLE");
     }
 
     function test_timelock_onlyExecutorIsGroveProxy() public view {
         TimelockController tl = _timelock();
-        assertTrue(tl.hasRole(tl.EXECUTOR_ROLE(), Ethereum.GROVE_PROXY));
-        assertFalse(tl.hasRole(tl.EXECUTOR_ROLE(), Deployments.DEPLOYER));
-        assertFalse(tl.hasRole(tl.EXECUTOR_ROLE(), _issuerMultisigAddr()));
-        assertFalse(tl.hasRole(tl.EXECUTOR_ROLE(), Ethereum.ALM_FREEZER));
+        assertTrue(tl.hasRole(tl.EXECUTOR_ROLE(), Ethereum.GROVE_PROXY),    "GROVE_PROXY should have EXECUTOR_ROLE");
+        assertFalse(tl.hasRole(tl.EXECUTOR_ROLE(), Deployments.DEPLOYER),   "deployer should not have EXECUTOR_ROLE");
+        assertFalse(tl.hasRole(tl.EXECUTOR_ROLE(), _issuerMultisigAddr()),  "issuer multisig should not have EXECUTOR_ROLE");
+        assertFalse(tl.hasRole(tl.EXECUTOR_ROLE(), Ethereum.ALM_FREEZER),   "ALM_FREEZER should not have EXECUTOR_ROLE");
     }
 
     function test_timelock_cancellerIsFreezerAndIssuer() public view {
         TimelockController tl = _timelock();
-        assertTrue(tl.hasRole(tl.CANCELLER_ROLE(), Ethereum.ALM_FREEZER));
-        assertTrue(tl.hasRole(tl.CANCELLER_ROLE(), _issuerMultisigAddr()));
-        assertFalse(tl.hasRole(tl.CANCELLER_ROLE(), Deployments.DEPLOYER));
-        assertFalse(tl.hasRole(tl.CANCELLER_ROLE(), Ethereum.GROVE_PROXY));
+        assertTrue(tl.hasRole(tl.CANCELLER_ROLE(), Ethereum.ALM_FREEZER),    "ALM_FREEZER should have CANCELLER_ROLE");
+        assertTrue(tl.hasRole(tl.CANCELLER_ROLE(), _issuerMultisigAddr()),   "issuer multisig should have CANCELLER_ROLE");
+        assertFalse(tl.hasRole(tl.CANCELLER_ROLE(), Deployments.DEPLOYER),   "deployer should not have CANCELLER_ROLE");
+        assertFalse(tl.hasRole(tl.CANCELLER_ROLE(), Ethereum.GROVE_PROXY),   "GROVE_PROXY should not have CANCELLER_ROLE");
     }
 
     function test_timelock_deployerHasNoRoles() public view {
         TimelockController tl = _timelock();
-        assertFalse(tl.hasRole(tl.DEFAULT_ADMIN_ROLE(), Deployments.DEPLOYER));
-        assertFalse(tl.hasRole(tl.PROPOSER_ROLE(), Deployments.DEPLOYER));
-        assertFalse(tl.hasRole(tl.EXECUTOR_ROLE(), Deployments.DEPLOYER));
-        assertFalse(tl.hasRole(tl.CANCELLER_ROLE(), Deployments.DEPLOYER));
+        assertFalse(tl.hasRole(tl.DEFAULT_ADMIN_ROLE(), Deployments.DEPLOYER), "deployer should not have DEFAULT_ADMIN_ROLE");
+        assertFalse(tl.hasRole(tl.PROPOSER_ROLE(), Deployments.DEPLOYER),      "deployer should not have PROPOSER_ROLE");
+        assertFalse(tl.hasRole(tl.EXECUTOR_ROLE(), Deployments.DEPLOYER),      "deployer should not have EXECUTOR_ROLE");
+        assertFalse(tl.hasRole(tl.CANCELLER_ROLE(), Deployments.DEPLOYER),     "deployer should not have CANCELLER_ROLE");
     }
 
     /*** Timelock actions ***/
@@ -493,6 +493,14 @@ abstract contract Verify_Pocket is UsdsUsdcBasinDeploymentForkTestBase {
 
     function test_pocket_groveProxy() public view {
         assertEq(pocket.groveProxy(), Ethereum.GROVE_PROXY);
+    }
+
+    function test_pocket_groveProxyHasUnlimitedUsdsAllowance() public view {
+        assertEq(
+            IERC20(Ethereum.USDS).allowance(address(pocket), Ethereum.GROVE_PROXY),
+            type(uint256).max,
+            "GROVE_PROXY should have unlimited USDS transfer privileges on pocket"
+        );
     }
 
 }
