@@ -53,13 +53,13 @@ library Deployments {
     address internal constant BUIDL_TIMELOCK                = 0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34;
     address internal constant BUIDL_BASIN                   = 0x10b3d3A96646720f8B3a29229cF96d513f3C84F1;
     address internal constant BUIDL_USDS_USDC_POCKET        = 0x621727A05db6AeB33118b3F9DE3EAf2d8Fc86aDA;
-    address internal constant BUIDL_TOKEN_REDEEMER          = address(0);  // TODO: add after BUIDLTokenRedeemer deployment
+    address internal constant BUIDL_TOKEN_REDEEMER          = 0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885;  
     address internal constant BUIDL_CHRONICLE_RATE_PROVIDER = 0x69a171853575FFD41574EA80Abfc6337AcbC4d43;
 
     // Issuer provided
-    address internal constant SECURITIZE_ISSUER_MULTISIG    = address(0);  // TODO: add securitize owner
-    address internal constant SECURITIZE_REDEEMER           = address(0);  // TODO: add securitize owner
-    address internal constant SECURITIZE_REDEMPTION_ADDRESS = address(0);  // TODO: add securitize redemption address
+    address internal constant SECURITIZE_ISSUER_MULTISIG    = 0x551e841e6fb54431a0664C8776784F6d7E611428;
+    address internal constant SECURITIZE_REDEEMER           = 0xdfC603076EA75895DD4d59c6e2ee5038f881CB74;
+    address internal constant SECURITIZE_REDEMPTION_ADDRESS = 0x0d671C15Aa427fFc31C3A484C3ACdd8043F73052;
 
     // External
     address internal constant BUIDL_TOKEN = 0x7712c34205737192402172409a8F7ccef8aA2AEc;
