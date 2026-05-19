@@ -2,20 +2,20 @@
 
 ## Trusted addresses
 
-| **Contract name** | **Address with URL** | **Source URL** |
-|---|---|---|
-| USDS | [0xdC035D45d973E3EC169d2276DDab16f1e407384F](https://etherscan.io/address/0xdC035D45d973E3EC169d2276DDab16f1e407384F) | TODO |
-| USDC | [0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48](https://etherscan.io/address/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48) | TODO |
-| BUIDL | [0x7712c34205737192402172409a8F7ccef8aA2AEc](https://etherscan.io/address/0x7712c34205737192402172409a8F7ccef8aA2AEc) | TODO |
-| JTRSY | [0x8c213ee79581Ff4984583C6a801e5263418C4b86](https://etherscan.io/address/0x8c213ee79581Ff4984583C6a801e5263418C4b86) | TODO |
-| Centrifuge JTRSY Vault | [0xFE6920eB6C421f1179cA8c8d4170530CDBdfd77A](https://etherscan.io/address/0xFE6920eB6C421f1179cA8c8d4170530CDBdfd77A) | TODO |
-| USDS PSM Wrapper | [0xA188EEC8F81263234dA3622A406892F3D630f98c](https://etherscan.io/address/0xA188EEC8F81263234dA3622A406892F3D630f98c) | TODO |
-| ALM Proxy | [0x491EDFB0B8b608044e227225C715981a30F3A44E](https://etherscan.io/address/0x491EDFB0B8b608044e227225C715981a30F3A44E) | TODO |
-| ALM Relayer | [0x0eEC86649E756a23CBc68d9EFEd756f16aD5F85f](https://etherscan.io/address/0x0eEC86649E756a23CBc68d9EFEd756f16aD5F85f) | TODO |
-| ALM Freezer | [0xB0113804960345fd0a245788b3423319c86940e5](https://etherscan.io/address/0xB0113804960345fd0a245788b3423319c86940e5) | TODO |
-| Grove Proxy | [0x1369f7b2b38c76B6478c0f0E66D94923421891Ba](https://etherscan.io/address/0x1369f7b2b38c76B6478c0f0E66D94923421891Ba) | TODO |
-| Chronicle BUIDL/USD Oracle Router | [0x8c68E0CacB61a065b99E2104457aCC829d61cbB0](https://etherscan.io/address/0x8c68E0CacB61a065b99E2104457aCC829d61cbB0) | [Chronicle Labs Dashboard](https://chroniclelabs.org/dashboard/proofofasset/blackrock-buidl) |
-| Chronicle JTRSY/USD Oracle Router | [0xE980a33EFA3EDDaa689eCbdCE4B2278D4DB94471](https://etherscan.io/address/0xE980a33EFA3EDDaa689eCbdCE4B2278D4DB94471) | [Chronicle Labs Dashboard](https://chroniclelabs.org/dashboard/proofofasset/janus-henderson-anemoy-treasury-fund) |
+| **Contract name** | **Address with URL** |
+|---|---|
+| USDS | [0xdC035D45d973E3EC169d2276DDab16f1e407384F](https://etherscan.io/address/0xdC035D45d973E3EC169d2276DDab16f1e407384F) |
+| USDC | [0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48](https://etherscan.io/address/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48) |
+| BUIDL | [0x7712c34205737192402172409a8F7ccef8aA2AEc](https://etherscan.io/address/0x7712c34205737192402172409a8F7ccef8aA2AEc) |
+| JTRSY | [0x8c213ee79581Ff4984583C6a801e5263418C4b86](https://etherscan.io/address/0x8c213ee79581Ff4984583C6a801e5263418C4b86) |
+| Centrifuge JTRSY Vault | [0xFE6920eB6C421f1179cA8c8d4170530CDBdfd77A](https://etherscan.io/address/0xFE6920eB6C421f1179cA8c8d4170530CDBdfd77A) |
+| USDS PSM Wrapper | [0xA188EEC8F81263234dA3622A406892F3D630f98c](https://etherscan.io/address/0xA188EEC8F81263234dA3622A406892F3D630f98c) |
+| ALM Proxy | [0x491EDFB0B8b608044e227225C715981a30F3A44E](https://etherscan.io/address/0x491EDFB0B8b608044e227225C715981a30F3A44E) |
+| ALM Relayer | [0x0eEC86649E756a23CBc68d9EFEd756f16aD5F85f](https://etherscan.io/address/0x0eEC86649E756a23CBc68d9EFEd756f16aD5F85f) |
+| ALM Freezer | [0xB0113804960345fd0a245788b3423319c86940e5](https://etherscan.io/address/0xB0113804960345fd0a245788b3423319c86940e5) |
+| Grove Proxy | [0x1369f7b2b38c76B6478c0f0E66D94923421891Ba](https://etherscan.io/address/0x1369f7b2b38c76B6478c0f0E66D94923421891Ba) |
+| Chronicle BUIDL/USD Oracle Router | [0x8c68E0CacB61a065b99E2104457aCC829d61cbB0](https://etherscan.io/address/0x8c68E0CacB61a065b99E2104457aCC829d61cbB0) |
+| Chronicle JTRSY/USD Oracle Router | [0xE980a33EFA3EDDaa689eCbdCE4B2278D4DB94471](https://etherscan.io/address/0xE980a33EFA3EDDaa689eCbdCE4B2278D4DB94471) |
 
 ## Pre-deployed contracts
 
@@ -1230,31 +1230,46 @@
     - Expected outcome: All return non-zero values. ChronicleRateProviders return rates that are not stale (within stalenessThreshold).
     - Who will perform this action: Deployer / reviewer
 
-6. **Test swap transaction (BUIDL Basin)**
+6. **Test swap transaction (BUIDL Basin — swap to USDS)**
     - What will be done: Perform a small test swap on the BUIDL GroveBasin (`0x10b3d3A96646720f8B3a29229cF96d513f3C84F1`) to confirm end-to-end functionality.
     - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
     - Expected outcome: Swap succeeds, expected output amount is received.
     - Who will perform this action: Deployer or designated tester, working with the issuer
 
-7. **Test swap transaction (JTRSY Basin)**
-    - What will be done: Perform a small test swap on the JTRSY GroveBasin (`0x1FA4dB8D545Cbd22b7bbA2084348A2E6ef36E363`) to confirm end-to-end functionality.
+7. **Test swap transaction (BUIDL Basin — swap to USDC)**
+    - What will be done: Perform a small test swap on the BUIDL GroveBasin (`0x10b3d3A96646720f8B3a29229cF96d513f3C84F1`) to confirm end-to-end functionality.
     - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
     - Expected outcome: Swap succeeds, expected output amount is received.
     - Who will perform this action: Deployer or designated tester, working with the issuer
 
-8. **Test redemption transaction (BUIDL Basin)**
+8. **Test swap transaction (JTRSY Basin — swap to USDS)**
+    - Transaction trace URL: [Tenderly testnet tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/e7893a1c-cc85-45f4-8445-7c0c7f11b7e9/tx/0x90befc0ee695674686e1e55130169d4f9fcd0b7258a7b13c88a3e92d77abbf22)
+    - What will be done: Perform a small test swap on the JTRSY GroveBasin (`0x1FA4dB8D545Cbd22b7bbA2084348A2E6ef36E363`) to confirm end-to-end functionality.
+    - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
+    - Expected outcome: Swap of 0.5 JTRSY for 0.552347 USDS succeeds.
+    - Who will perform this action: Deployer or designated tester, working with the issuer
+
+9. **Test swap transaction (JTRSY Basin — swap to USDC)**
+    - Transaction trace URL: [Tenderly testnet tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/e7893a1c-cc85-45f4-8445-7c0c7f11b7e9/tx/0xb290766fcc4df0e2e13d00127c62ca9f430772d9aa0975d10948bdb4f7565b72)
+    - What will be done: Perform a small test swap on the JTRSY GroveBasin (`0x1FA4dB8D545Cbd22b7bbA2084348A2E6ef36E363`) to confirm end-to-end functionality.
+    - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
+    - Expected outcome: Swap of 0.5 JTRSY for 0.552347 USDC succeeds.
+    - Who will perform this action: Deployer or designated tester, working with the issuer
+
+10. **Test redemption transaction (BUIDL Basin)**
     - What will be done: Perform a small test redemption on the BUIDL GroveBasin (`0x10b3d3A96646720f8B3a29229cF96d513f3C84F1`) to confirm end-to-end functionality.
     - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
     - Expected outcome: Redemption succeeds, expected output amount is received.
     - Who will perform this action: Deployer or designated tester, working with the issuer
 
-9. **Test redemption transaction (JTRSY Basin)**
+11. **Test redemption transaction (JTRSY Basin — initiate redeem)**
+    - Transaction trace URL: [Tenderly testnet tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/e7893a1c-cc85-45f4-8445-7c0c7f11b7e9/tx/0x10a94e17a8e0cb3d20bdaaefe4f8bd5dbdf1cb3e0380d6f16f8607529fe333c6)
     - What will be done: Perform a small test redemption on the JTRSY GroveBasin (`0x1FA4dB8D545Cbd22b7bbA2084348A2E6ef36E363`) to confirm end-to-end functionality.
     - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
     - Expected outcome: Redemption succeeds, expected output amount is received.
     - Who will perform this action: Deployer or designated tester, working with the issuer
 
-10. **Verify source code on block explorer**
+12. **Verify source code on block explorer**
     - What will be done: Confirm all deployed contracts have verified source code on Etherscan.
     - How it will be done: Check each contract address on etherscan.io for the "Contract" tab showing verified source.
     - Expected outcome: All contracts show verified source matching audited commit.

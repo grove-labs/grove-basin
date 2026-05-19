@@ -29,7 +29,9 @@ The Freezer holds `PAUSER_ROLE` on both Basin instances:
 
 ### Transaction staging and execution order
 
-**Step 1 — Global pause.** A Freezer signer creates a transaction in the Safe UI (or CLI) targeting the Basin contract:
+For most cases, we would prefer a global pause:
+
+**Global pause.** A Freezer signer creates a transaction in the Safe UI (or CLI) targeting the Basin contract:
 
 - **To**: `<Basin address>` (JTRSY or BUIDL, see table above)
 - **Value**: `0`
@@ -38,7 +40,9 @@ The Freezer holds `PAUSER_ROLE` on both Basin instances:
 
 A second signer confirms the transaction in the Safe. Once the 2-of-5 threshold is met, any signer executes it on-chain.
 
-**Step 2 — Revoke `MANAGER_ROLE` (full lockdown).** The Freezer stages a second Safe transaction:
+In the event of a compromised Grove ALM Relayer, we would elect to revoke the MANAGER_ROLE:
+
+**Revoke `MANAGER_ROLE` (full lockdown).** The Freezer stages a second Safe transaction:
 
 - **To**: `<Basin address>`
 - **Value**: `0`
@@ -46,7 +50,9 @@ A second signer confirms the transaction in the Safe. Once the 2-of-5 threshold 
 
 A second signer confirms and executes.
 
-**Step 3 — Revoke `REDEEMER_ROLE` (full lockdown).** The Freezer stages a third Safe transaction:
+Similarly, in the event of a compromised redeemer, we would elect to revoke the REDEEMER_ROLE:
+
+**Revoke `REDEEMER_ROLE` (full lockdown).** The Freezer stages a third Safe transaction:
 
 - **To**: `<Basin address>`
 - **Value**: `0`
@@ -59,7 +65,9 @@ A second signer confirms and executes.
 
 A second signer confirms and executes.
 
-> **Optimization**: Steps 1-3 can be batched into a single multi-send Safe transaction to reduce confirmation overhead from 3 rounds to 1.
+If multiple transactions are required, they should be batched into a single multi-send Safe transaction to reduce confirmation overhead from multiple rounds to one.
+
+We are currently exploring how to automate this process using a monitoring system through Hypernative.
 
 ### Side effects
 
