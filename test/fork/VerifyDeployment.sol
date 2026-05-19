@@ -124,7 +124,7 @@ abstract contract UsdsUsdcBasinDeploymentForkTestBase is Test {
     uint256 internal constant FORK_BLOCK_NUMBER = 25093011; // Thu, May 14, 7:33am EST
 
     function setUp() public virtual {
-        vm.createSelectFork(getChain("mainnet").rpcUrl, FORK_BLOCK_NUMBER);
+        vm.createSelectFork(getChain("mainnet").rpcUrl);
         basin  = GroveBasin(_basinAddr());
         pocket = UsdsUsdcPocket(basin.pocket());
         _postSetUp();
