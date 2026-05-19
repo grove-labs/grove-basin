@@ -17,6 +17,7 @@ Audited commit: [`a79269a3`](https://github.com/grove-labs/grove-basin/commit/a7
 | 9 | BUIDL Admin TimelockController | [0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34](https://etherscan.io/address/0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34) | [0x63a99523...](https://etherscan.io/tx/0x63a9952301836480eea0f6fe830243eaa2a71ca23457f4c8a2792e015df526d8) | [Yes](https://etherscan.io/address/0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34#code) |
 | 10 | BUIDL GroveBasin | [0x10b3d3A96646720f8B3a29229cF96d513f3C84F1](https://etherscan.io/address/0x10b3d3A96646720f8B3a29229cF96d513f3C84F1) | [0x4c394796...](https://etherscan.io/tx/0x4c39479656f2293361acb059d467cffd3b11f1346dfc52e99bd2a161521775e8) | [Yes](https://etherscan.io/address/0x10b3d3A96646720f8B3a29229cF96d513f3C84F1#code) |
 | 11 | BUIDL UsdsUsdcPocket | [0x621727A05db6AeB33118b3F9DE3EAf2d8Fc86aDA](https://etherscan.io/address/0x621727A05db6AeB33118b3F9DE3EAf2d8Fc86aDA) | [0xc6f0e579...](https://etherscan.io/tx/0xc6f0e579c7636321f4b27c4ec2f701e9afd6ce01488c111de66f932c5eaf8b5c) | [Yes](https://etherscan.io/address/0x621727A05db6AeB33118b3F9DE3EAf2d8Fc86aDA#code) |
+| 12 | BUIDL BUIDLTokenRedeemer | [0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885](https://etherscan.io/address/0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885) | [0x2577828e...](https://etherscan.io/tx/0x2577828e23503fdc87af290e044df43474341bc072f62fde6e983ef08b0729a1) | [Yes](https://etherscan.io/address/0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885#code) |
 
 ### Tenderly testnet deployments
 
@@ -33,10 +34,9 @@ Audited commit: [`a79269a3`](https://github.com/grove-labs/grove-basin/commit/a7
 | JTRSY JTRSYTokenRedeemer | `0x864DBBCc0876ca005Ca6469d5A22856bF4da0C59` | [tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/efd87152-530e-421e-9203-e3d597434433/tx/0xa577285c945a4a46e194336aa9b15cb8061e5bfe03a8819eed041a742fbcceb1) |
 | BUIDL GroveBasin | `0x10b3d3A96646720f8B3a29229cF96d513f3C84F1` | [tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/02d7edf3-c111-495c-88e6-98db7a9a2102/tx/0xa1299d2edf40902735b7f0285f0d41b46c0785a3cb4e0357fe9c6162db1dc937) |
 | BUIDL UsdsUsdcPocket | `0x621727A05db6AeB33118b3F9DE3EAf2d8Fc86aDA` | [tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/02d7edf3-c111-495c-88e6-98db7a9a2102/tx/0x70d642074437e2dae7fc8f13fbf6d88d4a808ff3ee7f14f012f2ef9fe65b0332) |
+| BUIDL BUIDLTokenRedeemer | `0x73B544955befa6CE7Dc90CcBFe72011deA243e1A` | [tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/02d7edf3-c111-495c-88e6-98db7a9a2102/tx/0x69e2c42167fc332992e9a9804bf7f1e3b655ee0db789e7f7e9777e401e13f699) |
 
 ### Pending deployments
 
-| Contract | Checklist | Blocker |
-|----------|-----------|---------|
-| BUIDL BUIDLTokenRedeemer | [deployment-checklist-buidl-basin.md](deployment-checklist-buidl-basin.md) | Securitize: redemption address + redeemer address |
+None — all contracts deployed.
 

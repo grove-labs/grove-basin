@@ -23,6 +23,7 @@
 - [x] Ensure the deployer has enough gas tokens.
 - [x] Document the command planned to be used to perform the deployment. Prefer writing a foundry script for anything that requires more than one transaction.
 
+**BUIDL GroveBasin and UsdsUsdcPocket:**
 ```bash
 DEPLOYER=<deployer_address> \
 forge script script/SetupBUIDLUsdsUsdcBasin.s.sol:SetupBUIDLUsdsUsdcBasin \
@@ -32,11 +33,23 @@ forge script script/SetupBUIDLUsdsUsdcBasin.s.sol:SetupBUIDLUsdsUsdcBasin \
     --broadcast --slow --verify
 ```
 
+**BUIDLTokenRedeemer:**
+```bash
+forge script script/SetupBUIDLUsdsUsdcBasin.s.sol:SetupBUIDLUsdsUsdcBasin \
+    --sig "deployRedeemerContractAndGrantRedeemerRole(address)" 0x10b3d3A96646720f8B3a29229cF96d513f3C84F1 \
+    --rpc-url mainnet \
+    --account grove-basin-deployer \
+    --sender 0x6D99f476E7E9FCcd189fb87023cFa301364Fa817 \
+    --broadcast --slow --verify
+```
+
 - [x] Perform a test deployment using a fresh *private* Tenderly testnet. Then, inspect submitted transactions to match the desired outcome.
   - GroveBasin: `0x10b3d3A96646720f8B3a29229cF96d513f3C84F1`
-    - [Basin deployment test tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/02d7edf3-c111-495c-88e6-98db7a9a2102/tx/0xa1299d2edf40902735b7f0285f0d41b46c0785a3cb4e0357fe9c6162db1dc937)
+    - [Tenderly test tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/02d7edf3-c111-495c-88e6-98db7a9a2102/tx/0xa1299d2edf40902735b7f0285f0d41b46c0785a3cb4e0357fe9c6162db1dc937)
   - UsdsUsdcPocket: `0x621727A05db6AeB33118b3F9DE3EAf2d8Fc86aDA`
-    - [Pocket deployment test tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/02d7edf3-c111-495c-88e6-98db7a9a2102/tx/0x70d642074437e2dae7fc8f13fbf6d88d4a808ff3ee7f14f012f2ef9fe65b0332)
+    - [Tenderly test tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/02d7edf3-c111-495c-88e6-98db7a9a2102/tx/0x70d642074437e2dae7fc8f13fbf6d88d4a808ff3ee7f14f012f2ef9fe65b0332)
+  - BUIDLTokenRedeemer: `0x73B544955befa6CE7Dc90CcBFe72011deA243e1A`
+    - [Tenderly test tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/02d7edf3-c111-495c-88e6-98db7a9a2102/tx/0x69e2c42167fc332992e9a9804bf7f1e3b655ee0db789e7f7e9777e401e13f699)
 
 ### Deployment
 - [x] Set production RPC URL (only trusted RPC provider shall be used to avoid poisoning attacks).
@@ -50,9 +63,8 @@ forge script script/SetupBUIDLUsdsUsdcBasin.s.sol:SetupBUIDLUsdsUsdcBasin \
     - Deploy tx: [0x4c394796...](https://etherscan.io/tx/0x4c39479656f2293361acb059d467cffd3b11f1346dfc52e99bd2a161521775e8)
   - UsdsUsdcPocket: [`0x621727A05db6AeB33118b3F9DE3EAf2d8Fc86aDA`](https://etherscan.io/address/0x621727A05db6AeB33118b3F9DE3EAf2d8Fc86aDA)
     - Deploy tx: [0xc6f0e579...](https://etherscan.io/tx/0xc6f0e579c7636321f4b27c4ec2f701e9afd6ce01488c111de66f932c5eaf8b5c)
-  - BUIDLTokenRedeemer: skipped (`BUIDL_REDEMPTION_ADDRESS` not set)
-  - Redeemer role grant: skipped (`SECURITIZE_REDEEMER_ADDRESS` not set)
-  - Both contracts verified on Etherscan
-- [ ] Inspect the transaction history of the deployer.
-- [ ] Perform all relevant checks documented in the technical doc (constructor arguments, optimizations, bytecode verify, ownership transfer).
+  - BUIDLTokenRedeemer: [`0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885`](https://etherscan.io/address/0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885)
+    - Deploy tx: [0x2577828e...](https://etherscan.io/tx/0x2577828e23503fdc87af290e044df43474341bc072f62fde6e983ef08b0729a1)
+- [x] Inspect the transaction history of the deployer.
+- [x] Perform all relevant checks documented in the technical doc (constructor arguments, optimizations, bytecode verify, ownership transfer).
 - [ ] Independently verify the deployment by another member of the team.

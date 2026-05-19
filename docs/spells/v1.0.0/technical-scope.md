@@ -14,6 +14,8 @@
 | ALM Relayer | [0x0eEC86649E756a23CBc68d9EFEd756f16aD5F85f](https://etherscan.io/address/0x0eEC86649E756a23CBc68d9EFEd756f16aD5F85f) | TODO |
 | ALM Freezer | [0xB0113804960345fd0a245788b3423319c86940e5](https://etherscan.io/address/0xB0113804960345fd0a245788b3423319c86940e5) | TODO |
 | Grove Proxy | [0x1369f7b2b38c76B6478c0f0E66D94923421891Ba](https://etherscan.io/address/0x1369f7b2b38c76B6478c0f0E66D94923421891Ba) | TODO |
+| Chronicle BUIDL/USD Oracle Router | [0x8c68E0CacB61a065b99E2104457aCC829d61cbB0](https://etherscan.io/address/0x8c68E0CacB61a065b99E2104457aCC829d61cbB0) | [Chronicle Labs Dashboard](https://chroniclelabs.org/dashboard/proofofasset/blackrock-buidl) |
+| Chronicle JTRSY/USD Oracle Router | [0xE980a33EFA3EDDaa689eCbdCE4B2278D4DB94471](https://etherscan.io/address/0xE980a33EFA3EDDaa689eCbdCE4B2278D4DB94471) | [Chronicle Labs Dashboard](https://chroniclelabs.org/dashboard/proofofasset/janus-henderson-anemoy-treasury-fund) |
 
 ## Pre-deployed contracts
 
@@ -27,7 +29,8 @@
             - Cantina audit: https://cantina.xyz/portfolio/71794706-b078-4579-8f50-a9bd25d732d3
             - Chain Security Audit: https://reports.chainsecurity.com/GroveLabs/ChainSecurity_GroveLabs_Basin_Audit.pdf
         - Deployed bytecode verification: `forge verify-bytecode 0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a src/GroveBasinFactory.sol:GroveBasinFactory --rpc-url mainnet`
-        - Compilation optimizations match optimizer=true, runs=180, source solc 0.8.24.
+            - Creation code matched with status `full`. Runtime code matched with status `full`.
+        - Compilation optimizations match optimizer=true, runs=180, evm_version=cancun, source solc 0.8.24. Bytecode CBOR metadata: bytecodeHash=ipfs, IPFS CID=`QmavWW8CzA2QfPxLGw1YbE2489SJ8YYexoKwQGnXFjj6Nv`, solc=0.8.24.
         - Constructor arguments: None (GroveBasinFactory has no constructor arguments).
     - Additional parameters configured on the contract by a privileged actor: None — factory is stateless.
     - Ownership, roles, privilege callers: None — factory has no access control.
@@ -48,7 +51,8 @@
             - Cantina audit: https://cantina.xyz/portfolio/71794706-b078-4579-8f50-a9bd25d732d3
             - Chain Security Audit: https://reports.chainsecurity.com/GroveLabs/ChainSecurity_GroveLabs_Basin_Audit.pdf
         - Deployed bytecode verification: `forge verify-bytecode 0x7928A185B8137D1CD2a0996a810A04dB2837419D src/rate-providers/FixedRateProvider.sol:FixedRateProvider --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(uint256)" 1000000000000000000000000000)`
-        - Compilation optimizations match optimizer=true, runs=180, source solc 0.8.24.
+            - Creation code matched with status `full`. Runtime code matched with status `full`.
+        - Compilation optimizations match optimizer=true, runs=180, evm_version=cancun, source solc 0.8.24. Bytecode CBOR metadata: bytecodeHash=ipfs, IPFS CID=`QmchhEbJcxoU5HDDea198wCoJUYTKNpaVrPygkaEdQCsaF`, solc=0.8.24.
         - Constructor arguments:
             1. `rate`
                 - Argument value: `1000000000000000000000000000` (1e27, i.e. 1:1)
@@ -72,7 +76,8 @@
             - Cantina audit: https://cantina.xyz/portfolio/71794706-b078-4579-8f50-a9bd25d732d3
             - Chain Security Audit: https://reports.chainsecurity.com/GroveLabs/ChainSecurity_GroveLabs_Basin_Audit.pdf
         - Deployed bytecode verification: `forge verify-bytecode 0x69a171853575FFD41574EA80Abfc6337AcbC4d43 src/rate-providers/ChronicleRateProvider.sol:ChronicleRateProvider --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address)" 0x8c68E0CacB61a065b99E2104457aCC829d61cbB0)`
-        - Compilation optimizations match optimizer=true, runs=180, source solc 0.8.24.
+            - Creation code matched with status `full`. Runtime code matched with status `full`.
+        - Compilation optimizations match optimizer=true, runs=180, evm_version=cancun, source solc 0.8.24. Bytecode CBOR metadata: bytecodeHash=ipfs, IPFS CID=`Qmc6Mfao8kmpCpktgMNfTrMyJrykDctcsrBkog5ZW2nhPc`, solc=0.8.24.
         - Constructor arguments:
             1. `oracle`
                 - Argument value: `0x8c68E0CacB61a065b99E2104457aCC829d61cbB0` (Chronicle BUIDL/USD oracle router)
@@ -96,7 +101,8 @@
             - Cantina audit: https://cantina.xyz/portfolio/71794706-b078-4579-8f50-a9bd25d732d3
             - Chain Security Audit: https://reports.chainsecurity.com/GroveLabs/ChainSecurity_GroveLabs_Basin_Audit.pdf
         - Deployed bytecode verification: `forge verify-bytecode 0x29209ceCFeFa6f675E6f1f829320D67cE2b025E5 src/rate-providers/ChronicleRateProvider.sol:ChronicleRateProvider --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address)" 0xE980a33EFA3EDDaa689eCbdCE4B2278D4DB94471)`
-        - Compilation optimizations match optimizer=true, runs=180, source solc 0.8.24.
+            - Creation code matched with status `full`. Runtime code matched with status `full`.
+        - Compilation optimizations match optimizer=true, runs=180, evm_version=cancun, source solc 0.8.24. Bytecode CBOR metadata: bytecodeHash=ipfs, IPFS CID=`Qmc6Mfao8kmpCpktgMNfTrMyJrykDctcsrBkog5ZW2nhPc`, solc=0.8.24.
         - Constructor arguments:
             1. `oracle`
                 - Argument value: `0xE980a33EFA3EDDaa689eCbdCE4B2278D4DB94471` (Chronicle JTRSY/USD oracle router)
@@ -119,6 +125,7 @@
         - Source code URL (at the audited commit hash): [OpenZeppelin `TimelockController`](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/fcbae5394ae8ad52d8e580a3477db99814b9d565/contracts/governance/TimelockController.sol)
         - External URLs to the audit reports: [OpenZeppelin](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/audits/2025-10-v5.5.pdf)
         - Deployed bytecode verification: `forge verify-bytecode 0xA52dC9876aB4A9DB6dAfbb83410554086054d140 lib/openzeppelin-contracts/contracts/governance/TimelockController.sol:TimelockController --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(uint256,address[],address[],address)" 604800 "[0x9184DdBCc4824B76CE2AEFA72534a1a87aA5037c]" "[0x1369f7b2b38c76B6478c0f0E66D94923421891Ba]" 0x6D99f476E7E9FCcd189fb87023cFa301364Fa817)`
+            - Creation code matched with status `full`. Runtime code matched with status `full`.
         - Constructor arguments:
             1. `minDelay`
                 - Argument value: `604800` (7 days)
@@ -154,6 +161,7 @@
         - Source code URL (at the audited commit hash): [OpenZeppelin `TimelockController`](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/fcbae5394ae8ad52d8e580a3477db99814b9d565/contracts/governance/TimelockController.sol)
         - External URLs to the audit reports: [OpenZeppelin](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/audits/2025-10-v5.5.pdf)
         - Deployed bytecode verification: `forge verify-bytecode 0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34 lib/openzeppelin-contracts/contracts/governance/TimelockController.sol:TimelockController --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(uint256,address[],address[],address)" 604800 "[0x6D99f476E7E9FCcd189fb87023cFa301364Fa817]" "[0x1369f7b2b38c76B6478c0f0E66D94923421891Ba]" 0x6D99f476E7E9FCcd189fb87023cFa301364Fa817)`
+            - Creation code matched with status `full`. Runtime code matched with status `full`.
         - Constructor arguments:
             1. `minDelay`
                 - Argument value: `604800` (7 days)
@@ -247,7 +255,8 @@
             - Cantina audit: https://cantina.xyz/portfolio/71794706-b078-4579-8f50-a9bd25d732d3
             - Chain Security Audit: https://reports.chainsecurity.com/GroveLabs/ChainSecurity_GroveLabs_Basin_Audit.pdf
         - Deployed bytecode verification: `forge verify-bytecode 0xA15B8C07Fa32A4f8BeA3882600a673dc9CC1D6B9 src/pockets/UsdsUsdcPocket.sol:UsdsUsdcPocket --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address,address,address)" 0x1FA4dB8D545Cbd22b7bbA2084348A2E6ef36E363 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 0xdC035D45d973E3EC169d2276DDab16f1e407384F 0xA188EEC8F81263234dA3622A406892F3D630f98c 0x1369f7b2b38c76B6478c0f0E66D94923421891Ba)`
-        - Compilation optimizations match optimizer=true, runs=180, source solc 0.8.24.
+            - Creation code matched with status `full`. Runtime code matched with status `full`.
+        - Compilation optimizations match optimizer=true, runs=180, evm_version=cancun, source solc 0.8.24. Bytecode CBOR metadata: bytecodeHash=ipfs, IPFS CID=`QmTUwRpfBkq1ZAwmTjHLW1MTAZTVKypXb1bJpwzrSNzRFu`, solc=0.8.24.
         - Constructor arguments:
             1. `basin_`
                 - Argument value: `0x1FA4dB8D545Cbd22b7bbA2084348A2E6ef36E363` (JTRSY GroveBasin)
@@ -280,7 +289,8 @@
             - Cantina audit: https://cantina.xyz/portfolio/71794706-b078-4579-8f50-a9bd25d732d3
             - Chain Security Audit: https://reports.chainsecurity.com/GroveLabs/ChainSecurity_GroveLabs_Basin_Audit.pdf
         - Deployed bytecode verification: `forge verify-bytecode 0x212697f0A9Fc218210D98cd1A159dc8D8A87b8A8 src/redeemers/JTRSYTokenRedeemer.sol:JTRSYTokenRedeemer --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address)" 0x8c213ee79581Ff4984583C6a801e5263418C4b86 0xFE6920eB6C421f1179cA8c8d4170530CDBdfd77A 0x1FA4dB8D545Cbd22b7bbA2084348A2E6ef36E363)`
-        - Compilation optimizations match optimizer=true, runs=180, source solc 0.8.24.
+            - Creation code matched with status `full`. Runtime code matched with status `full`.
+        - Compilation optimizations match optimizer=true, runs=180, evm_version=cancun, source solc 0.8.24. Bytecode CBOR metadata: bytecodeHash=ipfs, IPFS CID=`QmTdhLbu1GU2uygH13BLQ9T8QMdD2sr7dZ4ALgAFFcoWWY`, solc=0.8.24.
         - Constructor arguments:
             1. `creditToken_`
                 - Argument value: `0x8c213ee79581Ff4984583C6a801e5263418C4b86` (JTRSY)
@@ -334,14 +344,14 @@
             - `creditTokenRateProvider`
                 - Argument value: `0x69a171853575FFD41574EA80Abfc6337AcbC4d43` (BUIDL ChronicleRateProvider)
                 - External source of the value or an explanation of how this value can be verified, and who has to confirm it: Pre-deployed contract #3 (BUIDL Chronicle Rate Provider). Can be verified by calling `creditTokenRateProvider()` on the deployed GroveBasin and cross-referencing with [pre-deployed contract #3](https://etherscan.io/address/0x69a171853575FFD41574EA80Abfc6337AcbC4d43). Grove to confirm.
-    - Additional parameters configured on the contract by a privileged actor: Pocket set to `0x621727A05db6AeB33118b3F9DE3EAf2d8Fc86aDA` (UsdsUsdcPocket). Fee bounds set to [0, 500]. Four pause keys enabled (PAUSED_SWAP_SWAP_TO_CREDIT, PAUSED_SWAP_COLLATERAL_TO_CREDIT, PAUSED_DEPOSIT_CREDIT, PAUSED_WITHDRAW_CREDIT). BUIDLTokenRedeemer deployment skipped (BUIDL_REDEMPTION_ADDRESS not set). REDEEMER_ROLE grant skipped (SECURITIZE_REDEEMER_ADDRESS not set). See [SetupBUIDLUsdsUsdcBasin post-deploy configuration](#setupbuidlusdsusdcbasin-post-deploy-configuration) for full details.
+    - Additional parameters configured on the contract by a privileged actor: Pocket set to `0x621727A05db6AeB33118b3F9DE3EAf2d8Fc86aDA` (UsdsUsdcPocket). Token redeemer `0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885` (BUIDLTokenRedeemer) registered. Fee bounds set to [0, 500]. Four pause keys enabled (PAUSED_SWAP_SWAP_TO_CREDIT, PAUSED_SWAP_COLLATERAL_TO_CREDIT, PAUSED_DEPOSIT_CREDIT, PAUSED_WITHDRAW_CREDIT). See [SetupBUIDLUsdsUsdcBasin post-deploy configuration](#setupbuidlusdsusdcbasin-post-deploy-configuration) for full details.
     - Ownership, roles, privilege callers:
         - `OWNER_ROLE` (`DEFAULT_ADMIN_ROLE`): `0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34` (BUIDL Admin TimelockController)
         - `MANAGER_ADMIN_ROLE`: `0x1369f7b2b38c76B6478c0f0E66D94923421891Ba` (Grove Proxy) + `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
         - `MANAGER_ROLE`: `0x0eEC86649E756a23CBc68d9EFEd756f16aD5F85f` (ALM Relayer)
         - `PAUSER_ROLE`: `0xB0113804960345fd0a245788b3423319c86940e5` (ALM Freezer)
-        - `REDEEMER_ROLE`: None (pending Securitize redeemer address)
-        - `REDEEMER_CONTRACT_ROLE`: None (pending BUIDLTokenRedeemer deployment)
+        - `REDEEMER_ROLE`: `0xdfC603076EA75895DD4d59c6e2ee5038f881CB74`
+        - `REDEEMER_CONTRACT_ROLE`: `0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885` (BUIDLTokenRedeemer)
     - Deployment command:
         ```
         DEPLOYER=0x6D99f476E7E9FCcd189fb87023cFa301364Fa817 \
@@ -364,7 +374,8 @@
             - Cantina audit: https://cantina.xyz/portfolio/71794706-b078-4579-8f50-a9bd25d732d3
             - Chain Security Audit: https://reports.chainsecurity.com/GroveLabs/ChainSecurity_GroveLabs_Basin_Audit.pdf
         - Deployed bytecode verification: `forge verify-bytecode 0x621727A05db6AeB33118b3F9DE3EAf2d8Fc86aDA src/pockets/UsdsUsdcPocket.sol:UsdsUsdcPocket --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address,address,address)" 0x10b3d3A96646720f8B3a29229cF96d513f3C84F1 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 0xdC035D45d973E3EC169d2276DDab16f1e407384F 0xA188EEC8F81263234dA3622A406892F3D630f98c 0x1369f7b2b38c76B6478c0f0E66D94923421891Ba)`
-        - Compilation optimizations match optimizer=true, runs=180, source solc 0.8.24.
+            - Creation code matched with status `full`. Runtime code matched with status `full`.
+        - Compilation optimizations match optimizer=true, runs=180, evm_version=cancun, source solc 0.8.24. Bytecode CBOR metadata: bytecodeHash=ipfs, IPFS CID=`QmTUwRpfBkq1ZAwmTjHLW1MTAZTVKypXb1bJpwzrSNzRFu`, solc=0.8.24.
         - Constructor arguments:
             1. `basin_`
                 - Argument value: `0x10b3d3A96646720f8B3a29229cF96d513f3C84F1` (BUIDL GroveBasin)
@@ -387,6 +398,41 @@
     - Source code is verified on the block explorer: [Yes](https://etherscan.io/address/0x621727A05db6AeB33118b3F9DE3EAf2d8Fc86aDA#code)
     - The deployer no longer has a privileged role: N/A — no access control.
 
+9. **BUIDL BUIDLTokenRedeemer**
+    - Chain name: Ethereum Mainnet
+    - Contract address: [0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885](https://etherscan.io/address/0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885)
+    - Deployment transaction trace: [0x2577828e23503fdc87af290e044df43474341bc072f62fde6e983ef08b0729a1](https://etherscan.io/tx/0x2577828e23503fdc87af290e044df43474341bc072f62fde6e983ef08b0729a1)
+    - Code verification
+        - Source code URL (at the audited commit hash): [src/redeemers/BUIDLTokenRedeemer.sol](https://github.com/grove-labs/grove-basin/blob/a79269a3f5f0253110e9cbca15d79aa9ffb62c4d/src/redeemers/BUIDLTokenRedeemer.sol)
+        - External URLs to the audit reports: 
+            - Cantina audit: https://cantina.xyz/portfolio/71794706-b078-4579-8f50-a9bd25d732d3
+            - Chain Security Audit: https://reports.chainsecurity.com/GroveLabs/ChainSecurity_GroveLabs_Basin_Audit.pdf
+        - Deployed bytecode verification: `forge verify-bytecode 0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885 src/redeemers/BUIDLTokenRedeemer.sol:BUIDLTokenRedeemer --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address)" 0x7712c34205737192402172409a8F7ccef8aA2AEc 0x0d671C15Aa427fFc31C3A484C3ACdd8043F73052 0x10b3d3A96646720f8B3a29229cF96d513f3C84F1)`
+            - Creation code matched with status `full`. Runtime code matched with status `full`.
+        - Compilation optimizations match optimizer=true, runs=180, evm_version=cancun, source solc 0.8.24. Bytecode CBOR metadata: bytecodeHash=ipfs, IPFS CID=`QmQshJETAUWw5CJR4ushQEdSSV5v2kucCqLffY87TjaXDG`, solc=0.8.24.
+        - Constructor arguments:
+            1. `creditToken_`
+                - Argument value: `0x7712c34205737192402172409a8F7ccef8aA2AEc` (BUIDL)
+                - External source: Script constant `BUIDL_TOKEN`
+            2. `redemptionAddress_`
+                - Argument value: `0x0d671C15Aa427fFc31C3A484C3ACdd8043F73052`
+                - External source: Provided by Securitize (BUIDL primary redemption address)
+            3. `basin_`
+                - Argument value: `0x10b3d3A96646720f8B3a29229cF96d513f3C84F1` (BUIDL GroveBasin)
+                - External source: Pre-deployed contract #10 (BUIDL GroveBasin), deployed in step 2 of SetupBUIDLUsdsUsdcBasin
+    - Additional parameters configured on the contract by a privileged actor: None — BUIDLTokenRedeemer is immutable. Registered on the basin via `addTokenRedeemer()` which grants `REDEEMER_CONTRACT_ROLE` and calls `setUp()`.
+    - Ownership, roles, privilege callers: None — no access control. Callable by the GroveBasin contract (`onlyBasin` modifier) and the basin's manager admin (Grove Proxy `0x1369f7b2b38c76B6478c0f0E66D94923421891Ba`).
+    - Deployment command:
+        ```
+        forge script script/SetupBUIDLUsdsUsdcBasin.s.sol:SetupBUIDLUsdsUsdcBasin \
+            --sig "deployRedeemerContractAndGrantRedeemerRole(address)" 0x10b3d3A96646720f8B3a29229cF96d513f3C84F1 \
+            --rpc-url mainnet \
+            --account grove-basin-deployer \
+            --sender 0x6D99f476E7E9FCcd189fb87023cFa301364Fa817 --broadcast --slow --verify
+        ```
+    - Source code is verified on the block explorer: [Yes](https://etherscan.io/address/0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885#code)
+    - The deployer no longer has a privileged role: N/A — no access control.
+
 ## Pre-configurations
 
 ### BUIDL Basin TimelockController
@@ -405,7 +451,7 @@
             - Argument value: `[0x1369f7b2b38c76B6478c0f0E66D94923421891Ba]` (Grove Proxy)
             - External source: grove-address-registry `Ethereum.GROVE_PROXY`
         4. `admin`
-            - Argument value: deployer address (from `DEPLOYER` env var)
+            - Argument value: `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
             - External source: Deployer EOA
 
 2. **Grant CANCELLER_ROLE to ALM Freezer**
@@ -421,33 +467,82 @@
             - External source: grove-address-registry `Ethereum.ALM_FREEZER`
     - Note: The constructor also grants `CANCELLER_ROLE` to the proposer by default.
 
-3. **Issuer to propose a test transaction (sending 1 wei of ETH)**
-    - Transaction trace URL: TODO
+3. **Grant PROPOSER_ROLE to Securitize owner address**
+    - Transaction trace URL: [0x13708c4b25bacae1fc473709c229943ec095af29833dd3ce813c9077536d825d](https://etherscan.io/tx/0x13708c4b25bacae1fc473709c229943ec095af29833dd3ce813c9077536d825d)
+    - Contract being called: TimelockController (`0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34`)
+    - Function being called: `grantRole(bytes32 role, address account)`
+    - Function arguments:
+        1. `role`
+            - Argument value: `PROPOSER_ROLE` = `keccak256("PROPOSER_ROLE")`
+            - External source: TimelockController constant
+        2. `account`
+            - Argument value: `0x551e841e6fb54431a0664C8776784F6d7E611428` (Securitize owner address)
+            - External source: Provided by Securitize
+
+4. **Grant CANCELLER_ROLE to Securitize owner address**
+    - Transaction trace URL: [0xbdc05e7f7a38de9fcc25bf0b19a5e4afee54e45284a9db3cb124ead56c7dd17b](https://etherscan.io/tx/0xbdc05e7f7a38de9fcc25bf0b19a5e4afee54e45284a9db3cb124ead56c7dd17b)
+    - Contract being called: TimelockController (`0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34`)
+    - Function being called: `grantRole(bytes32 role, address account)`
+    - Function arguments:
+        1. `role`
+            - Argument value: `CANCELLER_ROLE` = `keccak256("CANCELLER_ROLE")`
+            - External source: TimelockController constant
+        2. `account`
+            - Argument value: `0x551e841e6fb54431a0664C8776784F6d7E611428` (Securitize owner address)
+            - External source: Provided by Securitize
+
+5. **Revoke PROPOSER_ROLE from deployer**
+    - Transaction trace URL: [0xbf846cf6e99603750864247a3697abdaf44c086c20bc25d9177cdf90c30d9880](https://etherscan.io/tx/0xbf846cf6e99603750864247a3697abdaf44c086c20bc25d9177cdf90c30d9880)
+    - Contract being called: TimelockController (`0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34`)
+    - Function being called: `revokeRole(bytes32 role, address account)`
+    - Function arguments:
+        1. `role`
+            - Argument value: `PROPOSER_ROLE` = `keccak256("PROPOSER_ROLE")`
+            - External source: TimelockController constant
+        2. `account`
+            - Argument value: `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
+            - External source: Deployer EOA
+
+6. **Revoke CANCELLER_ROLE from deployer**
+    - Transaction trace URL: [0x1a22124df961eee66a3d21b45ae9709a0fda7ca532bc77ad28750667790aaa3c](https://etherscan.io/tx/0x1a22124df961eee66a3d21b45ae9709a0fda7ca532bc77ad28750667790aaa3c)
+    - Contract being called: TimelockController (`0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34`)
+    - Function being called: `revokeRole(bytes32 role, address account)`
+    - Function arguments:
+        1. `role`
+            - Argument value: `CANCELLER_ROLE` = `keccak256("CANCELLER_ROLE")`
+            - External source: TimelockController constant
+        2. `account`
+            - Argument value: `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
+            - External source: Deployer EOA
+    - Note: The deployer held `CANCELLER_ROLE` via the constructor (granted to the initial proposer by default).
+
+7. **Issuer to propose a test transaction (sending 0 wei of ETH)**
+    - Transaction trace URL: [0xcb534ea4d3379ad43147e07d4beb7f61ecc9bf49854534b571f7df310aa3b09b](https://etherscan.io/tx/0xcb534ea4d3379ad43147e07d4beb7f61ecc9bf49854534b571f7df310aa3b09b)
     - Contract being called: TimelockController
     - Function being called: `schedule(address target, uint256 value, bytes data, bytes32 predecessor, bytes32 salt, uint256 delay)`
     - Function arguments:
         1. `target` - TimelockController address (self)
-        2. `value` - `1` (1 wei)
+        2. `value` - `0`
         3. `data` - `0x` (empty calldata)
         4. `predecessor` - `bytes32(0)`
         5. `salt` - `bytes32(0)`
         6. `delay` - `604800` (7 days)
     - Who will perform this action: Issuer (proposer)
 
-4. **Grove to simulate executing the test transaction with Grove Proxy on Tenderly**
-    - Transaction trace URL: TODO - Tenderly simulation link
+8. **Grove to simulate executing the test transaction with Grove Proxy on Tenderly**
+    - Transaction trace URL: [Tenderly simulation link](https://dashboard.tenderly.co/steakhouse/bloom-production/simulator/6fa4e0c1-b413-46fe-a0fa-85b60ef62ae9)
     - Contract being called: TimelockController
     - Function being called: `execute(address target, uint256 value, bytes data, bytes32 predecessor, bytes32 salt)`
-    - Function arguments: Same target/value/data/predecessor/salt as step 3
-    - Who will perform this action: Grove (via Grove Proxy `0x1369f7b2b38c76B6478c0f0E66D94923421891Ba`)
+    - Function arguments: Same target/value/data/predecessor/salt as step 7
+    - Who will perform this action: Grove
     - Note: This is a Tenderly simulation only, not an on-chain execution. Verifies the executor role is correctly configured.
 
-5. **Grove to cancel the test transaction with the freezer multisig**
+9. **Grove to cancel the test transaction with the freezer multisig**
     - Transaction trace URL: TODO
     - Contract being called: TimelockController
     - Function being called: `cancel(bytes32 id)`
     - Function arguments:
-        1. `id` - operation hash from the `schedule` call in step 3
+        1. `id` - operation hash from the `schedule` call in step 7
     - Who will perform this action: Grove (via ALM Freezer `0xB0113804960345fd0a245788b3423319c86940e5`)
     - Note: Verifies the CANCELLER_ROLE is correctly configured for the freezer multisig.
 
@@ -467,7 +562,7 @@
             - Argument value: `[0x1369f7b2b38c76B6478c0f0E66D94923421891Ba]` (Grove Proxy)
             - External source: grove-address-registry `Ethereum.GROVE_PROXY`
         4. `admin`
-            - Argument value: deployer address (from `DEPLOYER` env var)
+            - Argument value: `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
             - External source: Deployer EOA
 
 2. **Grant CANCELLER_ROLE to ALM Freezer**
@@ -484,7 +579,7 @@
     - Note: The constructor also grants `CANCELLER_ROLE` to the proposer by default.
 
 3. **Issuer to propose a test transaction (sending 1 wei of ETH)**
-    - Transaction trace URL: TODO
+    - Transaction trace URL: TODO — JTRSY to complete by 2026-05-15
     - Contract being called: TimelockController
     - Function being called: `schedule(address target, uint256 value, bytes data, bytes32 predecessor, bytes32 salt, uint256 delay)`
     - Function arguments:
@@ -533,7 +628,7 @@
     - Function being called: `deploy(address owner, address liquidityProvider, address swapToken, address collateralToken, address creditToken, address swapTokenRateProvider, address collateralTokenRateProvider, address creditTokenRateProvider)`
     - Function arguments:
         1. `owner`
-            - Argument value: deployer address (from `DEPLOYER` env var)
+            - Argument value: `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
             - External source: Deployer EOA
         2. `liquidityProvider`
             - Argument value: `0x491EDFB0B8b608044e227225C715981a30F3A44E` (ALM Proxy)
@@ -579,7 +674,7 @@
             - Argument value: `MANAGER_ADMIN_ROLE` = `keccak256("MANAGER_ADMIN_ROLE")`
             - External source: GroveBasin.sol constant
         2. `account`
-            - Argument value: deployer address (from `DEPLOYER` env var)
+            - Argument value: `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
             - External source: Deployer EOA
 
 5. **Deploy UsdsUsdcPocket**
@@ -611,9 +706,14 @@
             - Argument value: UsdsUsdcPocket address (deployed in step 5)
             - External source: Deterministic from deployment
 
-7. **Deploy and add BUIDLTokenRedeemer** _(skipped — BUIDL_REDEMPTION_ADDRESS not set)_
-    - Transaction trace URL: N/A
-    - Note: Not included in the current deployment. Will be deployed separately once Securitize shares the redemption address.
+7. **Deploy and add BUIDLTokenRedeemer**
+    - Transaction trace URL: [0x2577828e23503fdc87af290e044df43474341bc072f62fde6e983ef08b0729a1](https://etherscan.io/tx/0x2577828e23503fdc87af290e044df43474341bc072f62fde6e983ef08b0729a1)
+    - Contract being deployed: BUIDLTokenRedeemer at [`0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885`](https://etherscan.io/address/0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885)
+    - Constructor arguments:
+        1. `creditToken_`: `0x7712c34205737192402172409a8F7ccef8aA2AEc` (BUIDL)
+        2. `redemptionAddress_`: `0x0d671C15Aa427fFc31C3A484C3ACdd8043F73052`
+        3. `basin_`: `0x10b3d3A96646720f8B3a29229cF96d513f3C84F1` (BUIDL GroveBasin)
+    - Registered on basin via `addTokenRedeemer()` which grants `REDEEMER_CONTRACT_ROLE` and calls `setUp()`.
 
 8. **Grant MANAGER_ROLE to ALM Relayer**
     - Transaction trace URL: [0xc4afd2c3627b74160acdc2e4f25a9c4bea822304a00a218df0b899e5d4eb1739](https://etherscan.io/tx/0xc4afd2c3627b74160acdc2e4f25a9c4bea822304a00a218df0b899e5d4eb1739)
@@ -639,9 +739,17 @@
             - Argument value: `0xB0113804960345fd0a245788b3423319c86940e5` (ALM Freezer)
             - External source: grove-address-registry `Ethereum.ALM_FREEZER`
 
-10. **Grant REDEEMER_ROLE** _(skipped — SECURITIZE_REDEEMER_ADDRESS not set)_
-    - Transaction trace URL: N/A
-    - Note: Not included in the current deployment. Will be granted separately once Securitize shares the redeemer address.
+10. **Grant REDEEMER_ROLE**
+    - Transaction trace URL: [0x33adfefeee15f01805a582324701e2b03a63951680aab471bd8a034f10ee66da](https://etherscan.io/tx/0x33adfefeee15f01805a582324701e2b03a63951680aab471bd8a034f10ee66da)
+    - Contract being called: GroveBasin
+    - Function being called: `grantRole(bytes32 role, address account)`
+    - Function arguments:
+        1. `role`
+            - Argument value: `REDEEMER_ROLE` = `keccak256("REDEEMER_ROLE")`
+            - External source: GroveBasin.sol constant
+        2. `account`
+            - Argument value: `0xdfC603076EA75895DD4d59c6e2ee5038f881CB74`
+            - External source: Provided by Securitize (redeemer address)
 
 11. **Grant PAUSER_ROLE to deployer (temporary)**
     - Transaction trace URL: [0x3168f24a1804b3dbb14506b8cf32b01a185b81078e37e6edf30f71d103e49515](https://etherscan.io/tx/0x3168f24a1804b3dbb14506b8cf32b01a185b81078e37e6edf30f71d103e49515)
@@ -652,7 +760,7 @@
             - Argument value: `PAUSER_ROLE` = `keccak256("PAUSER_ROLE")`
             - External source: GroveBasin.sol constant
         2. `account`
-            - Argument value: deployer address (from `DEPLOYER` env var)
+            - Argument value: `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
             - External source: Deployer EOA
     - Note: Temporary grant to allow the deployer to call `setPaused` in steps 12--15. Revoked in step 17.
 
@@ -713,7 +821,7 @@
             - Argument value: `PAUSER_ROLE` = `keccak256("PAUSER_ROLE")`
             - External source: GroveBasin.sol constant
         2. `account`
-            - Argument value: deployer address (from `DEPLOYER` env var)
+            - Argument value: `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
             - External source: Deployer EOA
 
 18. **Grant OWNER_ROLE to BUIDL Admin TimelockController**
@@ -737,7 +845,7 @@
             - Argument value: `OWNER_ROLE` = `DEFAULT_ADMIN_ROLE` = `bytes32(0)`
             - External source: GroveBasin.sol constant
         2. `account`
-            - Argument value: deployer address (from `DEPLOYER` env var)
+            - Argument value: `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
             - External source: Deployer EOA
 
 ### SetupJTRSYUsdsUsdcBasin post-deploy configuration
@@ -760,7 +868,7 @@
     - Function being called: `deploy(address owner, address liquidityProvider, address swapToken, address collateralToken, address creditToken, address swapTokenRateProvider, address collateralTokenRateProvider, address creditTokenRateProvider)`
     - Function arguments:
         1. `owner`
-            - Argument value: deployer address (from `DEPLOYER` env var)
+            - Argument value: `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
             - External source: Deployer EOA
         2. `liquidityProvider`
             - Argument value: `0x491EDFB0B8b608044e227225C715981a30F3A44E` (ALM Proxy)
@@ -806,7 +914,7 @@
             - Argument value: `MANAGER_ADMIN_ROLE` = `keccak256("MANAGER_ADMIN_ROLE")`
             - External source: GroveBasin.sol constant
         2. `account`
-            - Argument value: deployer address (from `DEPLOYER` env var)
+            - Argument value: `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
             - External source: Deployer EOA
 
 5. **Deploy UsdsUsdcPocket**
@@ -906,7 +1014,7 @@
             - Argument value: `PAUSER_ROLE` = `keccak256("PAUSER_ROLE")`
             - External source: GroveBasin.sol constant
         2. `account`
-            - Argument value: deployer address (from `DEPLOYER` env var)
+            - Argument value: `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
             - External source: Deployer EOA
     - Note: Temporary grant to allow the deployer to call `setPaused` in steps 13--16. Revoked in step 18.
 
@@ -967,7 +1075,7 @@
             - Argument value: `PAUSER_ROLE` = `keccak256("PAUSER_ROLE")`
             - External source: GroveBasin.sol constant
         2. `account`
-            - Argument value: deployer address (from `DEPLOYER` env var)
+            - Argument value: `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
             - External source: Deployer EOA
 
 19. **Grant OWNER_ROLE to JTRSY Admin TimelockController**
@@ -991,7 +1099,7 @@
             - Argument value: `OWNER_ROLE` = `DEFAULT_ADMIN_ROLE` = `bytes32(0)`
             - External source: GroveBasin.sol constant
         2. `account`
-            - Argument value: deployer address (from `DEPLOYER` env var)
+            - Argument value: `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
             - External source: Deployer EOA
 
 ## Pre-requirements
@@ -1012,10 +1120,14 @@
 
 ### BUIDL Basin TimelockController
 
-1. **Transfer PROPOSER_ROLE from deployer to Securitize owner address**
+1. **Transfer PROPOSER_ROLE and CANCELLER_ROLE from deployer to Securitize owner address**
     - Intended end goal: The BUIDL Admin TimelockController's `PROPOSER_ROLE` must be transferred from the deployer (temporary initial proposer) to the Securitize owner address. This requires granting `PROPOSER_ROLE` to the Securitize address and revoking it from the deployer.
     - Why is it required to be done in advance: The deployer is set as the initial proposer only as a placeholder. The issuer (Securitize) must hold the proposer role before the system is considered live.
-    - Proof that it was done or planned to be done: TODO — transaction granting `PROPOSER_ROLE` to Securitize and revoking from deployer, once Securitize shares their owner address
+    - Proof that it was done or planned to be done: 
+        - `PROPOSER_ROLE` granted to `0x551e841e6fb54431a0664C8776784F6d7E611428` in tx [0x13708c4b...](https://etherscan.io/tx/0x13708c4b25bacae1fc473709c229943ec095af29833dd3ce813c9077536d825d). 
+        - `CANCELLER_ROLE` granted to `0x551e841e6fb54431a0664C8776784F6d7E611428` in tx [0xbdc05e7f...](https://etherscan.io/tx/0xbdc05e7f7a38de9fcc25bf0b19a5e4afee54e45284a9db3cb124ead56c7dd17b). 
+        - `PROPOSER_ROLE` revoked from deployer in tx [0xbf846cf6...](https://etherscan.io/tx/0xbf846cf6e99603750864247a3697abdaf44c086c20bc25d9177cdf90c30d9880).
+        - `CANCELLER_ROLE` revoked from deployer in tx [0x1a22124d...](https://etherscan.io/tx/0x1a22124df961eee66a3d21b45ae9709a0fda7ca532bc77ad28750667790aaa3c).
 
 2. **Deployer to revoke own admin role**
     - Intended end goal: The deployer must call `revokeRole(DEFAULT_ADMIN_ROLE, deployer)` on the BUIDL Basin TimelockController so that no single EOA retains admin privileges. After this, roles can only be managed through the timelock itself.
@@ -1029,37 +1141,61 @@
     - Why is it required to be done in advance: The deployer holds `DEFAULT_ADMIN_ROLE` after deployment, which allows bypassing the timelock delay for role changes. This must be revoked before the system is considered live.
     - Proof that it was done or planned to be done: TODO
 
-### SetupBUIDLUsdsUsdcBasin
+### BUIDL Basin
 
-1. **Securitize to share the BUIDL redemption address**
+1. **BUIDLTokenRedeemer must be deployed**
     - Intended end goal: The BUIDL redemption address is required to deploy the `BUIDLTokenRedeemer` contract, which is passed as a constructor argument. Without it, the redeemer cannot be deployed and the basin will not support BUIDL redemptions.
     - Why is it required to be done in advance: The `BUIDLTokenRedeemer` constructor requires the redemption address; the deployment script cannot proceed without it.
-    - Proof that it was done or planned to be done: TODO — waiting on Securitize to share the redemption address
+    - Proof that it was done or planned to be done: Deployed at [`0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885`](https://etherscan.io/address/0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885) in tx [0x2577828e...](https://etherscan.io/tx/0x2577828e23503fdc87af290e044df43474341bc072f62fde6e983ef08b0729a1). Redemption address: `0x0d671C15Aa427fFc31C3A484C3ACdd8043F73052`.
 
-2. **Securitize to share a redeemer address for REDEEMER_ROLE**
+2. **Grant redeemer address the REDEEMER_ROLE**
     - Intended end goal: A valid address to grant the `REDEEMER_ROLE` on the BUIDL GroveBasin. This address will be authorized to trigger redemptions.
     - Why is it required to be done in advance: Currently set to `address(0)` in the script; the conditional skip means no redeemer role holder will be set until the address is provided.
-    - Proof that it was done or planned to be done: TODO — waiting on Securitize to share their redeemer address
+    - Proof that it was done or planned to be done: `REDEEMER_ROLE` granted to `0xdfC603076EA75895DD4d59c6e2ee5038f881CB74` in tx [0x33adfefe...](https://etherscan.io/tx/0x33adfefeee15f01805a582324701e2b03a63951680aab471bd8a034f10ee66da).
 
 3. **BUIDL Basin must be allowlisted on BUIDL token**
     - Intended end goal: The BUIDL Basin contract (`0x10b3d3A96646720f8B3a29229cF96d513f3C84F1`) can hold BUIDL tokens
     - Why is it required to be done in advance: BUIDL requires holders to be on an allowlist.
     - Proof that it was done or planned to be done: TODO
 
+4. **Revoke MANAGER_ADMIN_ROLE from deployer**
+    - Intended end goal: The deployer must call `revokeRole(MANAGER_ADMIN_ROLE, deployer)` on the BUIDL GroveBasin so that no single EOA retains admin privileges. After this, roles can only be managed through the timelock itself.
+    - Why is it required to be done in advance: The deployer holds `MANAGER_ADMIN_ROLE` after deployment, which allows bypassing the timelock delay to set up the token redeeemer contract (step 1) and add a redeemer (step 2). This must be revoked before the system is considered live so that no address other thatn Grove Proxy holds the MANAGER_ADMIN_ROLE
+    - Proof that it was done or planned to be done: TODO
+
 ### SetupJTRSYUsdsUsdcBasin
 
 1. **JTRSYTokenRedeemer must be allowlisted on Centrifuge vault and JTRSY token**
-    - Intended end goal: The redeemer contract can call `requestRedeem` and `redeem` on the Centrifuge vault.
+    - Intended end goal: The redeemer contract (`0x212697f0A9Fc218210D98cd1A159dc8D8A87b8A8`) can call `requestRedeem` and `redeem` on the Centrifuge vault, and can hold/transfer JTRSY tokens.
     - Why is it required to be done in advance: The Centrifuge vault requires callers to be on an allowlist.
-    - Proof that it was done or planned to be done: TODO
+    - Proof that it was done or planned to be done: Allowlisted via `updateRestriction` on the Centrifuge restriction manager (`0xA4A7Bb3831958463b3FE3E27A6a160F764341953`). The `UpdateMember` event confirms `0x212697f0A9Fc218210D98cd1A159dc8D8A87b8A8` was added to the JTRSY token member list with `validUntil = 4294967295` (type(uint32).max, i.e. no expiry). Transaction: [0x3484c44e53f487769db67e41b0fb1acdd3d8ca64287b097df09278bcd6525319](https://etherscan.io/tx/0x3484c44e53f487769db67e41b0fb1acdd3d8ca64287b097df09278bcd6525319).
 
 2. **JTRSY Basin must be allowlisted on JTRSY token**
-    - Intended end goal: The JTRSY Basin contract can hold JTRSY tokens
+    - Intended end goal: The JTRSY Basin contract (`0x1FA4dB8D545Cbd22b7bbA2084348A2E6ef36E363`) can hold JTRSY tokens.
     - Why is it required to be done in advance: JTRSY requires holders to be on an allowlist.
+    - Proof that it was done or planned to be done: Allowlisted via `updateRestriction` on the Centrifuge restriction manager (`0xA4A7Bb3831958463b3FE3E27A6a160F764341953`). Transaction: [0x7a45aeda74c9ac7d87663b95d56a62094c960acf1bf5b8848b44d99ea206c576](https://etherscan.io/tx/0x7a45aeda74c9ac7d87663b95d56a62094c960acf1bf5b8848b44d99ea206c576).
+
+3. **Revoke MANAGER_ADMIN_ROLE from deployer**
+    - Intended end goal: The deployer must call `revokeRole(MANAGER_ADMIN_ROLE, deployer)` on the JTRSY GroveBasin so that no single EOA retains admin privileges. After this, roles can only be managed through the timelock itself.
+    - Why is it required to be done in advance: The deployer holds `MANAGER_ADMIN_ROLE` after deployment, which allows bypassing the timelock delay to set up the token redeeemer contract (step 1) and add a redeemer (step 2). This must be revoked before the system is considered live so that no address other thatn Grove Proxy holds the MANAGER_ADMIN_ROLE
     - Proof that it was done or planned to be done: TODO
 
 ## Proposed actions
 
+**JTRSY Initial Deposit**
+- Business reason behind this action: To seed the JTRSY basin with initial liquidity and establish a baseline for the system to operate.
+- Who will perform this action: Grove Proxy
+- Important arguments:
+    - `amount`: 50M USDS; Grove to confirm
+    - `receiver`: Grove ALM Proxy
+
+**BUIDL Initial Deposit**
+- Business reason behind this action: To seed the JTRSY basin with initial liquidity and establish a baseline for the system to operate.
+- Who will perform this action: Grove Proxy
+- Important arguments:
+    - `amount`: 50M USDS; Grove to confirm
+    - `receiver`: Grove ALM Proxy
+- _Note_: contingent on Securitize onboarding completion (see Pre-requirements §1–§3 and §7); if Securitize is not ready by spell execution, this item moves to a future spell.
 
 
 ## Post-checks
@@ -1096,9 +1232,15 @@
 
 6. **Test swap transaction**
     - What will be done: Perform a small test swap on each basin to confirm end-to-end functionality.
-    - How it will be done: Run `test/VerifyDeployment.sol`
+    - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
     - Expected outcome: Swap succeeds, expected output amount is received.
-    - Who will perform this action: Deployer or designated tester
+    - Who will perform this action: Deployer or designated tester, working with the issuer
+
+7. **Test redemption transaction**
+    - What will be done: Perform a small test redemption on each basin to confirm end-to-end functionality.
+    - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
+    - Expected outcome: Redemption succeeds, expected output amount is received.
+    - Who will perform this action: Deployer or designated tester, working with the issuer
 
 7. **Verify source code on block explorer**
     - What will be done: Confirm all deployed contracts have verified source code on Etherscan.
