@@ -132,7 +132,7 @@
                 - External source: Script constant `MIN_DELAY`
             2. `proposers`
                 - Argument value: `[0x9184DdBCc4824B76CE2AEFA72534a1a87aA5037c]`
-                - External source: From private chats with Anemoy
+                - External source: JTRSY proposer multisig address (provided by Anemoy)
             3. `executors`
                 - Argument value: `[0x1369f7b2b38c76B6478c0f0E66D94923421891Ba]` (Grove Proxy)
                 - External source: grove-address-registry `Ethereum.GROVE_PROXY`
@@ -141,7 +141,7 @@
                 - External source: Deployer EOA
     - Additional parameters configured on the contract by a privileged actor: `CANCELLER_ROLE` granted to ALM Freezer (`0xB0113804960345fd0a245788b3423319c86940e5`) in the deployment script.
     - Ownership, roles, privilege callers:
-        - `PROPOSER_ROLE`: `0x9184DdBCc4824B76CE2AEFA72534a1a87aA5037c`
+        - `PROPOSER_ROLE`: `0x9184DdBCc4824B76CE2AEFA72534a1a87aA5037c` (Anemoy proposer)
         - `EXECUTOR_ROLE`: `0x1369f7b2b38c76B6478c0f0E66D94923421891Ba` (Grove Proxy)
         - `CANCELLER_ROLE`: `0x9184DdBCc4824B76CE2AEFA72534a1a87aA5037c` (proposer, via constructor) + `0xB0113804960345fd0a245788b3423319c86940e5` (ALM Freezer, via script)
         - `DEFAULT_ADMIN_ROLE`: `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer — to be revoked as pre-requirement)
@@ -439,7 +439,7 @@
 
 1. **Deploy TimelockController**
     - Transaction trace URL: [0x63a9952301836480eea0f6fe830243eaa2a71ca23457f4c8a2792e015df526d8](https://etherscan.io/tx/0x63a9952301836480eea0f6fe830243eaa2a71ca23457f4c8a2792e015df526d8)
-    - Contract being deployed: `TimelockController` (OpenZeppelin)
+    - Contract being deployed: BUIDL Admin `TimelockController` (`0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34`) (OpenZeppelin)
     - Constructor arguments:
         1. `minDelay`
             - Argument value: `604800` (7 days)
@@ -456,7 +456,7 @@
 
 2. **Grant CANCELLER_ROLE to ALM Freezer**
     - Transaction trace URL: [0x211e0cab507ef6affbe69283e0270ffd41e84906fa6a347ac43b5889122d64e3](https://etherscan.io/tx/0x211e0cab507ef6affbe69283e0270ffd41e84906fa6a347ac43b5889122d64e3)
-    - Contract being called: TimelockController (newly deployed)
+    - Contract being called: BUIDL Admin TimelockController (`0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34`)
     - Function being called: `grantRole(bytes32 role, address account)`
     - Function arguments:
         1. `role`
@@ -469,7 +469,7 @@
 
 3. **Grant PROPOSER_ROLE to Securitize owner address**
     - Transaction trace URL: [0x13708c4b25bacae1fc473709c229943ec095af29833dd3ce813c9077536d825d](https://etherscan.io/tx/0x13708c4b25bacae1fc473709c229943ec095af29833dd3ce813c9077536d825d)
-    - Contract being called: TimelockController (`0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34`)
+    - Contract being called: BUIDL Admin TimelockController (`0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34`)
     - Function being called: `grantRole(bytes32 role, address account)`
     - Function arguments:
         1. `role`
@@ -481,7 +481,7 @@
 
 4. **Grant CANCELLER_ROLE to Securitize owner address**
     - Transaction trace URL: [0xbdc05e7f7a38de9fcc25bf0b19a5e4afee54e45284a9db3cb124ead56c7dd17b](https://etherscan.io/tx/0xbdc05e7f7a38de9fcc25bf0b19a5e4afee54e45284a9db3cb124ead56c7dd17b)
-    - Contract being called: TimelockController (`0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34`)
+    - Contract being called: BUIDL Admin TimelockController (`0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34`)
     - Function being called: `grantRole(bytes32 role, address account)`
     - Function arguments:
         1. `role`
@@ -493,7 +493,7 @@
 
 5. **Revoke PROPOSER_ROLE from deployer**
     - Transaction trace URL: [0xbf846cf6e99603750864247a3697abdaf44c086c20bc25d9177cdf90c30d9880](https://etherscan.io/tx/0xbf846cf6e99603750864247a3697abdaf44c086c20bc25d9177cdf90c30d9880)
-    - Contract being called: TimelockController (`0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34`)
+    - Contract being called: BUIDL Admin TimelockController (`0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34`)
     - Function being called: `revokeRole(bytes32 role, address account)`
     - Function arguments:
         1. `role`
@@ -505,7 +505,7 @@
 
 6. **Revoke CANCELLER_ROLE from deployer**
     - Transaction trace URL: [0x1a22124df961eee66a3d21b45ae9709a0fda7ca532bc77ad28750667790aaa3c](https://etherscan.io/tx/0x1a22124df961eee66a3d21b45ae9709a0fda7ca532bc77ad28750667790aaa3c)
-    - Contract being called: TimelockController (`0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34`)
+    - Contract being called: BUIDL Admin TimelockController (`0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34`)
     - Function being called: `revokeRole(bytes32 role, address account)`
     - Function arguments:
         1. `role`
@@ -517,11 +517,11 @@
     - Note: The deployer held `CANCELLER_ROLE` via the constructor (granted to the initial proposer by default).
 
 7. **Issuer to propose a test transaction (sending 0 wei of ETH)**
-    - Transaction trace URL: [0xcb534ea4d3379ad43147e07d4beb7f61ecc9bf49854534b571f7df310aa3b09b](https://etherscan.io/tx/0xcb534ea4d3379ad43147e07d4beb7f61ecc9bf49854534b571f7df310aa3b09b)
-    - Contract being called: TimelockController
+    - Transaction trace URL: TODO
+    - Contract being called: BUIDL Admin TimelockController (`0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34`)
     - Function being called: `schedule(address target, uint256 value, bytes data, bytes32 predecessor, bytes32 salt, uint256 delay)`
     - Function arguments:
-        1. `target` - TimelockController address (self)
+        1. `target` - BUIDL Admin TimelockController address (self, `0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34`)
         2. `value` - `0`
         3. `data` - `0x` (empty calldata)
         4. `predecessor` - `bytes32(0)`
@@ -530,34 +530,34 @@
     - Who will perform this action: Issuer (proposer)
 
 8. **Grove to simulate executing the test transaction with Grove Proxy on Tenderly**
-    - Transaction trace URL: [Tenderly simulation link](https://dashboard.tenderly.co/steakhouse/bloom-production/simulator/6fa4e0c1-b413-46fe-a0fa-85b60ef62ae9)
-    - Contract being called: TimelockController
+    - Transaction trace URL: TODO
+    - Contract being called: BUIDL Admin TimelockController (`0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34`)
     - Function being called: `execute(address target, uint256 value, bytes data, bytes32 predecessor, bytes32 salt)`
     - Function arguments: Same target/value/data/predecessor/salt as step 7
     - Who will perform this action: Grove
     - Note: This is a Tenderly simulation only, not an on-chain execution. Verifies the executor role is correctly configured.
 
 9. **Grove to cancel the test transaction with the freezer multisig**
-    - Transaction trace URL: TODO
-    - Contract being called: TimelockController
+    - Transaction trace URL: TODO - Tenderly testnet
+    - Contract being called: BUIDL Admin TimelockController (`0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34`)
     - Function being called: `cancel(bytes32 id)`
     - Function arguments:
         1. `id` - operation hash from the `schedule` call in step 7
     - Who will perform this action: Grove (via ALM Freezer `0xB0113804960345fd0a245788b3423319c86940e5`)
-    - Note: Verifies the CANCELLER_ROLE is correctly configured for the freezer multisig.
+    - Note: This will be performed on a Tenderly testnet, not on-chain. Verifies the CANCELLER_ROLE is correctly configured for the freezer multisig.
 
 ### JTRSY Basin TimelockController
 
 1. **Deploy TimelockController**
     - Transaction trace URL: [0xec51cda57fcb7698dbc3fb9a7da1bd8eb0fca506332700546a311ffd3b265b9d](https://etherscan.io/tx/0xec51cda57fcb7698dbc3fb9a7da1bd8eb0fca506332700546a311ffd3b265b9d)
-    - Contract being deployed: `TimelockController` (OpenZeppelin)
+    - Contract being deployed: JTRSY Admin `TimelockController` (`0xA52dC9876aB4A9DB6dAfbb83410554086054d140`) (OpenZeppelin)
     - Constructor arguments:
         1. `minDelay`
             - Argument value: `604800` (7 days)
             - External source: Script constant `MIN_DELAY`
         2. `proposers`
             - Argument value: `[0x9184DdBCc4824B76CE2AEFA72534a1a87aA5037c]`
-            - External source: Script argument
+            - External source: JTRSY proposer multisig address (provided by Anemoy)
         3. `executors`
             - Argument value: `[0x1369f7b2b38c76B6478c0f0E66D94923421891Ba]` (Grove Proxy)
             - External source: grove-address-registry `Ethereum.GROVE_PROXY`
@@ -567,7 +567,7 @@
 
 2. **Grant CANCELLER_ROLE to ALM Freezer**
     - Transaction trace URL: [0x69e236ea1ad036bea9775e735768f63d311d1ec45ff75933c1fbc0a55d9a472f](https://etherscan.io/tx/0x69e236ea1ad036bea9775e735768f63d311d1ec45ff75933c1fbc0a55d9a472f)
-    - Contract being called: TimelockController (newly deployed)
+    - Contract being called: JTRSY Admin TimelockController (`0xA52dC9876aB4A9DB6dAfbb83410554086054d140`)
     - Function being called: `grantRole(bytes32 role, address account)`
     - Function arguments:
         1. `role`
@@ -578,13 +578,13 @@
             - External source: grove-address-registry `Ethereum.ALM_FREEZER`
     - Note: The constructor also grants `CANCELLER_ROLE` to the proposer by default.
 
-3. **Issuer to propose a test transaction (sending 1 wei of ETH)**
-    - Transaction trace URL: TODO — JTRSY to complete by 2026-05-15
-    - Contract being called: TimelockController
+3. **Issuer to propose a test transaction (sending 0 wei of ETH)**
+    - Transaction trace URL: [Etherscan](https://etherscan.io/tx/0xcb534ea4d3379ad43147e07d4beb7f61ecc9bf49854534b571f7df310aa3b09b)
+    - Contract being called: JTRSY Admin TimelockController (`0xA52dC9876aB4A9DB6dAfbb83410554086054d140`)
     - Function being called: `schedule(address target, uint256 value, bytes data, bytes32 predecessor, bytes32 salt, uint256 delay)`
     - Function arguments:
-        1. `target` - TimelockController address (self)
-        2. `value` - `1` (1 wei)
+        1. `target` - JTRSY proposer multisig (`0x9184DdBCc4824B76CE2AEFA72534a1a87aA5037c`)
+        2. `value` - `0` (1 wei)
         3. `data` - `0x` (empty calldata)
         4. `predecessor` - `bytes32(0)`
         5. `salt` - `bytes32(0)`
@@ -592,21 +592,21 @@
     - Who will perform this action: Issuer (proposer)
 
 4. **Grove to simulate executing the test transaction with Grove Proxy on Tenderly**
-    - Transaction trace URL: TODO - Tenderly simulation link
-    - Contract being called: TimelockController
+    - Transaction trace URL: [Tenderly testnet tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/e7893a1c-cc85-45f4-8445-7c0c7f11b7e9/tx/0x18284a30a32f80c4eb7481631086765e75a6fab237473aa01e6a92fedcc0847e)
+    - Contract being called: JTRSY Admin TimelockController (`0xA52dC9876aB4A9DB6dAfbb83410554086054d140`)
     - Function being called: `execute(address target, uint256 value, bytes data, bytes32 predecessor, bytes32 salt)`
     - Function arguments: Same target/value/data/predecessor/salt as step 3
     - Who will perform this action: Grove (via Grove Proxy `0x1369f7b2b38c76B6478c0f0E66D94923421891Ba`)
     - Note: This is a Tenderly simulation only, not an on-chain execution. Verifies the executor role is correctly configured.
 
 5. **Grove to cancel the test transaction with the freezer multisig**
-    - Transaction trace URL: TODO
-    - Contract being called: TimelockController
+    - Transaction trace URL: [Tenderly testnet tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/9ff0d894-9609-4323-8c5e-4c771244f600/tx/0x35dd44f9ce319487949882c6c102819f210fcbf12c425d31f615500b5b1eef24)
+    - Contract being called: JTRSY Admin TimelockController (`0xA52dC9876aB4A9DB6dAfbb83410554086054d140`)
     - Function being called: `cancel(bytes32 id)`
     - Function arguments:
         1. `id` - operation hash from the `schedule` call in step 3
     - Who will perform this action: Grove (via ALM Freezer `0xB0113804960345fd0a245788b3423319c86940e5`)
-    - Note: Verifies the CANCELLER_ROLE is correctly configured for the freezer multisig.
+    - Note: This will be performed on a Tenderly testnet, not on-chain. Verifies the CANCELLER_ROLE is correctly configured for the freezer multisig.
 
 ### SetupBUIDLUsdsUsdcBasin post-deploy configuration
 
@@ -1230,19 +1230,31 @@
     - Expected outcome: All return non-zero values. ChronicleRateProviders return rates that are not stale (within stalenessThreshold).
     - Who will perform this action: Deployer / reviewer
 
-6. **Test swap transaction**
-    - What will be done: Perform a small test swap on each basin to confirm end-to-end functionality.
+6. **Test swap transaction (BUIDL Basin)**
+    - What will be done: Perform a small test swap on the BUIDL GroveBasin (`0x10b3d3A96646720f8B3a29229cF96d513f3C84F1`) to confirm end-to-end functionality.
     - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
     - Expected outcome: Swap succeeds, expected output amount is received.
     - Who will perform this action: Deployer or designated tester, working with the issuer
 
-7. **Test redemption transaction**
-    - What will be done: Perform a small test redemption on each basin to confirm end-to-end functionality.
+7. **Test swap transaction (JTRSY Basin)**
+    - What will be done: Perform a small test swap on the JTRSY GroveBasin (`0x1FA4dB8D545Cbd22b7bbA2084348A2E6ef36E363`) to confirm end-to-end functionality.
+    - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
+    - Expected outcome: Swap succeeds, expected output amount is received.
+    - Who will perform this action: Deployer or designated tester, working with the issuer
+
+8. **Test redemption transaction (BUIDL Basin)**
+    - What will be done: Perform a small test redemption on the BUIDL GroveBasin (`0x10b3d3A96646720f8B3a29229cF96d513f3C84F1`) to confirm end-to-end functionality.
     - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
     - Expected outcome: Redemption succeeds, expected output amount is received.
     - Who will perform this action: Deployer or designated tester, working with the issuer
 
-7. **Verify source code on block explorer**
+9. **Test redemption transaction (JTRSY Basin)**
+    - What will be done: Perform a small test redemption on the JTRSY GroveBasin (`0x1FA4dB8D545Cbd22b7bbA2084348A2E6ef36E363`) to confirm end-to-end functionality.
+    - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
+    - Expected outcome: Redemption succeeds, expected output amount is received.
+    - Who will perform this action: Deployer or designated tester, working with the issuer
+
+10. **Verify source code on block explorer**
     - What will be done: Confirm all deployed contracts have verified source code on Etherscan.
     - How it will be done: Check each contract address on etherscan.io for the "Contract" tab showing verified source.
     - Expected outcome: All contracts show verified source matching audited commit.

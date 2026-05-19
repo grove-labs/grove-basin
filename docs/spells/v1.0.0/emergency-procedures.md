@@ -184,8 +184,6 @@ The recovery is executed via a **Sky governance spell** — a contract that, whe
 
 Beyond the Pause, Timelock Cancel, and Governance USDS Recovery procedures documented above, the following additional emergency capabilities exist within the system:
 
-- **Liquidity withdrawal via Grove Proxy.** The Grove Proxy holds `MANAGER_ADMIN_ROLE` on both Basins, which allows it to call `withdrawLiquidity` on the pocket or directly manage Basin assets. In an emergency, Grove can withdraw stablecoin liquidity from the Basin during a timelock delay window to prevent a malicious queued transaction from taking effect. This does not require a governance spell — it is an operational action performed by Grove.
-
 - **Pocket migration via Grove Proxy.** The Grove Proxy (as `MANAGER_ADMIN_ROLE` holder) can call `setPocket()` on a Basin to migrate swap-token custody to a new pocket contract. The old pocket automatically withdraws its swap-token balance back to the Basin during migration. This can be used to move funds out of a compromised pocket implementation.
 
 - **ALM Proxy liquidity recall.** The ALM Proxy (`0x491EDFB0B8b608044e227225C715981a30F3A44E`), which is the designated `liquidityProvider` on both Basins, can withdraw deposited liquidity (shares) from the Basin. This is part of normal ALM operations but can be used in an emergency to pull allocated funds.
