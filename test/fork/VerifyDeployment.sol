@@ -53,13 +53,19 @@ library Deployments {
     address internal constant BUIDL_TIMELOCK                = 0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34;
     address internal constant BUIDL_BASIN                   = 0x10b3d3A96646720f8B3a29229cF96d513f3C84F1;
     address internal constant BUIDL_USDS_USDC_POCKET        = 0x621727A05db6AeB33118b3F9DE3EAf2d8Fc86aDA;
-    address internal constant BUIDL_TOKEN_REDEEMER          = 0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885;  
+    address internal constant BUIDL_TOKEN_REDEEMER          = 0x99E5E7c533C7319f855B940561Df285bE022c82d;
     address internal constant BUIDL_CHRONICLE_RATE_PROVIDER = 0x69a171853575FFD41574EA80Abfc6337AcbC4d43;
 
-    // Issuer provided
-    address internal constant SECURITIZE_ISSUER_MULTISIG    = 0x551e841e6fb54431a0664C8776784F6d7E611428;
-    address internal constant SECURITIZE_REDEEMER           = 0xdfC603076EA75895DD4d59c6e2ee5038f881CB74;
-    address internal constant SECURITIZE_REDEMPTION_ADDRESS = 0x0d671C15Aa427fFc31C3A484C3ACdd8043F73052;
+    // Issuer provided (current)
+    address internal constant SECURITIZE_ISSUER_MULTISIG    = 0x453A28B31fdc31858C35B02bc3A42BCD8bfbAd3a;
+    address internal constant SECURITIZE_REDEEMER           = 0xcBeEe2c39601e1ee5502F2593F6758e6598C47a6;
+    address internal constant SECURITIZE_REDEMPTION_ADDRESS = 0x8780Dd016171B91E4Df47075dA0a947959C34200;
+
+    // Issuer provided (old — rotated out, must not hold any roles)
+    address internal constant OLD_SECURITIZE_ISSUER_MULTISIG    = 0x551e841e6fb54431a0664C8776784F6d7E611428;
+    address internal constant OLD_SECURITIZE_REDEEMER           = 0xdfC603076EA75895DD4d59c6e2ee5038f881CB74;
+    address internal constant OLD_SECURITIZE_REDEMPTION_ADDRESS = 0x0d671C15Aa427fFc31C3A484C3ACdd8043F73052;
+    address internal constant OLD_BUIDL_TOKEN_REDEEMER          = 0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885;
 
     // External
     address internal constant BUIDL_TOKEN = 0x7712c34205737192402172409a8F7ccef8aA2AEc;
@@ -986,6 +992,58 @@ contract BUIDLUsdsUsdcDeploymentForkTest_Redeemer is BUIDLUsdsUsdcDeploymentFork
     function test_redeemer_redemptionAddress() public {
         require(_tokenRedeemerAddr() != address(0), "TOKEN_REDEEMER not set");
         assertEq(BUIDLTokenRedeemer(_tokenRedeemerAddr()).redemptionAddress(), Deployments.SECURITIZE_REDEMPTION_ADDRESS);
+    }
+
+}
+
+contract BUIDLUsdsUsdcDeploymentForkTest_OldAddressesRevoked is BUIDLUsdsUsdcDeploymentForkTestBase {
+
+    /*** Old Securitize issuer multisig must not hold any timelock roles ***/
+
+    function test_oldIssuer_noProposerRole() public view {
+        assertFalse(
+            timelock.hasRole(timelock.PROPOSER_ROLE(), Deployments.OLD_SECURITIZE_ISSUER_MULTISIG),
+            "old issuer multisig should not have PROPOSER_ROLE"
+        );
+    }
+
+    function test_oldIssuer_noCancellerRole() public view {
+        assertFalse(
+            timelock.hasRole(timelock.CANCELLER_ROLE(), Deployments.OLD_SECURITIZE_ISSUER_MULTISIG),
+            "old issuer multisig should not have CANCELLER_ROLE"
+        );
+    }
+
+    function test_oldIssuer_noExecutorRole() public view {
+        assertFalse(
+            timelock.hasRole(timelock.EXECUTOR_ROLE(), Deployments.OLD_SECURITIZE_ISSUER_MULTISIG),
+            "old issuer multisig should not have EXECUTOR_ROLE"
+        );
+    }
+
+    function test_oldIssuer_noDefaultAdminRole() public view {
+        assertFalse(
+            timelock.hasRole(timelock.DEFAULT_ADMIN_ROLE(), Deployments.OLD_SECURITIZE_ISSUER_MULTISIG),
+            "old issuer multisig should not have DEFAULT_ADMIN_ROLE"
+        );
+    }
+
+    /*** Old Securitize redeemer must not hold REDEEMER_ROLE on the basin ***/
+
+    function test_oldRedeemer_noRedeemerRole() public view {
+        assertFalse(
+            basin.hasRole(basin.REDEEMER_ROLE(), Deployments.OLD_SECURITIZE_REDEEMER),
+            "old redeemer address should not have REDEEMER_ROLE"
+        );
+    }
+
+    /*** Old BUIDLTokenRedeemer must not hold REDEEMER_CONTRACT_ROLE on the basin ***/
+
+    function test_oldTokenRedeemer_noRedeemerContractRole() public view {
+        assertFalse(
+            basin.hasRole(basin.REDEEMER_CONTRACT_ROLE(), Deployments.OLD_BUIDL_TOKEN_REDEEMER),
+            "old BUIDLTokenRedeemer should not have REDEEMER_CONTRACT_ROLE"
+        );
     }
 
 }

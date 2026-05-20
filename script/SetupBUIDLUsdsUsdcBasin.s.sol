@@ -19,8 +19,8 @@ contract SetupBUIDLUsdsUsdcBasin is Script {
     address constant GROVE_BASIN_FACTORY           = 0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a;
     address constant BUIDL_ADMIN_TIMELOCK          = 0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34;
     address constant BUIDL_TOKEN                   = 0x7712c34205737192402172409a8F7ccef8aA2AEc;
-    address constant SECURITIZE_REDEEMER_ADDRESS   = 0xdfC603076EA75895DD4d59c6e2ee5038f881CB74;
-    address constant BUIDL_REDEMPTION_ADDRESS      = 0x0d671C15Aa427fFc31C3A484C3ACdd8043F73052;
+    address constant SECURITIZE_REDEEMER_ADDRESS   = 0xcBeEe2c39601e1ee5502F2593F6758e6598C47a6;
+    address constant BUIDL_REDEMPTION_ADDRESS      = 0x8780Dd016171B91E4Df47075dA0a947959C34200;
 
     function run() external {
         vm.startBroadcast();
