@@ -48,8 +48,8 @@ forge script script/SetupBUIDLUsdsUsdcBasin.s.sol:SetupBUIDLUsdsUsdcBasin \
     - [Tenderly test tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/02d7edf3-c111-495c-88e6-98db7a9a2102/tx/0xa1299d2edf40902735b7f0285f0d41b46c0785a3cb4e0357fe9c6162db1dc937)
   - UsdsUsdcPocket: `0x621727A05db6AeB33118b3F9DE3EAf2d8Fc86aDA`
     - [Tenderly test tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/02d7edf3-c111-495c-88e6-98db7a9a2102/tx/0x70d642074437e2dae7fc8f13fbf6d88d4a808ff3ee7f14f012f2ef9fe65b0332)
-  - BUIDLTokenRedeemer: `0x73B544955befa6CE7Dc90CcBFe72011deA243e1A`
-    - [Tenderly test tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/02d7edf3-c111-495c-88e6-98db7a9a2102/tx/0x69e2c42167fc332992e9a9804bf7f1e3b655ee0db789e7f7e9777e401e13f699)
+  - BUIDLTokenRedeemer: `0x99e5e7c533c7319f855b940561df285be022c82d`
+    - [Tenderly test tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/e7893a1c-cc85-45f4-8445-7c0c7f11b7e9/tx/0x393165ada555b68f49dce8e93e43901670a3f21a948d03161933a81a0690b0fd)
 
 ### Deployment
 - [x] Set production RPC URL (only trusted RPC provider shall be used to avoid poisoning attacks).
@@ -63,8 +63,13 @@ forge script script/SetupBUIDLUsdsUsdcBasin.s.sol:SetupBUIDLUsdsUsdcBasin \
     - Deploy tx: [0x4c394796...](https://etherscan.io/tx/0x4c39479656f2293361acb059d467cffd3b11f1346dfc52e99bd2a161521775e8)
   - UsdsUsdcPocket: [`0x621727A05db6AeB33118b3F9DE3EAf2d8Fc86aDA`](https://etherscan.io/address/0x621727A05db6AeB33118b3F9DE3EAf2d8Fc86aDA)
     - Deploy tx: [0xc6f0e579...](https://etherscan.io/tx/0xc6f0e579c7636321f4b27c4ec2f701e9afd6ce01488c111de66f932c5eaf8b5c)
-  - BUIDLTokenRedeemer: [`0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885`](https://etherscan.io/address/0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885)
+  - BUIDLTokenRedeemer (old — superseded): [`0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885`](https://etherscan.io/address/0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885)
     - Deploy tx: [0x2577828e...](https://etherscan.io/tx/0x2577828e23503fdc87af290e044df43474341bc072f62fde6e983ef08b0729a1)
+  - BUIDLTokenRedeemer (current): [`0x99E5E7c533C7319f855B940561Df285bE022c82d`](https://etherscan.io/address/0x99E5E7c533C7319f855B940561Df285bE022c82d)
+    - Deploy tx: [0xc6152410...](https://etherscan.io/tx/0xc61524108a1fecf43252b20082c169ce60096b8e4f78c59125a2585d33f6dc49)
+    - `addTokenRedeemer` tx: [0xc92b0e53...](https://etherscan.io/tx/0xc92b0e537e826716ec1b2887c661f60ff419d2fbd67f1d15efb092c4ce3e5487)
+    - `grantRole(REDEEMER_ROLE)` tx: [0xfaf84da7...](https://etherscan.io/tx/0xfaf84da7a343b4fbd2776b955b4a4252de2e712f05092f45425b249ce7c407b4)
+    - Redemption address: `0x8780Dd016171B91E4Df47075dA0a947959C34200`
 - [x] Inspect the transaction history of the deployer.
 - [x] Perform all relevant checks documented in the technical doc (constructor arguments, optimizations, bytecode verify, ownership transfer).
 - [ ] Independently verify the deployment by another member of the team.

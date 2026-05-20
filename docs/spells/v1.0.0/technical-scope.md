@@ -177,9 +177,9 @@
                 - External source: Deployer EOA
     - Additional parameters configured on the contract by a privileged actor: `CANCELLER_ROLE` granted to ALM Freezer (`0xB0113804960345fd0a245788b3423319c86940e5`) in the deployment script.
     - Ownership, roles, privilege callers:
-        - `PROPOSER_ROLE`: `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer — temporary, to be replaced with Securitize owner address)
+        - `PROPOSER_ROLE`: ~~`0x551e841e6fb54431a0664C8776784F6d7E611428`~~ → `0x453A28B31fdc31858C35B02bc3A42BCD8bfbAd3a` (Securitize owner address, changed)
         - `EXECUTOR_ROLE`: `0x1369f7b2b38c76B6478c0f0E66D94923421891Ba` (Grove Proxy)
-        - `CANCELLER_ROLE`: `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (proposer, via constructor) + `0xB0113804960345fd0a245788b3423319c86940e5` (ALM Freezer, via script)
+        - `CANCELLER_ROLE`: ~~`0x551e841e6fb54431a0664C8776784F6d7E611428`~~ → `0x453A28B31fdc31858C35B02bc3A42BCD8bfbAd3a` (Securitize owner address, changed) + `0xB0113804960345fd0a245788b3423319c86940e5` (ALM Freezer, via script)
         - `DEFAULT_ADMIN_ROLE`: `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer — to be revoked as pre-requirement)
     - Deployment command:
         ```
@@ -350,8 +350,8 @@
         - `MANAGER_ADMIN_ROLE`: `0x1369f7b2b38c76B6478c0f0E66D94923421891Ba` (Grove Proxy) + `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
         - `MANAGER_ROLE`: `0x0eEC86649E756a23CBc68d9EFEd756f16aD5F85f` (ALM Relayer)
         - `PAUSER_ROLE`: `0xB0113804960345fd0a245788b3423319c86940e5` (ALM Freezer)
-        - `REDEEMER_ROLE`: `0xdfC603076EA75895DD4d59c6e2ee5038f881CB74`
-        - `REDEEMER_CONTRACT_ROLE`: `0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885` (BUIDLTokenRedeemer)
+        - `REDEEMER_ROLE`: ~~`0xdfC603076EA75895DD4d59c6e2ee5038f881CB74`~~ → `0xcBeEe2c39601e1ee5502F2593F6758e6598C47a6` (Securitize redeemer address, changed)
+        - `REDEEMER_CONTRACT_ROLE`: ~~`0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885`~~ → `0x99E5E7c533C7319f855B940561Df285bE022c82d` (BUIDLTokenRedeemer, redeployed)
     - Deployment command:
         ```
         DEPLOYER=0x6D99f476E7E9FCcd189fb87023cFa301364Fa817 \
@@ -398,10 +398,11 @@
     - Source code is verified on the block explorer: [Yes](https://etherscan.io/address/0x621727A05db6AeB33118b3F9DE3EAf2d8Fc86aDA#code)
     - The deployer no longer has a privileged role: N/A — no access control.
 
-9. **BUIDL BUIDLTokenRedeemer**
+9. **BUIDL BUIDLTokenRedeemer (old — superseded by #13)**
     - Chain name: Ethereum Mainnet
     - Contract address: [0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885](https://etherscan.io/address/0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885)
     - Deployment transaction trace: [0x2577828e23503fdc87af290e044df43474341bc072f62fde6e983ef08b0729a1](https://etherscan.io/tx/0x2577828e23503fdc87af290e044df43474341bc072f62fde6e983ef08b0729a1)
+    - **Status**: Superseded. `REDEEMER_CONTRACT_ROLE` must be revoked from this contract. Replaced by #13 due to Securitize redemption vault address change.
     - Code verification
         - Source code URL (at the audited commit hash): [src/redeemers/BUIDLTokenRedeemer.sol](https://github.com/grove-labs/grove-basin/blob/a79269a3f5f0253110e9cbca15d79aa9ffb62c4d/src/redeemers/BUIDLTokenRedeemer.sol)
         - External URLs to the audit reports: 
@@ -415,7 +416,7 @@
                 - Argument value: `0x7712c34205737192402172409a8F7ccef8aA2AEc` (BUIDL)
                 - External source: Script constant `BUIDL_TOKEN`
             2. `redemptionAddress_`
-                - Argument value: `0x0d671C15Aa427fFc31C3A484C3ACdd8043F73052`
+                - Argument value: `0x0d671C15Aa427fFc31C3A484C3ACdd8043F73052` (old Securitize redemption address)
                 - External source: Provided by Securitize (BUIDL primary redemption address)
             3. `basin_`
                 - Argument value: `0x10b3d3A96646720f8B3a29229cF96d513f3C84F1` (BUIDL GroveBasin)
@@ -431,6 +432,40 @@
             --sender 0x6D99f476E7E9FCcd189fb87023cFa301364Fa817 --broadcast --slow --verify
         ```
     - Source code is verified on the block explorer: [Yes](https://etherscan.io/address/0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885#code)
+    - The deployer no longer has a privileged role: N/A — no access control.
+
+13. **BUIDL BUIDLTokenRedeemer (current — replaces #9)**
+    - Chain name: Ethereum Mainnet
+    - Contract address: [0x99E5E7c533C7319f855B940561Df285bE022c82d](https://etherscan.io/address/0x99E5E7c533C7319f855B940561Df285bE022c82d)
+    - Deployment transaction trace: [0xc61524108a1fecf43252b20082c169ce60096b8e4f78c59125a2585d33f6dc49](https://etherscan.io/tx/0xc61524108a1fecf43252b20082c169ce60096b8e4f78c59125a2585d33f6dc49)
+    - Code verification
+        - Source code URL (at the audited commit hash): [src/redeemers/BUIDLTokenRedeemer.sol](https://github.com/grove-labs/grove-basin/blob/a79269a3f5f0253110e9cbca15d79aa9ffb62c4d/src/redeemers/BUIDLTokenRedeemer.sol)
+        - External URLs to the audit reports: 
+            - Cantina audit: https://cantina.xyz/portfolio/71794706-b078-4579-8f50-a9bd25d732d3
+            - Chain Security Audit: https://reports.chainsecurity.com/GroveLabs/ChainSecurity_GroveLabs_Basin_Audit.pdf
+        - Deployed bytecode verification: `forge verify-bytecode 0x99E5E7c533C7319f855B940561Df285bE022c82d src/redeemers/BUIDLTokenRedeemer.sol:BUIDLTokenRedeemer --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address)" 0x7712c34205737192402172409a8F7ccef8aA2AEc 0x8780Dd016171B91E4Df47075dA0a947959C34200 0x10b3d3A96646720f8B3a29229cF96d513f3C84F1)`
+        - Compilation optimizations match optimizer=true, runs=180, evm_version=cancun, source solc 0.8.24. Bytecode CBOR metadata: bytecodeHash=ipfs, IPFS CID=`QmQshJETAUWw5CJR4ushQEdSSV5v2kucCqLffY87TjaXDG`, solc=0.8.24.
+        - Constructor arguments:
+            1. `creditToken_`
+                - Argument value: `0x7712c34205737192402172409a8F7ccef8aA2AEc` (BUIDL)
+                - External source: Script constant `BUIDL_TOKEN`
+            2. `redemptionAddress_`
+                - Argument value: `0x8780Dd016171B91E4Df47075dA0a947959C34200` (new Securitize redemption address)
+                - External source: Provided by Securitize
+            3. `basin_`
+                - Argument value: `0x10b3d3A96646720f8B3a29229cF96d513f3C84F1` (BUIDL GroveBasin)
+                - External source: Pre-deployed contract #10 (BUIDL GroveBasin)
+    - Additional parameters configured on the contract by a privileged actor: None — BUIDLTokenRedeemer is immutable. Registered on the basin via `addTokenRedeemer()` which grants `REDEEMER_CONTRACT_ROLE` and calls `setUp()`.
+    - Ownership, roles, privilege callers: None — no access control. Callable by the GroveBasin contract (`onlyBasin` modifier) and the basin's manager admin (Grove Proxy `0x1369f7b2b38c76B6478c0f0E66D94923421891Ba`).
+    - Deployment command:
+        ```
+        forge script script/SetupBUIDLUsdsUsdcBasin.s.sol:SetupBUIDLUsdsUsdcBasin \
+            --sig "deployRedeemerContractAndGrantRedeemerRole(address)" 0x10b3d3A96646720f8B3a29229cF96d513f3C84F1 \
+            --rpc-url mainnet \
+            --account grove-basin-deployer \
+            --sender 0x6D99f476E7E9FCcd189fb87023cFa301364Fa817 --broadcast --slow --verify
+        ```
+    - Source code is verified on the block explorer: [Yes](https://etherscan.io/address/0x99E5E7c533C7319f855B940561Df285bE022c82d#code)
     - The deployer no longer has a privileged role: N/A — no access control.
 
 ## Pre-configurations
@@ -545,6 +580,56 @@
         1. `id` - operation hash from the `schedule` call in step 7
     - Who will perform this action: Grove (via ALM Freezer `0xB0113804960345fd0a245788b3423319c86940e5`)
     - Note: This will be performed on a Tenderly testnet, not on-chain. Verifies the CANCELLER_ROLE is correctly configured for the freezer multisig.
+
+10. **Grant PROPOSER_ROLE to new Securitize owner address**
+    - Transaction trace URL: [0xc24439197b6c9fdcde9ea9ea45f6dd6c65cd3d0634e6011dc5477a948579f59e](https://etherscan.io/tx/0xc24439197b6c9fdcde9ea9ea45f6dd6c65cd3d0634e6011dc5477a948579f59e)
+    - Contract being called: BUIDL Admin TimelockController (`0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34`)
+    - Function being called: `grantRole(bytes32 role, address account)`
+    - Function arguments:
+        1. `role`
+            - Argument value: `PROPOSER_ROLE` = `keccak256("PROPOSER_ROLE")`
+            - External source: TimelockController constant
+        2. `account`
+            - Argument value: `0x453A28B31fdc31858C35B02bc3A42BCD8bfbAd3a` (new Securitize owner address)
+            - External source: Provided by Securitize
+    - Note: Replacing old Securitize owner address `0x551e841e6fb54431a0664C8776784F6d7E611428`.
+
+11. **Grant CANCELLER_ROLE to new Securitize owner address**
+    - Transaction trace URL: [0x87d10db8cb37d90216b44c8da3c18ac2a6684de20078a26503163b3f56f56aa4](https://etherscan.io/tx/0x87d10db8cb37d90216b44c8da3c18ac2a6684de20078a26503163b3f56f56aa4)
+    - Contract being called: BUIDL Admin TimelockController (`0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34`)
+    - Function being called: `grantRole(bytes32 role, address account)`
+    - Function arguments:
+        1. `role`
+            - Argument value: `CANCELLER_ROLE` = `keccak256("CANCELLER_ROLE")`
+            - External source: TimelockController constant
+        2. `account`
+            - Argument value: `0x453A28B31fdc31858C35B02bc3A42BCD8bfbAd3a` (new Securitize owner address)
+            - External source: Provided by Securitize
+    - Note: Replacing old Securitize owner address `0x551e841e6fb54431a0664C8776784F6d7E611428`.
+
+12. **Revoke PROPOSER_ROLE from old Securitize owner address**
+    - Transaction trace URL: [0x64638b5dd25690f514cc134b028bccd59f420bb137e7536d79f02de51de0f09c](https://etherscan.io/tx/0x64638b5dd25690f514cc134b028bccd59f420bb137e7536d79f02de51de0f09c)
+    - Contract being called: BUIDL Admin TimelockController (`0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34`)
+    - Function being called: `revokeRole(bytes32 role, address account)`
+    - Function arguments:
+        1. `role`
+            - Argument value: `PROPOSER_ROLE` = `keccak256("PROPOSER_ROLE")`
+            - External source: TimelockController constant
+        2. `account`
+            - Argument value: `0x551e841e6fb54431a0664C8776784F6d7E611428` (old Securitize owner address)
+            - External source: Previously provided by Securitize
+
+13. **Revoke CANCELLER_ROLE from old Securitize owner address**
+    - Transaction trace URL: [0x5a65ee1d8ca2f2e76276edcbf29dd6847924f3c116e94bb2f5c8cc5a22662cb8](https://etherscan.io/tx/0x5a65ee1d8ca2f2e76276edcbf29dd6847924f3c116e94bb2f5c8cc5a22662cb8)
+    - Contract being called: BUIDL Admin TimelockController (`0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34`)
+    - Function being called: `revokeRole(bytes32 role, address account)`
+    - Function arguments:
+        1. `role`
+            - Argument value: `CANCELLER_ROLE` = `keccak256("CANCELLER_ROLE")`
+            - External source: TimelockController constant
+        2. `account`
+            - Argument value: `0x551e841e6fb54431a0664C8776784F6d7E611428` (old Securitize owner address)
+            - External source: Previously provided by Securitize
 
 ### JTRSY Basin TimelockController
 
@@ -748,8 +833,43 @@
             - Argument value: `REDEEMER_ROLE` = `keccak256("REDEEMER_ROLE")`
             - External source: GroveBasin.sol constant
         2. `account`
-            - Argument value: `0xdfC603076EA75895DD4d59c6e2ee5038f881CB74`
-            - External source: Provided by Securitize (redeemer address)
+            - Argument value: `0xdfC603076EA75895DD4d59c6e2ee5038f881CB74` (old Securitize redeemer address)
+            - External source: Previously provided by Securitize
+
+10a. **Grant REDEEMER_ROLE to new Securitize redeemer address**
+    - Transaction trace URL: [0x67b80561f00a61c3ad5b4744c050f77ec37043ab5a19b46b813ef50152344f47](https://etherscan.io/tx/0x67b80561f00a61c3ad5b4744c050f77ec37043ab5a19b46b813ef50152344f47)
+    - Contract being called: GroveBasin (`0x10b3d3A96646720f8B3a29229cF96d513f3C84F1`)
+    - Function being called: `grantRole(bytes32 role, address account)`
+    - Function arguments:
+        1. `role`
+            - Argument value: `REDEEMER_ROLE` = `keccak256("REDEEMER_ROLE")`
+            - External source: GroveBasin.sol constant
+        2. `account`
+            - Argument value: `0xcBeEe2c39601e1ee5502F2593F6758e6598C47a6` (new Securitize redeemer address)
+            - External source: Provided by Securitize
+    - Note: Replacing old redeemer address `0xdfC603076EA75895DD4d59c6e2ee5038f881CB74`.
+
+10b. **Revoke REDEEMER_ROLE from old Securitize redeemer address**
+    - Transaction trace URL: [0xb949e5958c2e5d73c976d6df82a734c2cbc227b9c581e1b83006b1ea76bb8ac0](https://etherscan.io/tx/0xb949e5958c2e5d73c976d6df82a734c2cbc227b9c581e1b83006b1ea76bb8ac0)
+    - Contract being called: GroveBasin (`0x10b3d3A96646720f8B3a29229cF96d513f3C84F1`)
+    - Function being called: `revokeRole(bytes32 role, address account)`
+    - Function arguments:
+        1. `role`
+            - Argument value: `REDEEMER_ROLE` = `keccak256("REDEEMER_ROLE")`
+            - External source: GroveBasin.sol constant
+        2. `account`
+            - Argument value: `0xdfC603076EA75895DD4d59c6e2ee5038f881CB74` (old Securitize redeemer address)
+            - External source: Previously provided by Securitize
+
+10c. **Remove old BUIDLTokenRedeemer (revoke REDEEMER_CONTRACT_ROLE)**
+    - Transaction trace URL: [0x4509facba190051cae17ccffaeba2b413ee6cf1bc8d5a796df1a90d1e5522c00](https://etherscan.io/tx/0x4509facba190051cae17ccffaeba2b413ee6cf1bc8d5a796df1a90d1e5522c00)
+    - Contract being called: GroveBasin (`0x10b3d3A96646720f8B3a29229cF96d513f3C84F1`)
+    - Function being called: `removeTokenRedeemer(address redeemer)`
+    - Function arguments:
+        1. `redeemer`
+            - Argument value: `0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885` (old BUIDLTokenRedeemer, superseded by #13)
+            - External source: Pre-deployed contract #9
+    - Note: `removeTokenRedeemer` revokes `REDEEMER_CONTRACT_ROLE` from the old redeemer. Required because the new BUIDLTokenRedeemer (`0x99E5E7c533C7319f855B940561Df285bE022c82d`) was registered via `addTokenRedeemer` in the redeployment script, but the old one still holds the role.
 
 11. **Grant PAUSER_ROLE to deployer (temporary)**
     - Transaction trace URL: [0x3168f24a1804b3dbb14506b8cf32b01a185b81078e37e6edf30f71d103e49515](https://etherscan.io/tx/0x3168f24a1804b3dbb14506b8cf32b01a185b81078e37e6edf30f71d103e49515)
@@ -1128,6 +1248,7 @@
         - `CANCELLER_ROLE` granted to `0x551e841e6fb54431a0664C8776784F6d7E611428` in tx [0xbdc05e7f...](https://etherscan.io/tx/0xbdc05e7f7a38de9fcc25bf0b19a5e4afee54e45284a9db3cb124ead56c7dd17b). 
         - `PROPOSER_ROLE` revoked from deployer in tx [0xbf846cf6...](https://etherscan.io/tx/0xbf846cf6e99603750864247a3697abdaf44c086c20bc25d9177cdf90c30d9880).
         - `CANCELLER_ROLE` revoked from deployer in tx [0x1a22124d...](https://etherscan.io/tx/0x1a22124df961eee66a3d21b45ae9709a0fda7ca532bc77ad28750667790aaa3c).
+    - **Address change**: Securitize changed their proposer/owner address. Roles must be rotated from `0x551e841e6fb54431a0664C8776784F6d7E611428` to `0x453A28B31fdc31858C35B02bc3A42BCD8bfbAd3a`. See BUIDL Basin TimelockController pre-configuration steps 10–13.
 
 2. **Deployer to revoke own admin role**
     - Intended end goal: The deployer must call `revokeRole(DEFAULT_ADMIN_ROLE, deployer)` on the BUIDL Basin TimelockController so that no single EOA retains admin privileges. After this, roles can only be managed through the timelock itself.
@@ -1147,11 +1268,14 @@
     - Intended end goal: The BUIDL redemption address is required to deploy the `BUIDLTokenRedeemer` contract, which is passed as a constructor argument. Without it, the redeemer cannot be deployed and the basin will not support BUIDL redemptions.
     - Why is it required to be done in advance: The `BUIDLTokenRedeemer` constructor requires the redemption address; the deployment script cannot proceed without it.
     - Proof that it was done or planned to be done: Deployed at [`0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885`](https://etherscan.io/address/0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885) in tx [0x2577828e...](https://etherscan.io/tx/0x2577828e23503fdc87af290e044df43474341bc072f62fde6e983ef08b0729a1). Redemption address: `0x0d671C15Aa427fFc31C3A484C3ACdd8043F73052`.
+    - **Address change**: Securitize changed their redemption vault address from `0x0d671C15Aa427fFc31C3A484C3ACdd8043F73052` to `0x8780Dd016171B91E4Df47075dA0a947959C34200`. Since `redemptionAddress_` is an immutable constructor argument, a new `BUIDLTokenRedeemer` must be deployed with the new vault address and registered on the basin via `removeTokenRedeemer` / `addTokenRedeemer`.
+    - **Mainnet deployment**: Deployed at [`0x99E5E7c533C7319f855B940561Df285bE022c82d`](https://etherscan.io/address/0x99E5E7c533C7319f855B940561Df285bE022c82d) in tx [0xc6152410...](https://etherscan.io/tx/0xc61524108a1fecf43252b20082c169ce60096b8e4f78c59125a2585d33f6dc49). Redemption address: `0x8780Dd016171B91E4Df47075dA0a947959C34200`. `addTokenRedeemer` in tx [0xc92b0e53...](https://etherscan.io/tx/0xc92b0e537e826716ec1b2887c661f60ff419d2fbd67f1d15efb092c4ce3e5487). Source code verified on [Etherscan](https://etherscan.io/address/0x99e5e7c533c7319f855b940561df285be022c82d#code).
 
 2. **Grant redeemer address the REDEEMER_ROLE**
     - Intended end goal: A valid address to grant the `REDEEMER_ROLE` on the BUIDL GroveBasin. This address will be authorized to trigger redemptions.
     - Why is it required to be done in advance: Currently set to `address(0)` in the script; the conditional skip means no redeemer role holder will be set until the address is provided.
     - Proof that it was done or planned to be done: `REDEEMER_ROLE` granted to `0xdfC603076EA75895DD4d59c6e2ee5038f881CB74` in tx [0x33adfefe...](https://etherscan.io/tx/0x33adfefeee15f01805a582324701e2b03a63951680aab471bd8a034f10ee66da).
+    - **Address change**: Securitize changed their redeemer address. `REDEEMER_ROLE` must be rotated from `0xdfC603076EA75895DD4d59c6e2ee5038f881CB74` to `0xcBeEe2c39601e1ee5502F2593F6758e6598C47a6`. See SetupBUIDLUsdsUsdcBasin pre-configuration steps 10a–10b.
 
 3. **BUIDL Basin must be allowlisted on BUIDL token**
     - Intended end goal: The BUIDL Basin contract (`0x10b3d3A96646720f8B3a29229cF96d513f3C84F1`) can hold BUIDL tokens
