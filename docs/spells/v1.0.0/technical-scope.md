@@ -150,7 +150,7 @@
         DEPLOYER=0x6D99f476E7E9FCcd189fb87023cFa301364Fa817 forge script script/DeployTimelockController.s.sol:DeployTimelockController --rpc-url mainnet --sig "run(address)" 0x9184DdBCc4824B76CE2AEFA72534a1a87aA5037c --account grove-basin-deployer --sender 0x6D99f476E7E9FCcd189fb87023cFa301364Fa817 --broadcast --slow --verify
         ```
     - Source code is verified on the block explorer: [Yes](https://etherscan.io/address/0xA52dC9876aB4A9DB6dAfbb83410554086054d140#code)
-    - The deployer no longer has a privileged role: TODO — `DEFAULT_ADMIN_ROLE` must be revoked after Anemoy does a test transaction (see pre-requirements).
+    - The deployer no longer has a privileged role: `DEFAULT_ADMIN_ROLE` revoked in tx [0x6ec10f73...](https://etherscan.io/tx/0x6ec10f73b0451935de484c233c0d949624debf424e79ff0c53e240f6e129249f).
 
 6. **BUIDL Admin TimelockController**
     - Chain name: Ethereum Mainnet
@@ -243,7 +243,7 @@
             --broadcast --slow --verify
         ```
     - Source code is verified on the block explorer: [Yes](https://etherscan.io/address/0x1FA4dB8D545Cbd22b7bbA2084348A2E6ef36E363#code)
-    - The deployer no longer has a privileged role: TODO — deployer to give up `MANAGER_ADMIN_ROLE` after test transaction from Anemoy
+    - The deployer no longer has a privileged role: `MANAGER_ADMIN_ROLE` revoked in tx [0x7c2ac50f...](https://etherscan.io/tx/0x7c2ac50fb6ddcb999e95f23f71e022cdc12158de348079a93fd15d2a811f504e).
 
 8. **JTRSY UsdsUsdcPocket**
     - Chain name: Ethereum Mainnet
@@ -1139,7 +1139,7 @@
 1. **Deployer to revoke own admin role**
     - Intended end goal: The deployer must call `revokeRole(DEFAULT_ADMIN_ROLE, deployer)` on the JTRSY Basin TimelockController so that no single EOA retains admin privileges. After this, roles can only be managed through the timelock itself.
     - Why is it required to be done in advance: The deployer holds `DEFAULT_ADMIN_ROLE` after deployment, which allows bypassing the timelock delay for role changes. This must be revoked before the system is considered live.
-    - Proof that it was done or planned to be done: TODO
+    - Proof that it was done or planned to be done: `DEFAULT_ADMIN_ROLE` revoked from deployer in tx [0x6ec10f73...](https://etherscan.io/tx/0x6ec10f73b0451935de484c233c0d949624debf424e79ff0c53e240f6e129249f).
 
 ### BUIDL Basin
 
@@ -1178,7 +1178,7 @@
 3. **Revoke MANAGER_ADMIN_ROLE from deployer**
     - Intended end goal: The deployer must call `revokeRole(MANAGER_ADMIN_ROLE, deployer)` on the JTRSY GroveBasin so that no single EOA retains admin privileges. After this, roles can only be managed through the timelock itself.
     - Why is it required to be done in advance: The deployer holds `MANAGER_ADMIN_ROLE` after deployment, which allows bypassing the timelock delay to set up the token redeeemer contract (step 1) and add a redeemer (step 2). This must be revoked before the system is considered live so that no address other thatn Grove Proxy holds the MANAGER_ADMIN_ROLE
-    - Proof that it was done or planned to be done: TODO
+    - Proof that it was done or planned to be done: `MANAGER_ADMIN_ROLE` revoked from deployer in tx [0x7c2ac50f...](https://etherscan.io/tx/0x7c2ac50fb6ddcb999e95f23f71e022cdc12158de348079a93fd15d2a811f504e).
 
 ## Proposed actions
 
