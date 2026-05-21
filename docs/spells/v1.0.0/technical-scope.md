@@ -552,11 +552,11 @@
     - Note: The deployer held `CANCELLER_ROLE` via the constructor (granted to the initial proposer by default).
 
 7. **Issuer to propose a test transaction (sending 0 wei of ETH)**
-    - Transaction trace URL: TODO
+    - Transaction trace URL: [Etherscan](https://etherscan.io/tx/0xb4b00a311f9a5edcdec2cdfc8ea69fda6e0974c95ca11cc286cb640f356c4dea)
     - Contract being called: BUIDL Admin TimelockController (`0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34`)
     - Function being called: `schedule(address target, uint256 value, bytes data, bytes32 predecessor, bytes32 salt, uint256 delay)`
     - Function arguments:
-        1. `target` - BUIDL Admin TimelockController address (self, `0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34`)
+        1. `target` - Securitize owner address (`0x453A28B31fdc31858C35B02bc3A42BCD8bfbAd3a`)
         2. `value` - `0`
         3. `data` - `0x` (empty calldata)
         4. `predecessor` - `bytes32(0)`
@@ -565,7 +565,7 @@
     - Who will perform this action: Issuer (proposer)
 
 8. **Grove to simulate executing the test transaction with Grove Proxy on Tenderly**
-    - Transaction trace URL: TODO
+    - Transaction trace URL: [Tenderly](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/e7893a1c-cc85-45f4-8445-7c0c7f11b7e9/tx/0x7c78b8ff899ad3d2417d030115429304585a893d7a325a4297fc49aedc68e79c)
     - Contract being called: BUIDL Admin TimelockController (`0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34`)
     - Function being called: `execute(address target, uint256 value, bytes data, bytes32 predecessor, bytes32 salt)`
     - Function arguments: Same target/value/data/predecessor/salt as step 7
@@ -573,11 +573,11 @@
     - Note: This is a Tenderly simulation only, not an on-chain execution. Verifies the executor role is correctly configured.
 
 9. **Grove to cancel the test transaction with the freezer multisig**
-    - Transaction trace URL: TODO - Tenderly testnet
+    - Transaction trace URL: [Tenderly testnet tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/1a16f08c-7266-4d33-9691-b5878a0a938d/tx/0x5f4961549c6ecaa14ac94591cc7134f1ac106b9a8f7b8cc6a2275fca0bfbb766)
     - Contract being called: BUIDL Admin TimelockController (`0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34`)
     - Function being called: `cancel(bytes32 id)`
     - Function arguments:
-        1. `id` - operation hash from the `schedule` call in step 7
+        1. `id` - `0x13bdfcbacee698fdfbc8de83e0ce86a238900e77348b0fa964df0efce295892e` (operation hash from the `schedule` call in step 7)
     - Who will perform this action: Grove (via ALM Freezer `0xB0113804960345fd0a245788b3423319c86940e5`)
     - Note: This will be performed on a Tenderly testnet, not on-chain. Verifies the CANCELLER_ROLE is correctly configured for the freezer multisig.
 
