@@ -43,6 +43,7 @@ remappings = [
 
 [rpc_endpoints]
 mainnet = "${MAINNET_RPC_URL}"
+tenderly = "${TENDERLY_RPC_URL}"
 
 [etherscan]
 mainnet = { key = "${MAINNET_API_KEY}" }

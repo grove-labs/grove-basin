@@ -3,25 +3,25 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Script.sol";
 
-import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
-
 import { Ethereum } from "lib/grove-address-registry/src/Ethereum.sol";
 
-import { GroveBasin }          from "src/GroveBasin.sol";
-import { GroveBasinFactory }   from "src/GroveBasinFactory.sol";
-import { JTRSYTokenRedeemer }  from "src/redeemers/JTRSYTokenRedeemer.sol";
-import { UsdsUsdcPocket }      from "src/pockets/UsdsUsdcPocket.sol";
+import { GroveBasin }         from "src/GroveBasin.sol";
+import { GroveBasinFactory }  from "src/GroveBasinFactory.sol";
+import { JTRSYTokenRedeemer } from "src/redeemers/JTRSYTokenRedeemer.sol";
+
+import { BasinSetup } from "script/lib/BasinSetup.sol";
 
 contract SetupJTRSYUsdsUsdcBasin is Script {
 
-    address constant USDS_USDC_CHRONICLE_RATE_PROVIDER = 0xE6305390428FD82eB437b50375b95B9550B90256;  // Fixed 1:1 ChronicleRateProvider for USDS and USDC
-    address constant JTRSY_CHRONICLE_RATE_PROVIDER     = 0xdBCF3230ff0dbd62BE38956d1aAA845e97126Fe5;  // JTRSY ChronicleRateProvider
-    address constant JTRSY_TOKEN                       = 0x8c213ee79581Ff4984583C6a801e5263418C4b86;  // JTRSY share token (6 decimals)
-    address constant USDS_PSM_WRAPPER                  = 0xA188EEC8F81263234dA3622A406892F3D630f98c;  // USDS PSM Wrapper
+    address constant USDS_USDC_FIXED_RATE_PROVIDER = 0x7928A185B8137D1CD2a0996a810A04dB2837419D;  // Fixed 1:1 ChronicleRateProvider for USDS and USDC
+    address constant JTRSY_CHRONICLE_RATE_PROVIDER = 0x29209ceCFeFa6f675E6f1f829320D67cE2b025E5;
+    address constant JTRSY_TOKEN                   = 0x8c213ee79581Ff4984583C6a801e5263418C4b86;
+    address constant USDS_PSM_WRAPPER              = 0xA188EEC8F81263234dA3622A406892F3D630f98c;
+    address constant GROVE_BASIN_FACTORY           = 0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a;
+    address constant JTRSY_ADMIN_TIMELOCK          = 0xA52dC9876aB4A9DB6dAfbb83410554086054d140;
+    address constant JTRSY_REDEEMER_ADDRESS        = 0xb6e8D3E47c4FC5606E6C24D097Dd1791885Ce05a;
 
     function run() external {
-        vm.createSelectFork(getChain("mainnet").rpcUrl);
-
         vm.startBroadcast();
         (address groveBasin, address pocket_, address redeemer_) = deploy();
         vm.stopBroadcast();
@@ -34,35 +34,23 @@ contract SetupJTRSYUsdsUsdcBasin is Script {
     function deploy() public returns (address groveBasin, address pocket_, address redeemer_) {
         address deployer = vm.envAddress("DEPLOYER");
 
-        require(IERC20(Ethereum.USDS).balanceOf(deployer) >= 1e18, "insufficient-usds-balance");
+        GroveBasinFactory factory = BasinSetup.approveFactoryForSeeding(GROVE_BASIN_FACTORY);
 
-        GroveBasinFactory factory = new GroveBasinFactory();
-
-        uint256 seedAmount = 10 ** IERC20(Ethereum.USDS).decimals();
-        IERC20(Ethereum.USDS).approve(address(factory), seedAmount);
-
-        groveBasin = factory.deploy({
-            owner                       : deployer,
-            liquidityProvider           : Ethereum.ALM_PROXY,
-            swapToken                   : Ethereum.USDS,
-            collateralToken             : Ethereum.USDC,
-            creditToken                 : JTRSY_TOKEN,
-            swapTokenRateProvider       : USDS_USDC_CHRONICLE_RATE_PROVIDER,
-            collateralTokenRateProvider : USDS_USDC_CHRONICLE_RATE_PROVIDER,
-            creditTokenRateProvider     : JTRSY_CHRONICLE_RATE_PROVIDER
+        groveBasin = BasinSetup.deployUsdsUsdcBasin({
+            factory                 : factory,
+            deployer                : deployer,
+            creditToken             : JTRSY_TOKEN,
+            creditTokenRateProvider : JTRSY_CHRONICLE_RATE_PROVIDER,
+            fixedRateProvider       : USDS_USDC_FIXED_RATE_PROVIDER
         });
 
-        GroveBasin(groveBasin).grantRole(GroveBasin(groveBasin).MANAGER_ADMIN_ROLE(), deployer);
+        GroveBasin basin = GroveBasin(groveBasin);
 
-        UsdsUsdcPocket pocket = new UsdsUsdcPocket(
-            groveBasin,
-            Ethereum.USDC,
-            Ethereum.USDS,
-            USDS_PSM_WRAPPER,
-            Ethereum.GROVE_PROXY
-        );
-
-        GroveBasin(groveBasin).setPocket(address(pocket));
+        pocket_ = BasinSetup.grantManagerAdminAndDeployPocket({
+            basin          : basin,
+            deployer       : deployer,
+            usdsPsmWrapper : USDS_PSM_WRAPPER
+        });
 
         JTRSYTokenRedeemer redeemer = new JTRSYTokenRedeemer(
             JTRSY_TOKEN,
@@ -70,11 +58,14 @@ contract SetupJTRSYUsdsUsdcBasin is Script {
             groveBasin
         );
 
-        GroveBasin(groveBasin).addTokenRedeemer(address(redeemer));
+        BasinSetup.performBasinInit({
+            basin          : basin,
+            deployer       : deployer,
+            tokenRedeemer  : address(redeemer),
+            issuerRedeemer : JTRSY_REDEEMER_ADDRESS,
+            adminTimelock  : JTRSY_ADMIN_TIMELOCK
+        });
 
-        GroveBasin(groveBasin).grantRole(GroveBasin(groveBasin).MANAGER_ROLE(), Ethereum.ALM_RELAYER);
-
-        pocket_   = address(pocket);
         redeemer_ = address(redeemer);
     }
 

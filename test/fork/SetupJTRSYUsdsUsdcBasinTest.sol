@@ -19,8 +19,8 @@ contract SetupJTRSYUsdsUsdcBasinTest is Test, SetupJTRSYUsdsUsdcBasin {
     function setUp() public {
         vm.createSelectFork(getChain("mainnet").rpcUrl);
 
-        _mockRateProvider(USDS_USDC_CHRONICLE_RATE_PROVIDER, 1e27);
-        _mockRateProvider(JTRSY_CHRONICLE_RATE_PROVIDER,     1.05e27);
+        _mockRateProvider(USDS_USDC_FIXED_RATE_PROVIDER, 1e27);
+        _mockRateProvider(JTRSY_CHRONICLE_RATE_PROVIDER, 1.05e27);
 
         deal(Ethereum.USDS, address(this), 1e18);
 
@@ -45,8 +45,8 @@ contract SetupJTRSYUsdsUsdcBasinTest is Test, SetupJTRSYUsdsUsdcBasin {
     }
 
     function test_deploy_rateProviders() public view {
-        assertEq(groveBasin.swapTokenRateProvider(),       USDS_USDC_CHRONICLE_RATE_PROVIDER);
-        assertEq(groveBasin.collateralTokenRateProvider(), USDS_USDC_CHRONICLE_RATE_PROVIDER);
+        assertEq(groveBasin.swapTokenRateProvider(),       USDS_USDC_FIXED_RATE_PROVIDER);
+        assertEq(groveBasin.collateralTokenRateProvider(), USDS_USDC_FIXED_RATE_PROVIDER);
         assertEq(groveBasin.creditTokenRateProvider(),     JTRSY_CHRONICLE_RATE_PROVIDER);
     }
 
@@ -62,13 +62,16 @@ contract SetupJTRSYUsdsUsdcBasinTest is Test, SetupJTRSYUsdsUsdcBasin {
         assertEq(redeemer.creditToken(),    JTRSY_TOKEN);
         assertEq(redeemer.vault(),          Ethereum.CENTRIFUGE_JTRSY);
         assertEq(address(redeemer.basin()), address(groveBasin));
+
         assertTrue(groveBasin.hasRole(groveBasin.REDEEMER_CONTRACT_ROLE(), address(redeemer)));
     }
 
     function test_deploy_roles() public view {
-        assertTrue(groveBasin.hasRole(groveBasin.OWNER_ROLE(),              address(this)));
-        assertTrue(groveBasin.hasRole(groveBasin.MANAGER_ADMIN_ROLE(),      address(this)));
-        assertTrue(groveBasin.hasRole(groveBasin.MANAGER_ROLE(),            Ethereum.ALM_RELAYER));
+        assertFalse(groveBasin.hasRole(groveBasin.OWNER_ROLE(),  address(this)));
+        assertFalse(groveBasin.hasRole(groveBasin.PAUSER_ROLE(), address(this)));
+
+        assertTrue(groveBasin.hasRole(groveBasin.MANAGER_ADMIN_ROLE(), address(this)));
+
         assertEq(groveBasin.liquidityProvider(), Ethereum.ALM_PROXY);
     }
 

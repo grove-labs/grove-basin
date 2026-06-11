@@ -65,9 +65,11 @@ contract SetupJTRSYMorphoUsdtBasinTest is Test, SetupJTRSYMorphoUsdtBasin {
     }
 
     function test_deploy_roles() public view {
-        assertTrue(groveBasin.hasRole(groveBasin.OWNER_ROLE(),              address(this)));
-        assertTrue(groveBasin.hasRole(groveBasin.MANAGER_ADMIN_ROLE(),      address(this)));
-        assertTrue(groveBasin.hasRole(groveBasin.MANAGER_ROLE(),            Ethereum.ALM_RELAYER));
+        assertFalse(groveBasin.hasRole(groveBasin.OWNER_ROLE(),  address(this)));
+        assertFalse(groveBasin.hasRole(groveBasin.PAUSER_ROLE(), address(this)));
+
+        assertTrue(groveBasin.hasRole(groveBasin.MANAGER_ADMIN_ROLE(), address(this)));
+
         assertEq(groveBasin.liquidityProvider(), Ethereum.ALM_PROXY);
     }
 
