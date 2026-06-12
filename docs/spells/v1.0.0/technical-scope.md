@@ -350,7 +350,7 @@
         - `MANAGER_ADMIN_ROLE`: `0x1369f7b2b38c76B6478c0f0E66D94923421891Ba` (Grove Proxy) + `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
         - `MANAGER_ROLE`: `0x0eEC86649E756a23CBc68d9EFEd756f16aD5F85f` (ALM Relayer)
         - `PAUSER_ROLE`: `0xB0113804960345fd0a245788b3423319c86940e5` (ALM Freezer)
-        - `REDEEMER_ROLE`: ~~`0xdfC603076EA75895DD4d59c6e2ee5038f881CB74`~~ → `0xcBeEe2c39601e1ee5502F2593F6758e6598C47a6` (Securitize redeemer address, changed)
+        - `REDEEMER_ROLE`: ~~`0xdfC603076EA75895DD4d59c6e2ee5038f881CB74`~~ → `0x488F27168a19472c51f003fbC5b75B1ACc3B7b4c` (Securitize redeemer address, changed)
         - `REDEEMER_CONTRACT_ROLE`: ~~`0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885`~~ → `0x99E5E7c533C7319f855B940561Df285bE022c82d` (BUIDLTokenRedeemer, redeployed)
     - Deployment command:
         ```
@@ -845,7 +845,7 @@
             - Argument value: `REDEEMER_ROLE` = `keccak256("REDEEMER_ROLE")`
             - External source: GroveBasin.sol constant
         2. `account`
-            - Argument value: `0xcBeEe2c39601e1ee5502F2593F6758e6598C47a6` (new Securitize redeemer address)
+            - Argument value: `0x488F27168a19472c51f003fbC5b75B1ACc3B7b4c` (new Securitize redeemer address)
             - External source: Provided by Securitize
     - Note: Replacing old redeemer address `0xdfC603076EA75895DD4d59c6e2ee5038f881CB74`.
 
@@ -1275,7 +1275,7 @@
     - Intended end goal: A valid address to grant the `REDEEMER_ROLE` on the BUIDL GroveBasin. This address will be authorized to trigger redemptions.
     - Why is it required to be done in advance: Currently set to `address(0)` in the script; the conditional skip means no redeemer role holder will be set until the address is provided.
     - Proof that it was done or planned to be done: `REDEEMER_ROLE` granted to `0xdfC603076EA75895DD4d59c6e2ee5038f881CB74` in tx [0x33adfefe...](https://etherscan.io/tx/0x33adfefeee15f01805a582324701e2b03a63951680aab471bd8a034f10ee66da).
-    - **Address change**: Securitize changed their redeemer address. `REDEEMER_ROLE` must be rotated from `0xdfC603076EA75895DD4d59c6e2ee5038f881CB74` to `0xcBeEe2c39601e1ee5502F2593F6758e6598C47a6`. See SetupBUIDLUsdsUsdcBasin pre-configuration steps 10a–10b.
+    - **Address change**: Securitize changed their redeemer address. `REDEEMER_ROLE` must be rotated from `0xdfC603076EA75895DD4d59c6e2ee5038f881CB74` to `0x488F27168a19472c51f003fbC5b75B1ACc3B7b4c`. See SetupBUIDLUsdsUsdcBasin pre-configuration steps 10a–10b.
 
 3. **BUIDL Basin must be allowlisted on BUIDL token**
     - Intended end goal: The BUIDL Basin contract (`0x10b3d3A96646720f8B3a29229cF96d513f3C84F1`) can hold BUIDL tokens

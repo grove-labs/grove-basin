@@ -58,7 +58,7 @@ library Deployments {
 
     // Issuer provided (current)
     address internal constant SECURITIZE_ISSUER_MULTISIG    = 0x453A28B31fdc31858C35B02bc3A42BCD8bfbAd3a;
-    address internal constant SECURITIZE_REDEEMER           = 0xcBeEe2c39601e1ee5502F2593F6758e6598C47a6;
+    address internal constant SECURITIZE_REDEEMER           = 0x488F27168a19472c51f003fbC5b75B1ACc3B7b4c;
     address internal constant SECURITIZE_REDEMPTION_ADDRESS = 0x8780Dd016171B91E4Df47075dA0a947959C34200;
 
     // Issuer provided (old — rotated out, must not hold any roles)
