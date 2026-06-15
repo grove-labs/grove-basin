@@ -2,7 +2,7 @@
 
 Chain: Ethereum Mainnet
 Deployer: `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817`
-Audited commit: [`a79269a3`](https://github.com/grove-labs/grove-basin/commit/a79269a3f5f0253110e9cbca15d79aa9ffb62c4d)
+Audited commit: [`9c812fcb`](https://github.com/grove-labs/grove-basin/commit/9c812fcb32df0475ceaf443e3db39c3302a5e56c)
 
 | # | Contract | Address | Deployment Tx | Verified |
 |---|----------|---------|---------------|----------|
@@ -11,9 +11,9 @@ Audited commit: [`a79269a3`](https://github.com/grove-labs/grove-basin/commit/a7
 | 3 | BUIDL ChronicleRateProvider | [0x69a171853575FFD41574EA80Abfc6337AcbC4d43](https://etherscan.io/address/0x69a171853575FFD41574EA80Abfc6337AcbC4d43) | [0xf92bfcad...](https://etherscan.io/tx/0xf92bfcada2976746a9b7fce8bd98636895db6a6046da44bc710abe42c6efd248) | [Yes](https://etherscan.io/address/0x69a171853575FFD41574EA80Abfc6337AcbC4d43#code) |
 | 4 | JTRSY ChronicleRateProvider | [0x29209ceCFeFa6f675E6f1f829320D67cE2b025E5](https://etherscan.io/address/0x29209ceCFeFa6f675E6f1f829320D67cE2b025E5) | [0xabaaf7e7...](https://etherscan.io/tx/0xabaaf7e7f32c02e68029f16cb10cbf6cdc45371220072e4acaaf9bfcf1713a73) | [Yes](https://etherscan.io/address/0x29209ceCFeFa6f675E6f1f829320D67cE2b025E5#code) |
 | 5 | JTRSY Admin TimelockController | [0xA52dC9876aB4A9DB6dAfbb83410554086054d140](https://etherscan.io/address/0xA52dC9876aB4A9DB6dAfbb83410554086054d140) | [0xec51cda5...](https://etherscan.io/tx/0xec51cda57fcb7698dbc3fb9a7da1bd8eb0fca506332700546a311ffd3b265b9d) | [Yes](https://etherscan.io/address/0xA52dC9876aB4A9DB6dAfbb83410554086054d140#code) |
-| 6 | JTRSY GroveBasin | — | — | — |
-| 7 | JTRSY UsdsUsdcPocket | — | — | — |
-| 8 | JTRSY JTRSYTokenRedeemer | — | — | — |
+| 6 | JTRSY GroveBasin | [0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9](https://etherscan.io/address/0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9) | [0x17e4e472...](https://etherscan.io/tx/0x17e4e472d6a5874fd057f7e34c2e3cb8d29fa5544b373ef371e46ff6ce6332da) | [Yes](https://etherscan.io/address/0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9#code) |
+| 7 | JTRSY UsdsUsdcPocket | [0x2Cd296095788A2741e72056D66B3Ae1fAeE23ea2](https://etherscan.io/address/0x2Cd296095788A2741e72056D66B3Ae1fAeE23ea2) | [0xa7d03ed1...](https://etherscan.io/tx/0xa7d03ed1f6ec5f718858a1c5c53cbf693604b7050cba4692de150a87b86a42a0) | [Yes](https://etherscan.io/address/0x2Cd296095788A2741e72056D66B3Ae1fAeE23ea2#code) |
+| 8 | JTRSY JTRSYTokenRedeemer | [0x7c5Ce1a1D50a6cb3Da97C9e202B3E7CD8e5b5b6c](https://etherscan.io/address/0x7c5Ce1a1D50a6cb3Da97C9e202B3E7CD8e5b5b6c) | [0x17bf9bd8...](https://etherscan.io/tx/0x17bf9bd8e28c8ca2ffeb39baaada6615c75c749a1bfaf2596172df531e6289af) | [Yes](https://etherscan.io/address/0x7c5Ce1a1D50a6cb3Da97C9e202B3E7CD8e5b5b6c#code) |
 | 9 | BUIDL Admin TimelockController | [0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34](https://etherscan.io/address/0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34) | [0x63a99523...](https://etherscan.io/tx/0x63a9952301836480eea0f6fe830243eaa2a71ca23457f4c8a2792e015df526d8) | [Yes](https://etherscan.io/address/0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34#code) |
 | 10 | BUIDL GroveBasin | — | — | — |
 | 11 | BUIDL UsdsUsdcPocket | — | — | — |
@@ -32,16 +32,15 @@ Audited commit: [`a79269a3`](https://github.com/grove-labs/grove-basin/commit/a7
 | JTRSY GroveBasin | 0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9 | [tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnets/d2d3c761-6480-44ce-b204-2f3cb6a1aa43/instance/fd0208d5-2bb9-4435-b849-a5eb216f2d61/container/359fb691-669d-481d-bc9d-d8de3ab923eb/tx/0x193b4a4d12e68a4a527c3ca7ab0d762e21a4cbb27d3bd98ed65500493ce045d5) |
 | JTRSY UsdsUsdcPocket | 0x2Cd296095788A2741e72056D66B3Ae1fAeE23ea2 | [tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnets/d2d3c761-6480-44ce-b204-2f3cb6a1aa43/instance/fd0208d5-2bb9-4435-b849-a5eb216f2d61/container/359fb691-669d-481d-bc9d-d8de3ab923eb/tx/0x7b601f9425dd261b8715a8e2321d6aff1cc01ce046da6a54b28c8a71825981fc) |
 | JTRSY JTRSYTokenRedeemer | 0x7c5Ce1a1D50a6cb3Da97C9e202B3E7CD8e5b5b6c | [tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnets/d2d3c761-6480-44ce-b204-2f3cb6a1aa43/instance/fd0208d5-2bb9-4435-b849-a5eb216f2d61/container/359fb691-669d-481d-bc9d-d8de3ab923eb/tx/0x4efbaf931511339618e669dc4c9dbacb881d6698925715486c2339f08748919d) |
-| BUIDL GroveBasin | — | — |
-| BUIDL UsdsUsdcPocket | — | — |
-| BUIDL BUIDLTokenRedeemer | — | — |
+| BUIDL GroveBasin | 0xCBa428fB052B365557DAf52b744DFfF20d5FbEdD | [tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnets/d2d3c761-6480-44ce-b204-2f3cb6a1aa43/instance/fd0208d5-2bb9-4435-b849-a5eb216f2d61/container/359fb691-669d-481d-bc9d-d8de3ab923eb/tx/0x0b7b97dc752b262e17a50e08ea871c8a05eb78cf7b0348943848da405325f87d) |
+| BUIDL UsdsUsdcPocket | 0x39548FeF138370Db06e172eF0739894b2a613DF9 | [tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnets/d2d3c761-6480-44ce-b204-2f3cb6a1aa43/instance/fd0208d5-2bb9-4435-b849-a5eb216f2d61/container/359fb691-669d-481d-bc9d-d8de3ab923eb/tx/0xe862d32871d4270ef7eb1a97cd55eef625238485b7db3713c66eff428ef48b50) |
+| BUIDL BUIDLTokenRedeemer | 0x73414528187A4986E2Af5D551fD14871b723E506 | [tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnets/d2d3c761-6480-44ce-b204-2f3cb6a1aa43/instance/fd0208d5-2bb9-4435-b849-a5eb216f2d61/container/359fb691-669d-481d-bc9d-d8de3ab923eb/tx/0xd3f022e052f5047f9b149618d1d43c133d5bcdfb5b0824c9938332d59e52984d) |
 
 ### Pending deployments
 
-The following contracts are pending redeployment for both JTRSY and BUIDL:
+The following contracts are pending deployment for BUIDL:
 
-- GroveBasin (JTRSY, BUIDL)
-- UsdsUsdcPocket (JTRSY, BUIDL)
-- JTRSYTokenRedeemer
+- GroveBasin (BUIDL)
+- UsdsUsdcPocket (BUIDL)
 - BUIDLTokenRedeemer
 

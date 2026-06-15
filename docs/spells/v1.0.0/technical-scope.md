@@ -1,5 +1,11 @@
 # General Technical Scope Template
 
+## Deployer
+
+- Address: [`0x6D99f476E7E9FCcd189fb87023cFa301364Fa817`](https://etherscan.io/address/0x6D99f476E7E9FCcd189fb87023cFa301364Fa817)
+- Mainnet nonce: `114`
+- Snapshot taken at: block `25323663`, timestamp `1781535647` (2026-06-15T15:00:47Z)
+
 ## Trusted addresses
 
 | **Contract name** | **Address with URL** |
@@ -25,7 +31,7 @@
     - Contract address: [0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a](https://etherscan.io/address/0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a)
     - Deployment transaction trace: [0x6154253c2283e32872ab8c3ead1658eefa2f30b0916236ca5ef649b1bdde1679](https://etherscan.io/tx/0x6154253c2283e32872ab8c3ead1658eefa2f30b0916236ca5ef649b1bdde1679)
     - Code verification
-        - Source code URL (at the audited commit hash): [src/GroveBasinFactory.sol](https://github.com/grove-labs/grove-basin/blob/a79269a3f5f0253110e9cbca15d79aa9ffb62c4d/src/GroveBasinFactory.sol)
+        - Source code URL (at the audited commit hash): [src/GroveBasinFactory.sol](https://github.com/grove-labs/grove-basin/blob/9c812fcb32df0475ceaf443e3db39c3302a5e56c/src/GroveBasinFactory.sol)
         - External URLs to the audit reports: 
             - Cantina audit: https://cantina.xyz/portfolio/71794706-b078-4579-8f50-a9bd25d732d3
             - Chain Security Audit: https://reports.chainsecurity.com/GroveLabs/ChainSecurity_GroveLabs_Basin_Audit.pdf
@@ -47,7 +53,7 @@
     - Contract address: [0x7928A185B8137D1CD2a0996a810A04dB2837419D](https://etherscan.io/address/0x7928A185B8137D1CD2a0996a810A04dB2837419D)
     - Deployment transaction trace: [0xfc222a7bc6442a387de4b1cc9abba93c796783ca8b720ef521e559688e37a271](https://etherscan.io/tx/0xfc222a7bc6442a387de4b1cc9abba93c796783ca8b720ef521e559688e37a271)
     - Code verification
-        - Source code URL (at the audited commit hash): [src/rate-providers/FixedRateProvider.sol](https://github.com/grove-labs/grove-basin/blob/a79269a3f5f0253110e9cbca15d79aa9ffb62c4d/src/rate-providers/FixedRateProvider.sol)
+        - Source code URL (at the audited commit hash): [src/rate-providers/FixedRateProvider.sol](https://github.com/grove-labs/grove-basin/blob/9c812fcb32df0475ceaf443e3db39c3302a5e56c/src/rate-providers/FixedRateProvider.sol)
         - External URLs to the audit reports: 
             - Cantina audit: https://cantina.xyz/portfolio/71794706-b078-4579-8f50-a9bd25d732d3
             - Chain Security Audit: https://reports.chainsecurity.com/GroveLabs/ChainSecurity_GroveLabs_Basin_Audit.pdf
@@ -72,7 +78,7 @@
     - Contract address: [0x69a171853575FFD41574EA80Abfc6337AcbC4d43](https://etherscan.io/address/0x69a171853575FFD41574EA80Abfc6337AcbC4d43)
     - Deployment transaction trace: [0xf92bfcada2976746a9b7fce8bd98636895db6a6046da44bc710abe42c6efd248](https://etherscan.io/tx/0xf92bfcada2976746a9b7fce8bd98636895db6a6046da44bc710abe42c6efd248)
     - Code verification
-        - Source code URL (at the audited commit hash): [src/rate-providers/ChronicleRateProvider.sol](https://github.com/grove-labs/grove-basin/blob/a79269a3f5f0253110e9cbca15d79aa9ffb62c4d/src/rate-providers/ChronicleRateProvider.sol)
+        - Source code URL (at the audited commit hash): [src/rate-providers/ChronicleRateProvider.sol](https://github.com/grove-labs/grove-basin/blob/9c812fcb32df0475ceaf443e3db39c3302a5e56c/src/rate-providers/ChronicleRateProvider.sol)
         - External URLs to the audit reports: 
             - Cantina audit: https://cantina.xyz/portfolio/71794706-b078-4579-8f50-a9bd25d732d3
             - Chain Security Audit: https://reports.chainsecurity.com/GroveLabs/ChainSecurity_GroveLabs_Basin_Audit.pdf
@@ -97,7 +103,7 @@
     - Contract address: [0x29209ceCFeFa6f675E6f1f829320D67cE2b025E5](https://etherscan.io/address/0x29209ceCFeFa6f675E6f1f829320D67cE2b025E5)
     - Deployment transaction trace: [0xabaaf7e7f32c02e68029f16cb10cbf6cdc45371220072e4acaaf9bfcf1713a73](https://etherscan.io/tx/0xabaaf7e7f32c02e68029f16cb10cbf6cdc45371220072e4acaaf9bfcf1713a73)
     - Code verification
-        - Source code URL (at the audited commit hash): [src/rate-providers/ChronicleRateProvider.sol](https://github.com/grove-labs/grove-basin/blob/a79269a3f5f0253110e9cbca15d79aa9ffb62c4d/src/rate-providers/ChronicleRateProvider.sol)
+        - Source code URL (at the audited commit hash): [src/rate-providers/ChronicleRateProvider.sol](https://github.com/grove-labs/grove-basin/blob/9c812fcb32df0475ceaf443e3db39c3302a5e56c/src/rate-providers/ChronicleRateProvider.sol)
         - External URLs to the audit reports: 
             - Cantina audit: https://cantina.xyz/portfolio/71794706-b078-4579-8f50-a9bd25d732d3
             - Chain Security Audit: https://reports.chainsecurity.com/GroveLabs/ChainSecurity_GroveLabs_Basin_Audit.pdf
@@ -191,10 +197,10 @@
 
 7. **JTRSY GroveBasin**
     - Chain name: Ethereum Mainnet
-    - Contract address: TBD (pending redeployment)
-    - Deployment transaction trace: TBD (pending redeployment; will be deployed via `GroveBasinFactory.deploy()` at `0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a`)
+    - Contract address: [0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9](https://etherscan.io/address/0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9)
+    - Deployment transaction trace: [0x17e4e472d6a5874fd057f7e34c2e3cb8d29fa5544b373ef371e46ff6ce6332da](https://etherscan.io/tx/0x17e4e472d6a5874fd057f7e34c2e3cb8d29fa5544b373ef371e46ff6ce6332da)
     - Deployed by a factory:
-        - Source code URL (at the audited commit hash): [src/GroveBasin.sol](https://github.com/grove-labs/grove-basin/blob/a79269a3f5f0253110e9cbca15d79aa9ffb62c4d/src/GroveBasin.sol)
+        - Source code URL (at the audited commit hash): [src/GroveBasin.sol](https://github.com/grove-labs/grove-basin/blob/9c812fcb32df0475ceaf443e3db39c3302a5e56c/src/GroveBasin.sol)
         - Contract being called: GroveBasinFactory ([0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a](https://etherscan.io/address/0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a))
         - External docs page with this address: N/A
         - External URLs to the audit reports: 
@@ -204,7 +210,7 @@
         - Function arguments:
             - `owner`
                 - Argument value: `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
-                - External source of the value or an explanation of how this value can be verified, and who has to confirm it: `DEPLOYER` env var in the deployment script. Can be verified by checking the `msg.sender` of the `GroveBasinFactory.deploy()` call in the deployment transaction trace (TBD). Grove to confirm.
+                - External source of the value or an explanation of how this value can be verified, and who has to confirm it: `DEPLOYER` env var in the deployment script. Can be verified by checking the `msg.sender` of the `GroveBasinFactory.deploy()` call in the deployment transaction trace ([0x17e4e472d6a5874fd057f7e34c2e3cb8d29fa5544b373ef371e46ff6ce6332da](https://etherscan.io/tx/0x17e4e472d6a5874fd057f7e34c2e3cb8d29fa5544b373ef371e46ff6ce6332da)). Grove to confirm.
             - `liquidityProvider`
                 - Argument value: `0x0DcD9298e163dFD3c0B5b00F0d9093C36e40A153` (DPAU ALM Proxy)
                 - External source of the value or an explanation of how this value can be verified, and who has to confirm it: `DPAU_ALM_PROXY` constant in [script/lib/BasinSetup.sol](../../../script/lib/BasinSetup.sol). Can be verified by calling `liquidityProvider()` on the deployed GroveBasin. Grove to confirm.
@@ -226,14 +232,14 @@
             - `creditTokenRateProvider`
                 - Argument value: `0x29209ceCFeFa6f675E6f1f829320D67cE2b025E5` (JTRSY ChronicleRateProvider)
                 - External source of the value or an explanation of how this value can be verified, and who has to confirm it: Pre-deployed contract #4 (JTRSY Chronicle Rate Provider). Can be verified by calling `creditTokenRateProvider()` on the deployed GroveBasin and cross-referencing with [pre-deployed contract #4](https://etherscan.io/address/0x29209ceCFeFa6f675E6f1f829320D67cE2b025E5). Grove to confirm.
-    - Additional parameters configured on the contract by a privileged actor: Pocket set to TBD (UsdsUsdcPocket, pending redeployment). Token redeemer TBD (JTRSYTokenRedeemer, pending redeployment) registered. Fee bounds set to [0, 500]. Four pause keys enabled (PAUSED_SWAP_SWAP_TO_CREDIT, PAUSED_SWAP_COLLATERAL_TO_CREDIT, PAUSED_DEPOSIT_CREDIT, PAUSED_WITHDRAW_CREDIT). See [SetupJTRSYUsdsUsdcBasin post-deploy configuration](#setupjtrsyusdsusdcbasin-post-deploy-configuration) for full details.
+    - Additional parameters configured on the contract by a privileged actor: Pocket set to 0x2Cd296095788A2741e72056D66B3Ae1fAeE23ea2 (UsdsUsdcPocket). Token redeemer 0x7c5Ce1a1D50a6cb3Da97C9e202B3E7CD8e5b5b6c (JTRSYTokenRedeemer) registered. Fee bounds set to [0, 500]. Four pause keys enabled (PAUSED_SWAP_SWAP_TO_CREDIT, PAUSED_SWAP_COLLATERAL_TO_CREDIT, PAUSED_DEPOSIT_CREDIT, PAUSED_WITHDRAW_CREDIT). See [SetupJTRSYUsdsUsdcBasin post-deploy configuration](#setupjtrsyusdsusdcbasin-post-deploy-configuration) for full details.
     - Ownership, roles, privilege callers:
         - `OWNER_ROLE` (`DEFAULT_ADMIN_ROLE`): `0xA52dC9876aB4A9DB6dAfbb83410554086054d140` (JTRSY Admin TimelockController)
         - `MANAGER_ADMIN_ROLE`: `0x1369f7b2b38c76B6478c0f0E66D94923421891Ba` (Grove Proxy) + `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
         - `MANAGER_ROLE`: `0x0eEC86649E756a23CBc68d9EFEd756f16aD5F85f` (ALM Relayer)
         - `PAUSER_ROLE`: `0xB0113804960345fd0a245788b3423319c86940e5` (ALM Freezer)
         - `REDEEMER_ROLE`: `0xb6e8D3E47c4FC5606E6C24D097Dd1791885Ce05a` ()
-        - `REDEEMER_CONTRACT_ROLE`: TBD (JTRSYTokenRedeemer, pending redeployment)
+        - `REDEEMER_CONTRACT_ROLE`: 0x7c5Ce1a1D50a6cb3Da97C9e202B3E7CD8e5b5b6c (JTRSYTokenRedeemer)
     - Deployment command:
         ```
         DEPLOYER=0x6D99f476E7E9FCcd189fb87023cFa301364Fa817 \
@@ -243,24 +249,24 @@
             --sender 0x6D99f476E7E9FCcd189fb87023cFa301364Fa817 \
             --broadcast --slow --verify
         ```
-    - Source code is verified on the block explorer: TBD (pending redeployment)
+    - Source code is verified on the block explorer: [Yes](https://etherscan.io/address/0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9#code)
     - The deployer no longer has a privileged role: `MANAGER_ADMIN_ROLE` revoked in tx TBD.
 
 8. **JTRSY UsdsUsdcPocket**
     - Chain name: Ethereum Mainnet
-    - Contract address: TBD (pending redeployment)
-    - Deployment transaction trace: TBD (pending redeployment)
+    - Contract address: [0x2Cd296095788A2741e72056D66B3Ae1fAeE23ea2](https://etherscan.io/address/0x2Cd296095788A2741e72056D66B3Ae1fAeE23ea2)
+    - Deployment transaction trace: [0xa7d03ed1f6ec5f718858a1c5c53cbf693604b7050cba4692de150a87b86a42a0](https://etherscan.io/tx/0xa7d03ed1f6ec5f718858a1c5c53cbf693604b7050cba4692de150a87b86a42a0)
     - Code verification
-        - Source code URL (at the audited commit hash): [src/pockets/UsdsUsdcPocket.sol](https://github.com/grove-labs/grove-basin/blob/a79269a3f5f0253110e9cbca15d79aa9ffb62c4d/src/pockets/UsdsUsdcPocket.sol)
+        - Source code URL (at the audited commit hash): [src/pockets/UsdsUsdcPocket.sol](https://github.com/grove-labs/grove-basin/blob/9c812fcb32df0475ceaf443e3db39c3302a5e56c/src/pockets/UsdsUsdcPocket.sol)
         - External URLs to the audit reports: 
             - Cantina audit: https://cantina.xyz/portfolio/71794706-b078-4579-8f50-a9bd25d732d3
             - Chain Security Audit: https://reports.chainsecurity.com/GroveLabs/ChainSecurity_GroveLabs_Basin_Audit.pdf
-        - Deployed bytecode verification: `forge verify-bytecode <TBD: pocket address> src/pockets/UsdsUsdcPocket.sol:UsdsUsdcPocket --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address,address,address)" <TBD: JTRSY GroveBasin address> 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 0xdC035D45d973E3EC169d2276DDab16f1e407384F 0xA188EEC8F81263234dA3622A406892F3D630f98c 0x1369f7b2b38c76B6478c0f0E66D94923421891Ba)`
+        - Deployed bytecode verification: `forge verify-bytecode 0x2Cd296095788A2741e72056D66B3Ae1fAeE23ea2 src/pockets/UsdsUsdcPocket.sol:UsdsUsdcPocket --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address,address,address)" 0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 0xdC035D45d973E3EC169d2276DDab16f1e407384F 0xA188EEC8F81263234dA3622A406892F3D630f98c 0x1369f7b2b38c76B6478c0f0E66D94923421891Ba)`
             - Creation code matched with status `full`. Runtime code matched with status `full`.
         - Compilation optimizations match optimizer=true, runs=180, evm_version=cancun, source solc 0.8.24. Bytecode CBOR metadata: bytecodeHash=ipfs, IPFS CID=`QmTUwRpfBkq1ZAwmTjHLW1MTAZTVKypXb1bJpwzrSNzRFu`, solc=0.8.24.
         - Constructor arguments:
             1. `basin_`
-                - Argument value: TBD (JTRSY GroveBasin, pending redeployment)
+                - Argument value: 0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9 (JTRSY GroveBasin)
                 - External source: Deployed in step 2 of SetupJTRSYUsdsUsdcBasin
             2. `usdc_`
                 - Argument value: `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48` (USDC)
@@ -277,19 +283,19 @@
     - Additional parameters configured on the contract by a privileged actor: None — UsdsUsdcPocket is immutable. Constructor grants max USDS approval to basin and Grove Proxy.
     - Ownership, roles, privilege callers: None — no access control. Callable by GroveBasin (via `MANAGER_ROLE`), Grove Proxy.
     - Deployment command: Deployed within `SetupJTRSYUsdsUsdcBasin` script (see item 7).
-    - Source code is verified on the block explorer: TBD (pending redeployment)
+    - Source code is verified on the block explorer: [Yes](https://etherscan.io/address/0x2Cd296095788A2741e72056D66B3Ae1fAeE23ea2#code)
     - The deployer no longer has a privileged role: N/A — no access control.
 
 9. **JTRSY JTRSYTokenRedeemer**
     - Chain name: Ethereum Mainnet
-    - Contract address: TBD (pending redeployment)
-    - Deployment transaction trace: TBD (pending redeployment)
+    - Contract address: [0x7c5Ce1a1D50a6cb3Da97C9e202B3E7CD8e5b5b6c](https://etherscan.io/address/0x7c5Ce1a1D50a6cb3Da97C9e202B3E7CD8e5b5b6c)
+    - Deployment transaction trace: [0x17bf9bd8e28c8ca2ffeb39baaada6615c75c749a1bfaf2596172df531e6289af](https://etherscan.io/tx/0x17bf9bd8e28c8ca2ffeb39baaada6615c75c749a1bfaf2596172df531e6289af)
     - Code verification
-        - Source code URL (at the audited commit hash): [src/redeemers/JTRSYTokenRedeemer.sol](https://github.com/grove-labs/grove-basin/blob/a79269a3f5f0253110e9cbca15d79aa9ffb62c4d/src/redeemers/JTRSYTokenRedeemer.sol)
+        - Source code URL (at the audited commit hash): [src/redeemers/JTRSYTokenRedeemer.sol](https://github.com/grove-labs/grove-basin/blob/9c812fcb32df0475ceaf443e3db39c3302a5e56c/src/redeemers/JTRSYTokenRedeemer.sol)
         - External URLs to the audit reports: 
             - Cantina audit: https://cantina.xyz/portfolio/71794706-b078-4579-8f50-a9bd25d732d3
             - Chain Security Audit: https://reports.chainsecurity.com/GroveLabs/ChainSecurity_GroveLabs_Basin_Audit.pdf
-        - Deployed bytecode verification: `forge verify-bytecode <TBD: redeemer address> src/redeemers/JTRSYTokenRedeemer.sol:JTRSYTokenRedeemer --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address)" 0x8c213ee79581Ff4984583C6a801e5263418C4b86 0xFE6920eB6C421f1179cA8c8d4170530CDBdfd77A <TBD: JTRSY GroveBasin address>)`
+        - Deployed bytecode verification: `forge verify-bytecode 0x7c5Ce1a1D50a6cb3Da97C9e202B3E7CD8e5b5b6c src/redeemers/JTRSYTokenRedeemer.sol:JTRSYTokenRedeemer --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address)" 0x8c213ee79581Ff4984583C6a801e5263418C4b86 0xFE6920eB6C421f1179cA8c8d4170530CDBdfd77A 0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9)`
             - Creation code matched with status `full`. Runtime code matched with status `full`.
         - Compilation optimizations match optimizer=true, runs=180, evm_version=cancun, source solc 0.8.24. Bytecode CBOR metadata: bytecodeHash=ipfs, IPFS CID=`QmTdhLbu1GU2uygH13BLQ9T8QMdD2sr7dZ4ALgAFFcoWWY`, solc=0.8.24.
         - Constructor arguments:
@@ -300,12 +306,12 @@
                 - Argument value: `0xFE6920eB6C421f1179cA8c8d4170530CDBdfd77A` (Centrifuge JTRSY vault)
                 - External source: grove-address-registry `Ethereum.CENTRIFUGE_JTRSY`
             3. `basin_`
-                - Argument value: TBD (JTRSY GroveBasin, pending redeployment)
+                - Argument value: 0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9 (JTRSY GroveBasin)
                 - External source: Deployed in step 2 of SetupJTRSYUsdsUsdcBasin
     - Additional parameters configured on the contract by a privileged actor: None — JTRSYTokenRedeemer is immutable. Registered on the basin via `addTokenRedeemer()` which grants `REDEEMER_CONTRACT_ROLE` and calls `setUp()`.
     - Ownership, roles, privilege callers: None — no access control. Callable by the GroveBasin contract (`onlyBasin` modifier) and the basin's manager admin (Grove Proxy `0x1369f7b2b38c76B6478c0f0E66D94923421891Ba`).
     - Deployment command: Deployed within `SetupJTRSYUsdsUsdcBasin` script (see item 7).
-    - Source code is verified on the block explorer: TBD (pending redeployment)
+    - Source code is verified on the block explorer: [Yes](https://etherscan.io/address/0x7c5Ce1a1D50a6cb3Da97C9e202B3E7CD8e5b5b6c#code)
     - The deployer no longer has a privileged role: N/A — no access control.
 
 10. **BUIDL GroveBasin**
@@ -313,7 +319,7 @@
     - Contract address: TBD (pending redeployment)
     - Deployment transaction trace: TBD (pending redeployment; will be deployed via `GroveBasinFactory.deploy()` at `0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a`)
     - Deployed by a factory:
-        - Source code URL (at the audited commit hash): [src/GroveBasin.sol](https://github.com/grove-labs/grove-basin/blob/a79269a3f5f0253110e9cbca15d79aa9ffb62c4d/src/GroveBasin.sol)
+        - Source code URL (at the audited commit hash): [src/GroveBasin.sol](https://github.com/grove-labs/grove-basin/blob/9c812fcb32df0475ceaf443e3db39c3302a5e56c/src/GroveBasin.sol)
         - Contract being called: GroveBasinFactory ([0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a](https://etherscan.io/address/0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a))
         - External docs page with this address: [Etherscan verified source](https://etherscan.io/address/0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a#code)
         - External URLs to the audit reports: 
@@ -370,7 +376,7 @@
     - Contract address: TBD (pending redeployment)
     - Deployment transaction trace: TBD (pending redeployment)
     - Code verification
-        - Source code URL (at the audited commit hash): [src/pockets/UsdsUsdcPocket.sol](https://github.com/grove-labs/grove-basin/blob/a79269a3f5f0253110e9cbca15d79aa9ffb62c4d/src/pockets/UsdsUsdcPocket.sol)
+        - Source code URL (at the audited commit hash): [src/pockets/UsdsUsdcPocket.sol](https://github.com/grove-labs/grove-basin/blob/9c812fcb32df0475ceaf443e3db39c3302a5e56c/src/pockets/UsdsUsdcPocket.sol)
         - External URLs to the audit reports: 
             - Cantina audit: https://cantina.xyz/portfolio/71794706-b078-4579-8f50-a9bd25d732d3
             - Chain Security Audit: https://reports.chainsecurity.com/GroveLabs/ChainSecurity_GroveLabs_Basin_Audit.pdf
@@ -404,7 +410,7 @@
     - Contract address: TBD (pending redeployment)
     - Deployment transaction trace: TBD (pending redeployment)
     - Code verification
-        - Source code URL (at the audited commit hash): [src/redeemers/BUIDLTokenRedeemer.sol](https://github.com/grove-labs/grove-basin/blob/a79269a3f5f0253110e9cbca15d79aa9ffb62c4d/src/redeemers/BUIDLTokenRedeemer.sol)
+        - Source code URL (at the audited commit hash): [src/redeemers/BUIDLTokenRedeemer.sol](https://github.com/grove-labs/grove-basin/blob/9c812fcb32df0475ceaf443e3db39c3302a5e56c/src/redeemers/BUIDLTokenRedeemer.sol)
         - External URLs to the audit reports: 
             - Cantina audit: https://cantina.xyz/portfolio/71794706-b078-4579-8f50-a9bd25d732d3
             - Chain Security Audit: https://reports.chainsecurity.com/GroveLabs/ChainSecurity_GroveLabs_Basin_Audit.pdf
@@ -901,7 +907,7 @@
 ### SetupJTRSYUsdsUsdcBasin post-deploy configuration
 
 1. **Approve GroveBasinFactory to spend 1 USDS (seed amount)**
-    - Transaction trace URL: TBD
+    - Transaction trace URL: [0xd43f3e8333e282cb2e5c5a58799aecfd9f8e044f7ed5731cebd9c47a924333a0](https://etherscan.io/tx/0xd43f3e8333e282cb2e5c5a58799aecfd9f8e044f7ed5731cebd9c47a924333a0)
     - Contract being called: USDS (`0xdC035D45d973E3EC169d2276DDab16f1e407384F`)
     - Function being called: `approve(address spender, uint256 amount)`
     - Function arguments:
@@ -913,7 +919,7 @@
             - External source: `10 ** IERC20(USDS).decimals()`
 
 2. **Deploy GroveBasin via GroveBasinFactory**
-    - Transaction trace URL: TBD (pending redeployment)
+    - Transaction trace URL: [0x17e4e472d6a5874fd057f7e34c2e3cb8d29fa5544b373ef371e46ff6ce6332da](https://etherscan.io/tx/0x17e4e472d6a5874fd057f7e34c2e3cb8d29fa5544b373ef371e46ff6ce6332da)
     - Contract being called: GroveBasinFactory (`0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a`)
     - Function being called: `deploy(address owner, address liquidityProvider, address swapToken, address collateralToken, address creditToken, address swapTokenRateProvider, address collateralTokenRateProvider, address creditTokenRateProvider)`
     - Function arguments:
@@ -944,7 +950,7 @@
     - Note: Factory internally seeds 1 USDS to `address(0)` as dead shares via `depositInitial`.
 
 3. **Grant MANAGER_ADMIN_ROLE to Grove Proxy**
-    - Transaction trace URL: TBD
+    - Transaction trace URL: [0x60496db5b73712b91be8883a7bf93d125333db383cf7048355ad618ff4a40cd0](https://etherscan.io/tx/0x60496db5b73712b91be8883a7bf93d125333db383cf7048355ad618ff4a40cd0)
     - Contract being called: GroveBasin (newly deployed)
     - Function being called: `grantRole(bytes32 role, address account)`
     - Function arguments:
@@ -956,7 +962,7 @@
             - External source: grove-address-registry `Ethereum.GROVE_PROXY`
 
 4. **Grant MANAGER_ADMIN_ROLE to deployer**
-    - Transaction trace URL: TBD
+    - Transaction trace URL: [0xfb5dd1223488eb293e13773b9d8eaf9dcdc82554ded433e7684d8ed366161543](https://etherscan.io/tx/0xfb5dd1223488eb293e13773b9d8eaf9dcdc82554ded433e7684d8ed366161543)
     - Contract being called: GroveBasin
     - Function being called: `grantRole(bytes32 role, address account)`
     - Function arguments:
@@ -968,7 +974,7 @@
             - External source: Deployer EOA
 
 5. **Deploy UsdsUsdcPocket**
-    - Transaction trace URL: TBD (pending redeployment)
+    - Transaction trace URL: [0xa7d03ed1f6ec5f718858a1c5c53cbf693604b7050cba4692de150a87b86a42a0](https://etherscan.io/tx/0xa7d03ed1f6ec5f718858a1c5c53cbf693604b7050cba4692de150a87b86a42a0)
     - Contract being deployed: `UsdsUsdcPocket`
     - Constructor arguments:
         1. `basin_`
@@ -988,7 +994,7 @@
     - Note: Constructor grants max USDS approval to basin and Grove Proxy.
 
 6. **Set pocket on GroveBasin**
-    - Transaction trace URL: TBD
+    - Transaction trace URL: [0x53886473cf2cc0fa4c4dc92a277ff97ad426d176f8e3ebefd463f04936fa2595](https://etherscan.io/tx/0x53886473cf2cc0fa4c4dc92a277ff97ad426d176f8e3ebefd463f04936fa2595)
     - Contract being called: GroveBasin
     - Function being called: `setPocket(address newPocket)`
     - Function arguments:
@@ -997,7 +1003,7 @@
             - External source: Deterministic from deployment
 
 7. **Deploy JTRSYTokenRedeemer**
-    - Transaction trace URL: TBD (pending redeployment)
+    - Transaction trace URL: [0x17bf9bd8e28c8ca2ffeb39baaada6615c75c749a1bfaf2596172df531e6289af](https://etherscan.io/tx/0x17bf9bd8e28c8ca2ffeb39baaada6615c75c749a1bfaf2596172df531e6289af)
     - Contract being deployed: `JTRSYTokenRedeemer`
     - Constructor arguments:
         1. `creditToken_`
@@ -1010,7 +1016,7 @@
             - Argument value: GroveBasin address (deployed in step 2)
 
 8. **Register JTRSYTokenRedeemer on GroveBasin**
-    - Transaction trace URL: TBD
+    - Transaction trace URL: [0xc768f6a370eb87891a4f1059881171ee6a3812487014a5d50bdcfa4134d987f8](https://etherscan.io/tx/0xc768f6a370eb87891a4f1059881171ee6a3812487014a5d50bdcfa4134d987f8)
     - Contract being called: GroveBasin
     - Function being called: `addTokenRedeemer(address redeemer)`
     - Function arguments:
@@ -1020,7 +1026,7 @@
     - Note: This grants `REDEEMER_CONTRACT_ROLE` to the redeemer and calls `setUp()` on it.
 
 9. **Grant MANAGER_ROLE to ALM Relayer**
-    - Transaction trace URL: TBD
+    - Transaction trace URL: [0x509ea1e64e2f8ea2e205876897ee7d054328890b99a388d5d1d4cf6dca8547be](https://etherscan.io/tx/0x509ea1e64e2f8ea2e205876897ee7d054328890b99a388d5d1d4cf6dca8547be)
     - Contract being called: GroveBasin
     - Function being called: `grantRole(bytes32 role, address account)`
     - Function arguments:
@@ -1032,7 +1038,7 @@
             - External source: grove-address-registry `Ethereum.ALM_RELAYER`
 
 10. **Grant PAUSER_ROLE to ALM Freezer**
-    - Transaction trace URL: TBD
+    - Transaction trace URL: [0x679ee7f980a03225f4f4bdac0167a5bcce4c4f4addb3e2f833afdce1b2d50444](https://etherscan.io/tx/0x679ee7f980a03225f4f4bdac0167a5bcce4c4f4addb3e2f833afdce1b2d50444)
     - Contract being called: GroveBasin
     - Function being called: `grantRole(bytes32 role, address account)`
     - Function arguments:
@@ -1044,7 +1050,7 @@
             - External source: grove-address-registry `Ethereum.ALM_FREEZER`
 
 11. **Grant REDEEMER_ROLE**
-    - Transaction trace URL: TBD
+    - Transaction trace URL: [0x168a4670152426cc02319d4eba27562ef428f7277c14f437a4d2cba6a5ea7b36](https://etherscan.io/tx/0x168a4670152426cc02319d4eba27562ef428f7277c14f437a4d2cba6a5ea7b36)
     - Contract being called: GroveBasin
     - Function being called: `grantRole(bytes32 role, address account)`
     - Function arguments:
@@ -1056,7 +1062,7 @@
             - External source: Hardcoded in script
 
 12. **Grant PAUSER_ROLE to deployer (temporary)**
-    - Transaction trace URL: TBD
+    - Transaction trace URL: [0x119ed3c1076a8be0fff2f109d8871348cd48bdc0ce1f2035ca5508975b70a063](https://etherscan.io/tx/0x119ed3c1076a8be0fff2f109d8871348cd48bdc0ce1f2035ca5508975b70a063)
     - Contract being called: GroveBasin
     - Function being called: `grantRole(bytes32 role, address account)`
     - Function arguments:
@@ -1069,7 +1075,7 @@
     - Note: Temporary grant to allow the deployer to call `setPaused` in steps 13--16. Revoked in step 18.
 
 13. **Pause SWAP_SWAP_TO_CREDIT**
-    - Transaction trace URL: TBD
+    - Transaction trace URL: [0xcae1009e2589e461c362d2da41ae2ceaad10e4165d9b82bdb4600864e12025b3](https://etherscan.io/tx/0xcae1009e2589e461c362d2da41ae2ceaad10e4165d9b82bdb4600864e12025b3)
     - Contract being called: GroveBasin
     - Function being called: `setPaused(bytes4 key)`
     - Function arguments:
@@ -1078,7 +1084,7 @@
             - External source: GroveBasin.sol constant
 
 14. **Pause SWAP_COLLATERAL_TO_CREDIT**
-    - Transaction trace URL: TBD
+    - Transaction trace URL: [0x888f61ea7620e73b18dcdd87f83218376c3664690f3ab7309dbc54ac102ae629](https://etherscan.io/tx/0x888f61ea7620e73b18dcdd87f83218376c3664690f3ab7309dbc54ac102ae629)
     - Contract being called: GroveBasin
     - Function being called: `setPaused(bytes4 key)`
     - Function arguments:
@@ -1087,7 +1093,7 @@
             - External source: GroveBasin.sol constant
 
 15. **Pause DEPOSIT_CREDIT**
-    - Transaction trace URL: TBD
+    - Transaction trace URL: [0x0009c1320c53376312f7c5a2b2cbcfdb2538afb80f53226644669d42f6ba81d5](https://etherscan.io/tx/0x0009c1320c53376312f7c5a2b2cbcfdb2538afb80f53226644669d42f6ba81d5)
     - Contract being called: GroveBasin
     - Function being called: `setPaused(bytes4 key)`
     - Function arguments:
@@ -1096,7 +1102,7 @@
             - External source: GroveBasin.sol constant
 
 16. **Pause WITHDRAW_CREDIT**
-    - Transaction trace URL: TBD
+    - Transaction trace URL: [0x1322710d02bcfe6571e679afb105cf3dc9b63310cb8cbc50f74ad7239a45a9d9](https://etherscan.io/tx/0x1322710d02bcfe6571e679afb105cf3dc9b63310cb8cbc50f74ad7239a45a9d9)
     - Contract being called: GroveBasin
     - Function being called: `setPaused(bytes4 key)`
     - Function arguments:
@@ -1105,7 +1111,7 @@
             - External source: GroveBasin.sol constant
 
 17. **Set fee bounds to [0, 500] bps (0% to 5%)**
-    - Transaction trace URL: TBD
+    - Transaction trace URL: [0x3fdb03155480648a25bbbba3dba1eda2db902e5b7118f8737667858848738441](https://etherscan.io/tx/0x3fdb03155480648a25bbbba3dba1eda2db902e5b7118f8737667858848738441)
     - Contract being called: GroveBasin
     - Function being called: `setFeeBounds(uint256 newMinFee, uint256 newMaxFee)`
     - Function arguments:
@@ -1117,7 +1123,7 @@
             - External source: Script hardcoded value
 
 18. **Revoke deployer PAUSER_ROLE**
-    - Transaction trace URL: TBD
+    - Transaction trace URL: [0x7426b2c97e8a014ca2cf2b7c3aa3f6dadcc38a3df4e2436c06058f2ffc2ca05b](https://etherscan.io/tx/0x7426b2c97e8a014ca2cf2b7c3aa3f6dadcc38a3df4e2436c06058f2ffc2ca05b)
     - Contract being called: GroveBasin
     - Function being called: `revokeRole(bytes32 role, address account)`
     - Function arguments:
@@ -1129,7 +1135,7 @@
             - External source: Deployer EOA
 
 19. **Grant OWNER_ROLE to JTRSY Admin TimelockController**
-    - Transaction trace URL: TBD
+    - Transaction trace URL: [0x73e8501dbb3bda893587ac5ed0fd2feaef000f9341c3ce46c399b139817879d6](https://etherscan.io/tx/0x73e8501dbb3bda893587ac5ed0fd2feaef000f9341c3ce46c399b139817879d6)
     - Contract being called: GroveBasin
     - Function being called: `grantRole(bytes32 role, address account)`
     - Function arguments:
@@ -1141,7 +1147,7 @@
             - External source: Script constant `JTRSY_ADMIN_TIMELOCK`
 
 20. **Revoke deployer OWNER_ROLE**
-    - Transaction trace URL: TBD
+    - Transaction trace URL: [0xb8bd4a905002e4ba485b735bcab80f3f43f63dd820c0545fbb5ced96ab36232f](https://etherscan.io/tx/0xb8bd4a905002e4ba485b735bcab80f3f43f63dd820c0545fbb5ced96ab36232f)
     - Contract being called: GroveBasin
     - Function being called: `revokeRole(bytes32 role, address account)`
     - Function arguments:
@@ -1217,12 +1223,12 @@
 ### SetupJTRSYUsdsUsdcBasin
 
 1. **JTRSYTokenRedeemer must be allowlisted on Centrifuge vault and JTRSY token**
-    - Intended end goal: The redeemer contract (TBD, pending redeployment) can call `requestRedeem` and `redeem` on the Centrifuge vault, and can hold/transfer JTRSY tokens.
+    - Intended end goal: The redeemer contract (`0x7c5Ce1a1D50a6cb3Da97C9e202B3E7CD8e5b5b6c`) can call `requestRedeem` and `redeem` on the Centrifuge vault, and can hold/transfer JTRSY tokens.
     - Why is it required to be done in advance: The Centrifuge vault requires callers to be on an allowlist.
     - Proof that it was done or planned to be done: Allowlisted via `updateRestriction` on the Centrifuge restriction manager (`0xA4A7Bb3831958463b3FE3E27A6a160F764341953`). The `UpdateMember` event confirms the redeemer was added to the JTRSY token member list with `validUntil = 4294967295` (type(uint32).max, i.e. no expiry). Transaction: TBD.
 
 2. **JTRSY Basin must be allowlisted on JTRSY token**
-    - Intended end goal: The JTRSY Basin contract (TBD, pending redeployment) can hold JTRSY tokens.
+    - Intended end goal: The JTRSY Basin contract (`0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9`) can hold JTRSY tokens.
     - Why is it required to be done in advance: JTRSY requires holders to be on an allowlist.
     - Proof that it was done or planned to be done: Allowlisted via `updateRestriction` on the Centrifuge restriction manager (`0xA4A7Bb3831958463b3FE3E27A6a160F764341953`). Transaction: TBD.
 
@@ -1295,14 +1301,14 @@
 
 8. **Test swap transaction (JTRSY Basin — swap to USDS)**
     - Transaction trace URL: TBD
-    - What will be done: Perform a small test swap on the JTRSY GroveBasin (TBD, pending redeployment) to confirm end-to-end functionality.
+    - What will be done: Perform a small test swap on the JTRSY GroveBasin (`0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9`) to confirm end-to-end functionality.
     - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
     - Expected outcome: Swap of 0.5 JTRSY for 0.552347 USDS succeeds.
     - Who will perform this action: Deployer or designated tester, working with the issuer
 
 9. **Test swap transaction (JTRSY Basin — swap to USDC)**
     - Transaction trace URL: TBD
-    - What will be done: Perform a small test swap on the JTRSY GroveBasin (TBD, pending redeployment) to confirm end-to-end functionality.
+    - What will be done: Perform a small test swap on the JTRSY GroveBasin (`0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9`) to confirm end-to-end functionality.
     - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
     - Expected outcome: Swap of 0.5 JTRSY for 0.552347 USDC succeeds.
     - Who will perform this action: Deployer or designated tester, working with the issuer
@@ -1315,7 +1321,7 @@
 
 11. **Test redemption transaction (JTRSY Basin — initiate redeem)**
     - Transaction trace URL: TBD
-    - What will be done: Perform a small test redemption on the JTRSY GroveBasin (TBD, pending redeployment) to confirm end-to-end functionality.
+    - What will be done: Perform a small test redemption on the JTRSY GroveBasin (`0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9`) to confirm end-to-end functionality.
     - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
     - Expected outcome: Redemption succeeds, expected output amount is received.
     - Who will perform this action: Deployer or designated tester, working with the issuer

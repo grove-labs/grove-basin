@@ -43,13 +43,13 @@ forge script script/SetupBUIDLUsdsUsdcBasin.s.sol:SetupBUIDLUsdsUsdcBasin \
     --broadcast --slow --verify
 ```
 
-- [ ] Perform a test deployment using a fresh *private* Tenderly testnet. Then, inspect submitted transactions to match the desired outcome.
-  - GroveBasin: TBD
-    - Tenderly test tx: TBD
-  - UsdsUsdcPocket: TBD
-    - Tenderly test tx: TBD
-  - BUIDLTokenRedeemer: TBD
-    - Tenderly test tx: TBD
+- [x] Perform a test deployment using a fresh *private* Tenderly testnet. Then, inspect submitted transactions to match the desired outcome.
+  - GroveBasin: `0xCBa428fB052B365557DAf52b744DFfF20d5FbEdD`
+    - Tenderly test tx: `0x0b7b97dc752b262e17a50e08ea871c8a05eb78cf7b0348943848da405325f87d`
+  - UsdsUsdcPocket: `0x39548FeF138370Db06e172eF0739894b2a613DF9`
+    - Tenderly test tx: `0xe862d32871d4270ef7eb1a97cd55eef625238485b7db3713c66eff428ef48b50`
+  - BUIDLTokenRedeemer: `0x73414528187A4986E2Af5D551fD14871b723E506`
+    - Tenderly test tx: `0xd3f022e052f5047f9b149618d1d43c133d5bcdfb5b0824c9938332d59e52984d`
 
 ### Deployment
 - [x] Set production RPC URL (only trusted RPC provider shall be used to avoid poisoning attacks).

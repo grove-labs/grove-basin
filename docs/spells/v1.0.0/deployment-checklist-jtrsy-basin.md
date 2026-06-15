@@ -42,13 +42,13 @@ forge script script/SetupJTRSYUsdsUsdcBasin.s.sol:SetupJTRSYUsdsUsdcBasin \
   - RPC provider: Alchemy
 - [x] Set API key for the verification provider (e.g., Etherscan) compatible with the target chain.
   - Verification provider: Etherscan
-- [ ] Execute the same command used for testnet deployment, but with `--slow --verify`.
-  - GroveBasin: TBD
-    - Deploy tx: TBD
-  - UsdsUsdcPocket: TBD
-    - Deploy tx: TBD
-  - JTRSYTokenRedeemer: TBD
-    - Deploy tx: TBD
+- [x] Execute the same command used for testnet deployment, but with `--slow --verify`.
+  - GroveBasin: `0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9`
+    - Deploy tx: [0x17e4e472...](https://etherscan.io/tx/0x17e4e472d6a5874fd057f7e34c2e3cb8d29fa5544b373ef371e46ff6ce6332da)
+  - UsdsUsdcPocket: `0x2Cd296095788A2741e72056D66B3Ae1fAeE23ea2`
+    - Deploy tx: [0xa7d03ed1...](https://etherscan.io/tx/0xa7d03ed1f6ec5f718858a1c5c53cbf693604b7050cba4692de150a87b86a42a0)
+  - JTRSYTokenRedeemer: `0x7c5Ce1a1D50a6cb3Da97C9e202B3E7CD8e5b5b6c`
+    - Deploy tx: [0x17bf9bd8...](https://etherscan.io/tx/0x17bf9bd8e28c8ca2ffeb39baaada6615c75c749a1bfaf2596172df531e6289af)
 - [ ] Inspect the transaction history of the deployer.
 - [ ] Perform all relevant checks documented in the technical doc (constructor arguments, optimizations, bytecode verify, ownership transfer).
 - [ ] Independently verify the deployment by another member of the team.
