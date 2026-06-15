@@ -9,13 +9,13 @@
 - [x] Update your foundry to the latest stable version, and ensure that the updated version is at least one week old (to avoid a not-yet-detected supply chain attack).
 - [x] Note down your foundry version used for the deployments by documenting `foundryup` logs:
   ```
-  foundryup: use - forge 1.5.1-stable (b0a9dd9ced 2025-12-22T11:41:09.812070000Z)
-  foundryup: use - cast 1.5.1-stable (b0a9dd9ced 2025-12-22T11:41:09.812070000Z)
-  foundryup: use - anvil 1.5.1-stable (b0a9dd9ced 2025-12-22T11:41:09.812070000Z)
-  foundryup: use - chisel 1.5.1-stable (b0a9dd9ced 2025-12-22T11:41:09.812070000Z)
+  foundryup: use - forge 1.7.1 (4072e48705 2026-05-08T07:54:31.470926000Z)
+  foundryup: use - cast 1.7.1 (4072e48705 2026-05-08T07:54:31.470926000Z)
+  foundryup: use - anvil 1.7.1 (4072e48705 2026-05-08T07:54:31.470926000Z)
+  foundryup: use - chisel 1.7.1 (4072e48705 2026-05-08T07:54:31.470926000Z)
   ```
 - [x] Find the latest audits for the contract to be deployed. If there are 2 reports, compare commit hashes between them and inspect the diff. If the diff is safe, note down the latest of the two commit hashes.
-  - The commit URL: https://github.com/grove-labs/grove-basin/commit/a79269a3f5f0253110e9cbca15d79aa9ffb62c4d
+  - The commit URL: https://github.com/grove-labs/grove-basin/commit/9c812fcb32df0475ceaf443e3db39c3302a5e56c
 - [x] Freshly clone the repository with the contract at the commit determined above.
 - [x] Init submodules and install npm packages using the appropriate package manager (npm, yarn, pnpm – based on the lockfile type present in the repository).
 - [x] Check the deployer address (e.g., using `cast wallet address`) to match the expected value and expected transaction history.
