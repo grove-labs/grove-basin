@@ -11,6 +11,7 @@
 | Centrifuge JTRSY Vault | [0xFE6920eB6C421f1179cA8c8d4170530CDBdfd77A](https://etherscan.io/address/0xFE6920eB6C421f1179cA8c8d4170530CDBdfd77A) |
 | USDS PSM Wrapper | [0xA188EEC8F81263234dA3622A406892F3D630f98c](https://etherscan.io/address/0xA188EEC8F81263234dA3622A406892F3D630f98c) |
 | ALM Proxy | [0x491EDFB0B8b608044e227225C715981a30F3A44E](https://etherscan.io/address/0x491EDFB0B8b608044e227225C715981a30F3A44E) |
+| DPAU ALM Proxy | [0x0DcD9298e163dFD3c0B5b00F0d9093C36e40A153](https://etherscan.io/address/0x0DcD9298e163dFD3c0B5b00F0d9093C36e40A153) |
 | ALM Relayer | [0x0eEC86649E756a23CBc68d9EFEd756f16aD5F85f](https://etherscan.io/address/0x0eEC86649E756a23CBc68d9EFEd756f16aD5F85f) |
 | ALM Freezer | [0xB0113804960345fd0a245788b3423319c86940e5](https://etherscan.io/address/0xB0113804960345fd0a245788b3423319c86940e5) |
 | Grove Proxy | [0x1369f7b2b38c76B6478c0f0E66D94923421891Ba](https://etherscan.io/address/0x1369f7b2b38c76B6478c0f0E66D94923421891Ba) |
@@ -205,8 +206,8 @@
                 - Argument value: `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
                 - External source of the value or an explanation of how this value can be verified, and who has to confirm it: `DEPLOYER` env var in the deployment script. Can be verified by checking the `msg.sender` of the `GroveBasinFactory.deploy()` call in the deployment transaction trace (TBD). Grove to confirm.
             - `liquidityProvider`
-                - Argument value: `0x491EDFB0B8b608044e227225C715981a30F3A44E` (ALM Proxy)
-                - External source of the value or an explanation of how this value can be verified, and who has to confirm it: grove-address-registry [`Ethereum.ALM_PROXY`](lib/grove-address-registry/src/Ethereum.sol). Can be verified by calling `liquidityProvider()` on the deployed GroveBasin. Grove to confirm.
+                - Argument value: `0x0DcD9298e163dFD3c0B5b00F0d9093C36e40A153` (DPAU ALM Proxy)
+                - External source of the value or an explanation of how this value can be verified, and who has to confirm it: `DPAU_ALM_PROXY` constant in [script/lib/BasinSetup.sol](../../../script/lib/BasinSetup.sol). Can be verified by calling `liquidityProvider()` on the deployed GroveBasin. Grove to confirm.
             - `swapToken`
                 - Argument value: `0xdC035D45d973E3EC169d2276DDab16f1e407384F` (USDS)
                 - External source of the value or an explanation of how this value can be verified, and who has to confirm it: grove-address-registry [`Ethereum.USDS`](lib/grove-address-registry/src/Ethereum.sol). Can be verified by calling `swapToken()` on the deployed GroveBasin and cross-referencing with the [USDS token on Etherscan](https://etherscan.io/address/0xdC035D45d973E3EC169d2276DDab16f1e407384F). Grove to confirm.
@@ -324,8 +325,8 @@
                 - Argument value: `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
                 - External source of the value or an explanation of how this value can be verified, and who has to confirm it: `DEPLOYER` env var in the deployment script. Can be verified by checking the `msg.sender` of the `GroveBasinFactory.deploy()` call in the deployment transaction trace (TBD). Grove to confirm.
             - `liquidityProvider`
-                - Argument value: `0x491EDFB0B8b608044e227225C715981a30F3A44E` (ALM Proxy)
-                - External source of the value or an explanation of how this value can be verified, and who has to confirm it: grove-address-registry [`Ethereum.ALM_PROXY`](lib/grove-address-registry/src/Ethereum.sol). Can be verified by calling `liquidityProvider()` on the deployed GroveBasin. Grove to confirm.
+                - Argument value: `0x0DcD9298e163dFD3c0B5b00F0d9093C36e40A153` (DPAU ALM Proxy)
+                - External source of the value or an explanation of how this value can be verified, and who has to confirm it: `DPAU_ALM_PROXY` constant in [script/lib/BasinSetup.sol](../../../script/lib/BasinSetup.sol). Can be verified by calling `liquidityProvider()` on the deployed GroveBasin. Grove to confirm.
             - `swapToken`
                 - Argument value: `0xdC035D45d973E3EC169d2276DDab16f1e407384F` (USDS)
                 - External source of the value or an explanation of how this value can be verified, and who has to confirm it: grove-address-registry [`Ethereum.USDS`](lib/grove-address-registry/src/Ethereum.sol). Can be verified by calling `swapToken()` on the deployed GroveBasin and cross-referencing with the [USDS token on Etherscan](https://etherscan.io/address/0xdC035D45d973E3EC169d2276DDab16f1e407384F). Grove to confirm.
@@ -350,7 +351,7 @@
         - `MANAGER_ADMIN_ROLE`: `0x1369f7b2b38c76B6478c0f0E66D94923421891Ba` (Grove Proxy) + `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
         - `MANAGER_ROLE`: `0x0eEC86649E756a23CBc68d9EFEd756f16aD5F85f` (ALM Relayer)
         - `PAUSER_ROLE`: `0xB0113804960345fd0a245788b3423319c86940e5` (ALM Freezer)
-        - `REDEEMER_ROLE`: ~~`0xdfC603076EA75895DD4d59c6e2ee5038f881CB74`~~ → `0x488F27168a19472c51f003fbC5b75B1ACc3B7b4c` (Securitize redeemer address, changed)
+        - `REDEEMER_ROLE`: `0x488F27168a19472c51f003fbC5b75B1ACc3B7b4c` (Securitize redeemer address)
         - `REDEEMER_CONTRACT_ROLE`: TBD (BUIDLTokenRedeemer, pending redeployment)
     - Deployment command:
         ```
@@ -398,43 +399,7 @@
     - Source code is verified on the block explorer: TBD (pending redeployment)
     - The deployer no longer has a privileged role: N/A — no access control.
 
-9. **BUIDL BUIDLTokenRedeemer (old — superseded by #13)**
-    - Chain name: Ethereum Mainnet
-    - Contract address: TBD (pending redeployment)
-    - Deployment transaction trace: TBD (pending redeployment)
-    - **Status**: Superseded. `REDEEMER_CONTRACT_ROLE` must be revoked from this contract. Replaced by #13 due to Securitize redemption vault address change.
-    - Code verification
-        - Source code URL (at the audited commit hash): [src/redeemers/BUIDLTokenRedeemer.sol](https://github.com/grove-labs/grove-basin/blob/a79269a3f5f0253110e9cbca15d79aa9ffb62c4d/src/redeemers/BUIDLTokenRedeemer.sol)
-        - External URLs to the audit reports: 
-            - Cantina audit: https://cantina.xyz/portfolio/71794706-b078-4579-8f50-a9bd25d732d3
-            - Chain Security Audit: https://reports.chainsecurity.com/GroveLabs/ChainSecurity_GroveLabs_Basin_Audit.pdf
-        - Deployed bytecode verification: `forge verify-bytecode <TBD: redeemer address> src/redeemers/BUIDLTokenRedeemer.sol:BUIDLTokenRedeemer --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address)" 0x7712c34205737192402172409a8F7ccef8aA2AEc 0x0d671C15Aa427fFc31C3A484C3ACdd8043F73052 <TBD: BUIDL GroveBasin address>)`
-            - Creation code matched with status `full`. Runtime code matched with status `full`.
-        - Compilation optimizations match optimizer=true, runs=180, evm_version=cancun, source solc 0.8.24. Bytecode CBOR metadata: bytecodeHash=ipfs, IPFS CID=`QmQshJETAUWw5CJR4ushQEdSSV5v2kucCqLffY87TjaXDG`, solc=0.8.24.
-        - Constructor arguments:
-            1. `creditToken_`
-                - Argument value: `0x7712c34205737192402172409a8F7ccef8aA2AEc` (BUIDL)
-                - External source: Script constant `BUIDL_TOKEN`
-            2. `redemptionAddress_`
-                - Argument value: `0x0d671C15Aa427fFc31C3A484C3ACdd8043F73052` (old Securitize redemption address)
-                - External source: Provided by Securitize (BUIDL primary redemption address)
-            3. `basin_`
-                - Argument value: TBD (BUIDL GroveBasin, pending redeployment)
-                - External source: Pre-deployed contract #10 (BUIDL GroveBasin), deployed in step 2 of SetupBUIDLUsdsUsdcBasin
-    - Additional parameters configured on the contract by a privileged actor: None — BUIDLTokenRedeemer is immutable. Registered on the basin via `addTokenRedeemer()` which grants `REDEEMER_CONTRACT_ROLE` and calls `setUp()`.
-    - Ownership, roles, privilege callers: None — no access control. Callable by the GroveBasin contract (`onlyBasin` modifier) and the basin's manager admin (Grove Proxy `0x1369f7b2b38c76B6478c0f0E66D94923421891Ba`).
-    - Deployment command:
-        ```
-        forge script script/SetupBUIDLUsdsUsdcBasin.s.sol:SetupBUIDLUsdsUsdcBasin \
-            --sig "deployRedeemerContractAndGrantRedeemerRole(address)" <TBD: BUIDL GroveBasin address> \
-            --rpc-url mainnet \
-            --account grove-basin-deployer \
-            --sender 0x6D99f476E7E9FCcd189fb87023cFa301364Fa817 --broadcast --slow --verify
-        ```
-    - Source code is verified on the block explorer: TBD (pending redeployment)
-    - The deployer no longer has a privileged role: N/A — no access control.
-
-13. **BUIDL BUIDLTokenRedeemer (current — replaces #9)**
+12. **BUIDL BUIDLTokenRedeemer**
     - Chain name: Ethereum Mainnet
     - Contract address: TBD (pending redeployment)
     - Deployment transaction trace: TBD (pending redeployment)
@@ -716,8 +681,8 @@
             - Argument value: `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
             - External source: Deployer EOA
         2. `liquidityProvider`
-            - Argument value: `0x491EDFB0B8b608044e227225C715981a30F3A44E` (ALM Proxy)
-            - External source: grove-address-registry `Ethereum.ALM_PROXY`
+            - Argument value: `0x0DcD9298e163dFD3c0B5b00F0d9093C36e40A153` (DPAU ALM Proxy)
+            - External source: `DPAU_ALM_PROXY` constant in `script/lib/BasinSetup.sol`
         3. `swapToken`
             - Argument value: `0xdC035D45d973E3EC169d2276DDab16f1e407384F` (USDS)
             - External source: grove-address-registry `Ethereum.USDS`
@@ -825,18 +790,6 @@
             - External source: grove-address-registry `Ethereum.ALM_FREEZER`
 
 10. **Grant REDEEMER_ROLE**
-    - Transaction trace URL: TBD
-    - Contract being called: GroveBasin
-    - Function being called: `grantRole(bytes32 role, address account)`
-    - Function arguments:
-        1. `role`
-            - Argument value: `REDEEMER_ROLE` = `keccak256("REDEEMER_ROLE")`
-            - External source: GroveBasin.sol constant
-        2. `account`
-            - Argument value: `0xdfC603076EA75895DD4d59c6e2ee5038f881CB74` (old Securitize redeemer address)
-            - External source: Previously provided by Securitize
-
-10a. **Grant REDEEMER_ROLE to new Securitize redeemer address**
     - Transaction trace URL: TBD (pending redeployment)
     - Contract being called: GroveBasin (TBD, pending redeployment)
     - Function being called: `grantRole(bytes32 role, address account)`
@@ -845,31 +798,8 @@
             - Argument value: `REDEEMER_ROLE` = `keccak256("REDEEMER_ROLE")`
             - External source: GroveBasin.sol constant
         2. `account`
-            - Argument value: `0x488F27168a19472c51f003fbC5b75B1ACc3B7b4c` (new Securitize redeemer address)
+            - Argument value: `0x488F27168a19472c51f003fbC5b75B1ACc3B7b4c` (Securitize redeemer address)
             - External source: Provided by Securitize
-    - Note: Replacing old redeemer address `0xdfC603076EA75895DD4d59c6e2ee5038f881CB74`.
-
-10b. **Revoke REDEEMER_ROLE from old Securitize redeemer address**
-    - Transaction trace URL: TBD (pending redeployment)
-    - Contract being called: GroveBasin (TBD, pending redeployment)
-    - Function being called: `revokeRole(bytes32 role, address account)`
-    - Function arguments:
-        1. `role`
-            - Argument value: `REDEEMER_ROLE` = `keccak256("REDEEMER_ROLE")`
-            - External source: GroveBasin.sol constant
-        2. `account`
-            - Argument value: `0xdfC603076EA75895DD4d59c6e2ee5038f881CB74` (old Securitize redeemer address)
-            - External source: Previously provided by Securitize
-
-10c. **Remove old BUIDLTokenRedeemer (revoke REDEEMER_CONTRACT_ROLE)**
-    - Transaction trace URL: TBD (pending redeployment)
-    - Contract being called: GroveBasin (TBD, pending redeployment)
-    - Function being called: `removeTokenRedeemer(address redeemer)`
-    - Function arguments:
-        1. `redeemer`
-            - Argument value: TBD (old BUIDLTokenRedeemer, superseded by #13)
-            - External source: Pre-deployed contract #9
-    - Note: `removeTokenRedeemer` revokes `REDEEMER_CONTRACT_ROLE` from the old redeemer. Required because the new BUIDLTokenRedeemer (TBD) was registered via `addTokenRedeemer` in the redeployment script, but the old one still holds the role.
 
 11. **Grant PAUSER_ROLE to deployer (temporary)**
     - Transaction trace URL: TBD
@@ -991,8 +921,8 @@
             - Argument value: `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
             - External source: Deployer EOA
         2. `liquidityProvider`
-            - Argument value: `0x491EDFB0B8b608044e227225C715981a30F3A44E` (ALM Proxy)
-            - External source: grove-address-registry `Ethereum.ALM_PROXY`
+            - Argument value: `0x0DcD9298e163dFD3c0B5b00F0d9093C36e40A153` (DPAU ALM Proxy)
+            - External source: `DPAU_ALM_PROXY` constant in `script/lib/BasinSetup.sol`
         3. `swapToken`
             - Argument value: `0xdC035D45d973E3EC169d2276DDab16f1e407384F` (USDS)
             - External source: grove-address-registry `Ethereum.USDS`
@@ -1267,15 +1197,12 @@
 1. **BUIDLTokenRedeemer must be deployed**
     - Intended end goal: The BUIDL redemption address is required to deploy the `BUIDLTokenRedeemer` contract, which is passed as a constructor argument. Without it, the redeemer cannot be deployed and the basin will not support BUIDL redemptions.
     - Why is it required to be done in advance: The `BUIDLTokenRedeemer` constructor requires the redemption address; the deployment script cannot proceed without it.
-    - Proof that it was done or planned to be done: Deployed at TBD in tx TBD. Redemption address: `0x0d671C15Aa427fFc31C3A484C3ACdd8043F73052`.
-    - **Address change**: Securitize changed their redemption vault address from `0x0d671C15Aa427fFc31C3A484C3ACdd8043F73052` to `0x8780Dd016171B91E4Df47075dA0a947959C34200`. Since `redemptionAddress_` is an immutable constructor argument, a new `BUIDLTokenRedeemer` must be deployed with the new vault address and registered on the basin via `removeTokenRedeemer` / `addTokenRedeemer`.
-    - **Mainnet deployment**: Deployed at TBD in tx TBD. Redemption address: `0x8780Dd016171B91E4Df47075dA0a947959C34200`. `addTokenRedeemer` in tx TBD. Source code verified on Etherscan: TBD.
+    - Proof that it was done or planned to be done: Deployed at TBD in tx TBD. Redemption address: `0x8780Dd016171B91E4Df47075dA0a947959C34200`. `addTokenRedeemer` in tx TBD. Source code verified on Etherscan: TBD.
 
 2. **Grant redeemer address the REDEEMER_ROLE**
     - Intended end goal: A valid address to grant the `REDEEMER_ROLE` on the BUIDL GroveBasin. This address will be authorized to trigger redemptions.
     - Why is it required to be done in advance: Currently set to `address(0)` in the script; the conditional skip means no redeemer role holder will be set until the address is provided.
-    - Proof that it was done or planned to be done: `REDEEMER_ROLE` granted to `0xdfC603076EA75895DD4d59c6e2ee5038f881CB74` in tx TBD.
-    - **Address change**: Securitize changed their redeemer address. `REDEEMER_ROLE` must be rotated from `0xdfC603076EA75895DD4d59c6e2ee5038f881CB74` to `0x488F27168a19472c51f003fbC5b75B1ACc3B7b4c`. See SetupBUIDLUsdsUsdcBasin pre-configuration steps 10a–10b.
+    - Proof that it was done or planned to be done: `REDEEMER_ROLE` granted to `0x488F27168a19472c51f003fbC5b75B1ACc3B7b4c` in tx TBD. See SetupBUIDLUsdsUsdcBasin pre-configuration step 10.
 
 3. **BUIDL Basin must be allowlisted on BUIDL token**
     - Intended end goal: The BUIDL Basin contract (TBD, pending redeployment) can hold BUIDL tokens

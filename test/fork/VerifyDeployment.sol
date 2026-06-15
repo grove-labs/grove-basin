@@ -24,6 +24,7 @@ library Deployments {
     /**********************************************************************************************/
 
     address internal constant DEPLOYER                      = 0x6D99f476E7E9FCcd189fb87023cFa301364Fa817;
+    address internal constant DPAU_ALM_PROXY                = 0x0DcD9298e163dFD3c0B5b00F0d9093C36e40A153;
     address internal constant USDS_PSM_WRAPPER              = 0xA188EEC8F81263234dA3622A406892F3D630f98c;
     address internal constant GROVE_BASIN_FACTORY           = 0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a;
     address internal constant USDS_USDC_FIXED_RATE_PROVIDER = 0x7928A185B8137D1CD2a0996a810A04dB2837419D;
@@ -563,8 +564,8 @@ abstract contract Verify_Basin is UsdsUsdcBasinDeploymentForkTestBase {
         assertTrue(basin.hasRole(basin.PAUSER_ROLE(), Ethereum.ALM_FREEZER), "ALM Freezer should have PAUSER_ROLE");
     }
 
-    function test_basin_liquidityProviderIsAlmProxy() public view {
-        assertEq(basin.liquidityProvider(), Ethereum.ALM_PROXY);
+    function test_basin_liquidityProviderIsDpauAlmProxy() public view {
+        assertEq(basin.liquidityProvider(), Deployments.DPAU_ALM_PROXY);
     }
 
     function test_basin_feeClaimerIsZero() public view {
@@ -778,7 +779,7 @@ abstract contract Verify_Actions is UsdsUsdcBasinDeploymentForkTestBase {
 
     function test_action_depositAndWithdrawFull_50m() public {
         address lp            = basin.liquidityProvider();
-        assertEq(lp, Ethereum.ALM_PROXY);
+        assertEq(lp, Deployments.DPAU_ALM_PROXY);
 
         uint256 depositAmount = 50_000_000e18;
 
@@ -808,9 +809,9 @@ abstract contract Verify_Actions is UsdsUsdcBasinDeploymentForkTestBase {
         uint256 expectedOut = basin.previewSwapExactIn(_creditToken(), Ethereum.USDS, amountIn);
         assertGt(expectedOut, 0);
 
-        _dealCreditToken(Ethereum.ALM_PROXY, amountIn);
+        _dealCreditToken(Deployments.DPAU_ALM_PROXY, amountIn);
 
-        vm.startPrank(Ethereum.ALM_PROXY);
+        vm.startPrank(Deployments.DPAU_ALM_PROXY);
         IERC20(_creditToken()).approve(address(basin), amountIn);
         uint256 amountOut = basin.swapExactIn(_creditToken(), Ethereum.USDS, amountIn, expectedOut, receiver, 0);
         vm.stopPrank();
@@ -828,9 +829,9 @@ abstract contract Verify_Actions is UsdsUsdcBasinDeploymentForkTestBase {
         uint256 expectedOut = basin.previewSwapExactIn(_creditToken(), Ethereum.USDC, amountIn);
         assertGt(expectedOut, 0);
 
-        _dealCreditToken(Ethereum.ALM_PROXY, amountIn);
+        _dealCreditToken(Deployments.DPAU_ALM_PROXY, amountIn);
 
-        vm.startPrank(Ethereum.ALM_PROXY);
+        vm.startPrank(Deployments.DPAU_ALM_PROXY);
         IERC20(_creditToken()).approve(address(basin), amountIn);
         uint256 amountOut = basin.swapExactIn(_creditToken(), Ethereum.USDC, amountIn, expectedOut, receiver, 0);
         vm.stopPrank();
@@ -848,9 +849,9 @@ abstract contract Verify_Actions is UsdsUsdcBasinDeploymentForkTestBase {
         uint256 expectedIn = basin.previewSwapExactOut(_creditToken(), Ethereum.USDS, amountOut);
         assertGt(expectedIn, 0);
 
-        _dealCreditToken(Ethereum.ALM_PROXY, expectedIn);
+        _dealCreditToken(Deployments.DPAU_ALM_PROXY, expectedIn);
 
-        vm.startPrank(Ethereum.ALM_PROXY);
+        vm.startPrank(Deployments.DPAU_ALM_PROXY);
         IERC20(_creditToken()).approve(address(basin), expectedIn);
         uint256 amountIn = basin.swapExactOut(_creditToken(), Ethereum.USDS, amountOut, expectedIn, receiver, 0);
         vm.stopPrank();
@@ -868,9 +869,9 @@ abstract contract Verify_Actions is UsdsUsdcBasinDeploymentForkTestBase {
         uint256 expectedIn = basin.previewSwapExactOut(_creditToken(), Ethereum.USDC, amountOut);
         assertGt(expectedIn, 0);
 
-        _dealCreditToken(Ethereum.ALM_PROXY, expectedIn);
+        _dealCreditToken(Deployments.DPAU_ALM_PROXY, expectedIn);
 
-        vm.startPrank(Ethereum.ALM_PROXY);
+        vm.startPrank(Deployments.DPAU_ALM_PROXY);
         IERC20(_creditToken()).approve(address(basin), expectedIn);
         uint256 amountIn = basin.swapExactOut(_creditToken(), Ethereum.USDC, amountOut, expectedIn, receiver, 0);
         vm.stopPrank();

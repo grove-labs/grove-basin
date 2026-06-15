@@ -194,6 +194,6 @@ Beyond the Pause, Timelock Cancel, and Governance USDS Recovery procedures docum
 
 - **Pocket migration via Grove Proxy.** The Grove Proxy (as `MANAGER_ADMIN_ROLE` holder) can call `setPocket()` on a Basin to migrate swap-token custody to a new pocket contract. The old pocket automatically withdraws its swap-token balance back to the Basin during migration. This can be used to move funds out of a compromised pocket implementation.
 
-- **ALM Proxy liquidity recall.** The ALM Proxy (`0x491EDFB0B8b608044e227225C715981a30F3A44E`), which is the designated `liquidityProvider` on both Basins, can withdraw deposited liquidity (shares) from the Basin. This is part of normal ALM operations but can be used in an emergency to pull allocated funds.
+- **ALM Proxy liquidity recall.** The DPAU ALM Proxy (`0x0DcD9298e163dFD3c0B5b00F0d9093C36e40A153`), which is the designated `liquidityProvider` on both Basins, can withdraw deposited liquidity (shares) from the Basin. This is part of normal ALM operations but can be used in an emergency to pull allocated funds.
 
 No other emergency actions are in scope for this spell beyond the above and the three primary procedures (Pause, Cancel, USDS Recovery).
