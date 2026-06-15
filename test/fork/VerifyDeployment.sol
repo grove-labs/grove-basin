@@ -33,9 +33,9 @@ library Deployments {
     /**********************************************************************************************/
 
     address internal constant JTRSY_TIMELOCK                = 0xA52dC9876aB4A9DB6dAfbb83410554086054d140;
-    address internal constant JTRSY_BASIN                   = 0x1FA4dB8D545Cbd22b7bbA2084348A2E6ef36E363;
-    address internal constant JTRSY_TOKEN_REDEEMER          = 0x212697f0A9Fc218210D98cd1A159dc8D8A87b8A8;
-    address internal constant JTRSY_USDS_USDC_POCKET        = 0xA15B8C07Fa32A4f8BeA3882600a673dc9CC1D6B9;
+    address internal constant JTRSY_BASIN                   = address(0);
+    address internal constant JTRSY_TOKEN_REDEEMER          = address(0);
+    address internal constant JTRSY_USDS_USDC_POCKET        = address(0);
     address internal constant JTRSY_CHRONICLE_RATE_PROVIDER = 0x29209ceCFeFa6f675E6f1f829320D67cE2b025E5;
 
     // Issuer provided
@@ -51,9 +51,9 @@ library Deployments {
     /**********************************************************************************************/
 
     address internal constant BUIDL_TIMELOCK                = 0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34;
-    address internal constant BUIDL_BASIN                   = 0x10b3d3A96646720f8B3a29229cF96d513f3C84F1;
-    address internal constant BUIDL_USDS_USDC_POCKET        = 0x621727A05db6AeB33118b3F9DE3EAf2d8Fc86aDA;
-    address internal constant BUIDL_TOKEN_REDEEMER          = 0x99E5E7c533C7319f855B940561Df285bE022c82d;
+    address internal constant BUIDL_BASIN                   = address(0);
+    address internal constant BUIDL_USDS_USDC_POCKET        = address(0);
+    address internal constant BUIDL_TOKEN_REDEEMER          = address(0);
     address internal constant BUIDL_CHRONICLE_RATE_PROVIDER = 0x69a171853575FFD41574EA80Abfc6337AcbC4d43;
 
     // Issuer provided (current)

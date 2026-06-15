@@ -32,17 +32,23 @@ forge script script/SetupJTRSYUsdsUsdcBasin.s.sol:SetupJTRSYUsdsUsdcBasin \
     --broadcast --slow --verify
 ```
 
-- [x] Perform a test deployment using a fresh *private* Tenderly testnet. Then, inspect submitted transactions to match the desired outcome.
-  - GroveBasin: [Tenderly testnet tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/efd87152-530e-421e-9203-e3d597434433/tx/0x16b7e81243cd6ae4fa54ec7eaffbbb45649f4f27aa786cf4c8be10e314469247)
-  - UsdsUsdcPocket: [Tenderly testnet tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/efd87152-530e-421e-9203-e3d597434433/tx/0xd1c0623b2ed526bfe79fe00dc354d1c7c6b571c5c75752d4dfe973e2d98d50bd)
-  - JTRSYTokenRedeemer: [Tenderly testnet tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/efd87152-530e-421e-9203-e3d597434433/tx/0x792aa4ac79a6571a4941184e25142c65bc98b1e728c83b82a9f6b20a4554b160)
+- [ ] Perform a test deployment using a fresh *private* Tenderly testnet. Then, inspect submitted transactions to match the desired outcome.
+  - GroveBasin: Tenderly testnet tx TBD
+  - UsdsUsdcPocket: Tenderly testnet tx TBD
+  - JTRSYTokenRedeemer: Tenderly testnet tx TBD
 
 ### Deployment
 - [x] Set production RPC URL (only trusted RPC provider shall be used to avoid poisoning attacks).
   - RPC provider: Alchemy
 - [x] Set API key for the verification provider (e.g., Etherscan) compatible with the target chain.
   - Verification provider: Etherscan
-- [x] Execute the same command used for testnet deployment, but with `--slow --verify`.
-- [x] Inspect the transaction history of the deployer.
+- [ ] Execute the same command used for testnet deployment, but with `--slow --verify`.
+  - GroveBasin: TBD
+    - Deploy tx: TBD
+  - UsdsUsdcPocket: TBD
+    - Deploy tx: TBD
+  - JTRSYTokenRedeemer: TBD
+    - Deploy tx: TBD
+- [ ] Inspect the transaction history of the deployer.
 - [ ] Perform all relevant checks documented in the technical doc (constructor arguments, optimizations, bytecode verify, ownership transfer).
 - [ ] Independently verify the deployment by another member of the team.

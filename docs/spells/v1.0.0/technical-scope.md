@@ -190,8 +190,8 @@
 
 7. **JTRSY GroveBasin**
     - Chain name: Ethereum Mainnet
-    - Contract address: [0x1FA4dB8D545Cbd22b7bbA2084348A2E6ef36E363](https://etherscan.io/address/0x1FA4dB8D545Cbd22b7bbA2084348A2E6ef36E363)
-    - Deployment transaction trace: [0x7d3a7d8b0e3f06bd945482ee9d10bbd8c8f0dc2524736edc81d3ed99f94f0b82](https://etherscan.io/tx/0x7d3a7d8b0e3f06bd945482ee9d10bbd8c8f0dc2524736edc81d3ed99f94f0b82) (deployed via `GroveBasinFactory.deploy()` at `0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a`)
+    - Contract address: TBD (pending redeployment)
+    - Deployment transaction trace: TBD (pending redeployment; will be deployed via `GroveBasinFactory.deploy()` at `0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a`)
     - Deployed by a factory:
         - Source code URL (at the audited commit hash): [src/GroveBasin.sol](https://github.com/grove-labs/grove-basin/blob/a79269a3f5f0253110e9cbca15d79aa9ffb62c4d/src/GroveBasin.sol)
         - Contract being called: GroveBasinFactory ([0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a](https://etherscan.io/address/0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a))
@@ -203,7 +203,7 @@
         - Function arguments:
             - `owner`
                 - Argument value: `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
-                - External source of the value or an explanation of how this value can be verified, and who has to confirm it: `DEPLOYER` env var in the deployment script. Can be verified by checking the `msg.sender` of the `GroveBasinFactory.deploy()` call in the [deployment transaction trace](https://etherscan.io/tx/0x7d3a7d8b0e3f06bd945482ee9d10bbd8c8f0dc2524736edc81d3ed99f94f0b82). Grove to confirm.
+                - External source of the value or an explanation of how this value can be verified, and who has to confirm it: `DEPLOYER` env var in the deployment script. Can be verified by checking the `msg.sender` of the `GroveBasinFactory.deploy()` call in the deployment transaction trace (TBD). Grove to confirm.
             - `liquidityProvider`
                 - Argument value: `0x491EDFB0B8b608044e227225C715981a30F3A44E` (ALM Proxy)
                 - External source of the value or an explanation of how this value can be verified, and who has to confirm it: grove-address-registry [`Ethereum.ALM_PROXY`](lib/grove-address-registry/src/Ethereum.sol). Can be verified by calling `liquidityProvider()` on the deployed GroveBasin. Grove to confirm.
@@ -225,14 +225,14 @@
             - `creditTokenRateProvider`
                 - Argument value: `0x29209ceCFeFa6f675E6f1f829320D67cE2b025E5` (JTRSY ChronicleRateProvider)
                 - External source of the value or an explanation of how this value can be verified, and who has to confirm it: Pre-deployed contract #4 (JTRSY Chronicle Rate Provider). Can be verified by calling `creditTokenRateProvider()` on the deployed GroveBasin and cross-referencing with [pre-deployed contract #4](https://etherscan.io/address/0x29209ceCFeFa6f675E6f1f829320D67cE2b025E5). Grove to confirm.
-    - Additional parameters configured on the contract by a privileged actor: Pocket set to `0xA15B8C07Fa32A4f8BeA3882600a673dc9CC1D6B9` (UsdsUsdcPocket). Token redeemer `0x212697f0A9Fc218210D98cd1A159dc8D8A87b8A8` (JTRSYTokenRedeemer) registered. Fee bounds set to [0, 500]. Four pause keys enabled (PAUSED_SWAP_SWAP_TO_CREDIT, PAUSED_SWAP_COLLATERAL_TO_CREDIT, PAUSED_DEPOSIT_CREDIT, PAUSED_WITHDRAW_CREDIT). See [SetupJTRSYUsdsUsdcBasin post-deploy configuration](#setupjtrsyusdsusdcbasin-post-deploy-configuration) for full details.
+    - Additional parameters configured on the contract by a privileged actor: Pocket set to TBD (UsdsUsdcPocket, pending redeployment). Token redeemer TBD (JTRSYTokenRedeemer, pending redeployment) registered. Fee bounds set to [0, 500]. Four pause keys enabled (PAUSED_SWAP_SWAP_TO_CREDIT, PAUSED_SWAP_COLLATERAL_TO_CREDIT, PAUSED_DEPOSIT_CREDIT, PAUSED_WITHDRAW_CREDIT). See [SetupJTRSYUsdsUsdcBasin post-deploy configuration](#setupjtrsyusdsusdcbasin-post-deploy-configuration) for full details.
     - Ownership, roles, privilege callers:
         - `OWNER_ROLE` (`DEFAULT_ADMIN_ROLE`): `0xA52dC9876aB4A9DB6dAfbb83410554086054d140` (JTRSY Admin TimelockController)
         - `MANAGER_ADMIN_ROLE`: `0x1369f7b2b38c76B6478c0f0E66D94923421891Ba` (Grove Proxy) + `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
         - `MANAGER_ROLE`: `0x0eEC86649E756a23CBc68d9EFEd756f16aD5F85f` (ALM Relayer)
         - `PAUSER_ROLE`: `0xB0113804960345fd0a245788b3423319c86940e5` (ALM Freezer)
         - `REDEEMER_ROLE`: `0xb6e8D3E47c4FC5606E6C24D097Dd1791885Ce05a` ()
-        - `REDEEMER_CONTRACT_ROLE`: `0x212697f0A9Fc218210D98cd1A159dc8D8A87b8A8` (JTRSYTokenRedeemer)
+        - `REDEEMER_CONTRACT_ROLE`: TBD (JTRSYTokenRedeemer, pending redeployment)
     - Deployment command:
         ```
         DEPLOYER=0x6D99f476E7E9FCcd189fb87023cFa301364Fa817 \
@@ -242,24 +242,24 @@
             --sender 0x6D99f476E7E9FCcd189fb87023cFa301364Fa817 \
             --broadcast --slow --verify
         ```
-    - Source code is verified on the block explorer: [Yes](https://etherscan.io/address/0x1FA4dB8D545Cbd22b7bbA2084348A2E6ef36E363#code)
-    - The deployer no longer has a privileged role: `MANAGER_ADMIN_ROLE` revoked in tx [0x7c2ac50f...](https://etherscan.io/tx/0x7c2ac50fb6ddcb999e95f23f71e022cdc12158de348079a93fd15d2a811f504e).
+    - Source code is verified on the block explorer: TBD (pending redeployment)
+    - The deployer no longer has a privileged role: `MANAGER_ADMIN_ROLE` revoked in tx TBD.
 
 8. **JTRSY UsdsUsdcPocket**
     - Chain name: Ethereum Mainnet
-    - Contract address: [0xA15B8C07Fa32A4f8BeA3882600a673dc9CC1D6B9](https://etherscan.io/address/0xA15B8C07Fa32A4f8BeA3882600a673dc9CC1D6B9)
-    - Deployment transaction trace: [0x64604be1965dda0a8b72745206d43630fc0a7f8e598d40d75d0a183f420def81](https://etherscan.io/tx/0x64604be1965dda0a8b72745206d43630fc0a7f8e598d40d75d0a183f420def81)
+    - Contract address: TBD (pending redeployment)
+    - Deployment transaction trace: TBD (pending redeployment)
     - Code verification
         - Source code URL (at the audited commit hash): [src/pockets/UsdsUsdcPocket.sol](https://github.com/grove-labs/grove-basin/blob/a79269a3f5f0253110e9cbca15d79aa9ffb62c4d/src/pockets/UsdsUsdcPocket.sol)
         - External URLs to the audit reports: 
             - Cantina audit: https://cantina.xyz/portfolio/71794706-b078-4579-8f50-a9bd25d732d3
             - Chain Security Audit: https://reports.chainsecurity.com/GroveLabs/ChainSecurity_GroveLabs_Basin_Audit.pdf
-        - Deployed bytecode verification: `forge verify-bytecode 0xA15B8C07Fa32A4f8BeA3882600a673dc9CC1D6B9 src/pockets/UsdsUsdcPocket.sol:UsdsUsdcPocket --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address,address,address)" 0x1FA4dB8D545Cbd22b7bbA2084348A2E6ef36E363 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 0xdC035D45d973E3EC169d2276DDab16f1e407384F 0xA188EEC8F81263234dA3622A406892F3D630f98c 0x1369f7b2b38c76B6478c0f0E66D94923421891Ba)`
+        - Deployed bytecode verification: `forge verify-bytecode <TBD: pocket address> src/pockets/UsdsUsdcPocket.sol:UsdsUsdcPocket --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address,address,address)" <TBD: JTRSY GroveBasin address> 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 0xdC035D45d973E3EC169d2276DDab16f1e407384F 0xA188EEC8F81263234dA3622A406892F3D630f98c 0x1369f7b2b38c76B6478c0f0E66D94923421891Ba)`
             - Creation code matched with status `full`. Runtime code matched with status `full`.
         - Compilation optimizations match optimizer=true, runs=180, evm_version=cancun, source solc 0.8.24. Bytecode CBOR metadata: bytecodeHash=ipfs, IPFS CID=`QmTUwRpfBkq1ZAwmTjHLW1MTAZTVKypXb1bJpwzrSNzRFu`, solc=0.8.24.
         - Constructor arguments:
             1. `basin_`
-                - Argument value: `0x1FA4dB8D545Cbd22b7bbA2084348A2E6ef36E363` (JTRSY GroveBasin)
+                - Argument value: TBD (JTRSY GroveBasin, pending redeployment)
                 - External source: Deployed in step 2 of SetupJTRSYUsdsUsdcBasin
             2. `usdc_`
                 - Argument value: `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48` (USDC)
@@ -276,19 +276,19 @@
     - Additional parameters configured on the contract by a privileged actor: None — UsdsUsdcPocket is immutable. Constructor grants max USDS approval to basin and Grove Proxy.
     - Ownership, roles, privilege callers: None — no access control. Callable by GroveBasin (via `MANAGER_ROLE`), Grove Proxy.
     - Deployment command: Deployed within `SetupJTRSYUsdsUsdcBasin` script (see item 7).
-    - Source code is verified on the block explorer: [Yes](https://etherscan.io/address/0xA15B8C07Fa32A4f8BeA3882600a673dc9CC1D6B9#code)
+    - Source code is verified on the block explorer: TBD (pending redeployment)
     - The deployer no longer has a privileged role: N/A — no access control.
 
 9. **JTRSY JTRSYTokenRedeemer**
     - Chain name: Ethereum Mainnet
-    - Contract address: [0x212697f0A9Fc218210D98cd1A159dc8D8A87b8A8](https://etherscan.io/address/0x212697f0A9Fc218210D98cd1A159dc8D8A87b8A8)
-    - Deployment transaction trace: [0x2386be7468d4c752f78d92d6f9435af778e8d1e92d8b93c85e9ed3891a562b82](https://etherscan.io/tx/0x2386be7468d4c752f78d92d6f9435af778e8d1e92d8b93c85e9ed3891a562b82)
+    - Contract address: TBD (pending redeployment)
+    - Deployment transaction trace: TBD (pending redeployment)
     - Code verification
         - Source code URL (at the audited commit hash): [src/redeemers/JTRSYTokenRedeemer.sol](https://github.com/grove-labs/grove-basin/blob/a79269a3f5f0253110e9cbca15d79aa9ffb62c4d/src/redeemers/JTRSYTokenRedeemer.sol)
         - External URLs to the audit reports: 
             - Cantina audit: https://cantina.xyz/portfolio/71794706-b078-4579-8f50-a9bd25d732d3
             - Chain Security Audit: https://reports.chainsecurity.com/GroveLabs/ChainSecurity_GroveLabs_Basin_Audit.pdf
-        - Deployed bytecode verification: `forge verify-bytecode 0x212697f0A9Fc218210D98cd1A159dc8D8A87b8A8 src/redeemers/JTRSYTokenRedeemer.sol:JTRSYTokenRedeemer --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address)" 0x8c213ee79581Ff4984583C6a801e5263418C4b86 0xFE6920eB6C421f1179cA8c8d4170530CDBdfd77A 0x1FA4dB8D545Cbd22b7bbA2084348A2E6ef36E363)`
+        - Deployed bytecode verification: `forge verify-bytecode <TBD: redeemer address> src/redeemers/JTRSYTokenRedeemer.sol:JTRSYTokenRedeemer --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address)" 0x8c213ee79581Ff4984583C6a801e5263418C4b86 0xFE6920eB6C421f1179cA8c8d4170530CDBdfd77A <TBD: JTRSY GroveBasin address>)`
             - Creation code matched with status `full`. Runtime code matched with status `full`.
         - Compilation optimizations match optimizer=true, runs=180, evm_version=cancun, source solc 0.8.24. Bytecode CBOR metadata: bytecodeHash=ipfs, IPFS CID=`QmTdhLbu1GU2uygH13BLQ9T8QMdD2sr7dZ4ALgAFFcoWWY`, solc=0.8.24.
         - Constructor arguments:
@@ -299,18 +299,18 @@
                 - Argument value: `0xFE6920eB6C421f1179cA8c8d4170530CDBdfd77A` (Centrifuge JTRSY vault)
                 - External source: grove-address-registry `Ethereum.CENTRIFUGE_JTRSY`
             3. `basin_`
-                - Argument value: `0x1FA4dB8D545Cbd22b7bbA2084348A2E6ef36E363` (JTRSY GroveBasin)
+                - Argument value: TBD (JTRSY GroveBasin, pending redeployment)
                 - External source: Deployed in step 2 of SetupJTRSYUsdsUsdcBasin
     - Additional parameters configured on the contract by a privileged actor: None — JTRSYTokenRedeemer is immutable. Registered on the basin via `addTokenRedeemer()` which grants `REDEEMER_CONTRACT_ROLE` and calls `setUp()`.
     - Ownership, roles, privilege callers: None — no access control. Callable by the GroveBasin contract (`onlyBasin` modifier) and the basin's manager admin (Grove Proxy `0x1369f7b2b38c76B6478c0f0E66D94923421891Ba`).
     - Deployment command: Deployed within `SetupJTRSYUsdsUsdcBasin` script (see item 7).
-    - Source code is verified on the block explorer: [Yes](https://etherscan.io/address/0x212697f0A9Fc218210D98cd1A159dc8D8A87b8A8#code)
+    - Source code is verified on the block explorer: TBD (pending redeployment)
     - The deployer no longer has a privileged role: N/A — no access control.
 
 10. **BUIDL GroveBasin**
     - Chain name: Ethereum Mainnet
-    - Contract address: [0x10b3d3A96646720f8B3a29229cF96d513f3C84F1](https://etherscan.io/address/0x10b3d3A96646720f8B3a29229cF96d513f3C84F1)
-    - Deployment transaction trace: [0x4c39479656f2293361acb059d467cffd3b11f1346dfc52e99bd2a161521775e8](https://etherscan.io/tx/0x4c39479656f2293361acb059d467cffd3b11f1346dfc52e99bd2a161521775e8) (deployed via `GroveBasinFactory.deploy()` at `0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a`)
+    - Contract address: TBD (pending redeployment)
+    - Deployment transaction trace: TBD (pending redeployment; will be deployed via `GroveBasinFactory.deploy()` at `0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a`)
     - Deployed by a factory:
         - Source code URL (at the audited commit hash): [src/GroveBasin.sol](https://github.com/grove-labs/grove-basin/blob/a79269a3f5f0253110e9cbca15d79aa9ffb62c4d/src/GroveBasin.sol)
         - Contract being called: GroveBasinFactory ([0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a](https://etherscan.io/address/0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a))
@@ -322,7 +322,7 @@
         - Function arguments:
             - `owner`
                 - Argument value: `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
-                - External source of the value or an explanation of how this value can be verified, and who has to confirm it: `DEPLOYER` env var in the deployment script. Can be verified by checking the `msg.sender` of the `GroveBasinFactory.deploy()` call in the [deployment transaction trace](https://etherscan.io/tx/0x4c39479656f2293361acb059d467cffd3b11f1346dfc52e99bd2a161521775e8). Grove to confirm.
+                - External source of the value or an explanation of how this value can be verified, and who has to confirm it: `DEPLOYER` env var in the deployment script. Can be verified by checking the `msg.sender` of the `GroveBasinFactory.deploy()` call in the deployment transaction trace (TBD). Grove to confirm.
             - `liquidityProvider`
                 - Argument value: `0x491EDFB0B8b608044e227225C715981a30F3A44E` (ALM Proxy)
                 - External source of the value or an explanation of how this value can be verified, and who has to confirm it: grove-address-registry [`Ethereum.ALM_PROXY`](lib/grove-address-registry/src/Ethereum.sol). Can be verified by calling `liquidityProvider()` on the deployed GroveBasin. Grove to confirm.
@@ -344,14 +344,14 @@
             - `creditTokenRateProvider`
                 - Argument value: `0x69a171853575FFD41574EA80Abfc6337AcbC4d43` (BUIDL ChronicleRateProvider)
                 - External source of the value or an explanation of how this value can be verified, and who has to confirm it: Pre-deployed contract #3 (BUIDL Chronicle Rate Provider). Can be verified by calling `creditTokenRateProvider()` on the deployed GroveBasin and cross-referencing with [pre-deployed contract #3](https://etherscan.io/address/0x69a171853575FFD41574EA80Abfc6337AcbC4d43). Grove to confirm.
-    - Additional parameters configured on the contract by a privileged actor: Pocket set to `0x621727A05db6AeB33118b3F9DE3EAf2d8Fc86aDA` (UsdsUsdcPocket). Token redeemer `0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885` (BUIDLTokenRedeemer) registered. Fee bounds set to [0, 500]. Four pause keys enabled (PAUSED_SWAP_SWAP_TO_CREDIT, PAUSED_SWAP_COLLATERAL_TO_CREDIT, PAUSED_DEPOSIT_CREDIT, PAUSED_WITHDRAW_CREDIT). See [SetupBUIDLUsdsUsdcBasin post-deploy configuration](#setupbuidlusdsusdcbasin-post-deploy-configuration) for full details.
+    - Additional parameters configured on the contract by a privileged actor: Pocket set to TBD (UsdsUsdcPocket, pending redeployment). Token redeemer TBD (BUIDLTokenRedeemer, pending redeployment) registered. Fee bounds set to [0, 500]. Four pause keys enabled (PAUSED_SWAP_SWAP_TO_CREDIT, PAUSED_SWAP_COLLATERAL_TO_CREDIT, PAUSED_DEPOSIT_CREDIT, PAUSED_WITHDRAW_CREDIT). See [SetupBUIDLUsdsUsdcBasin post-deploy configuration](#setupbuidlusdsusdcbasin-post-deploy-configuration) for full details.
     - Ownership, roles, privilege callers:
         - `OWNER_ROLE` (`DEFAULT_ADMIN_ROLE`): `0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34` (BUIDL Admin TimelockController)
         - `MANAGER_ADMIN_ROLE`: `0x1369f7b2b38c76B6478c0f0E66D94923421891Ba` (Grove Proxy) + `0x6D99f476E7E9FCcd189fb87023cFa301364Fa817` (deployer)
         - `MANAGER_ROLE`: `0x0eEC86649E756a23CBc68d9EFEd756f16aD5F85f` (ALM Relayer)
         - `PAUSER_ROLE`: `0xB0113804960345fd0a245788b3423319c86940e5` (ALM Freezer)
         - `REDEEMER_ROLE`: ~~`0xdfC603076EA75895DD4d59c6e2ee5038f881CB74`~~ → `0x488F27168a19472c51f003fbC5b75B1ACc3B7b4c` (Securitize redeemer address, changed)
-        - `REDEEMER_CONTRACT_ROLE`: ~~`0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885`~~ → `0x99E5E7c533C7319f855B940561Df285bE022c82d` (BUIDLTokenRedeemer, redeployed)
+        - `REDEEMER_CONTRACT_ROLE`: TBD (BUIDLTokenRedeemer, pending redeployment)
     - Deployment command:
         ```
         DEPLOYER=0x6D99f476E7E9FCcd189fb87023cFa301364Fa817 \
@@ -361,24 +361,24 @@
             --sender 0x6D99f476E7E9FCcd189fb87023cFa301364Fa817 \
             --broadcast --slow --verify
         ```
-    - Source code is verified on the block explorer: [Yes](https://etherscan.io/address/0x10b3d3A96646720f8B3a29229cF96d513f3C84F1#code)
+    - Source code is verified on the block explorer: TBD (pending redeployment)
     - The deployer no longer has a privileged role: TODO — deployer to give up `MANAGER_ADMIN_ROLE` after redeemer address, redemption vault address, and test admin transaction from Securitize.
 
 11. **BUIDL UsdsUsdcPocket**
     - Chain name: Ethereum Mainnet
-    - Contract address: [0x621727A05db6AeB33118b3F9DE3EAf2d8Fc86aDA](https://etherscan.io/address/0x621727A05db6AeB33118b3F9DE3EAf2d8Fc86aDA)
-    - Deployment transaction trace: [0xc6f0e579c7636321f4b27c4ec2f701e9afd6ce01488c111de66f932c5eaf8b5c](https://etherscan.io/tx/0xc6f0e579c7636321f4b27c4ec2f701e9afd6ce01488c111de66f932c5eaf8b5c)
+    - Contract address: TBD (pending redeployment)
+    - Deployment transaction trace: TBD (pending redeployment)
     - Code verification
         - Source code URL (at the audited commit hash): [src/pockets/UsdsUsdcPocket.sol](https://github.com/grove-labs/grove-basin/blob/a79269a3f5f0253110e9cbca15d79aa9ffb62c4d/src/pockets/UsdsUsdcPocket.sol)
         - External URLs to the audit reports: 
             - Cantina audit: https://cantina.xyz/portfolio/71794706-b078-4579-8f50-a9bd25d732d3
             - Chain Security Audit: https://reports.chainsecurity.com/GroveLabs/ChainSecurity_GroveLabs_Basin_Audit.pdf
-        - Deployed bytecode verification: `forge verify-bytecode 0x621727A05db6AeB33118b3F9DE3EAf2d8Fc86aDA src/pockets/UsdsUsdcPocket.sol:UsdsUsdcPocket --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address,address,address)" 0x10b3d3A96646720f8B3a29229cF96d513f3C84F1 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 0xdC035D45d973E3EC169d2276DDab16f1e407384F 0xA188EEC8F81263234dA3622A406892F3D630f98c 0x1369f7b2b38c76B6478c0f0E66D94923421891Ba)`
+        - Deployed bytecode verification: `forge verify-bytecode <TBD: pocket address> src/pockets/UsdsUsdcPocket.sol:UsdsUsdcPocket --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address,address,address)" <TBD: BUIDL GroveBasin address> 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 0xdC035D45d973E3EC169d2276DDab16f1e407384F 0xA188EEC8F81263234dA3622A406892F3D630f98c 0x1369f7b2b38c76B6478c0f0E66D94923421891Ba)`
             - Creation code matched with status `full`. Runtime code matched with status `full`.
         - Compilation optimizations match optimizer=true, runs=180, evm_version=cancun, source solc 0.8.24. Bytecode CBOR metadata: bytecodeHash=ipfs, IPFS CID=`QmTUwRpfBkq1ZAwmTjHLW1MTAZTVKypXb1bJpwzrSNzRFu`, solc=0.8.24.
         - Constructor arguments:
             1. `basin_`
-                - Argument value: `0x10b3d3A96646720f8B3a29229cF96d513f3C84F1` (BUIDL GroveBasin)
+                - Argument value: TBD (BUIDL GroveBasin, pending redeployment)
                 - External source: Pre-deployed contract #10 (BUIDL GroveBasin), deployed in step 2 of SetupBUIDLUsdsUsdcBasin
             2. `usdc_`
                 - Argument value: `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48` (USDC)
@@ -395,20 +395,20 @@
     - Additional parameters configured on the contract by a privileged actor: None — UsdsUsdcPocket is immutable. Constructor grants max USDS approval to basin and Grove Proxy.
     - Ownership, roles, privilege callers: None — no access control. Callable by GroveBasin (via `MANAGER_ROLE`) and Grove Proxy.
     - Deployment command: Deployed within `SetupBUIDLUsdsUsdcBasin` script (see item 10).
-    - Source code is verified on the block explorer: [Yes](https://etherscan.io/address/0x621727A05db6AeB33118b3F9DE3EAf2d8Fc86aDA#code)
+    - Source code is verified on the block explorer: TBD (pending redeployment)
     - The deployer no longer has a privileged role: N/A — no access control.
 
 9. **BUIDL BUIDLTokenRedeemer (old — superseded by #13)**
     - Chain name: Ethereum Mainnet
-    - Contract address: [0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885](https://etherscan.io/address/0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885)
-    - Deployment transaction trace: [0x2577828e23503fdc87af290e044df43474341bc072f62fde6e983ef08b0729a1](https://etherscan.io/tx/0x2577828e23503fdc87af290e044df43474341bc072f62fde6e983ef08b0729a1)
+    - Contract address: TBD (pending redeployment)
+    - Deployment transaction trace: TBD (pending redeployment)
     - **Status**: Superseded. `REDEEMER_CONTRACT_ROLE` must be revoked from this contract. Replaced by #13 due to Securitize redemption vault address change.
     - Code verification
         - Source code URL (at the audited commit hash): [src/redeemers/BUIDLTokenRedeemer.sol](https://github.com/grove-labs/grove-basin/blob/a79269a3f5f0253110e9cbca15d79aa9ffb62c4d/src/redeemers/BUIDLTokenRedeemer.sol)
         - External URLs to the audit reports: 
             - Cantina audit: https://cantina.xyz/portfolio/71794706-b078-4579-8f50-a9bd25d732d3
             - Chain Security Audit: https://reports.chainsecurity.com/GroveLabs/ChainSecurity_GroveLabs_Basin_Audit.pdf
-        - Deployed bytecode verification: `forge verify-bytecode 0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885 src/redeemers/BUIDLTokenRedeemer.sol:BUIDLTokenRedeemer --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address)" 0x7712c34205737192402172409a8F7ccef8aA2AEc 0x0d671C15Aa427fFc31C3A484C3ACdd8043F73052 0x10b3d3A96646720f8B3a29229cF96d513f3C84F1)`
+        - Deployed bytecode verification: `forge verify-bytecode <TBD: redeemer address> src/redeemers/BUIDLTokenRedeemer.sol:BUIDLTokenRedeemer --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address)" 0x7712c34205737192402172409a8F7ccef8aA2AEc 0x0d671C15Aa427fFc31C3A484C3ACdd8043F73052 <TBD: BUIDL GroveBasin address>)`
             - Creation code matched with status `full`. Runtime code matched with status `full`.
         - Compilation optimizations match optimizer=true, runs=180, evm_version=cancun, source solc 0.8.24. Bytecode CBOR metadata: bytecodeHash=ipfs, IPFS CID=`QmQshJETAUWw5CJR4ushQEdSSV5v2kucCqLffY87TjaXDG`, solc=0.8.24.
         - Constructor arguments:
@@ -419,31 +419,31 @@
                 - Argument value: `0x0d671C15Aa427fFc31C3A484C3ACdd8043F73052` (old Securitize redemption address)
                 - External source: Provided by Securitize (BUIDL primary redemption address)
             3. `basin_`
-                - Argument value: `0x10b3d3A96646720f8B3a29229cF96d513f3C84F1` (BUIDL GroveBasin)
+                - Argument value: TBD (BUIDL GroveBasin, pending redeployment)
                 - External source: Pre-deployed contract #10 (BUIDL GroveBasin), deployed in step 2 of SetupBUIDLUsdsUsdcBasin
     - Additional parameters configured on the contract by a privileged actor: None — BUIDLTokenRedeemer is immutable. Registered on the basin via `addTokenRedeemer()` which grants `REDEEMER_CONTRACT_ROLE` and calls `setUp()`.
     - Ownership, roles, privilege callers: None — no access control. Callable by the GroveBasin contract (`onlyBasin` modifier) and the basin's manager admin (Grove Proxy `0x1369f7b2b38c76B6478c0f0E66D94923421891Ba`).
     - Deployment command:
         ```
         forge script script/SetupBUIDLUsdsUsdcBasin.s.sol:SetupBUIDLUsdsUsdcBasin \
-            --sig "deployRedeemerContractAndGrantRedeemerRole(address)" 0x10b3d3A96646720f8B3a29229cF96d513f3C84F1 \
+            --sig "deployRedeemerContractAndGrantRedeemerRole(address)" <TBD: BUIDL GroveBasin address> \
             --rpc-url mainnet \
             --account grove-basin-deployer \
             --sender 0x6D99f476E7E9FCcd189fb87023cFa301364Fa817 --broadcast --slow --verify
         ```
-    - Source code is verified on the block explorer: [Yes](https://etherscan.io/address/0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885#code)
+    - Source code is verified on the block explorer: TBD (pending redeployment)
     - The deployer no longer has a privileged role: N/A — no access control.
 
 13. **BUIDL BUIDLTokenRedeemer (current — replaces #9)**
     - Chain name: Ethereum Mainnet
-    - Contract address: [0x99E5E7c533C7319f855B940561Df285bE022c82d](https://etherscan.io/address/0x99E5E7c533C7319f855B940561Df285bE022c82d)
-    - Deployment transaction trace: [0xc61524108a1fecf43252b20082c169ce60096b8e4f78c59125a2585d33f6dc49](https://etherscan.io/tx/0xc61524108a1fecf43252b20082c169ce60096b8e4f78c59125a2585d33f6dc49)
+    - Contract address: TBD (pending redeployment)
+    - Deployment transaction trace: TBD (pending redeployment)
     - Code verification
         - Source code URL (at the audited commit hash): [src/redeemers/BUIDLTokenRedeemer.sol](https://github.com/grove-labs/grove-basin/blob/a79269a3f5f0253110e9cbca15d79aa9ffb62c4d/src/redeemers/BUIDLTokenRedeemer.sol)
         - External URLs to the audit reports: 
             - Cantina audit: https://cantina.xyz/portfolio/71794706-b078-4579-8f50-a9bd25d732d3
             - Chain Security Audit: https://reports.chainsecurity.com/GroveLabs/ChainSecurity_GroveLabs_Basin_Audit.pdf
-        - Deployed bytecode verification: `forge verify-bytecode 0x99E5E7c533C7319f855B940561Df285bE022c82d src/redeemers/BUIDLTokenRedeemer.sol:BUIDLTokenRedeemer --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address)" 0x7712c34205737192402172409a8F7ccef8aA2AEc 0x8780Dd016171B91E4Df47075dA0a947959C34200 0x10b3d3A96646720f8B3a29229cF96d513f3C84F1)`
+        - Deployed bytecode verification: `forge verify-bytecode <TBD: redeemer address> src/redeemers/BUIDLTokenRedeemer.sol:BUIDLTokenRedeemer --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address)" 0x7712c34205737192402172409a8F7ccef8aA2AEc 0x8780Dd016171B91E4Df47075dA0a947959C34200 <TBD: BUIDL GroveBasin address>)`
         - Compilation optimizations match optimizer=true, runs=180, evm_version=cancun, source solc 0.8.24. Bytecode CBOR metadata: bytecodeHash=ipfs, IPFS CID=`QmQshJETAUWw5CJR4ushQEdSSV5v2kucCqLffY87TjaXDG`, solc=0.8.24.
         - Constructor arguments:
             1. `creditToken_`
@@ -453,19 +453,19 @@
                 - Argument value: `0x8780Dd016171B91E4Df47075dA0a947959C34200` (new Securitize redemption address)
                 - External source: Provided by Securitize
             3. `basin_`
-                - Argument value: `0x10b3d3A96646720f8B3a29229cF96d513f3C84F1` (BUIDL GroveBasin)
+                - Argument value: TBD (BUIDL GroveBasin, pending redeployment)
                 - External source: Pre-deployed contract #10 (BUIDL GroveBasin)
     - Additional parameters configured on the contract by a privileged actor: None — BUIDLTokenRedeemer is immutable. Registered on the basin via `addTokenRedeemer()` which grants `REDEEMER_CONTRACT_ROLE` and calls `setUp()`.
     - Ownership, roles, privilege callers: None — no access control. Callable by the GroveBasin contract (`onlyBasin` modifier) and the basin's manager admin (Grove Proxy `0x1369f7b2b38c76B6478c0f0E66D94923421891Ba`).
     - Deployment command:
         ```
         forge script script/SetupBUIDLUsdsUsdcBasin.s.sol:SetupBUIDLUsdsUsdcBasin \
-            --sig "deployRedeemerContractAndGrantRedeemerRole(address)" 0x10b3d3A96646720f8B3a29229cF96d513f3C84F1 \
+            --sig "deployRedeemerContractAndGrantRedeemerRole(address)" <TBD: BUIDL GroveBasin address> \
             --rpc-url mainnet \
             --account grove-basin-deployer \
             --sender 0x6D99f476E7E9FCcd189fb87023cFa301364Fa817 --broadcast --slow --verify
         ```
-    - Source code is verified on the block explorer: [Yes](https://etherscan.io/address/0x99E5E7c533C7319f855B940561Df285bE022c82d#code)
+    - Source code is verified on the block explorer: TBD (pending redeployment)
     - The deployer no longer has a privileged role: N/A — no access control.
 
 ## Pre-configurations
@@ -696,7 +696,7 @@
 ### SetupBUIDLUsdsUsdcBasin post-deploy configuration
 
 1. **Approve GroveBasinFactory to spend 1 USDS (seed amount)**
-    - Transaction trace URL: [0xda07b81643dc8949cdc7b5584807f23a0eb7a2a7378d90313e5d04efcb6b98d3](https://etherscan.io/tx/0xda07b81643dc8949cdc7b5584807f23a0eb7a2a7378d90313e5d04efcb6b98d3)
+    - Transaction trace URL: TBD
     - Contract being called: USDS (`0xdC035D45d973E3EC169d2276DDab16f1e407384F`)
     - Function being called: `approve(address spender, uint256 amount)`
     - Function arguments:
@@ -708,7 +708,7 @@
             - External source: `10 ** IERC20(USDS).decimals()`
 
 2. **Deploy GroveBasin via GroveBasinFactory**
-    - Transaction trace URL: [0x4c39479656f2293361acb059d467cffd3b11f1346dfc52e99bd2a161521775e8](https://etherscan.io/tx/0x4c39479656f2293361acb059d467cffd3b11f1346dfc52e99bd2a161521775e8)
+    - Transaction trace URL: TBD (pending redeployment)
     - Contract being called: GroveBasinFactory (`0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a`)
     - Function being called: `deploy(address owner, address liquidityProvider, address swapToken, address collateralToken, address creditToken, address swapTokenRateProvider, address collateralTokenRateProvider, address creditTokenRateProvider)`
     - Function arguments:
@@ -739,7 +739,7 @@
     - Note: Factory internally seeds 1 USDS to `address(0)` as dead shares via `depositInitial`.
 
 3. **Grant MANAGER_ADMIN_ROLE to Grove Proxy**
-    - Transaction trace URL: [0x99b6fd7702e92f8d5acd168aeb405a11567e9edab819be42b61ec1c344b4c9fa](https://etherscan.io/tx/0x99b6fd7702e92f8d5acd168aeb405a11567e9edab819be42b61ec1c344b4c9fa)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin (newly deployed)
     - Function being called: `grantRole(bytes32 role, address account)`
     - Function arguments:
@@ -751,7 +751,7 @@
             - External source: grove-address-registry `Ethereum.GROVE_PROXY`
 
 4. **Grant MANAGER_ADMIN_ROLE to deployer**
-    - Transaction trace URL: [0x38c03a33f7603349362169b82f90a506075bb37a80afe868e29ac91b3ba04b89](https://etherscan.io/tx/0x38c03a33f7603349362169b82f90a506075bb37a80afe868e29ac91b3ba04b89)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `grantRole(bytes32 role, address account)`
     - Function arguments:
@@ -763,7 +763,7 @@
             - External source: Deployer EOA
 
 5. **Deploy UsdsUsdcPocket**
-    - Transaction trace URL: [0xc6f0e579c7636321f4b27c4ec2f701e9afd6ce01488c111de66f932c5eaf8b5c](https://etherscan.io/tx/0xc6f0e579c7636321f4b27c4ec2f701e9afd6ce01488c111de66f932c5eaf8b5c)
+    - Transaction trace URL: TBD (pending redeployment)
     - Contract being deployed: `UsdsUsdcPocket`
     - Constructor arguments:
         1. `basin_`
@@ -783,7 +783,7 @@
     - Note: Constructor grants max USDS approval to basin and Grove Proxy.
 
 6. **Set pocket on GroveBasin**
-    - Transaction trace URL: [0x94d4ad13e24e7dd6ee912d8a966d68a432e76a16f10de598847d7e1d4cd3f450](https://etherscan.io/tx/0x94d4ad13e24e7dd6ee912d8a966d68a432e76a16f10de598847d7e1d4cd3f450)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `setPocket(address newPocket)`
     - Function arguments:
@@ -792,16 +792,16 @@
             - External source: Deterministic from deployment
 
 7. **Deploy and add BUIDLTokenRedeemer**
-    - Transaction trace URL: [0x2577828e23503fdc87af290e044df43474341bc072f62fde6e983ef08b0729a1](https://etherscan.io/tx/0x2577828e23503fdc87af290e044df43474341bc072f62fde6e983ef08b0729a1)
-    - Contract being deployed: BUIDLTokenRedeemer at [`0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885`](https://etherscan.io/address/0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885)
+    - Transaction trace URL: TBD (pending redeployment)
+    - Contract being deployed: BUIDLTokenRedeemer at TBD (pending redeployment)
     - Constructor arguments:
-        1. `creditToken_`: `0x7712c34205737192402172409a8F7ccef8aA2AEc` (BUIDL)
-        2. `redemptionAddress_`: `0x0d671C15Aa427fFc31C3A484C3ACdd8043F73052`
-        3. `basin_`: `0x10b3d3A96646720f8B3a29229cF96d513f3C84F1` (BUIDL GroveBasin)
+        1. `creditToken_`: `******************************************` (BUIDL)
+        2. `redemptionAddress_`: `0x8780Dd016171B91E4Df47075dA0a947959C34200` (Securitize redemption address)
+        3. `basin_`: TBD (BUIDL GroveBasin, pending redeployment)
     - Registered on basin via `addTokenRedeemer()` which grants `REDEEMER_CONTRACT_ROLE` and calls `setUp()`.
 
 8. **Grant MANAGER_ROLE to ALM Relayer**
-    - Transaction trace URL: [0xc4afd2c3627b74160acdc2e4f25a9c4bea822304a00a218df0b899e5d4eb1739](https://etherscan.io/tx/0xc4afd2c3627b74160acdc2e4f25a9c4bea822304a00a218df0b899e5d4eb1739)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `grantRole(bytes32 role, address account)`
     - Function arguments:
@@ -813,7 +813,7 @@
             - External source: grove-address-registry `Ethereum.ALM_RELAYER`
 
 9. **Grant PAUSER_ROLE to ALM Freezer**
-    - Transaction trace URL: [0x852e5da8ab758fd1143fd93f2d511e63fcef7a77412b1790ffc93614db63ff27](https://etherscan.io/tx/0x852e5da8ab758fd1143fd93f2d511e63fcef7a77412b1790ffc93614db63ff27)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `grantRole(bytes32 role, address account)`
     - Function arguments:
@@ -825,7 +825,7 @@
             - External source: grove-address-registry `Ethereum.ALM_FREEZER`
 
 10. **Grant REDEEMER_ROLE**
-    - Transaction trace URL: [0x33adfefeee15f01805a582324701e2b03a63951680aab471bd8a034f10ee66da](https://etherscan.io/tx/0x33adfefeee15f01805a582324701e2b03a63951680aab471bd8a034f10ee66da)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `grantRole(bytes32 role, address account)`
     - Function arguments:
@@ -837,8 +837,8 @@
             - External source: Previously provided by Securitize
 
 10a. **Grant REDEEMER_ROLE to new Securitize redeemer address**
-    - Transaction trace URL: [0x67b80561f00a61c3ad5b4744c050f77ec37043ab5a19b46b813ef50152344f47](https://etherscan.io/tx/0x67b80561f00a61c3ad5b4744c050f77ec37043ab5a19b46b813ef50152344f47)
-    - Contract being called: GroveBasin (`0x10b3d3A96646720f8B3a29229cF96d513f3C84F1`)
+    - Transaction trace URL: TBD (pending redeployment)
+    - Contract being called: GroveBasin (TBD, pending redeployment)
     - Function being called: `grantRole(bytes32 role, address account)`
     - Function arguments:
         1. `role`
@@ -850,8 +850,8 @@
     - Note: Replacing old redeemer address `0xdfC603076EA75895DD4d59c6e2ee5038f881CB74`.
 
 10b. **Revoke REDEEMER_ROLE from old Securitize redeemer address**
-    - Transaction trace URL: [0xb949e5958c2e5d73c976d6df82a734c2cbc227b9c581e1b83006b1ea76bb8ac0](https://etherscan.io/tx/0xb949e5958c2e5d73c976d6df82a734c2cbc227b9c581e1b83006b1ea76bb8ac0)
-    - Contract being called: GroveBasin (`0x10b3d3A96646720f8B3a29229cF96d513f3C84F1`)
+    - Transaction trace URL: TBD (pending redeployment)
+    - Contract being called: GroveBasin (TBD, pending redeployment)
     - Function being called: `revokeRole(bytes32 role, address account)`
     - Function arguments:
         1. `role`
@@ -862,17 +862,17 @@
             - External source: Previously provided by Securitize
 
 10c. **Remove old BUIDLTokenRedeemer (revoke REDEEMER_CONTRACT_ROLE)**
-    - Transaction trace URL: [0x4509facba190051cae17ccffaeba2b413ee6cf1bc8d5a796df1a90d1e5522c00](https://etherscan.io/tx/0x4509facba190051cae17ccffaeba2b413ee6cf1bc8d5a796df1a90d1e5522c00)
-    - Contract being called: GroveBasin (`0x10b3d3A96646720f8B3a29229cF96d513f3C84F1`)
+    - Transaction trace URL: TBD (pending redeployment)
+    - Contract being called: GroveBasin (TBD, pending redeployment)
     - Function being called: `removeTokenRedeemer(address redeemer)`
     - Function arguments:
         1. `redeemer`
-            - Argument value: `0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885` (old BUIDLTokenRedeemer, superseded by #13)
+            - Argument value: TBD (old BUIDLTokenRedeemer, superseded by #13)
             - External source: Pre-deployed contract #9
-    - Note: `removeTokenRedeemer` revokes `REDEEMER_CONTRACT_ROLE` from the old redeemer. Required because the new BUIDLTokenRedeemer (`0x99E5E7c533C7319f855B940561Df285bE022c82d`) was registered via `addTokenRedeemer` in the redeployment script, but the old one still holds the role.
+    - Note: `removeTokenRedeemer` revokes `REDEEMER_CONTRACT_ROLE` from the old redeemer. Required because the new BUIDLTokenRedeemer (TBD) was registered via `addTokenRedeemer` in the redeployment script, but the old one still holds the role.
 
 11. **Grant PAUSER_ROLE to deployer (temporary)**
-    - Transaction trace URL: [0x3168f24a1804b3dbb14506b8cf32b01a185b81078e37e6edf30f71d103e49515](https://etherscan.io/tx/0x3168f24a1804b3dbb14506b8cf32b01a185b81078e37e6edf30f71d103e49515)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `grantRole(bytes32 role, address account)`
     - Function arguments:
@@ -885,7 +885,7 @@
     - Note: Temporary grant to allow the deployer to call `setPaused` in steps 12--15. Revoked in step 17.
 
 12. **Pause SWAP_SWAP_TO_CREDIT**
-    - Transaction trace URL: [0x72861d77034bda9b5e29fe84fe6892fec36e201317651aa2c00867702ddbebef](https://etherscan.io/tx/0x72861d77034bda9b5e29fe84fe6892fec36e201317651aa2c00867702ddbebef)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `setPaused(bytes4 key)`
     - Function arguments:
@@ -894,7 +894,7 @@
             - External source: GroveBasin.sol constant
 
 13. **Pause SWAP_COLLATERAL_TO_CREDIT**
-    - Transaction trace URL: [0x5a783b6aa377d7cae4f4b3b01517407967709d48de3bc6cc336895f4eda785f7](https://etherscan.io/tx/0x5a783b6aa377d7cae4f4b3b01517407967709d48de3bc6cc336895f4eda785f7)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `setPaused(bytes4 key)`
     - Function arguments:
@@ -903,7 +903,7 @@
             - External source: GroveBasin.sol constant
 
 14. **Pause DEPOSIT_CREDIT**
-    - Transaction trace URL: [0xaaf15b5dc577fa5d99abeb4d89bd408aa559aa841149077fc5a33e4989581ae7](https://etherscan.io/tx/0xaaf15b5dc577fa5d99abeb4d89bd408aa559aa841149077fc5a33e4989581ae7)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `setPaused(bytes4 key)`
     - Function arguments:
@@ -912,7 +912,7 @@
             - External source: GroveBasin.sol constant
 
 15. **Pause WITHDRAW_CREDIT**
-    - Transaction trace URL: [0xa1f8a81c2d7bc635bb0bbd8b455f093af022d9ecb8fd0f93f6d994d5b12240ce](https://etherscan.io/tx/0xa1f8a81c2d7bc635bb0bbd8b455f093af022d9ecb8fd0f93f6d994d5b12240ce)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `setPaused(bytes4 key)`
     - Function arguments:
@@ -921,7 +921,7 @@
             - External source: GroveBasin.sol constant
 
 16. **Set fee bounds to [0, 500] bps (0% to 5%)**
-    - Transaction trace URL: [0x3d8de864e93b9bc11c295f6c9f04e8f6016bf31343139c32cd0807cd984eb81d](https://etherscan.io/tx/0x3d8de864e93b9bc11c295f6c9f04e8f6016bf31343139c32cd0807cd984eb81d)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `setFeeBounds(uint256 newMinFee, uint256 newMaxFee)`
     - Function arguments:
@@ -933,7 +933,7 @@
             - External source: Script hardcoded value
 
 17. **Revoke deployer PAUSER_ROLE**
-    - Transaction trace URL: [0x9d6f71de497bcca04853fcacc995226d59a2cfacdf94159c0cf64597a0064b99](https://etherscan.io/tx/0x9d6f71de497bcca04853fcacc995226d59a2cfacdf94159c0cf64597a0064b99)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `revokeRole(bytes32 role, address account)`
     - Function arguments:
@@ -945,7 +945,7 @@
             - External source: Deployer EOA
 
 18. **Grant OWNER_ROLE to BUIDL Admin TimelockController**
-    - Transaction trace URL: [0x04db0842f877a05936c2e50b247dd6830dc0c4a04d25b7f6674f32377edd0c0b](https://etherscan.io/tx/0x04db0842f877a05936c2e50b247dd6830dc0c4a04d25b7f6674f32377edd0c0b)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `grantRole(bytes32 role, address account)`
     - Function arguments:
@@ -957,7 +957,7 @@
             - External source: Script constant `BUIDL_ADMIN_TIMELOCK`
 
 19. **Revoke deployer OWNER_ROLE**
-    - Transaction trace URL: [0x03327e82537885cf6632aff4c2587b9afc12b087fb1f2ee723e2444ed4e18911](https://etherscan.io/tx/0x03327e82537885cf6632aff4c2587b9afc12b087fb1f2ee723e2444ed4e18911)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `revokeRole(bytes32 role, address account)`
     - Function arguments:
@@ -971,7 +971,7 @@
 ### SetupJTRSYUsdsUsdcBasin post-deploy configuration
 
 1. **Approve GroveBasinFactory to spend 1 USDS (seed amount)**
-    - Transaction trace URL: [0x05da550286223c26f06c8a58249b753ce11a9d69051f388283ccc9ad761e844d](https://etherscan.io/tx/0x05da550286223c26f06c8a58249b753ce11a9d69051f388283ccc9ad761e844d)
+    - Transaction trace URL: TBD
     - Contract being called: USDS (`0xdC035D45d973E3EC169d2276DDab16f1e407384F`)
     - Function being called: `approve(address spender, uint256 amount)`
     - Function arguments:
@@ -983,7 +983,7 @@
             - External source: `10 ** IERC20(USDS).decimals()`
 
 2. **Deploy GroveBasin via GroveBasinFactory**
-    - Transaction trace URL: [0x7d3a7d8b0e3f06bd945482ee9d10bbd8c8f0dc2524736edc81d3ed99f94f0b82](https://etherscan.io/tx/0x7d3a7d8b0e3f06bd945482ee9d10bbd8c8f0dc2524736edc81d3ed99f94f0b82)
+    - Transaction trace URL: TBD (pending redeployment)
     - Contract being called: GroveBasinFactory (`0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a`)
     - Function being called: `deploy(address owner, address liquidityProvider, address swapToken, address collateralToken, address creditToken, address swapTokenRateProvider, address collateralTokenRateProvider, address creditTokenRateProvider)`
     - Function arguments:
@@ -1014,7 +1014,7 @@
     - Note: Factory internally seeds 1 USDS to `address(0)` as dead shares via `depositInitial`.
 
 3. **Grant MANAGER_ADMIN_ROLE to Grove Proxy**
-    - Transaction trace URL: [0xb24ed0117b8f334a0e8ada430002a87219db8b583a1ee188d60744dd6ec5ce5c](https://etherscan.io/tx/0xb24ed0117b8f334a0e8ada430002a87219db8b583a1ee188d60744dd6ec5ce5c)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin (newly deployed)
     - Function being called: `grantRole(bytes32 role, address account)`
     - Function arguments:
@@ -1026,7 +1026,7 @@
             - External source: grove-address-registry `Ethereum.GROVE_PROXY`
 
 4. **Grant MANAGER_ADMIN_ROLE to deployer**
-    - Transaction trace URL: [0x807577f9bf0c4f2907fa688cd11c472a99e8c66c2af36e798acc4712b96d39f3](https://etherscan.io/tx/0x807577f9bf0c4f2907fa688cd11c472a99e8c66c2af36e798acc4712b96d39f3)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `grantRole(bytes32 role, address account)`
     - Function arguments:
@@ -1038,7 +1038,7 @@
             - External source: Deployer EOA
 
 5. **Deploy UsdsUsdcPocket**
-    - Transaction trace URL: [0x64604be1965dda0a8b72745206d43630fc0a7f8e598d40d75d0a183f420def81](https://etherscan.io/tx/0x64604be1965dda0a8b72745206d43630fc0a7f8e598d40d75d0a183f420def81)
+    - Transaction trace URL: TBD (pending redeployment)
     - Contract being deployed: `UsdsUsdcPocket`
     - Constructor arguments:
         1. `basin_`
@@ -1058,7 +1058,7 @@
     - Note: Constructor grants max USDS approval to basin and Grove Proxy.
 
 6. **Set pocket on GroveBasin**
-    - Transaction trace URL: [0x5dbd4ead55333e3189d75e9be52f3292b5d964ace4a57db6108ed3ed927febd2](https://etherscan.io/tx/0x5dbd4ead55333e3189d75e9be52f3292b5d964ace4a57db6108ed3ed927febd2)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `setPocket(address newPocket)`
     - Function arguments:
@@ -1067,7 +1067,7 @@
             - External source: Deterministic from deployment
 
 7. **Deploy JTRSYTokenRedeemer**
-    - Transaction trace URL: [0x2386be7468d4c752f78d92d6f9435af778e8d1e92d8b93c85e9ed3891a562b82](https://etherscan.io/tx/0x2386be7468d4c752f78d92d6f9435af778e8d1e92d8b93c85e9ed3891a562b82)
+    - Transaction trace URL: TBD (pending redeployment)
     - Contract being deployed: `JTRSYTokenRedeemer`
     - Constructor arguments:
         1. `creditToken_`
@@ -1080,7 +1080,7 @@
             - Argument value: GroveBasin address (deployed in step 2)
 
 8. **Register JTRSYTokenRedeemer on GroveBasin**
-    - Transaction trace URL: [0x741c44317437e17018ca9e7faf2e8a3860126719245225f175e41e3b1155a86f](https://etherscan.io/tx/0x741c44317437e17018ca9e7faf2e8a3860126719245225f175e41e3b1155a86f)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `addTokenRedeemer(address redeemer)`
     - Function arguments:
@@ -1090,7 +1090,7 @@
     - Note: This grants `REDEEMER_CONTRACT_ROLE` to the redeemer and calls `setUp()` on it.
 
 9. **Grant MANAGER_ROLE to ALM Relayer**
-    - Transaction trace URL: [0x61e948691b5e4ad03c4c6919792d51051d9bc28948c10404edb6a80ae32e282c](https://etherscan.io/tx/0x61e948691b5e4ad03c4c6919792d51051d9bc28948c10404edb6a80ae32e282c)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `grantRole(bytes32 role, address account)`
     - Function arguments:
@@ -1102,7 +1102,7 @@
             - External source: grove-address-registry `Ethereum.ALM_RELAYER`
 
 10. **Grant PAUSER_ROLE to ALM Freezer**
-    - Transaction trace URL: [0x389bd400f5d99fdafc6b818ecd4ad8658ff14b8e5e287da6482f6b39cb2e8673](https://etherscan.io/tx/0x389bd400f5d99fdafc6b818ecd4ad8658ff14b8e5e287da6482f6b39cb2e8673)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `grantRole(bytes32 role, address account)`
     - Function arguments:
@@ -1114,7 +1114,7 @@
             - External source: grove-address-registry `Ethereum.ALM_FREEZER`
 
 11. **Grant REDEEMER_ROLE**
-    - Transaction trace URL: [0xde757885f0f0f005e02121275ff5849b1efbcfe236af7e2e927fadab3a57c129](https://etherscan.io/tx/0xde757885f0f0f005e02121275ff5849b1efbcfe236af7e2e927fadab3a57c129)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `grantRole(bytes32 role, address account)`
     - Function arguments:
@@ -1126,7 +1126,7 @@
             - External source: Hardcoded in script
 
 12. **Grant PAUSER_ROLE to deployer (temporary)**
-    - Transaction trace URL: [0xbff160f4246731b72df39a4b61ab903e20024e3b32a248070f2d72f804aea385](https://etherscan.io/tx/0xbff160f4246731b72df39a4b61ab903e20024e3b32a248070f2d72f804aea385)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `grantRole(bytes32 role, address account)`
     - Function arguments:
@@ -1139,7 +1139,7 @@
     - Note: Temporary grant to allow the deployer to call `setPaused` in steps 13--16. Revoked in step 18.
 
 13. **Pause SWAP_SWAP_TO_CREDIT**
-    - Transaction trace URL: [0x3f318fdff79bf42a85ed786dd9a4c32d10b1670fd9d9ca0d1903550b3f81ea89](https://etherscan.io/tx/0x3f318fdff79bf42a85ed786dd9a4c32d10b1670fd9d9ca0d1903550b3f81ea89)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `setPaused(bytes4 key)`
     - Function arguments:
@@ -1148,7 +1148,7 @@
             - External source: GroveBasin.sol constant
 
 14. **Pause SWAP_COLLATERAL_TO_CREDIT**
-    - Transaction trace URL: [0x764052528bbb8620b5ec31f529972f22b9f519dd98bd1c227c985166a4d02e11](https://etherscan.io/tx/0x764052528bbb8620b5ec31f529972f22b9f519dd98bd1c227c985166a4d02e11)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `setPaused(bytes4 key)`
     - Function arguments:
@@ -1157,7 +1157,7 @@
             - External source: GroveBasin.sol constant
 
 15. **Pause DEPOSIT_CREDIT**
-    - Transaction trace URL: [0x02e281a8ac7c37df904b44aa0912f20e27378165fc22267f75ac781456a9295c](https://etherscan.io/tx/0x02e281a8ac7c37df904b44aa0912f20e27378165fc22267f75ac781456a9295c)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `setPaused(bytes4 key)`
     - Function arguments:
@@ -1166,7 +1166,7 @@
             - External source: GroveBasin.sol constant
 
 16. **Pause WITHDRAW_CREDIT**
-    - Transaction trace URL: [0xe580e3f4e0807d84f2f9904f56d1c3a745526c33adb9dce2eaefe1ef5c7ce68a](https://etherscan.io/tx/0xe580e3f4e0807d84f2f9904f56d1c3a745526c33adb9dce2eaefe1ef5c7ce68a)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `setPaused(bytes4 key)`
     - Function arguments:
@@ -1175,7 +1175,7 @@
             - External source: GroveBasin.sol constant
 
 17. **Set fee bounds to [0, 500] bps (0% to 5%)**
-    - Transaction trace URL: [0xa2b18aadd6b73cdade768ca7eb97774faeced3dc2bf2e3b61e06f5a00217eb96](https://etherscan.io/tx/0xa2b18aadd6b73cdade768ca7eb97774faeced3dc2bf2e3b61e06f5a00217eb96)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `setFeeBounds(uint256 newMinFee, uint256 newMaxFee)`
     - Function arguments:
@@ -1187,7 +1187,7 @@
             - External source: Script hardcoded value
 
 18. **Revoke deployer PAUSER_ROLE**
-    - Transaction trace URL: [0x65991011467870dece52b7a1279c37e46cb73a076f9648dd1c0dd44e7bfc72c8](https://etherscan.io/tx/0x65991011467870dece52b7a1279c37e46cb73a076f9648dd1c0dd44e7bfc72c8)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `revokeRole(bytes32 role, address account)`
     - Function arguments:
@@ -1199,7 +1199,7 @@
             - External source: Deployer EOA
 
 19. **Grant OWNER_ROLE to JTRSY Admin TimelockController**
-    - Transaction trace URL: [0xa43f67df69d677abc0623a2d385998b69f3c72b935c176bcd41975d1d6b1f2dc](https://etherscan.io/tx/0xa43f67df69d677abc0623a2d385998b69f3c72b935c176bcd41975d1d6b1f2dc)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `grantRole(bytes32 role, address account)`
     - Function arguments:
@@ -1211,7 +1211,7 @@
             - External source: Script constant `JTRSY_ADMIN_TIMELOCK`
 
 20. **Revoke deployer OWNER_ROLE**
-    - Transaction trace URL: [0x08bd1f13395e4e222a71a343af837e54313ba1477aa7c73732e22f09c90dd03f](https://etherscan.io/tx/0x08bd1f13395e4e222a71a343af837e54313ba1477aa7c73732e22f09c90dd03f)
+    - Transaction trace URL: TBD
     - Contract being called: GroveBasin
     - Function being called: `revokeRole(bytes32 role, address account)`
     - Function arguments:
@@ -1267,18 +1267,18 @@
 1. **BUIDLTokenRedeemer must be deployed**
     - Intended end goal: The BUIDL redemption address is required to deploy the `BUIDLTokenRedeemer` contract, which is passed as a constructor argument. Without it, the redeemer cannot be deployed and the basin will not support BUIDL redemptions.
     - Why is it required to be done in advance: The `BUIDLTokenRedeemer` constructor requires the redemption address; the deployment script cannot proceed without it.
-    - Proof that it was done or planned to be done: Deployed at [`0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885`](https://etherscan.io/address/0x0D46f8A832B76A79AC3B5F29fFfc35ACeebad885) in tx [0x2577828e...](https://etherscan.io/tx/0x2577828e23503fdc87af290e044df43474341bc072f62fde6e983ef08b0729a1). Redemption address: `0x0d671C15Aa427fFc31C3A484C3ACdd8043F73052`.
+    - Proof that it was done or planned to be done: Deployed at TBD in tx TBD. Redemption address: `0x0d671C15Aa427fFc31C3A484C3ACdd8043F73052`.
     - **Address change**: Securitize changed their redemption vault address from `0x0d671C15Aa427fFc31C3A484C3ACdd8043F73052` to `0x8780Dd016171B91E4Df47075dA0a947959C34200`. Since `redemptionAddress_` is an immutable constructor argument, a new `BUIDLTokenRedeemer` must be deployed with the new vault address and registered on the basin via `removeTokenRedeemer` / `addTokenRedeemer`.
-    - **Mainnet deployment**: Deployed at [`0x99E5E7c533C7319f855B940561Df285bE022c82d`](https://etherscan.io/address/0x99E5E7c533C7319f855B940561Df285bE022c82d) in tx [0xc6152410...](https://etherscan.io/tx/0xc61524108a1fecf43252b20082c169ce60096b8e4f78c59125a2585d33f6dc49). Redemption address: `0x8780Dd016171B91E4Df47075dA0a947959C34200`. `addTokenRedeemer` in tx [0xc92b0e53...](https://etherscan.io/tx/0xc92b0e537e826716ec1b2887c661f60ff419d2fbd67f1d15efb092c4ce3e5487). Source code verified on [Etherscan](https://etherscan.io/address/0x99e5e7c533c7319f855b940561df285be022c82d#code).
+    - **Mainnet deployment**: Deployed at TBD in tx TBD. Redemption address: `0x8780Dd016171B91E4Df47075dA0a947959C34200`. `addTokenRedeemer` in tx TBD. Source code verified on Etherscan: TBD.
 
 2. **Grant redeemer address the REDEEMER_ROLE**
     - Intended end goal: A valid address to grant the `REDEEMER_ROLE` on the BUIDL GroveBasin. This address will be authorized to trigger redemptions.
     - Why is it required to be done in advance: Currently set to `address(0)` in the script; the conditional skip means no redeemer role holder will be set until the address is provided.
-    - Proof that it was done or planned to be done: `REDEEMER_ROLE` granted to `0xdfC603076EA75895DD4d59c6e2ee5038f881CB74` in tx [0x33adfefe...](https://etherscan.io/tx/0x33adfefeee15f01805a582324701e2b03a63951680aab471bd8a034f10ee66da).
+    - Proof that it was done or planned to be done: `REDEEMER_ROLE` granted to `0xdfC603076EA75895DD4d59c6e2ee5038f881CB74` in tx TBD.
     - **Address change**: Securitize changed their redeemer address. `REDEEMER_ROLE` must be rotated from `0xdfC603076EA75895DD4d59c6e2ee5038f881CB74` to `0x488F27168a19472c51f003fbC5b75B1ACc3B7b4c`. See SetupBUIDLUsdsUsdcBasin pre-configuration steps 10a–10b.
 
 3. **BUIDL Basin must be allowlisted on BUIDL token**
-    - Intended end goal: The BUIDL Basin contract (`0x10b3d3A96646720f8B3a29229cF96d513f3C84F1`) can hold BUIDL tokens
+    - Intended end goal: The BUIDL Basin contract (TBD, pending redeployment) can hold BUIDL tokens
     - Why is it required to be done in advance: BUIDL requires holders to be on an allowlist.
     - Proof that it was done or planned to be done: TODO
 
@@ -1290,19 +1290,19 @@
 ### SetupJTRSYUsdsUsdcBasin
 
 1. **JTRSYTokenRedeemer must be allowlisted on Centrifuge vault and JTRSY token**
-    - Intended end goal: The redeemer contract (`0x212697f0A9Fc218210D98cd1A159dc8D8A87b8A8`) can call `requestRedeem` and `redeem` on the Centrifuge vault, and can hold/transfer JTRSY tokens.
+    - Intended end goal: The redeemer contract (TBD, pending redeployment) can call `requestRedeem` and `redeem` on the Centrifuge vault, and can hold/transfer JTRSY tokens.
     - Why is it required to be done in advance: The Centrifuge vault requires callers to be on an allowlist.
-    - Proof that it was done or planned to be done: Allowlisted via `updateRestriction` on the Centrifuge restriction manager (`0xA4A7Bb3831958463b3FE3E27A6a160F764341953`). The `UpdateMember` event confirms `0x212697f0A9Fc218210D98cd1A159dc8D8A87b8A8` was added to the JTRSY token member list with `validUntil = 4294967295` (type(uint32).max, i.e. no expiry). Transaction: [0x3484c44e53f487769db67e41b0fb1acdd3d8ca64287b097df09278bcd6525319](https://etherscan.io/tx/0x3484c44e53f487769db67e41b0fb1acdd3d8ca64287b097df09278bcd6525319).
+    - Proof that it was done or planned to be done: Allowlisted via `updateRestriction` on the Centrifuge restriction manager (`0xA4A7Bb3831958463b3FE3E27A6a160F764341953`). The `UpdateMember` event confirms the redeemer was added to the JTRSY token member list with `validUntil = 4294967295` (type(uint32).max, i.e. no expiry). Transaction: TBD.
 
 2. **JTRSY Basin must be allowlisted on JTRSY token**
-    - Intended end goal: The JTRSY Basin contract (`0x1FA4dB8D545Cbd22b7bbA2084348A2E6ef36E363`) can hold JTRSY tokens.
+    - Intended end goal: The JTRSY Basin contract (TBD, pending redeployment) can hold JTRSY tokens.
     - Why is it required to be done in advance: JTRSY requires holders to be on an allowlist.
-    - Proof that it was done or planned to be done: Allowlisted via `updateRestriction` on the Centrifuge restriction manager (`0xA4A7Bb3831958463b3FE3E27A6a160F764341953`). Transaction: [0x7a45aeda74c9ac7d87663b95d56a62094c960acf1bf5b8848b44d99ea206c576](https://etherscan.io/tx/0x7a45aeda74c9ac7d87663b95d56a62094c960acf1bf5b8848b44d99ea206c576).
+    - Proof that it was done or planned to be done: Allowlisted via `updateRestriction` on the Centrifuge restriction manager (`0xA4A7Bb3831958463b3FE3E27A6a160F764341953`). Transaction: TBD.
 
 3. **Revoke MANAGER_ADMIN_ROLE from deployer**
     - Intended end goal: The deployer must call `revokeRole(MANAGER_ADMIN_ROLE, deployer)` on the JTRSY GroveBasin so that no single EOA retains admin privileges. After this, roles can only be managed through the timelock itself.
     - Why is it required to be done in advance: The deployer holds `MANAGER_ADMIN_ROLE` after deployment, which allows bypassing the timelock delay to set up the token redeeemer contract (step 1) and add a redeemer (step 2). This must be revoked before the system is considered live so that no address other thatn Grove Proxy holds the MANAGER_ADMIN_ROLE
-    - Proof that it was done or planned to be done: `MANAGER_ADMIN_ROLE` revoked from deployer in tx [0x7c2ac50f...](https://etherscan.io/tx/0x7c2ac50fb6ddcb999e95f23f71e022cdc12158de348079a93fd15d2a811f504e).
+    - Proof that it was done or planned to be done: `MANAGER_ADMIN_ROLE` revoked from deployer in tx TBD.
 
 ## Proposed actions
 
@@ -1355,40 +1355,40 @@
     - Who will perform this action: Deployer / reviewer
 
 6. **Test swap transaction (BUIDL Basin — swap to USDS)**
-    - What will be done: Perform a small test swap on the BUIDL GroveBasin (`0x10b3d3A96646720f8B3a29229cF96d513f3C84F1`) to confirm end-to-end functionality.
+    - What will be done: Perform a small test swap on the BUIDL GroveBasin (TBD, pending redeployment) to confirm end-to-end functionality.
     - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
     - Expected outcome: Swap succeeds, expected output amount is received.
     - Who will perform this action: Deployer or designated tester, working with the issuer
 
 7. **Test swap transaction (BUIDL Basin — swap to USDC)**
-    - What will be done: Perform a small test swap on the BUIDL GroveBasin (`0x10b3d3A96646720f8B3a29229cF96d513f3C84F1`) to confirm end-to-end functionality.
+    - What will be done: Perform a small test swap on the BUIDL GroveBasin (TBD, pending redeployment) to confirm end-to-end functionality.
     - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
     - Expected outcome: Swap succeeds, expected output amount is received.
     - Who will perform this action: Deployer or designated tester, working with the issuer
 
 8. **Test swap transaction (JTRSY Basin — swap to USDS)**
-    - Transaction trace URL: [Tenderly testnet tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/e7893a1c-cc85-45f4-8445-7c0c7f11b7e9/tx/0x90befc0ee695674686e1e55130169d4f9fcd0b7258a7b13c88a3e92d77abbf22)
-    - What will be done: Perform a small test swap on the JTRSY GroveBasin (`0x1FA4dB8D545Cbd22b7bbA2084348A2E6ef36E363`) to confirm end-to-end functionality.
+    - Transaction trace URL: TBD
+    - What will be done: Perform a small test swap on the JTRSY GroveBasin (TBD, pending redeployment) to confirm end-to-end functionality.
     - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
     - Expected outcome: Swap of 0.5 JTRSY for 0.552347 USDS succeeds.
     - Who will perform this action: Deployer or designated tester, working with the issuer
 
 9. **Test swap transaction (JTRSY Basin — swap to USDC)**
-    - Transaction trace URL: [Tenderly testnet tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/e7893a1c-cc85-45f4-8445-7c0c7f11b7e9/tx/0xb290766fcc4df0e2e13d00127c62ca9f430772d9aa0975d10948bdb4f7565b72)
-    - What will be done: Perform a small test swap on the JTRSY GroveBasin (`0x1FA4dB8D545Cbd22b7bbA2084348A2E6ef36E363`) to confirm end-to-end functionality.
+    - Transaction trace URL: TBD
+    - What will be done: Perform a small test swap on the JTRSY GroveBasin (TBD, pending redeployment) to confirm end-to-end functionality.
     - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
     - Expected outcome: Swap of 0.5 JTRSY for 0.552347 USDC succeeds.
     - Who will perform this action: Deployer or designated tester, working with the issuer
 
 10. **Test redemption transaction (BUIDL Basin)**
-    - What will be done: Perform a small test redemption on the BUIDL GroveBasin (`0x10b3d3A96646720f8B3a29229cF96d513f3C84F1`) to confirm end-to-end functionality.
+    - What will be done: Perform a small test redemption on the BUIDL GroveBasin (TBD, pending redeployment) to confirm end-to-end functionality.
     - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
     - Expected outcome: Redemption succeeds, expected output amount is received.
     - Who will perform this action: Deployer or designated tester, working with the issuer
 
 11. **Test redemption transaction (JTRSY Basin — initiate redeem)**
-    - Transaction trace URL: [Tenderly testnet tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/e7893a1c-cc85-45f4-8445-7c0c7f11b7e9/tx/0x10a94e17a8e0cb3d20bdaaefe4f8bd5dbdf1cb3e0380d6f16f8607529fe333c6)
-    - What will be done: Perform a small test redemption on the JTRSY GroveBasin (`0x1FA4dB8D545Cbd22b7bbA2084348A2E6ef36E363`) to confirm end-to-end functionality.
+    - Transaction trace URL: TBD
+    - What will be done: Perform a small test redemption on the JTRSY GroveBasin (TBD, pending redeployment) to confirm end-to-end functionality.
     - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
     - Expected outcome: Redemption succeeds, expected output amount is received.
     - Who will perform this action: Deployer or designated tester, working with the issuer
