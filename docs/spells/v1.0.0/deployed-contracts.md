@@ -15,9 +15,9 @@ Audited commit: [`9c812fcb`](https://github.com/grove-labs/grove-basin/commit/9c
 | 7 | JTRSY UsdsUsdcPocket | [0x2Cd296095788A2741e72056D66B3Ae1fAeE23ea2](https://etherscan.io/address/0x2Cd296095788A2741e72056D66B3Ae1fAeE23ea2) | [0xa7d03ed1...](https://etherscan.io/tx/0xa7d03ed1f6ec5f718858a1c5c53cbf693604b7050cba4692de150a87b86a42a0) | [Yes](https://etherscan.io/address/0x2Cd296095788A2741e72056D66B3Ae1fAeE23ea2#code) |
 | 8 | JTRSY JTRSYTokenRedeemer | [0x7c5Ce1a1D50a6cb3Da97C9e202B3E7CD8e5b5b6c](https://etherscan.io/address/0x7c5Ce1a1D50a6cb3Da97C9e202B3E7CD8e5b5b6c) | [0x17bf9bd8...](https://etherscan.io/tx/0x17bf9bd8e28c8ca2ffeb39baaada6615c75c749a1bfaf2596172df531e6289af) | [Yes](https://etherscan.io/address/0x7c5Ce1a1D50a6cb3Da97C9e202B3E7CD8e5b5b6c#code) |
 | 9 | BUIDL Admin TimelockController | [0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34](https://etherscan.io/address/0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34) | [0x63a99523...](https://etherscan.io/tx/0x63a9952301836480eea0f6fe830243eaa2a71ca23457f4c8a2792e015df526d8) | [Yes](https://etherscan.io/address/0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34#code) |
-| 10 | BUIDL GroveBasin | — | — | — |
-| 11 | BUIDL UsdsUsdcPocket | — | — | — |
-| 12 | BUIDL BUIDLTokenRedeemer | — | — | — |
+| 10 | BUIDL GroveBasin | [0xCBa428fB052B365557DAf52b744DFfF20d5FbEdD](https://etherscan.io/address/0xCBa428fB052B365557DAf52b744DFfF20d5FbEdD) | [0x990afcd9...](https://etherscan.io/tx/0x990afcd93b55b0fe5463bb91d0dc66dcfad685f3c47b393cedfbceae20e82340) | [Yes](https://etherscan.io/address/0xCBa428fB052B365557DAf52b744DFfF20d5FbEdD#code) |
+| 11 | BUIDL UsdsUsdcPocket | [0x39548FeF138370Db06e172eF0739894b2a613DF9](https://etherscan.io/address/0x39548FeF138370Db06e172eF0739894b2a613DF9) | [0x77f6e80c...](https://etherscan.io/tx/0x77f6e80c7819d585ffb2e1f4bd8172edf19c89b12ca0b3ac0f02ec69f8d6c05f) | [Yes](https://etherscan.io/address/0x39548FeF138370Db06e172eF0739894b2a613DF9#code) |
+| 12 | BUIDL BUIDLTokenRedeemer | [0x73414528187A4986E2Af5D551fD14871b723E506](https://etherscan.io/address/0x73414528187A4986E2Af5D551fD14871b723E506) | [0x888266d7...](https://etherscan.io/tx/0x888266d7097dbd63221f7087e33dad9abf6b11c31bd8ce5799b5993b12bc5a99) | [Yes](https://etherscan.io/address/0x73414528187A4986E2Af5D551fD14871b723E506#code) |
 
 ### Tenderly testnet deployments
 
@@ -36,11 +36,7 @@ Audited commit: [`9c812fcb`](https://github.com/grove-labs/grove-basin/commit/9c
 | BUIDL UsdsUsdcPocket | 0x39548FeF138370Db06e172eF0739894b2a613DF9 | [tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnets/d2d3c761-6480-44ce-b204-2f3cb6a1aa43/instance/fd0208d5-2bb9-4435-b849-a5eb216f2d61/container/359fb691-669d-481d-bc9d-d8de3ab923eb/tx/0xe862d32871d4270ef7eb1a97cd55eef625238485b7db3713c66eff428ef48b50) |
 | BUIDL BUIDLTokenRedeemer | 0x73414528187A4986E2Af5D551fD14871b723E506 | [tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnets/d2d3c761-6480-44ce-b204-2f3cb6a1aa43/instance/fd0208d5-2bb9-4435-b849-a5eb216f2d61/container/359fb691-669d-481d-bc9d-d8de3ab923eb/tx/0xd3f022e052f5047f9b149618d1d43c133d5bcdfb5b0824c9938332d59e52984d) |
 
-### Pending deployments
+### Deployment status
 
-The following contracts are pending deployment for BUIDL:
-
-- GroveBasin (BUIDL)
-- UsdsUsdcPocket (BUIDL)
-- BUIDLTokenRedeemer
+All contracts in this spell are deployed and verified on Etherscan.
 

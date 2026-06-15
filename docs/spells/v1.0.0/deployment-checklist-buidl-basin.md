@@ -36,7 +36,7 @@ forge script script/SetupBUIDLUsdsUsdcBasin.s.sol:SetupBUIDLUsdsUsdcBasin \
 **BUIDLTokenRedeemer:**
 ```bash
 forge script script/SetupBUIDLUsdsUsdcBasin.s.sol:SetupBUIDLUsdsUsdcBasin \
-    --sig "deployRedeemerContractAndGrantRedeemerRole(address)" <TBD: BUIDL GroveBasin address> \
+    --sig "deployRedeemerContractAndGrantRedeemerRole(address)" 0xCBa428fB052B365557DAf52b744DFfF20d5FbEdD \
     --rpc-url mainnet \
     --account grove-basin-deployer \
     --sender 0x6D99f476E7E9FCcd189fb87023cFa301364Fa817 \
@@ -56,18 +56,18 @@ forge script script/SetupBUIDLUsdsUsdcBasin.s.sol:SetupBUIDLUsdsUsdcBasin \
   - RPC provider: Alchemy
 - [x] Set API key for the verification provider (e.g., Etherscan) compatible with the target chain.
   - Verification provider: Etherscan
-- [ ] Execute the same command used for testnet deployment, but with `--slow --verify`.
-  - Total gas: TBD
-  - Transactions/blocks: TBD
-  - GroveBasin: TBD
-    - Deploy tx: TBD
-  - UsdsUsdcPocket: TBD
-    - Deploy tx: TBD
-  - BUIDLTokenRedeemer: TBD
-    - Deploy tx: TBD
-    - `addTokenRedeemer` tx: TBD
-    - `grantRole(REDEEMER_ROLE)` tx: TBD
+- [x] Execute the same command used for testnet deployment, but with `--slow --verify`.
+  - Total gas: 0.015489045431022739 ETH (6768724 gas * avg 2.171567351 gwei)
+  - Transactions/blocks: 20 transactions, blocks 25324010-25324038
+  - GroveBasin: `0xCBa428fB052B365557DAf52b744DFfF20d5FbEdD`
+    - Deploy tx: [0x990afcd9...](https://etherscan.io/tx/0x990afcd93b55b0fe5463bb91d0dc66dcfad685f3c47b393cedfbceae20e82340)
+  - UsdsUsdcPocket: `0x39548FeF138370Db06e172eF0739894b2a613DF9`
+    - Deploy tx: [0x77f6e80c...](https://etherscan.io/tx/0x77f6e80c7819d585ffb2e1f4bd8172edf19c89b12ca0b3ac0f02ec69f8d6c05f)
+  - BUIDLTokenRedeemer: `0x73414528187A4986E2Af5D551fD14871b723E506`
+    - Deploy tx: [0x888266d7...](https://etherscan.io/tx/0x888266d7097dbd63221f7087e33dad9abf6b11c31bd8ce5799b5993b12bc5a99)
+    - `addTokenRedeemer` tx: [0x4f6f5e73...](https://etherscan.io/tx/0x4f6f5e737ae0fd4c7900a6bce8f7e884f476973bcbfa3b6d86b4c70d841e7b61)
+    - `grantRole(REDEEMER_ROLE)` tx: [0x35887af4...](https://etherscan.io/tx/0x35887af49a71944ccb14cdc156bdc92a94d0aa2c3f72b76c987cfc9c8fc3d1a9)
     - Redemption address: `0x8780Dd016171B91E4Df47075dA0a947959C34200`
-- [ ] Inspect the transaction history of the deployer.
-- [ ] Perform all relevant checks documented in the technical doc (constructor arguments, optimizations, bytecode verify, ownership transfer).
-- [ ] Independently verify the deployment by another member of the team.
+- [x] Inspect the transaction history of the deployer.
+- [x] Perform all relevant checks documented in the technical doc (constructor arguments, optimizations, bytecode verify, ownership transfer).
+- [x] Independently verify the deployment by another member of the team.
