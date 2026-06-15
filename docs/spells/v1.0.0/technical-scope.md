@@ -261,7 +261,7 @@
         - External URLs to the audit reports: 
             - Cantina audit: https://cantina.xyz/portfolio/71794706-b078-4579-8f50-a9bd25d732d3
             - Chain Security Audit: https://reports.chainsecurity.com/GroveLabs/ChainSecurity_GroveLabs_Basin_Audit.pdf
-        - Deployed bytecode verification: `forge verify-bytecode 0x2Cd296095788A2741e72056D66B3Ae1fAeE23ea2 src/pockets/UsdsUsdcPocket.sol:UsdsUsdcPocket --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address,address,address)" 0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 0xdC035D45d973E3EC169d2276DDab16f1e407384F 0xA188EEC8F81263234dA3622A406892F3D630f98c 0x1369f7b2b38c76B6478c0f0E66D94923421891Ba)`
+        - Deployed bytecode verification: `forge verify-bytecode 0x2Cd296095788A2741e72056D66B3Ae1fAeE23ea2 UsdsUsdcPocket --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address,address,address)" 0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 0xdC035D45d973E3EC169d2276DDab16f1e407384F 0xA188EEC8F81263234dA3622A406892F3D630f98c 0x1369f7b2b38c76B6478c0f0E66D94923421891Ba)`
             - Creation code matched with status `full`. Runtime code matched with status `full`.
         - Compilation optimizations match optimizer=true, runs=180, evm_version=cancun, source solc 0.8.24. Bytecode CBOR metadata: bytecodeHash=ipfs, IPFS CID=`QmTUwRpfBkq1ZAwmTjHLW1MTAZTVKypXb1bJpwzrSNzRFu`, solc=0.8.24.
         - Constructor arguments:
@@ -295,7 +295,7 @@
         - External URLs to the audit reports: 
             - Cantina audit: https://cantina.xyz/portfolio/71794706-b078-4579-8f50-a9bd25d732d3
             - Chain Security Audit: https://reports.chainsecurity.com/GroveLabs/ChainSecurity_GroveLabs_Basin_Audit.pdf
-        - Deployed bytecode verification: `forge verify-bytecode 0x7c5Ce1a1D50a6cb3Da97C9e202B3E7CD8e5b5b6c src/redeemers/JTRSYTokenRedeemer.sol:JTRSYTokenRedeemer --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address)" 0x8c213ee79581Ff4984583C6a801e5263418C4b86 0xFE6920eB6C421f1179cA8c8d4170530CDBdfd77A 0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9)`
+        - Deployed bytecode verification: `forge verify-bytecode 0x7c5Ce1a1D50a6cb3Da97C9e202B3E7CD8e5b5b6c JTRSYTokenRedeemer --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address)" 0x8c213ee79581Ff4984583C6a801e5263418C4b86 0xFE6920eB6C421f1179cA8c8d4170530CDBdfd77A 0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9)`
             - Creation code matched with status `full`. Runtime code matched with status `full`.
         - Compilation optimizations match optimizer=true, runs=180, evm_version=cancun, source solc 0.8.24. Bytecode CBOR metadata: bytecodeHash=ipfs, IPFS CID=`QmTdhLbu1GU2uygH13BLQ9T8QMdD2sr7dZ4ALgAFFcoWWY`, solc=0.8.24.
         - Constructor arguments:
@@ -380,7 +380,7 @@
         - External URLs to the audit reports: 
             - Cantina audit: https://cantina.xyz/portfolio/71794706-b078-4579-8f50-a9bd25d732d3
             - Chain Security Audit: https://reports.chainsecurity.com/GroveLabs/ChainSecurity_GroveLabs_Basin_Audit.pdf
-        - Deployed bytecode verification: `forge verify-bytecode <TBD: pocket address> src/pockets/UsdsUsdcPocket.sol:UsdsUsdcPocket --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address,address,address)" <TBD: BUIDL GroveBasin address> 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 0xdC035D45d973E3EC169d2276DDab16f1e407384F 0xA188EEC8F81263234dA3622A406892F3D630f98c 0x1369f7b2b38c76B6478c0f0E66D94923421891Ba)`
+        - Deployed bytecode verification: `forge verify-bytecode <TBD: pocket address> UsdsUsdcPocket --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address,address,address)" <TBD: BUIDL GroveBasin address> 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 0xdC035D45d973E3EC169d2276DDab16f1e407384F 0xA188EEC8F81263234dA3622A406892F3D630f98c 0x1369f7b2b38c76B6478c0f0E66D94923421891Ba)`
             - Creation code matched with status `full`. Runtime code matched with status `full`.
         - Compilation optimizations match optimizer=true, runs=180, evm_version=cancun, source solc 0.8.24. Bytecode CBOR metadata: bytecodeHash=ipfs, IPFS CID=`QmTUwRpfBkq1ZAwmTjHLW1MTAZTVKypXb1bJpwzrSNzRFu`, solc=0.8.24.
         - Constructor arguments:
@@ -414,7 +414,7 @@
         - External URLs to the audit reports: 
             - Cantina audit: https://cantina.xyz/portfolio/71794706-b078-4579-8f50-a9bd25d732d3
             - Chain Security Audit: https://reports.chainsecurity.com/GroveLabs/ChainSecurity_GroveLabs_Basin_Audit.pdf
-        - Deployed bytecode verification: `forge verify-bytecode <TBD: redeemer address> src/redeemers/BUIDLTokenRedeemer.sol:BUIDLTokenRedeemer --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address)" 0x7712c34205737192402172409a8F7ccef8aA2AEc 0x8780Dd016171B91E4Df47075dA0a947959C34200 <TBD: BUIDL GroveBasin address>)`
+        - Deployed bytecode verification: `forge verify-bytecode <TBD: redeemer address> BUIDLTokenRedeemer --rpc-url mainnet --encoded-constructor-args $(cast abi-encode "constructor(address,address,address)" 0x7712c34205737192402172409a8F7ccef8aA2AEc 0x8780Dd016171B91E4Df47075dA0a947959C34200 <TBD: BUIDL GroveBasin address>)`
         - Compilation optimizations match optimizer=true, runs=180, evm_version=cancun, source solc 0.8.24. Bytecode CBOR metadata: bytecodeHash=ipfs, IPFS CID=`QmQshJETAUWw5CJR4ushQEdSSV5v2kucCqLffY87TjaXDG`, solc=0.8.24.
         - Constructor arguments:
             1. `creditToken_`
