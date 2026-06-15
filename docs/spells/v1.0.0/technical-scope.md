@@ -250,7 +250,7 @@
             --broadcast --slow --verify
         ```
     - Source code is verified on the block explorer: [Yes](https://etherscan.io/address/0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9#code)
-    - The deployer no longer has a privileged role: `MANAGER_ADMIN_ROLE` revoked in tx TBD.
+    - The deployer no longer has a privileged role: `MANAGER_ADMIN_ROLE` revoked in tx [0xe40fcfd3...](https://etherscan.io/tx/0xe40fcfd3bbda897afc9073a411b4820202cfe412ac24981069e5bf6602b9fba2).
 
 8. **JTRSY UsdsUsdcPocket**
     - Chain name: Ethereum Mainnet
@@ -369,7 +369,7 @@
             --broadcast --slow --verify
         ```
     - Source code is verified on the block explorer: [Yes](https://etherscan.io/address/0xCBa428fB052B365557DAf52b744DFfF20d5FbEdD#code)
-    - The deployer no longer has a privileged role: TODO — deployer to give up `MANAGER_ADMIN_ROLE` after redeemer address, redemption vault address, and test admin transaction from Securitize.
+    - The deployer no longer has a privileged role: `MANAGER_ADMIN_ROLE` revoked from deployer in tx [0x581fbc97...](https://etherscan.io/tx/0x581fbc9768b28d0e9c802d0482f1c5cf546aeac8cc39bda9882062555e9c0301).
 
 11. **BUIDL UsdsUsdcPocket**
     - Chain name: Ethereum Mainnet
@@ -1226,24 +1226,24 @@
 4. **Revoke MANAGER_ADMIN_ROLE from deployer**
     - Intended end goal: The deployer must call `revokeRole(MANAGER_ADMIN_ROLE, deployer)` on the BUIDL GroveBasin so that no single EOA retains admin privileges. After this, roles can only be managed through the timelock itself.
     - Why is it required to be done in advance: The deployer holds `MANAGER_ADMIN_ROLE` after deployment, which allows bypassing the timelock delay to set up the token redeeemer contract (step 1) and add a redeemer (step 2). This must be revoked before the system is considered live so that no address other thatn Grove Proxy holds the MANAGER_ADMIN_ROLE
-    - Proof that it was done or planned to be done: TODO
+    - Proof that it was done or planned to be done: `MANAGER_ADMIN_ROLE` revoked from deployer in tx [0x581fbc97...](https://etherscan.io/tx/0x581fbc9768b28d0e9c802d0482f1c5cf546aeac8cc39bda9882062555e9c0301).
 
 ### SetupJTRSYUsdsUsdcBasin
 
 1. **JTRSYTokenRedeemer must be allowlisted on Centrifuge vault and JTRSY token**
     - Intended end goal: The redeemer contract (`0x7c5Ce1a1D50a6cb3Da97C9e202B3E7CD8e5b5b6c`) can call `requestRedeem` and `redeem` on the Centrifuge vault, and can hold/transfer JTRSY tokens.
     - Why is it required to be done in advance: The Centrifuge vault requires callers to be on an allowlist.
-    - Proof that it was done or planned to be done: Allowlisted via `updateRestriction` on the Centrifuge restriction manager (`0xA4A7Bb3831958463b3FE3E27A6a160F764341953`). The `UpdateMember` event confirms the redeemer was added to the JTRSY token member list with `validUntil = 4294967295` (type(uint32).max, i.e. no expiry). Transaction: TBD.
+    - Proof that it was done or planned to be done: Allowlisted via `updateRestriction` on the Centrifuge restriction manager (`0xA4A7Bb3831958463b3FE3E27A6a160F764341953`). The `UpdateMember` event confirms the redeemer was added to the JTRSY token member list with `validUntil = 4294967295` (type(uint32).max, i.e. no expiry). Transaction: TODO.
 
 2. **JTRSY Basin must be allowlisted on JTRSY token**
     - Intended end goal: The JTRSY Basin contract (`0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9`) can hold JTRSY tokens.
     - Why is it required to be done in advance: JTRSY requires holders to be on an allowlist.
-    - Proof that it was done or planned to be done: Allowlisted via `updateRestriction` on the Centrifuge restriction manager (`0xA4A7Bb3831958463b3FE3E27A6a160F764341953`). Transaction: TBD.
+    - Proof that it was done or planned to be done: Allowlisted via `updateRestriction` on the Centrifuge restriction manager (`0xA4A7Bb3831958463b3FE3E27A6a160F764341953`). Transaction: TODO.
 
 3. **Revoke MANAGER_ADMIN_ROLE from deployer**
     - Intended end goal: The deployer must call `revokeRole(MANAGER_ADMIN_ROLE, deployer)` on the JTRSY GroveBasin so that no single EOA retains admin privileges. After this, roles can only be managed through the timelock itself.
     - Why is it required to be done in advance: The deployer holds `MANAGER_ADMIN_ROLE` after deployment, which allows bypassing the timelock delay to set up the token redeeemer contract (step 1) and add a redeemer (step 2). This must be revoked before the system is considered live so that no address other thatn Grove Proxy holds the MANAGER_ADMIN_ROLE
-    - Proof that it was done or planned to be done: `MANAGER_ADMIN_ROLE` revoked from deployer in tx TBD.
+    - Proof that it was done or planned to be done: `MANAGER_ADMIN_ROLE` revoked from deployer in tx [0xe40fcfd3...](https://etherscan.io/tx/0xe40fcfd3bbda897afc9073a411b4820202cfe412ac24981069e5bf6602b9fba2).
 
 ## Proposed actions
 
@@ -1294,14 +1294,14 @@ N/A
     - Who will perform this action: Deployer or designated tester, working with the issuer
 
 8. **Test swap transaction (JTRSY Basin — swap to USDS)**
-    - Transaction trace URL: TBD
+    - Transaction trace URL: TODO
     - What will be done: Perform a small test swap on the JTRSY GroveBasin (`0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9`) to confirm end-to-end functionality.
     - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
     - Expected outcome: Swap of 0.5 JTRSY for 0.552347 USDS succeeds.
     - Who will perform this action: Deployer or designated tester, working with the issuer
 
 9. **Test swap transaction (JTRSY Basin — swap to USDC)**
-    - Transaction trace URL: TBD
+    - Transaction trace URL: TODO
     - What will be done: Perform a small test swap on the JTRSY GroveBasin (`0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9`) to confirm end-to-end functionality.
     - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
     - Expected outcome: Swap of 0.5 JTRSY for 0.552347 USDC succeeds.
@@ -1314,7 +1314,7 @@ N/A
     - Who will perform this action: Deployer or designated tester, working with the issuer
 
 11. **Test redemption transaction (JTRSY Basin — initiate redeem)**
-    - Transaction trace URL: TBD
+    - Transaction trace URL: TODO
     - What will be done: Perform a small test redemption on the JTRSY GroveBasin (`0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9`) to confirm end-to-end functionality.
     - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
     - Expected outcome: Redemption succeeds, expected output amount is received.
@@ -1350,7 +1350,3 @@ Two deployment scripts cover all basin configurations:
 - Solidity version: 0.8.24
 - Optimizer: enabled, 180 runs
 - Remappings: `forge-std`, `erc20-helpers`, `openzeppelin-contracts`, `ds-test`
-
-### Open TODOs in scripts
-
-1. `SetupBUIDLUsdsUsdcBasin.s.sol`: BUIDLTokenRedeemer deployment and REDEEMER_ROLE grant deferred — waiting on Securitize to share the redemption address and redeemer address
