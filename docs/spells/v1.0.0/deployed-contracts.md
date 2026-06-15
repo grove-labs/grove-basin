@@ -29,9 +29,9 @@ Audited commit: [`a79269a3`](https://github.com/grove-labs/grove-basin/commit/a7
 | JTRSY ChronicleRateProvider | — | [tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/efd87152-530e-421e-9203-e3d597434433/tx/0xc1f289f6dd0cbf92c5402e3e87727afc3920183dbe1d0e0a3891cb7a18a52903) |
 | BUIDL Admin TimelockController | — | [tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/efd87152-530e-421e-9203-e3d597434433/tx/0x9e7eb568c64ce31140f93a86c73cd5d916c675accada9e28d71d84764f63409f) |
 | JTRSY Admin TimelockController | — | [tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnet/efd87152-530e-421e-9203-e3d597434433/tx/0x4a5a6eef672202cf7290097ed4076d1ee78c58dba9cc180facdbee4c2c178733) |
-| JTRSY GroveBasin | — | — |
-| JTRSY UsdsUsdcPocket | — | — |
-| JTRSY JTRSYTokenRedeemer | — | — |
+| JTRSY GroveBasin | 0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9 | [tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnets/d2d3c761-6480-44ce-b204-2f3cb6a1aa43/instance/fd0208d5-2bb9-4435-b849-a5eb216f2d61/container/359fb691-669d-481d-bc9d-d8de3ab923eb/tx/0x193b4a4d12e68a4a527c3ca7ab0d762e21a4cbb27d3bd98ed65500493ce045d5) |
+| JTRSY UsdsUsdcPocket | 0x2Cd296095788A2741e72056D66B3Ae1fAeE23ea2 | [tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnets/d2d3c761-6480-44ce-b204-2f3cb6a1aa43/instance/fd0208d5-2bb9-4435-b849-a5eb216f2d61/container/359fb691-669d-481d-bc9d-d8de3ab923eb/tx/0x7b601f9425dd261b8715a8e2321d6aff1cc01ce046da6a54b28c8a71825981fc) |
+| JTRSY JTRSYTokenRedeemer | 0x7c5Ce1a1D50a6cb3Da97C9e202B3E7CD8e5b5b6c | [tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnets/d2d3c761-6480-44ce-b204-2f3cb6a1aa43/instance/fd0208d5-2bb9-4435-b849-a5eb216f2d61/container/359fb691-669d-481d-bc9d-d8de3ab923eb/tx/0x4efbaf931511339618e669dc4c9dbacb881d6698925715486c2339f08748919d) |
 | BUIDL GroveBasin | — | — |
 | BUIDL UsdsUsdcPocket | — | — |
 | BUIDL BUIDLTokenRedeemer | — | — |

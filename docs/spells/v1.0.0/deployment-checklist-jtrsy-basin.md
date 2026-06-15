@@ -32,10 +32,10 @@ forge script script/SetupJTRSYUsdsUsdcBasin.s.sol:SetupJTRSYUsdsUsdcBasin \
     --broadcast --slow --verify
 ```
 
-- [ ] Perform a test deployment using a fresh *private* Tenderly testnet. Then, inspect submitted transactions to match the desired outcome.
-  - GroveBasin: Tenderly testnet tx TBD
-  - UsdsUsdcPocket: Tenderly testnet tx TBD
-  - JTRSYTokenRedeemer: Tenderly testnet tx TBD
+- [x] Perform a test deployment using a fresh *private* Tenderly testnet. Then, inspect submitted transactions to match the desired outcome.
+  - GroveBasin: `0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9` ([Tenderly testnet tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnets/d2d3c761-6480-44ce-b204-2f3cb6a1aa43/instance/fd0208d5-2bb9-4435-b849-a5eb216f2d61/container/359fb691-669d-481d-bc9d-d8de3ab923eb/tx/0x193b4a4d12e68a4a527c3ca7ab0d762e21a4cbb27d3bd98ed65500493ce045d5))
+  - UsdsUsdcPocket: `0x2Cd296095788A2741e72056D66B3Ae1fAeE23ea2` ([Tenderly testnet tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnets/d2d3c761-6480-44ce-b204-2f3cb6a1aa43/instance/fd0208d5-2bb9-4435-b849-a5eb216f2d61/container/359fb691-669d-481d-bc9d-d8de3ab923eb/tx/0x7b601f9425dd261b8715a8e2321d6aff1cc01ce046da6a54b28c8a71825981fc))
+  - JTRSYTokenRedeemer: `0x7c5Ce1a1D50a6cb3Da97C9e202B3E7CD8e5b5b6c` ([Tenderly testnet tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnets/d2d3c761-6480-44ce-b204-2f3cb6a1aa43/instance/fd0208d5-2bb9-4435-b849-a5eb216f2d61/container/359fb691-669d-481d-bc9d-d8de3ab923eb/tx/0x4efbaf931511339618e669dc4c9dbacb881d6698925715486c2339f08748919d))
 
 ### Deployment
 - [x] Set production RPC URL (only trusted RPC provider shall be used to avoid poisoning attacks).
