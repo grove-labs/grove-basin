@@ -24,6 +24,7 @@ library Deployments {
     /**********************************************************************************************/
 
     address internal constant DEPLOYER                      = 0x6D99f476E7E9FCcd189fb87023cFa301364Fa817;
+    address internal constant DPAU_ALM_PROXY                = 0x0DcD9298e163dFD3c0B5b00F0d9093C36e40A153;
     address internal constant USDS_PSM_WRAPPER              = 0xA188EEC8F81263234dA3622A406892F3D630f98c;
     address internal constant GROVE_BASIN_FACTORY           = 0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a;
     address internal constant USDS_USDC_FIXED_RATE_PROVIDER = 0x7928A185B8137D1CD2a0996a810A04dB2837419D;
@@ -33,9 +34,9 @@ library Deployments {
     /**********************************************************************************************/
 
     address internal constant JTRSY_TIMELOCK                = 0xA52dC9876aB4A9DB6dAfbb83410554086054d140;
-    address internal constant JTRSY_BASIN                   = 0x1FA4dB8D545Cbd22b7bbA2084348A2E6ef36E363;
-    address internal constant JTRSY_TOKEN_REDEEMER          = 0x212697f0A9Fc218210D98cd1A159dc8D8A87b8A8;
-    address internal constant JTRSY_USDS_USDC_POCKET        = 0xA15B8C07Fa32A4f8BeA3882600a673dc9CC1D6B9;
+    address internal constant JTRSY_BASIN                   = 0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9;
+    address internal constant JTRSY_TOKEN_REDEEMER          = 0x7c5Ce1a1D50a6cb3Da97C9e202B3E7CD8e5b5b6c;
+    address internal constant JTRSY_USDS_USDC_POCKET        = 0x2Cd296095788A2741e72056D66B3Ae1fAeE23ea2;
     address internal constant JTRSY_CHRONICLE_RATE_PROVIDER = 0x29209ceCFeFa6f675E6f1f829320D67cE2b025E5;
 
     // Issuer provided
@@ -51,14 +52,14 @@ library Deployments {
     /**********************************************************************************************/
 
     address internal constant BUIDL_TIMELOCK                = 0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34;
-    address internal constant BUIDL_BASIN                   = 0x10b3d3A96646720f8B3a29229cF96d513f3C84F1;
-    address internal constant BUIDL_USDS_USDC_POCKET        = 0x621727A05db6AeB33118b3F9DE3EAf2d8Fc86aDA;
-    address internal constant BUIDL_TOKEN_REDEEMER          = 0x99E5E7c533C7319f855B940561Df285bE022c82d;
+    address internal constant BUIDL_BASIN                   = 0xCBa428fB052B365557DAf52b744DFfF20d5FbEdD;
+    address internal constant BUIDL_USDS_USDC_POCKET        = 0x39548FeF138370Db06e172eF0739894b2a613DF9;
+    address internal constant BUIDL_TOKEN_REDEEMER          = 0x73414528187A4986E2Af5D551fD14871b723E506;
     address internal constant BUIDL_CHRONICLE_RATE_PROVIDER = 0x69a171853575FFD41574EA80Abfc6337AcbC4d43;
 
     // Issuer provided (current)
     address internal constant SECURITIZE_ISSUER_MULTISIG    = 0x453A28B31fdc31858C35B02bc3A42BCD8bfbAd3a;
-    address internal constant SECURITIZE_REDEEMER           = 0xcBeEe2c39601e1ee5502F2593F6758e6598C47a6;
+    address internal constant SECURITIZE_REDEEMER           = 0x488F27168a19472c51f003fbC5b75B1ACc3B7b4c;
     address internal constant SECURITIZE_REDEMPTION_ADDRESS = 0x8780Dd016171B91E4Df47075dA0a947959C34200;
 
     // Issuer provided (old — rotated out, must not hold any roles)
@@ -563,8 +564,8 @@ abstract contract Verify_Basin is UsdsUsdcBasinDeploymentForkTestBase {
         assertTrue(basin.hasRole(basin.PAUSER_ROLE(), Ethereum.ALM_FREEZER), "ALM Freezer should have PAUSER_ROLE");
     }
 
-    function test_basin_liquidityProviderIsAlmProxy() public view {
-        assertEq(basin.liquidityProvider(), Ethereum.ALM_PROXY);
+    function test_basin_liquidityProviderIsDpauAlmProxy() public view {
+        assertEq(basin.liquidityProvider(), Deployments.DPAU_ALM_PROXY);
     }
 
     function test_basin_feeClaimerIsZero() public view {
@@ -778,7 +779,7 @@ abstract contract Verify_Actions is UsdsUsdcBasinDeploymentForkTestBase {
 
     function test_action_depositAndWithdrawFull_50m() public {
         address lp            = basin.liquidityProvider();
-        assertEq(lp, Ethereum.ALM_PROXY);
+        assertEq(lp, Deployments.DPAU_ALM_PROXY);
 
         uint256 depositAmount = 50_000_000e18;
 
@@ -808,9 +809,9 @@ abstract contract Verify_Actions is UsdsUsdcBasinDeploymentForkTestBase {
         uint256 expectedOut = basin.previewSwapExactIn(_creditToken(), Ethereum.USDS, amountIn);
         assertGt(expectedOut, 0);
 
-        _dealCreditToken(Ethereum.ALM_PROXY, amountIn);
+        _dealCreditToken(Deployments.DPAU_ALM_PROXY, amountIn);
 
-        vm.startPrank(Ethereum.ALM_PROXY);
+        vm.startPrank(Deployments.DPAU_ALM_PROXY);
         IERC20(_creditToken()).approve(address(basin), amountIn);
         uint256 amountOut = basin.swapExactIn(_creditToken(), Ethereum.USDS, amountIn, expectedOut, receiver, 0);
         vm.stopPrank();
@@ -828,9 +829,9 @@ abstract contract Verify_Actions is UsdsUsdcBasinDeploymentForkTestBase {
         uint256 expectedOut = basin.previewSwapExactIn(_creditToken(), Ethereum.USDC, amountIn);
         assertGt(expectedOut, 0);
 
-        _dealCreditToken(Ethereum.ALM_PROXY, amountIn);
+        _dealCreditToken(Deployments.DPAU_ALM_PROXY, amountIn);
 
-        vm.startPrank(Ethereum.ALM_PROXY);
+        vm.startPrank(Deployments.DPAU_ALM_PROXY);
         IERC20(_creditToken()).approve(address(basin), amountIn);
         uint256 amountOut = basin.swapExactIn(_creditToken(), Ethereum.USDC, amountIn, expectedOut, receiver, 0);
         vm.stopPrank();
@@ -848,9 +849,9 @@ abstract contract Verify_Actions is UsdsUsdcBasinDeploymentForkTestBase {
         uint256 expectedIn = basin.previewSwapExactOut(_creditToken(), Ethereum.USDS, amountOut);
         assertGt(expectedIn, 0);
 
-        _dealCreditToken(Ethereum.ALM_PROXY, expectedIn);
+        _dealCreditToken(Deployments.DPAU_ALM_PROXY, expectedIn);
 
-        vm.startPrank(Ethereum.ALM_PROXY);
+        vm.startPrank(Deployments.DPAU_ALM_PROXY);
         IERC20(_creditToken()).approve(address(basin), expectedIn);
         uint256 amountIn = basin.swapExactOut(_creditToken(), Ethereum.USDS, amountOut, expectedIn, receiver, 0);
         vm.stopPrank();
@@ -868,9 +869,9 @@ abstract contract Verify_Actions is UsdsUsdcBasinDeploymentForkTestBase {
         uint256 expectedIn = basin.previewSwapExactOut(_creditToken(), Ethereum.USDC, amountOut);
         assertGt(expectedIn, 0);
 
-        _dealCreditToken(Ethereum.ALM_PROXY, expectedIn);
+        _dealCreditToken(Deployments.DPAU_ALM_PROXY, expectedIn);
 
-        vm.startPrank(Ethereum.ALM_PROXY);
+        vm.startPrank(Deployments.DPAU_ALM_PROXY);
         IERC20(_creditToken()).approve(address(basin), expectedIn);
         uint256 amountIn = basin.swapExactOut(_creditToken(), Ethereum.USDC, amountOut, expectedIn, receiver, 0);
         vm.stopPrank();

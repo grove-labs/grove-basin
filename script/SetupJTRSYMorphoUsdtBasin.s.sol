@@ -50,7 +50,7 @@ contract SetupJTRSYMorphoUsdtBasin is Script {
 
         groveBasin = factory.deploy({
             owner                       : deployer,
-            liquidityProvider           : Ethereum.ALM_PROXY,
+            liquidityProvider           : BasinSetup.DPAU_ALM_PROXY,
             swapToken                   : Ethereum.USDT,
             collateralToken             : Ethereum.USDC,
             creditToken                 : JTRSY_TOKEN,

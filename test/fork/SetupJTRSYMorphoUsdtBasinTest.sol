@@ -9,6 +9,7 @@ import { GroveBasin }                from "src/GroveBasin.sol";
 import { MorphoUsdtPocket }          from "src/pockets/MorphoUsdtPocket.sol";
 import { JTRSYTokenRedeemer }        from "src/redeemers/JTRSYTokenRedeemer.sol";
 import { SetupJTRSYMorphoUsdtBasin } from "script/SetupJTRSYMorphoUsdtBasin.s.sol";
+import { BasinSetup }                from "script/lib/BasinSetup.sol";
 
 contract SetupJTRSYMorphoUsdtBasinTest is Test, SetupJTRSYMorphoUsdtBasin {
 
@@ -70,7 +71,7 @@ contract SetupJTRSYMorphoUsdtBasinTest is Test, SetupJTRSYMorphoUsdtBasin {
 
         assertTrue(groveBasin.hasRole(groveBasin.MANAGER_ADMIN_ROLE(), address(this)));
 
-        assertEq(groveBasin.liquidityProvider(), Ethereum.ALM_PROXY);
+        assertEq(groveBasin.liquidityProvider(), BasinSetup.DPAU_ALM_PROXY);
     }
 
     function test_deploy_initialShares() public view {

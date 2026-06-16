@@ -13,6 +13,9 @@ import { UsdsUsdcPocket }    from "src/pockets/UsdsUsdcPocket.sol";
 
 library BasinSetup {
 
+    /// @notice DPAU ALM Proxy, set as the `liquidityProvider` on deployed Basins.
+    address internal constant DPAU_ALM_PROXY = 0x0DcD9298e163dFD3c0B5b00F0d9093C36e40A153;
+
     /// @notice Check the deployer has at least 1 USDS, then approve that amount to the factory
     ///         so the subsequent `factory.deploy(...)` call can pull it as the basin seed.
     function approveFactoryForSeeding(address factoryAddr) internal returns (GroveBasinFactory factory) {
@@ -34,7 +37,7 @@ library BasinSetup {
     ) internal returns (address basin) {
         basin = factory.deploy({
             owner                       : deployer,
-            liquidityProvider           : Ethereum.ALM_PROXY,
+            liquidityProvider           : DPAU_ALM_PROXY,
             swapToken                   : Ethereum.USDS,
             collateralToken             : Ethereum.USDC,
             creditToken                 : creditToken,
