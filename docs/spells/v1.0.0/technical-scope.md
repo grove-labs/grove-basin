@@ -1221,9 +1221,14 @@
 3. **BUIDL Basin must be allowlisted on BUIDL token**
     - Intended end goal: The BUIDL Basin contract (`0xCBa428fB052B365557DAf52b744DFfF20d5FbEdD`) can hold BUIDL tokens
     - Why is it required to be done in advance: BUIDL requires holders to be on an allowlist.
-    - Proof that it was done or planned to be done: TODO
+    - Proof that it was done or planned to be done: Allowlisted on the BUIDL token. Transaction: [0xc8bfbef2...](https://etherscan.io/tx/0xc8bfbef21655db53f511ae6cfa0460c7ca878a034ceb40c44d211f170ae5af8e#eventlog).
 
-4. **Revoke MANAGER_ADMIN_ROLE from deployer**
+4. **BUIDLTokenRedeemer must be allowlisted on BUIDL token**
+    - Intended end goal: The redeemer contract (`0x73414528187A4986E2Af5D551fD14871b723E506`) can hold and transfer BUIDL tokens in order to process redemptions.
+    - Why is it required to be done in advance: BUIDL requires holders to be on an allowlist.
+    - Proof that it was done or planned to be done: Allowlisted on the BUIDL token. Transaction: [0xe8088974...](https://etherscan.io/tx/0xe8088974afaaf8a30002f35e6a61f5992d00e4eb877d450a2ea7ca18b803f130#eventlog).
+
+5. **Revoke MANAGER_ADMIN_ROLE from deployer**
     - Intended end goal: The deployer must call `revokeRole(MANAGER_ADMIN_ROLE, deployer)` on the BUIDL GroveBasin so that no single EOA retains admin privileges. After this, roles can only be managed through the timelock itself.
     - Why is it required to be done in advance: The deployer holds `MANAGER_ADMIN_ROLE` after deployment, which allows bypassing the timelock delay to set up the token redeeemer contract (step 1) and add a redeemer (step 2). This must be revoked before the system is considered live so that no address other thatn Grove Proxy holds the MANAGER_ADMIN_ROLE
     - Proof that it was done or planned to be done: `MANAGER_ADMIN_ROLE` revoked from deployer in tx [0x581fbc97...](https://etherscan.io/tx/0x581fbc9768b28d0e9c802d0482f1c5cf546aeac8cc39bda9882062555e9c0301).
@@ -1233,12 +1238,12 @@
 1. **JTRSYTokenRedeemer must be allowlisted on Centrifuge vault and JTRSY token**
     - Intended end goal: The redeemer contract (`0x7c5Ce1a1D50a6cb3Da97C9e202B3E7CD8e5b5b6c`) can call `requestRedeem` and `redeem` on the Centrifuge vault, and can hold/transfer JTRSY tokens.
     - Why is it required to be done in advance: The Centrifuge vault requires callers to be on an allowlist.
-    - Proof that it was done or planned to be done: Allowlisted via `updateRestriction` on the Centrifuge restriction manager (`0xA4A7Bb3831958463b3FE3E27A6a160F764341953`). The `UpdateMember` event confirms the redeemer was added to the JTRSY token member list with `validUntil = 4294967295` (type(uint32).max, i.e. no expiry). Transaction: TODO.
+    - Proof that it was done or planned to be done: Allowlisted via `updateRestriction` on the Centrifuge restriction manager (`0xA4A7Bb3831958463b3FE3E27A6a160F764341953`). The `UpdateMember` event confirms the redeemer was added to the JTRSY token member list with `validUntil = 4294967295` (type(uint32).max, i.e. no expiry), which both enables it to hold/transfer JTRSY and to call the Centrifuge vault's redemption functions (`requestRedeem`/`redeem`). Transaction: [0x697db05f...](https://etherscan.io/tx/0x697db05fd79bae00a4b5de68193f5f18f30eab0c922e6cfbb5d90f060af9b069#eventlog).
 
 2. **JTRSY Basin must be allowlisted on JTRSY token**
     - Intended end goal: The JTRSY Basin contract (`0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9`) can hold JTRSY tokens.
     - Why is it required to be done in advance: JTRSY requires holders to be on an allowlist.
-    - Proof that it was done or planned to be done: Allowlisted via `updateRestriction` on the Centrifuge restriction manager (`0xA4A7Bb3831958463b3FE3E27A6a160F764341953`). Transaction: TODO.
+    - Proof that it was done or planned to be done: Allowlisted via `updateRestriction` on the Centrifuge restriction manager (`0xA4A7Bb3831958463b3FE3E27A6a160F764341953`). The `UpdateMember` event confirms the basin was added to the JTRSY token member list. Transaction: [0x68e84f9c...](https://etherscan.io/tx/0x68e84f9c3bc7971edd2c99e828586c319419a415073698fb8d609afb313d1979#eventlog).
 
 3. **Revoke MANAGER_ADMIN_ROLE from deployer**
     - Intended end goal: The deployer must call `revokeRole(MANAGER_ADMIN_ROLE, deployer)` on the JTRSY GroveBasin so that no single EOA retains admin privileges. After this, roles can only be managed through the timelock itself.
@@ -1288,39 +1293,33 @@ N/A
     - Who will perform this action: Deployer or designated tester, working with the issuer
 
 7. **Test swap transaction (BUIDL Basin — swap to USDC)**
+    - Transaction trace URL: [Tenderly testnet tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnets/e33dd186-9f04-40da-b315-2c29cf732c79/instance/8617f08e-1f46-4c67-9113-a34fec86a8fa/container/5d99cd15-93bf-4703-bccd-3e63dd93d66d/tx/0x9506fe5bab8aac04ddc865b2b2b1de4f1a47bdbb4fe95ebb0c837ea9e289c334?trace=true)
     - What will be done: Perform a small test swap on the BUIDL GroveBasin (`0xCBa428fB052B365557DAf52b744DFfF20d5FbEdD`) to confirm end-to-end functionality.
     - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
     - Expected outcome: Swap succeeds, expected output amount is received.
     - Who will perform this action: Deployer or designated tester, working with the issuer
 
-8. **Test swap transaction (JTRSY Basin — swap to USDS)**
-    - Transaction trace URL: TODO
-    - What will be done: Perform a small test swap on the JTRSY GroveBasin (`0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9`) to confirm end-to-end functionality.
-    - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
-    - Expected outcome: Swap of 0.5 JTRSY for 0.552347 USDS succeeds.
-    - Who will perform this action: Deployer or designated tester, working with the issuer
-
-9. **Test swap transaction (JTRSY Basin — swap to USDC)**
-    - Transaction trace URL: TODO
+8. **Test swap transaction (JTRSY Basin — swap to USDC)**
+    - Transaction trace URL: [Tenderly testnet tx](https://dashboard.tenderly.co/steakhouse/bloom-production/testnets/e33dd186-9f04-40da-b315-2c29cf732c79/instance/8617f08e-1f46-4c67-9113-a34fec86a8fa/container/5d99cd15-93bf-4703-bccd-3e63dd93d66d/tx/0x61b5b84baf7d2b984b9eae25c5f832f9484b78165242d371ea8744ed10891ebc?trace=true)
     - What will be done: Perform a small test swap on the JTRSY GroveBasin (`0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9`) to confirm end-to-end functionality.
     - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
     - Expected outcome: Swap of 0.5 JTRSY for 0.552347 USDC succeeds.
     - Who will perform this action: Deployer or designated tester, working with the issuer
 
-10. **Test redemption transaction (BUIDL Basin)**
+9. **Test redemption transaction (BUIDL Basin)**
     - What will be done: Perform a small test redemption on the BUIDL GroveBasin (`0xCBa428fB052B365557DAf52b744DFfF20d5FbEdD`) to confirm end-to-end functionality.
     - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
     - Expected outcome: Redemption succeeds, expected output amount is received.
     - Who will perform this action: Deployer or designated tester, working with the issuer
 
-11. **Test redemption transaction (JTRSY Basin — initiate redeem)**
+10. **Test redemption transaction (JTRSY Basin — initiate redeem)**
     - Transaction trace URL: TODO
     - What will be done: Perform a small test redemption on the JTRSY GroveBasin (`0xf08943f817e1F902dEbC884c7B19Ea5764594Ac9`) to confirm end-to-end functionality.
     - How it will be done: Tenderly simulation (liquidity deposit does not exist until the June 4th spell)
     - Expected outcome: Redemption succeeds, expected output amount is received.
     - Who will perform this action: Deployer or designated tester, working with the issuer
 
-12. **Verify source code on block explorer**
+11. **Verify source code on block explorer**
     - What will be done: Confirm all deployed contracts have verified source code on Etherscan.
     - How it will be done: Check each contract address on etherscan.io for the "Contract" tab showing verified source.
     - Expected outcome: All contracts show verified source matching audited commit.
