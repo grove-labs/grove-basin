@@ -17,7 +17,7 @@ contract GroveBasinFactory {
 
     using SafeERC20 for IERC20;
 
-    enum PocketType { UsdsUsdc, MorphoUsdt, AaveUsdt }
+    enum PocketType { UsdsUsdc, MorphoUsdt, AaveUsdt, None }
 
     uint256 public constant DEFAULT_MIN_FEE = 0;
     uint256 public constant DEFAULT_MAX_FEE = 500;
@@ -33,15 +33,14 @@ contract GroveBasinFactory {
      * @param swapTokenRateProvider       Rate provider for the swap token.
      * @param collateralTokenRateProvider Rate provider for the collateral token.
      * @param creditTokenRateProvider     Rate provider for the credit token.
-     * @param pocketType                  Which pocket implementation to deploy and wire up.
+     * @param pocketType                  Which pocket implementation to deploy and wire up (None deploys no pocket).
      * @param pocketAddress1              UsdsUsdc: PSM wrapper | MorphoUsdt: ERC-4626 vault | AaveUsdt: aUSDT token.
      * @param pocketAddress2              AaveUsdt: Aave V3 pool | otherwise unused.
-     * @param groveProxy                  Granted MANAGER_ADMIN_ROLE; UsdsUsdc pocket owner and timelock executor.
-     * @param almRelayer                  Granted MANAGER_ROLE.
-     * @param almFreezer                  Granted PAUSER_ROLE; timelock canceller.
-     * @param deployBuidlRedeemer         If true, deploy a BUIDLTokenRedeemer and register it.
-     * @param buidlRedemptionAddress      Redemption address for the BUIDLTokenRedeemer (only used when deployBuidlRedeemer).
-     * @param tokenRedeemer               Pre-deployed token redeemer to register (only used when !deployBuidlRedeemer; address(0) skips).
+     * @param managerAdmin                Granted MANAGER_ADMIN_ROLE; UsdsUsdc pocket owner and timelock executor.
+     * @param manager                     Granted MANAGER_ROLE.
+     * @param pauser                      Granted PAUSER_ROLE; timelock canceller.
+     * @param buidlRedemptionAddress      Non-zero deploys a BUIDLTokenRedeemer with this redemption address and registers it.
+     * @param tokenRedeemer               Pre-deployed token redeemer to register (used only when buidlRedemptionAddress == address(0); address(0) skips).
      * @param issuerRedeemer              Address granted REDEEMER_ROLE (address(0) skips).
      * @param pausedFlags                 Flags applied via setPaused; empty pauses nothing.
      * @param minFee                      Lower fee bound; ignored when maxFee == 0 (defaults applied).
@@ -58,10 +57,9 @@ contract GroveBasinFactory {
         PocketType pocketType;
         address    pocketAddress1;
         address    pocketAddress2;
-        address    groveProxy;
-        address    almRelayer;
-        address    almFreezer;
-        bool       deployBuidlRedeemer;
+        address    managerAdmin;
+        address    manager;
+        address    pauser;
         address    buidlRedemptionAddress;
         address    tokenRedeemer;
         address    issuerRedeemer;
@@ -159,9 +157,9 @@ contract GroveBasinFactory {
         timelock = TimelockDeployer.deploy(
             minDelay,
             proposer,
-            params.groveProxy,
+            params.managerAdmin,
             address(this),
-            params.almFreezer
+            params.pauser
         );
 
         (basin, pocket, redeemer) = deploy(params, timelock);
@@ -191,12 +189,15 @@ contract GroveBasinFactory {
         GroveBasin groveBasin = GroveBasin(basin);
 
         groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), address(this));
-        groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), params.groveProxy);
+        groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), params.managerAdmin);
 
         pocket = _deployPocket(params, basin);
-        groveBasin.setPocket(pocket);
 
-        redeemer = params.deployBuidlRedeemer
+        if (pocket != address(0)) {
+            groveBasin.setPocket(pocket);
+        }
+
+        redeemer = params.buidlRedemptionAddress != address(0)
             ? RedeemerDeployer.deployBuidl(params.creditToken, params.buidlRedemptionAddress, basin)
             : params.tokenRedeemer;
 
@@ -214,12 +215,14 @@ contract GroveBasinFactory {
                 params.collateralToken,
                 params.swapToken,
                 params.pocketAddress1,
-                params.groveProxy
+                params.managerAdmin
             );
         } else if (params.pocketType == PocketType.MorphoUsdt) {
             return PocketDeployer.deployMorphoUsdt(basin, params.swapToken, params.pocketAddress1);
-        } else {
+        } else if (params.pocketType == PocketType.AaveUsdt) {
             return PocketDeployer.deployAaveUsdt(basin, params.swapToken, params.pocketAddress1, params.pocketAddress2);
+        } else {
+            return address(0);  // PocketType.None
         }
     }
 
@@ -237,8 +240,8 @@ contract GroveBasinFactory {
             groveBasin.addTokenRedeemer(tokenRedeemer);
         }
 
-        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), params.almRelayer);
-        groveBasin.grantRole(groveBasin.PAUSER_ROLE(),  params.almFreezer);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), params.manager);
+        groveBasin.grantRole(groveBasin.PAUSER_ROLE(),  params.pauser);
 
         if (params.issuerRedeemer != address(0)) {
             groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), params.issuerRedeemer);

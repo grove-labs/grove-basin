@@ -3,11 +3,7 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 
-import { IERC20 }    from "erc20-helpers/interfaces/IERC20.sol";
-import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
-
-import { Ethereum } from "lib/grove-address-registry/src/Ethereum.sol";
 
 import { TimelockController } from "openzeppelin-contracts/contracts/governance/TimelockController.sol";
 
@@ -18,44 +14,49 @@ import { BUIDLTokenRedeemer } from "src/redeemers/BUIDLTokenRedeemer.sol";
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 import { MockAToken }       from "test/mocks/MockAToken.sol";
 
-contract GroveBasinFactorySetupForkTest is Test {
-
-    using SafeERC20 for IERC20;
-
-    address constant DPAU_ALM_PROXY = 0x0DcD9298e163dFD3c0B5b00F0d9093C36e40A153;
+/// @dev Mock-based coverage of the GroveBasinFactory full-setup flow. The fork test
+///      (GroveBasinFactorySetupForkTest) exercises the same paths against real mainnet state;
+///      these unit tests reproduce them with mocks so they run without an RPC.
+contract GroveBasinFactorySetupTests is Test {
 
     GroveBasinFactory factory;
 
+    MockERC20        swapToken;        // USDS for UsdsUsdc, USDT for Morpho/Aave
+    MockERC20        collateralToken;  // USDC
     MockERC20        creditToken;
     MockRateProvider rateProvider;
-    MockAToken       aUsdt;
+    MockAToken       aToken;
 
-    address adminTimelock = makeAddr("adminTimelock");
-    address proposer      = makeAddr("proposer");
-    address issuer        = makeAddr("issuer");
-    address psm           = makeAddr("psm");
-    address morphoVault   = makeAddr("morphoVault");
-    address aaveV3Pool    = makeAddr("aaveV3Pool");
-    address redemption    = makeAddr("redemption");
+    address liquidityProvider = makeAddr("liquidityProvider");
+    address groveProxy        = makeAddr("groveProxy");
+    address almRelayer        = makeAddr("almRelayer");
+    address almFreezer        = makeAddr("almFreezer");
+    address adminTimelock     = makeAddr("adminTimelock");
+    address proposer          = makeAddr("proposer");
+    address issuer            = makeAddr("issuer");
+    address psm               = makeAddr("psm");
+    address morphoVault       = makeAddr("morphoVault");
+    address aaveV3Pool        = makeAddr("aaveV3Pool");
+    address redemption        = makeAddr("redemption");
 
     function setUp() public {
-        vm.createSelectFork(getChain("mainnet").rpcUrl, 24_522_338);
-
-        factory      = new GroveBasinFactory();
-        creditToken  = new MockERC20("credit", "credit", 18);
-        rateProvider = new MockRateProvider();
+        factory         = new GroveBasinFactory();
+        swapToken       = new MockERC20("swap",       "swap",       6);
+        collateralToken = new MockERC20("collateral", "collateral", 6);
+        creditToken     = new MockERC20("credit",     "credit",     18);
+        rateProvider    = new MockRateProvider();
         rateProvider.__setConversionRate(1e27);
-        aUsdt = new MockAToken("aUSDT", "aUSDT", 6, Ethereum.USDT);
+        aToken = new MockAToken("aSwap", "aSwap", 6, address(swapToken));
     }
 
     /**********************************************************************************************/
     /*** Helpers                                                                                ***/
     /**********************************************************************************************/
 
-    function _seed(address swapToken) internal {
-        uint256 seedAmount = 10 ** IERC20(swapToken).decimals();
-        deal(swapToken, address(this), seedAmount);
-        IERC20(swapToken).safeApprove(address(factory), seedAmount);
+    function _seed() internal {
+        uint256 seedAmount = 10 ** swapToken.decimals();
+        swapToken.mint(address(this), seedAmount);
+        swapToken.approve(address(factory), seedAmount);
     }
 
     function _defaultPausedFlags() internal pure returns (bytes4[] memory flags) {
@@ -66,27 +67,30 @@ contract GroveBasinFactorySetupForkTest is Test {
         flags[3] = bytes4(keccak256("PAUSED_WITHDRAW_CREDIT"));
     }
 
-    function _baseParams(GroveBasinFactory.PocketType pocketType)
-        internal
-        view
-        returns (GroveBasinFactory.DeployParams memory params)
-    {
-        bool isUsds = pocketType == GroveBasinFactory.PocketType.UsdsUsdc;
+    function _pocketAddress1(GroveBasinFactory.PocketType pocketType) internal view returns (address) {
+        if (pocketType == GroveBasinFactory.PocketType.UsdsUsdc)   return psm;
+        if (pocketType == GroveBasinFactory.PocketType.MorphoUsdt) return morphoVault;
+        if (pocketType == GroveBasinFactory.PocketType.AaveUsdt)   return address(aToken);
+        return address(0);  // None
+    }
 
+    function _baseParams(GroveBasinFactory.PocketType pocketType)
+        internal view returns (GroveBasinFactory.DeployParams memory params)
+    {
         params = GroveBasinFactory.DeployParams({
-            liquidityProvider           : DPAU_ALM_PROXY,
-            swapToken                   : isUsds ? Ethereum.USDS : Ethereum.USDT,
-            collateralToken             : Ethereum.USDC,
+            liquidityProvider           : liquidityProvider,
+            swapToken                   : address(swapToken),
+            collateralToken             : address(collateralToken),
             creditToken                 : address(creditToken),
             swapTokenRateProvider       : address(rateProvider),
             collateralTokenRateProvider : address(rateProvider),
             creditTokenRateProvider     : address(rateProvider),
             pocketType                  : pocketType,
-            pocketAddress1              : isUsds ? psm : (pocketType == GroveBasinFactory.PocketType.MorphoUsdt ? morphoVault : address(aUsdt)),
+            pocketAddress1              : _pocketAddress1(pocketType),
             pocketAddress2              : pocketType == GroveBasinFactory.PocketType.AaveUsdt ? aaveV3Pool : address(0),
-            managerAdmin                : Ethereum.GROVE_PROXY,
-            manager                     : Ethereum.ALM_RELAYER,
-            pauser                      : Ethereum.ALM_FREEZER,
+            managerAdmin                : groveProxy,
+            manager                     : almRelayer,
+            pauser                      : almFreezer,
             buidlRedemptionAddress      : address(0),
             tokenRedeemer               : address(0),
             issuerRedeemer              : address(0),
@@ -96,50 +100,33 @@ contract GroveBasinFactorySetupForkTest is Test {
         });
     }
 
-    function _assertCommonConfig(GroveBasin basin, address pocket, address expectedOwner) internal view {
-        // Liquidity provider is the hardcoded DPAU ALM Proxy.
-        assertEq(basin.liquidityProvider(), DPAU_ALM_PROXY);
+    function _assertCommonConfig(GroveBasin basin, address expectedOwner) internal view {
+        assertEq(basin.liquidityProvider(), liquidityProvider);
 
-        // Pocket wired up and is not the basin itself.
-        assertEq(basin.pocket(), pocket);
-        assertTrue(pocket != address(basin));
-
-        // Ownership handed to the admin timelock; factory and deployer (this) hold nothing.
+        // Ownership handed to the admin timelock; factory and deployer hold nothing.
         assertTrue(basin.hasRole(basin.OWNER_ROLE(), expectedOwner));
         assertFalse(basin.hasRole(basin.OWNER_ROLE(), address(factory)));
         assertFalse(basin.hasRole(basin.OWNER_ROLE(), address(this)));
 
-        // GROVE_PROXY keeps MANAGER_ADMIN_ROLE; factory and deployer must not.
-        assertTrue(basin.hasRole(basin.MANAGER_ADMIN_ROLE(), Ethereum.GROVE_PROXY));
+        // GROVE_PROXY keeps MANAGER_ADMIN_ROLE; factory must not.
+        assertTrue(basin.hasRole(basin.MANAGER_ADMIN_ROLE(), groveProxy));
         assertFalse(basin.hasRole(basin.MANAGER_ADMIN_ROLE(), address(factory)));
-        assertFalse(basin.hasRole(basin.MANAGER_ADMIN_ROLE(), address(this)));
 
         // Operational roles.
-        assertTrue(basin.hasRole(basin.MANAGER_ROLE(), Ethereum.ALM_RELAYER));
-        assertTrue(basin.hasRole(basin.PAUSER_ROLE(), Ethereum.ALM_FREEZER));
+        assertTrue(basin.hasRole(basin.MANAGER_ROLE(), almRelayer));
+        assertTrue(basin.hasRole(basin.PAUSER_ROLE(),  almFreezer));
         assertFalse(basin.hasRole(basin.PAUSER_ROLE(), address(factory)));
 
-        // Pause flags.
-        assertTrue(basin.paused(basin.PAUSED_SWAP_SWAP_TO_CREDIT()));
-        assertTrue(basin.paused(basin.PAUSED_SWAP_COLLATERAL_TO_CREDIT()));
-        assertTrue(basin.paused(basin.PAUSED_DEPOSIT_CREDIT()));
-        assertTrue(basin.paused(basin.PAUSED_WITHDRAW_CREDIT()));
-        assertFalse(basin.paused(basin.PAUSED_SWAP_CREDIT_TO_COLLATERAL()));
-        assertFalse(basin.paused(basin.PAUSED_SWAP_CREDIT_TO_SWAP()));
-
-        // Fee bounds and seed.
-        assertEq(basin.minFee(), 0);
-        assertEq(basin.maxFee(), 500);
         assertEq(basin.totalShares(),      1e18);
         assertEq(basin.shares(address(0)), 1e18);
     }
 
     /**********************************************************************************************/
-    /*** Happy paths                                                                            ***/
+    /*** Pocket variants                                                                        ***/
     /**********************************************************************************************/
 
     function test_deploy_usdsUsdc_withBuidlRedeemer() public {
-        _seed(Ethereum.USDS);
+        _seed();
 
         GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.UsdsUsdc);
         params.buidlRedemptionAddress = redemption;
@@ -149,64 +136,121 @@ contract GroveBasinFactorySetupForkTest is Test {
 
         GroveBasin groveBasin = GroveBasin(basin);
 
-        assertEq(groveBasin.swapToken(),       Ethereum.USDS);
-        assertEq(groveBasin.collateralToken(), Ethereum.USDC);
+        assertEq(groveBasin.swapToken(),       address(swapToken));
+        assertEq(groveBasin.collateralToken(), address(collateralToken));
         assertEq(groveBasin.creditToken(),     address(creditToken));
 
-        _assertCommonConfig(groveBasin, pocket, adminTimelock);
+        _assertCommonConfig(groveBasin, adminTimelock);
 
-        // BUIDL redeemer deployed and registered, issuer granted REDEEMER_ROLE.
+        // Pocket deployed and wired up; seed migrated out of the basin.
+        assertTrue(pocket != address(0));
+        assertEq(groveBasin.pocket(), pocket);
+        assertEq(swapToken.balanceOf(basin),  0);
+        assertEq(swapToken.balanceOf(pocket), 10 ** swapToken.decimals());
+
+        // Default fee bounds (maxFee == 0 sentinel).
+        assertEq(groveBasin.minFee(), 0);
+        assertEq(groveBasin.maxFee(), 500);
+
+        // Default pauses applied.
+        assertTrue(groveBasin.paused(groveBasin.PAUSED_SWAP_SWAP_TO_CREDIT()));
+        assertTrue(groveBasin.paused(groveBasin.PAUSED_SWAP_COLLATERAL_TO_CREDIT()));
+        assertTrue(groveBasin.paused(groveBasin.PAUSED_DEPOSIT_CREDIT()));
+        assertTrue(groveBasin.paused(groveBasin.PAUSED_WITHDRAW_CREDIT()));
+
+        // BUIDL redeemer deployed and registered; issuer granted REDEEMER_ROLE.
         assertTrue(redeemer != address(0));
-        assertEq(BUIDLTokenRedeemer(redeemer).creditToken(), address(creditToken));
+        assertEq(BUIDLTokenRedeemer(redeemer).creditToken(),    address(creditToken));
         assertEq(address(BUIDLTokenRedeemer(redeemer).basin()), basin);
         assertTrue(groveBasin.hasRole(groveBasin.REDEEMER_CONTRACT_ROLE(), redeemer));
         assertTrue(groveBasin.hasRole(groveBasin.REDEEMER_ROLE(),          issuer));
     }
 
-    function test_deploy_morphoUsdt_withExternalRedeemer() public {
-        _seed(Ethereum.USDT);
+    function test_deploy_morphoUsdt_withExternalRedeemer_customFeeBounds() public {
+        _seed();
 
         address externalRedeemer = address(new MockTokenRedeemer());
 
         GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.MorphoUsdt);
         params.tokenRedeemer  = externalRedeemer;
         params.issuerRedeemer = issuer;
+        params.minFee         = 0;
+        params.maxFee         = 400;
 
         (address basin, address pocket, address redeemer) = factory.deploy(params, adminTimelock);
 
         GroveBasin groveBasin = GroveBasin(basin);
 
-        assertEq(groveBasin.swapToken(), Ethereum.USDT);
+        assertEq(groveBasin.swapToken(), address(swapToken));
 
-        _assertCommonConfig(groveBasin, pocket, adminTimelock);
+        _assertCommonConfig(groveBasin, adminTimelock);
 
-        // The pre-deployed redeemer address is registered as-is.
+        assertTrue(pocket != address(0));
+        assertEq(groveBasin.pocket(), pocket);
+
+        // Custom fee bounds applied (exercises the maxFee != 0 path).
+        assertEq(groveBasin.minFee(), 0);
+        assertEq(groveBasin.maxFee(), 400);
+
+        // Pre-deployed redeemer registered as-is; issuer granted REDEEMER_ROLE.
         assertEq(redeemer, externalRedeemer);
         assertTrue(groveBasin.hasRole(groveBasin.REDEEMER_CONTRACT_ROLE(), externalRedeemer));
         assertTrue(groveBasin.hasRole(groveBasin.REDEEMER_ROLE(),          issuer));
     }
 
-    function test_deploy_aaveUsdt_withoutRedeemer() public {
-        _seed(Ethereum.USDT);
+    function test_deploy_aaveUsdt_noRedeemer_emptyPausedFlags() public {
+        _seed();
 
         GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.AaveUsdt);
+        params.pausedFlags = new bytes4[](0);
 
         (address basin, address pocket, address redeemer) = factory.deploy(params, adminTimelock);
 
         GroveBasin groveBasin = GroveBasin(basin);
 
-        assertEq(groveBasin.swapToken(), Ethereum.USDT);
+        assertEq(groveBasin.swapToken(), address(swapToken));
 
-        _assertCommonConfig(groveBasin, pocket, adminTimelock);
+        _assertCommonConfig(groveBasin, adminTimelock);
+
+        assertTrue(pocket != address(0));
+        assertEq(groveBasin.pocket(), pocket);
+
+        // Empty pausedFlags pauses nothing.
+        assertFalse(groveBasin.paused(groveBasin.PAUSED_SWAP_SWAP_TO_CREDIT()));
+        assertFalse(groveBasin.paused(groveBasin.PAUSED_DEPOSIT_CREDIT()));
 
         // No token redeemer registered, no issuer granted.
         assertEq(redeemer, address(0));
-        assertFalse(groveBasin.hasRole(groveBasin.REDEEMER_CONTRACT_ROLE(), address(0)));
         assertFalse(groveBasin.hasRole(groveBasin.REDEEMER_ROLE(), issuer));
     }
 
+    function test_deploy_none_deploysNoPocket() public {
+        _seed();
+
+        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
+
+        (address basin, address pocket, address redeemer) = factory.deploy(params, adminTimelock);
+
+        GroveBasin groveBasin = GroveBasin(basin);
+
+        // No pocket deployed and setPocket skipped.
+        assertEq(pocket,   address(0));
+        assertEq(redeemer, address(0));
+
+        assertEq(groveBasin.swapToken(), address(swapToken));
+
+        _assertCommonConfig(groveBasin, adminTimelock);
+
+        // Seed remains held by the basin since no pocket migration occurred.
+        assertEq(swapToken.balanceOf(basin), 10 ** swapToken.decimals());
+    }
+
+    /**********************************************************************************************/
+    /*** Timelock variant                                                                       ***/
+    /**********************************************************************************************/
+
     function test_deployWithTimelock_deploysAndOwnsBasin() public {
-        _seed(Ethereum.USDT);
+        _seed();
 
         uint256 minDelay = 7 days;
 
@@ -219,15 +263,16 @@ contract GroveBasinFactorySetupForkTest is Test {
         GroveBasin groveBasin = GroveBasin(basin);
 
         // Basin owned by the freshly deployed timelock.
-        _assertCommonConfig(groveBasin, pocket, timelock);
+        _assertCommonConfig(groveBasin, timelock);
+        assertEq(groveBasin.pocket(), pocket);
 
         TimelockController tl = TimelockController(payable(timelock));
 
         assertEq(tl.getMinDelay(), minDelay);
 
         assertTrue(tl.hasRole(tl.PROPOSER_ROLE(),  proposer));
-        assertTrue(tl.hasRole(tl.EXECUTOR_ROLE(),  Ethereum.GROVE_PROXY));
-        assertTrue(tl.hasRole(tl.CANCELLER_ROLE(), Ethereum.ALM_FREEZER));
+        assertTrue(tl.hasRole(tl.EXECUTOR_ROLE(),  groveProxy));
+        assertTrue(tl.hasRole(tl.CANCELLER_ROLE(), almFreezer));
         assertTrue(tl.hasRole(tl.CANCELLER_ROLE(), proposer));
 
         // Timelock self-administered; factory and deployer hold no admin.
