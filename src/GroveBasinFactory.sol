@@ -96,7 +96,7 @@ contract GroveBasinFactory {
         external returns (address groveBasin)
     {
         return deploy({
-            salt                        : keccak256(abi.encode(owner, swapToken, collateralToken, creditToken)),
+            salt                        : bytes32(nonce++),
             owner                       : owner,
             liquidityProvider           : liquidityProvider,
             swapToken                   : swapToken,
