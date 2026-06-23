@@ -4,8 +4,6 @@ pragma solidity ^0.8.24;
 import { IERC20 }    from "erc20-helpers/interfaces/IERC20.sol";
 import { SafeERC20 } from "erc20-helpers/SafeERC20.sol";
 
-import { Ethereum } from "lib/grove-address-registry/src/Ethereum.sol";
-
 import { GroveBasin } from "src/GroveBasin.sol";
 
 import {
@@ -19,14 +17,16 @@ contract GroveBasinFactory {
 
     using SafeERC20 for IERC20;
 
-    /// @notice DPAU ALM Proxy, set as the `liquidityProvider` on Basins deployed via the full
-    ///         setup flow.
-    address internal constant DPAU_ALM_PROXY = 0x0DcD9298e163dFD3c0B5b00F0d9093C36e40A153;
-
     enum PocketType { UsdsUsdc, MorphoUsdt, AaveUsdt }
 
+    uint256 public constant DEFAULT_MIN_FEE = 0;
+    uint256 public constant DEFAULT_MAX_FEE = 500;
+
+    /// @notice Auto-incrementing CREATE2 salt counter for the full-setup deployment flow.
+    uint256 public nonce;
+
     /**
-     * @param salt                        CREATE2 salt for the GroveBasin.
+     * @param liquidityProvider           Address set as the Basin `liquidityProvider`.
      * @param swapToken                   Basin swap token.
      * @param collateralToken             Basin collateral token.
      * @param creditToken                 Basin credit token.
@@ -36,13 +36,19 @@ contract GroveBasinFactory {
      * @param pocketType                  Which pocket implementation to deploy and wire up.
      * @param pocketAddress1              UsdsUsdc: PSM wrapper | MorphoUsdt: ERC-4626 vault | AaveUsdt: aUSDT token.
      * @param pocketAddress2              AaveUsdt: Aave V3 pool | otherwise unused.
+     * @param groveProxy                  Granted MANAGER_ADMIN_ROLE; UsdsUsdc pocket owner and timelock executor.
+     * @param almRelayer                  Granted MANAGER_ROLE.
+     * @param almFreezer                  Granted PAUSER_ROLE; timelock canceller.
      * @param deployBuidlRedeemer         If true, deploy a BUIDLTokenRedeemer and register it.
      * @param buidlRedemptionAddress      Redemption address for the BUIDLTokenRedeemer (only used when deployBuidlRedeemer).
      * @param tokenRedeemer               Pre-deployed token redeemer to register (only used when !deployBuidlRedeemer; address(0) skips).
      * @param issuerRedeemer              Address granted REDEEMER_ROLE (address(0) skips).
+     * @param pausedFlags                 Flags applied via setPaused; empty pauses nothing.
+     * @param minFee                      Lower fee bound; ignored when maxFee == 0 (defaults applied).
+     * @param maxFee                      Upper fee bound; 0 applies the defaults (DEFAULT_MIN_FEE, DEFAULT_MAX_FEE).
      */
     struct DeployParams {
-        bytes32    salt;
+        address    liquidityProvider;
         address    swapToken;
         address    collateralToken;
         address    creditToken;
@@ -52,14 +58,18 @@ contract GroveBasinFactory {
         PocketType pocketType;
         address    pocketAddress1;
         address    pocketAddress2;
+        address    groveProxy;
+        address    almRelayer;
+        address    almFreezer;
         bool       deployBuidlRedeemer;
         address    buidlRedemptionAddress;
         address    tokenRedeemer;
         address    issuerRedeemer;
+        bytes4[]   pausedFlags;
+        uint256    minFee;
+        uint256    maxFee;
     }
 
-    error InvalidSwapToken();
-    error InvalidCollateralToken();
     error InvalidAdminTimelock();
     error InvalidTimelockProposer();
 
@@ -149,9 +159,9 @@ contract GroveBasinFactory {
         timelock = TimelockDeployer.deploy(
             minDelay,
             proposer,
-            Ethereum.GROVE_PROXY,
+            params.groveProxy,
             address(this),
-            Ethereum.ALM_FREEZER
+            params.almFreezer
         );
 
         (basin, pocket, redeemer) = deploy(params, timelock);
@@ -167,9 +177,9 @@ contract GroveBasinFactory {
         if (adminTimelock == address(0)) revert InvalidAdminTimelock();
 
         basin = deploy({
-            salt                        : params.salt,
+            salt                        : bytes32(nonce++),
             owner                       : address(this),
-            liquidityProvider           : DPAU_ALM_PROXY,
+            liquidityProvider           : params.liquidityProvider,
             swapToken                   : params.swapToken,
             collateralToken             : params.collateralToken,
             creditToken                 : params.creditToken,
@@ -181,7 +191,7 @@ contract GroveBasinFactory {
         GroveBasin groveBasin = GroveBasin(basin);
 
         groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), address(this));
-        groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), Ethereum.GROVE_PROXY);
+        groveBasin.grantRole(groveBasin.MANAGER_ADMIN_ROLE(), params.groveProxy);
 
         pocket = _deployPocket(params, basin);
         groveBasin.setPocket(pocket);
@@ -190,7 +200,7 @@ contract GroveBasinFactory {
             ? RedeemerDeployer.deployBuidl(params.creditToken, params.buidlRedemptionAddress, basin)
             : params.tokenRedeemer;
 
-        _initBasin(groveBasin, redeemer, params.issuerRedeemer, adminTimelock);
+        _initBasin(groveBasin, params, redeemer, adminTimelock);
     }
 
     /**********************************************************************************************/
@@ -199,51 +209,55 @@ contract GroveBasinFactory {
 
     function _deployPocket(DeployParams calldata params, address basin) internal returns (address) {
         if (params.pocketType == PocketType.UsdsUsdc) {
-            if (params.swapToken       != Ethereum.USDS) revert InvalidSwapToken();
-            if (params.collateralToken != Ethereum.USDC) revert InvalidCollateralToken();
-
             return PocketDeployer.deployUsdsUsdc(
                 basin,
-                Ethereum.USDC,
-                Ethereum.USDS,
+                params.collateralToken,
+                params.swapToken,
                 params.pocketAddress1,
-                Ethereum.GROVE_PROXY
+                params.groveProxy
             );
         } else if (params.pocketType == PocketType.MorphoUsdt) {
-            if (params.swapToken != Ethereum.USDT) revert InvalidSwapToken();
-
-            return PocketDeployer.deployMorphoUsdt(basin, Ethereum.USDT, params.pocketAddress1);
+            return PocketDeployer.deployMorphoUsdt(basin, params.swapToken, params.pocketAddress1);
         } else {
-            if (params.swapToken != Ethereum.USDT) revert InvalidSwapToken();
-
-            return PocketDeployer.deployAaveUsdt(basin, Ethereum.USDT, params.pocketAddress1, params.pocketAddress2);
+            return PocketDeployer.deployAaveUsdt(basin, params.swapToken, params.pocketAddress1, params.pocketAddress2);
         }
     }
 
     /// @dev Mirrors the BasinSetup.performBasinInit sequence, then revokes the factory's own
     ///      OWNER_ROLE and MANAGER_ADMIN_ROLE so the deployer retains no admin power.
-    function _initBasin(GroveBasin groveBasin, address tokenRedeemer, address issuerRedeemer, address adminTimelock)
+    function _initBasin(
+        GroveBasin            groveBasin,
+        DeployParams calldata params,
+        address               tokenRedeemer,
+        address               adminTimelock
+    )
         internal
     {
         if (tokenRedeemer != address(0)) {
             groveBasin.addTokenRedeemer(tokenRedeemer);
         }
 
-        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), Ethereum.ALM_RELAYER);
-        groveBasin.grantRole(groveBasin.PAUSER_ROLE(),  Ethereum.ALM_FREEZER);
+        groveBasin.grantRole(groveBasin.MANAGER_ROLE(), params.almRelayer);
+        groveBasin.grantRole(groveBasin.PAUSER_ROLE(),  params.almFreezer);
 
-        if (issuerRedeemer != address(0)) {
-            groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), issuerRedeemer);
+        if (params.issuerRedeemer != address(0)) {
+            groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), params.issuerRedeemer);
         }
 
         groveBasin.grantRole(groveBasin.PAUSER_ROLE(), address(this));
 
-        groveBasin.setPaused(groveBasin.PAUSED_SWAP_SWAP_TO_CREDIT());
-        groveBasin.setPaused(groveBasin.PAUSED_SWAP_COLLATERAL_TO_CREDIT());
-        groveBasin.setPaused(groveBasin.PAUSED_DEPOSIT_CREDIT());
-        groveBasin.setPaused(groveBasin.PAUSED_WITHDRAW_CREDIT());
+        for (uint256 i; i < params.pausedFlags.length; ++i) {
+            groveBasin.setPaused(params.pausedFlags[i]);
+        }
 
-        groveBasin.setFeeBounds(0, 500);
+        uint256 minFee_ = params.minFee;
+        uint256 maxFee_ = params.maxFee;
+        if (maxFee_ == 0) {
+            minFee_ = DEFAULT_MIN_FEE;
+            maxFee_ = DEFAULT_MAX_FEE;
+        }
+
+        groveBasin.setFeeBounds(minFee_, maxFee_);
 
         groveBasin.revokeRole(groveBasin.PAUSER_ROLE(), address(this));
 

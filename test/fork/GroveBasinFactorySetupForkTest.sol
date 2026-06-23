@@ -58,6 +58,14 @@ contract GroveBasinFactorySetupForkTest is Test {
         IERC20(swapToken).safeApprove(address(factory), seedAmount);
     }
 
+    function _defaultPausedFlags() internal pure returns (bytes4[] memory flags) {
+        flags = new bytes4[](4);
+        flags[0] = bytes4(keccak256("PAUSED_SWAP_SWAP_TO_CREDIT"));
+        flags[1] = bytes4(keccak256("PAUSED_SWAP_COLLATERAL_TO_CREDIT"));
+        flags[2] = bytes4(keccak256("PAUSED_DEPOSIT_CREDIT"));
+        flags[3] = bytes4(keccak256("PAUSED_WITHDRAW_CREDIT"));
+    }
+
     function _baseParams(GroveBasinFactory.PocketType pocketType)
         internal
         view
@@ -66,7 +74,7 @@ contract GroveBasinFactorySetupForkTest is Test {
         bool isUsds = pocketType == GroveBasinFactory.PocketType.UsdsUsdc;
 
         params = GroveBasinFactory.DeployParams({
-            salt                        : bytes32(uint256(1)),
+            liquidityProvider           : DPAU_ALM_PROXY,
             swapToken                   : isUsds ? Ethereum.USDS : Ethereum.USDT,
             collateralToken             : Ethereum.USDC,
             creditToken                 : address(creditToken),
@@ -76,10 +84,16 @@ contract GroveBasinFactorySetupForkTest is Test {
             pocketType                  : pocketType,
             pocketAddress1              : isUsds ? psm : (pocketType == GroveBasinFactory.PocketType.MorphoUsdt ? morphoVault : address(aUsdt)),
             pocketAddress2              : pocketType == GroveBasinFactory.PocketType.AaveUsdt ? aaveV3Pool : address(0),
+            groveProxy                  : Ethereum.GROVE_PROXY,
+            almRelayer                  : Ethereum.ALM_RELAYER,
+            almFreezer                  : Ethereum.ALM_FREEZER,
             deployBuidlRedeemer         : false,
             buidlRedemptionAddress      : address(0),
             tokenRedeemer               : address(0),
-            issuerRedeemer              : address(0)
+            issuerRedeemer              : address(0),
+            pausedFlags                 : _defaultPausedFlags(),
+            minFee                      : 0,
+            maxFee                      : 0
         });
     }
 
@@ -240,46 +254,6 @@ contract GroveBasinFactorySetupForkTest is Test {
 
         vm.expectRevert(GroveBasinFactory.InvalidTimelockProposer.selector);
         factory.deployWithTimelock(params, address(0), 7 days);
-    }
-
-    function test_deploy_usdsUsdc_revertsOnWrongSwapToken() public {
-        _seed(Ethereum.USDT);
-
-        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.UsdsUsdc);
-        params.swapToken = Ethereum.USDT;
-
-        vm.expectRevert(GroveBasinFactory.InvalidSwapToken.selector);
-        factory.deploy(params, adminTimelock);
-    }
-
-    function test_deploy_usdsUsdc_revertsOnWrongCollateralToken() public {
-        _seed(Ethereum.USDS);
-
-        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.UsdsUsdc);
-        params.collateralToken = Ethereum.USDT;
-
-        vm.expectRevert(GroveBasinFactory.InvalidCollateralToken.selector);
-        factory.deploy(params, adminTimelock);
-    }
-
-    function test_deploy_morphoUsdt_revertsOnWrongSwapToken() public {
-        _seed(Ethereum.USDS);
-
-        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.MorphoUsdt);
-        params.swapToken = Ethereum.USDS;
-
-        vm.expectRevert(GroveBasinFactory.InvalidSwapToken.selector);
-        factory.deploy(params, adminTimelock);
-    }
-
-    function test_deploy_aaveUsdt_revertsOnWrongSwapToken() public {
-        _seed(Ethereum.USDS);
-
-        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.AaveUsdt);
-        params.swapToken = Ethereum.USDS;
-
-        vm.expectRevert(GroveBasinFactory.InvalidSwapToken.selector);
-        factory.deploy(params, adminTimelock);
     }
 
 }
