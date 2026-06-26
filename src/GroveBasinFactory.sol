@@ -253,12 +253,8 @@ contract GroveBasinFactory {
             groveBasin.setPaused(params.pausedFlags[i]);
         }
 
-        uint256 minFee_ = params.minFee;
-        uint256 maxFee_ = params.maxFee;
-        if (maxFee_ == 0) {
-            minFee_ = DEFAULT_MIN_FEE;
-            maxFee_ = DEFAULT_MAX_FEE;
-        }
+        uint256 minFee_ = params.minFee > 0 ? params.minFee : DEFAULT_MIN_FEE;
+        uint256 maxFee_ = params.maxFee > 0 ? params.maxFee : DEFAULT_MAX_FEE;
 
         groveBasin.setFeeBounds(minFee_, maxFee_);
 
