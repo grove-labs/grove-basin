@@ -162,11 +162,26 @@ contract GroveBasinFactoryTests is GroveBasinTestBase {
     }
 
     function test_deploy_sameSaltReverts() public {
-        _deploy();
+        bytes32 salt = bytes32(uint256(1));
+
+        _mintAndApprove();
+        factory.deploy(
+            salt,
+            owner,
+            lp,
+            address(swapToken),
+            address(collateralToken),
+            address(creditToken),
+            address(swapTokenRateProvider),
+            address(collateralTokenRateProvider),
+            address(creditTokenRateProvider)
+        );
+
         _mintAndApprove();
 
         vm.expectRevert();
         factory.deploy(
+            salt,
             owner,
             lp,
             address(swapToken),
