@@ -22,7 +22,7 @@ contract GroveBasinFactorySetupForkTest is Test {
 
     using SafeERC20 for IERC20;
 
-    address constant DPAU_ALM_PROXY = 0x0DcD9298e163dFD3c0B5b00F0d9093C36e40A153;
+    address constant PAU_ALM_PROXY = 0x0DcD9298e163dFD3c0B5b00F0d9093C36e40A153;
 
     GroveBasinFactory factory;
 
@@ -74,7 +74,7 @@ contract GroveBasinFactorySetupForkTest is Test {
         bool isUsds = pocketType == GroveBasinFactory.PocketType.UsdsUsdc;
 
         params = GroveBasinFactory.DeployParams({
-            liquidityProvider           : DPAU_ALM_PROXY,
+            liquidityProvider           : PAU_ALM_PROXY,
             swapToken                   : isUsds ? Ethereum.USDS : Ethereum.USDT,
             collateralToken             : Ethereum.USDC,
             creditToken                 : address(creditToken),
@@ -98,7 +98,7 @@ contract GroveBasinFactorySetupForkTest is Test {
 
     function _assertCommonConfig(GroveBasin basin, address pocket, address expectedOwner) internal view {
         // Liquidity provider is the hardcoded DPAU ALM Proxy.
-        assertEq(basin.liquidityProvider(), DPAU_ALM_PROXY);
+        assertEq(basin.liquidityProvider(), PAU_ALM_PROXY);
 
         // Pocket wired up and is not the basin itself.
         assertEq(basin.pocket(), pocket);
