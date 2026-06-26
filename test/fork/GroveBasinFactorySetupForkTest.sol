@@ -145,7 +145,7 @@ contract GroveBasinFactorySetupForkTest is Test {
         params.buidlRedemptionAddress = redemption;
         params.issuerRedeemer         = issuer;
 
-        (address basin, address pocket, address redeemer) = factory.deploy(params, adminTimelock);
+        (address basin, address pocket, address redeemer) = factory.deployAndInit(params, adminTimelock);
 
         GroveBasin groveBasin = GroveBasin(basin);
 
@@ -172,7 +172,7 @@ contract GroveBasinFactorySetupForkTest is Test {
         params.tokenRedeemer  = externalRedeemer;
         params.issuerRedeemer = issuer;
 
-        (address basin, address pocket, address redeemer) = factory.deploy(params, adminTimelock);
+        (address basin, address pocket, address redeemer) = factory.deployAndInit(params, adminTimelock);
 
         GroveBasin groveBasin = GroveBasin(basin);
 
@@ -191,7 +191,7 @@ contract GroveBasinFactorySetupForkTest is Test {
 
         GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.AaveUsdt);
 
-        (address basin, address pocket, address redeemer) = factory.deploy(params, adminTimelock);
+        (address basin, address pocket, address redeemer) = factory.deployAndInit(params, adminTimelock);
 
         GroveBasin groveBasin = GroveBasin(basin);
 
@@ -205,7 +205,7 @@ contract GroveBasinFactorySetupForkTest is Test {
         assertFalse(groveBasin.hasRole(groveBasin.REDEEMER_ROLE(), issuer));
     }
 
-    function test_deployWithTimelock_deploysAndOwnsBasin() public {
+    function test_deployWithTimelockAndInit_deploysAndOwnsBasin() public {
         _seed(Ethereum.USDT);
 
         uint256 minDelay = 7 days;
@@ -214,7 +214,7 @@ contract GroveBasinFactorySetupForkTest is Test {
         params.issuerRedeemer = issuer;
 
         (address basin, address pocket, , address timelock) =
-            factory.deployWithTimelock(params, proposer, minDelay);
+            factory.deployWithTimelockAndInit(params, proposer, minDelay);
 
         GroveBasin groveBasin = GroveBasin(basin);
 
@@ -244,14 +244,14 @@ contract GroveBasinFactorySetupForkTest is Test {
         GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.UsdsUsdc);
 
         vm.expectRevert(GroveBasinFactory.InvalidAdminTimelock.selector);
-        factory.deploy(params, address(0));
+        factory.deployAndInit(params, address(0));
     }
 
-    function test_deployWithTimelock_revertsOnZeroProposer() public {
+    function test_deployWithTimelockAndInit_revertsOnZeroProposer() public {
         GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.MorphoUsdt);
 
         vm.expectRevert(GroveBasinFactory.InvalidTimelockProposer.selector);
-        factory.deployWithTimelock(params, address(0), 7 days);
+        factory.deployWithTimelockAndInit(params, address(0), 7 days);
     }
 
 }

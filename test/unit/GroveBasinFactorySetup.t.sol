@@ -132,7 +132,7 @@ contract GroveBasinFactorySetupTests is Test {
         params.buidlRedemptionAddress = redemption;
         params.issuerRedeemer         = issuer;
 
-        (address basin, address pocket, address redeemer) = factory.deploy(params, adminTimelock);
+        (address basin, address pocket, address redeemer) = factory.deployAndInit(params, adminTimelock);
 
         GroveBasin groveBasin = GroveBasin(basin);
 
@@ -177,7 +177,7 @@ contract GroveBasinFactorySetupTests is Test {
         params.minFee         = 0;
         params.maxFee         = 400;
 
-        (address basin, address pocket, address redeemer) = factory.deploy(params, adminTimelock);
+        (address basin, address pocket, address redeemer) = factory.deployAndInit(params, adminTimelock);
 
         GroveBasin groveBasin = GroveBasin(basin);
 
@@ -204,7 +204,7 @@ contract GroveBasinFactorySetupTests is Test {
         GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.AaveUsdt);
         params.pausedFlags = new bytes4[](0);
 
-        (address basin, address pocket, address redeemer) = factory.deploy(params, adminTimelock);
+        (address basin, address pocket, address redeemer) = factory.deployAndInit(params, adminTimelock);
 
         GroveBasin groveBasin = GroveBasin(basin);
 
@@ -229,7 +229,7 @@ contract GroveBasinFactorySetupTests is Test {
 
         GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
 
-        (address basin, address pocket, address redeemer) = factory.deploy(params, adminTimelock);
+        (address basin, address pocket, address redeemer) = factory.deployAndInit(params, adminTimelock);
 
         GroveBasin groveBasin = GroveBasin(basin);
 
@@ -249,7 +249,7 @@ contract GroveBasinFactorySetupTests is Test {
     /*** Timelock variant                                                                       ***/
     /**********************************************************************************************/
 
-    function test_deployWithTimelock_deploysAndOwnsBasin() public {
+    function test_deployWithTimelockAndInit_deploysAndOwnsBasin() public {
         _seed();
 
         uint256 minDelay = 7 days;
@@ -258,7 +258,7 @@ contract GroveBasinFactorySetupTests is Test {
         params.issuerRedeemer = issuer;
 
         (address basin, address pocket, , address timelock) =
-            factory.deployWithTimelock(params, proposer, minDelay);
+            factory.deployWithTimelockAndInit(params, proposer, minDelay);
 
         GroveBasin groveBasin = GroveBasin(basin);
 
@@ -289,14 +289,14 @@ contract GroveBasinFactorySetupTests is Test {
         GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.UsdsUsdc);
 
         vm.expectRevert(GroveBasinFactory.InvalidAdminTimelock.selector);
-        factory.deploy(params, address(0));
+        factory.deployAndInit(params, address(0));
     }
 
-    function test_deployWithTimelock_revertsOnZeroProposer() public {
+    function test_deployWithTimelockAndInit_revertsOnZeroProposer() public {
         GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.MorphoUsdt);
 
         vm.expectRevert(GroveBasinFactory.InvalidTimelockProposer.selector);
-        factory.deployWithTimelock(params, address(0), 7 days);
+        factory.deployWithTimelockAndInit(params, address(0), 7 days);
     }
 
 }

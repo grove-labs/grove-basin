@@ -149,7 +149,7 @@ contract GroveBasinFactory {
 
     /// @notice Deploy a GroveBasin together with a fresh admin TimelockController that receives
     ///         OWNER_ROLE.
-    function deployWithTimelock(DeployParams calldata params, address proposer, uint256 minDelay)
+    function deployWithTimelockAndInit(DeployParams calldata params, address proposer, uint256 minDelay)
         external returns (address basin, address pocket, address redeemer, address timelock)
     {
         if (proposer == address(0)) revert InvalidTimelockProposer();
@@ -162,14 +162,14 @@ contract GroveBasinFactory {
             params.pauser
         );
 
-        (basin, pocket, redeemer) = deploy(params, timelock);
+        (basin, pocket, redeemer) = deployAndInit(params, timelock);
     }
 
     /// @notice Deploy and fully configure a GroveBasin, handing OWNER_ROLE to `adminTimelock`.
     ///         The factory holds OWNER_ROLE and MANAGER_ADMIN_ROLE only for the duration of this
     ///         call and revokes both from itself before returning, so no deployer-side admin
     ///         remains. GROVE_PROXY retains MANAGER_ADMIN_ROLE.
-    function deploy(DeployParams calldata params, address adminTimelock)
+    function deployAndInit(DeployParams calldata params, address adminTimelock)
         public returns (address basin, address pocket, address redeemer)
     {
         if (adminTimelock == address(0)) revert InvalidAdminTimelock();
