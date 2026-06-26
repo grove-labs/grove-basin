@@ -33,7 +33,6 @@ contract GroveBasinFactory {
      * @param swapTokenRateProvider       Rate provider for the swap token.
      * @param collateralTokenRateProvider Rate provider for the collateral token.
      * @param creditTokenRateProvider     Rate provider for the credit token.
-     * @param pocketType                  Which pocket implementation to deploy and wire up (None deploys no pocket).
      * @param pocketAddress1              UsdsUsdc: PSM wrapper | MorphoUsdt: ERC-4626 vault | AaveUsdt: aUSDT token.
      * @param pocketAddress2              AaveUsdt: Aave V3 pool | otherwise unused.
      * @param managerAdmin                Granted MANAGER_ADMIN_ROLE; UsdsUsdc pocket owner and timelock executor.
@@ -42,9 +41,10 @@ contract GroveBasinFactory {
      * @param buidlRedemptionAddress      Non-zero deploys a BUIDLTokenRedeemer with this redemption address and registers it.
      * @param tokenRedeemer               Pre-deployed token redeemer to register (used only when buidlRedemptionAddress == address(0); address(0) skips).
      * @param issuerRedeemer              Address granted REDEEMER_ROLE (address(0) skips).
-     * @param pausedFlags                 Flags applied via setPaused; empty pauses nothing.
      * @param minFee                      Lower fee bound; ignored when maxFee == 0 (defaults applied).
      * @param maxFee                      Upper fee bound; 0 applies the defaults (DEFAULT_MIN_FEE, DEFAULT_MAX_FEE).
+     * @param pocketType                  Which pocket implementation to deploy and wire up (None deploys no pocket).
+     * @param pausedFlags                 Flags applied via setPaused; empty pauses nothing.
      */
     struct DeployParams {
         address    liquidityProvider;
@@ -54,7 +54,6 @@ contract GroveBasinFactory {
         address    swapTokenRateProvider;
         address    collateralTokenRateProvider;
         address    creditTokenRateProvider;
-        PocketType pocketType;
         address    pocketAddress1;
         address    pocketAddress2;
         address    managerAdmin;
@@ -63,9 +62,10 @@ contract GroveBasinFactory {
         address    buidlRedemptionAddress;
         address    tokenRedeemer;
         address    issuerRedeemer;
-        bytes4[]   pausedFlags;
         uint256    minFee;
         uint256    maxFee;
+        PocketType pocketType;
+        bytes4[]   pausedFlags;
     }
 
     error InvalidAdminTimelock();
