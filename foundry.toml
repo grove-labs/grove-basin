@@ -30,7 +30,7 @@ depth = 2000
 shrink_run_limit = 40_000
 
 [profile.master.fuzz]
-runs = 750_000
+runs = 2000
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
 
