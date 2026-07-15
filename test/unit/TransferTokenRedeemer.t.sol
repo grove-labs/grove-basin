@@ -6,7 +6,7 @@ import "forge-std/Test.sol";
 import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 
 import { GroveBasin }          from "src/GroveBasin.sol";
-import { BUIDLTokenRedeemer }  from "src/redeemers/BUIDLTokenRedeemer.sol";
+import { TransferTokenRedeemer }  from "src/redeemers/TransferTokenRedeemer.sol";
 import { ITokenRedeemer, RedeemRequest } from "src/interfaces/ITokenRedeemer.sol";
 
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
@@ -15,7 +15,7 @@ import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 /*** Helper                                                                                 ***/
 /**********************************************************************************************/
 
-contract BUIDLTokenRedeemerTestBase is Test {
+contract TransferTokenRedeemerTestBase is Test {
 
     function _deployBasin(address collateralToken_, address creditToken_) internal returns (GroveBasin) {
         MockERC20 swapToken = new MockERC20("swapToken", "swapToken", 6);
@@ -46,7 +46,7 @@ contract BUIDLTokenRedeemerTestBase is Test {
 /*** Constructor tests                                                                      ***/
 /**********************************************************************************************/
 
-contract BUIDLTokenRedeemerConstructorTests is BUIDLTokenRedeemerTestBase {
+contract TransferTokenRedeemerConstructorTests is TransferTokenRedeemerTestBase {
 
     MockERC20  public creditToken;
     MockERC20  public collateralToken;
@@ -61,7 +61,7 @@ contract BUIDLTokenRedeemerConstructorTests is BUIDLTokenRedeemerTestBase {
     }
 
     function test_constructor() public {
-        BUIDLTokenRedeemer redeemer = new BUIDLTokenRedeemer(address(creditToken), redemptionAddress, address(basin));
+        TransferTokenRedeemer redeemer = new TransferTokenRedeemer(address(creditToken), redemptionAddress, address(basin));
 
         assertEq(redeemer.creditToken(),      address(creditToken));
         assertEq(redeemer.collateralToken(),   address(collateralToken));
@@ -73,24 +73,24 @@ contract BUIDLTokenRedeemerConstructorTests is BUIDLTokenRedeemerTestBase {
 
     function test_constructor_invalidCreditToken() public {
         vm.expectRevert(ITokenRedeemer.InvalidCreditToken.selector);
-        new BUIDLTokenRedeemer(address(0), redemptionAddress, address(basin));
+        new TransferTokenRedeemer(address(0), redemptionAddress, address(basin));
     }
 
     function test_constructor_invalidRedemptionAddress() public {
-        vm.expectRevert(BUIDLTokenRedeemer.InvalidRedemptionAddress.selector);
-        new BUIDLTokenRedeemer(address(creditToken), address(0), address(basin));
+        vm.expectRevert(TransferTokenRedeemer.InvalidRedemptionAddress.selector);
+        new TransferTokenRedeemer(address(creditToken), address(0), address(basin));
     }
 
     function test_constructor_invalidBasin() public {
         vm.expectRevert(ITokenRedeemer.InvalidBasin.selector);
-        new BUIDLTokenRedeemer(address(creditToken), redemptionAddress, address(0));
+        new TransferTokenRedeemer(address(creditToken), redemptionAddress, address(0));
     }
 
     function test_constructor_creditTokenMismatch() public {
         MockERC20 wrongCreditToken = new MockERC20("wrong", "wrong", 18);
 
         vm.expectRevert(ITokenRedeemer.CreditTokenMismatch.selector);
-        new BUIDLTokenRedeemer(address(wrongCreditToken), redemptionAddress, address(basin));
+        new TransferTokenRedeemer(address(wrongCreditToken), redemptionAddress, address(basin));
     }
 
 }
@@ -99,7 +99,7 @@ contract BUIDLTokenRedeemerConstructorTests is BUIDLTokenRedeemerTestBase {
 /*** setUp / tearDown tests                                                                 ***/
 /**********************************************************************************************/
 
-contract BUIDLTokenRedeemerSetUpTests is BUIDLTokenRedeemerTestBase {
+contract TransferTokenRedeemerSetUpTests is TransferTokenRedeemerTestBase {
 
     function test_setUp_onlyBasin() public {
         MockERC20 creditToken     = new MockERC20("creditToken",     "creditToken",     18);
@@ -108,7 +108,7 @@ contract BUIDLTokenRedeemerSetUpTests is BUIDLTokenRedeemerTestBase {
 
         GroveBasin basin = _deployBasin(address(collateralToken), address(creditToken));
 
-        BUIDLTokenRedeemer redeemer = new BUIDLTokenRedeemer(address(creditToken), redemptionAddr, address(basin));
+        TransferTokenRedeemer redeemer = new TransferTokenRedeemer(address(creditToken), redemptionAddr, address(basin));
 
         address notBasin = makeAddr("notBasin");
 
@@ -124,7 +124,7 @@ contract BUIDLTokenRedeemerSetUpTests is BUIDLTokenRedeemerTestBase {
 
         GroveBasin basin = _deployBasin(address(collateralToken), address(creditToken));
 
-        BUIDLTokenRedeemer redeemer = new BUIDLTokenRedeemer(address(creditToken), redemptionAddr, address(basin));
+        TransferTokenRedeemer redeemer = new TransferTokenRedeemer(address(creditToken), redemptionAddr, address(basin));
 
         address notBasin = makeAddr("notBasin");
 
@@ -139,11 +139,11 @@ contract BUIDLTokenRedeemerSetUpTests is BUIDLTokenRedeemerTestBase {
 /*** InitiateRedeem tests                                                                   ***/
 /**********************************************************************************************/
 
-contract BUIDLTokenRedeemerInitiateRedeemTests is BUIDLTokenRedeemerTestBase {
+contract TransferTokenRedeemerInitiateRedeemTests is TransferTokenRedeemerTestBase {
 
     MockERC20            public creditToken;
     MockERC20            public collateralToken;
-    BUIDLTokenRedeemer   public redeemer;
+    TransferTokenRedeemer   public redeemer;
     address              public basin;
     address              public redemptionAddress;
 
@@ -154,7 +154,7 @@ contract BUIDLTokenRedeemerInitiateRedeemTests is BUIDLTokenRedeemerTestBase {
 
         basin = address(_deployBasin(address(collateralToken), address(creditToken)));
 
-        redeemer = new BUIDLTokenRedeemer(address(creditToken), redemptionAddress, basin);
+        redeemer = new TransferTokenRedeemer(address(creditToken), redemptionAddress, basin);
 
         creditToken.mint(basin, 10_000e18);
         vm.prank(basin);
@@ -178,7 +178,7 @@ contract BUIDLTokenRedeemerInitiateRedeemTests is BUIDLTokenRedeemerTestBase {
         redeemer.initiateRedeem(100e18);
 
         vm.prank(basin);
-        vm.expectRevert(BUIDLTokenRedeemer.RedemptionAlreadyActive.selector);
+        vm.expectRevert(TransferTokenRedeemer.RedemptionAlreadyActive.selector);
         redeemer.initiateRedeem(200e18);
     }
 
@@ -206,11 +206,11 @@ contract BUIDLTokenRedeemerInitiateRedeemTests is BUIDLTokenRedeemerTestBase {
 /*** CompleteRedeem tests                                                                   ***/
 /**********************************************************************************************/
 
-contract BUIDLTokenRedeemerCompleteRedeemTests is BUIDLTokenRedeemerTestBase {
+contract TransferTokenRedeemerCompleteRedeemTests is TransferTokenRedeemerTestBase {
 
     MockERC20            public collateralToken;
     MockERC20            public creditToken;
-    BUIDLTokenRedeemer   public redeemer;
+    TransferTokenRedeemer   public redeemer;
     address              public basin;
     address              public redemptionAddress;
 
@@ -221,7 +221,7 @@ contract BUIDLTokenRedeemerCompleteRedeemTests is BUIDLTokenRedeemerTestBase {
 
         basin = address(_deployBasin(address(collateralToken), address(creditToken)));
 
-        redeemer = new BUIDLTokenRedeemer(address(creditToken), redemptionAddress, basin);
+        redeemer = new TransferTokenRedeemer(address(creditToken), redemptionAddress, basin);
     }
 
     function _makeRequest(uint256 creditAmount, uint256 collateralAmount) internal view returns (RedeemRequest memory) {
@@ -270,7 +270,7 @@ contract BUIDLTokenRedeemerCompleteRedeemTests is BUIDLTokenRedeemerTestBase {
         RedeemRequest memory request = _makeRequest(1000e18, 1000e18);
 
         vm.prank(basin);
-        vm.expectRevert(BUIDLTokenRedeemer.NoCollateralBalance.selector);
+        vm.expectRevert(TransferTokenRedeemer.NoCollateralBalance.selector);
         redeemer.completeRedeem(request);
     }
 
@@ -362,11 +362,11 @@ contract BUIDLTokenRedeemerCompleteRedeemTests is BUIDLTokenRedeemerTestBase {
 /*** Sweep tests                                                                            ***/
 /**********************************************************************************************/
 
-contract BUIDLTokenRedeemerSweepTests is BUIDLTokenRedeemerTestBase {
+contract TransferTokenRedeemerSweepTests is TransferTokenRedeemerTestBase {
 
     MockERC20            public creditToken;
     MockERC20            public collateralToken;
-    BUIDLTokenRedeemer   public redeemer;
+    TransferTokenRedeemer   public redeemer;
     GroveBasin           public basin;
     address              public managerAdmin;
     address              public redemptionAddress;
@@ -382,7 +382,7 @@ contract BUIDLTokenRedeemerSweepTests is BUIDLTokenRedeemerTestBase {
         basin.grantRole(basin.MANAGER_ADMIN_ROLE(), address(this));
         basin.grantRole(basin.MANAGER_ADMIN_ROLE(), managerAdmin);
 
-        redeemer = new BUIDLTokenRedeemer(address(creditToken), redemptionAddress, address(basin));
+        redeemer = new TransferTokenRedeemer(address(creditToken), redemptionAddress, address(basin));
     }
 
     function test_sweep_creditToken() public {

@@ -42,7 +42,7 @@ For detailed implementation, refer to the contract code and `IGroveBasin` interf
 
 ### Redeemers
 
-- **`src/redeemers/BUIDLTokenRedeemer.sol`**: Token redeemer that handles BUIDL credit token redemptions through an offchain settlement process.
+- **`src/redeemers/TransferTokenRedeemer.sol`**: Token redeemer that transfers the credit token to an external redemption address for offchain settlement.
 - **`src/redeemers/JTRSYTokenRedeemer.sol`**: Token redeemer that handles asynchronous credit token redemptions through an ERC-7540 vault.
 
 

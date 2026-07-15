@@ -40,8 +40,8 @@ contract GroveBasinFactory {
      * @param managerAdmin                Granted MANAGER_ADMIN_ROLE; UsdsUsdc pocket owner and timelock executor. Must be non-zero: a zero value would open timelock execution to any account.
      * @param manager                     Granted MANAGER_ROLE.
      * @param pauser                      Granted PAUSER_ROLE; timelock canceller.
-     * @param buidlRedemptionAddress      Non-zero deploys a BUIDLTokenRedeemer with this redemption address and registers it.
-     * @param tokenRedeemer               Pre-deployed token redeemer to register (used only when buidlRedemptionAddress == address(0); address(0) skips).
+     * @param redemptionAddress           Non-zero deploys a TransferTokenRedeemer with this redemption address and registers it.
+     * @param tokenRedeemer               Pre-deployed token redeemer to register (used only when redemptionAddress == address(0); address(0) skips).
      * @param issuerRedeemer              Address granted REDEEMER_ROLE (address(0) skips).
      * @param minFee                      Lower fee bound applied to the Basin, in basis points.
      * @param maxFee                      Upper fee bound applied to the Basin, in basis points.
@@ -61,7 +61,7 @@ contract GroveBasinFactory {
         address    managerAdmin;
         address    manager;
         address    pauser;
-        address    buidlRedemptionAddress;
+        address    redemptionAddress;
         address    tokenRedeemer;
         address    issuerRedeemer;
         uint256    minFee;
@@ -232,10 +232,10 @@ contract GroveBasinFactory {
             groveBasin.setPocket(pocket);
         }
 
-        redeemer = params.buidlRedemptionAddress != address(0)
-            ? RedeemerDeployer.deployBuidl({
+        redeemer = params.redemptionAddress != address(0)
+            ? RedeemerDeployer.deployTransfer({
                 creditToken       : params.creditToken,
-                redemptionAddress : params.buidlRedemptionAddress,
+                redemptionAddress : params.redemptionAddress,
                 basin             : basin
             })
             : params.tokenRedeemer;

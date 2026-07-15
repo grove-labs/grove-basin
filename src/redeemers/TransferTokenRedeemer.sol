@@ -10,15 +10,16 @@ import { IGroveBasin }                 from "src/interfaces/IGroveBasin.sol";
 import { ITokenRedeemer, RedeemRequest } from "src/interfaces/ITokenRedeemer.sol";
 
 /**
- * @title  BUIDLTokenRedeemer
- * @notice Token redeemer that handles BUIDL credit token redemptions through an offchain
- *         settlement process. Only one redemption may be active at a time. Transfers credit
- *         tokens to the redemption address on initiation and returns the redeemer's entire
- *         collateral token balance to the basin on completion.
+ * @title  TransferTokenRedeemer
+ * @notice Token redeemer that transfers the credit token to an external redemption address for
+ *         offchain settlement. Only one redemption may be active at a time. Transfers credit
+ *         tokens to the redemption address on initiation and, once the issuer has sent the
+ *         collateral token back to this contract, returns the redeemer's entire collateral token
+ *         balance to the basin on completion.
  * @dev    Only callable by the Basin contract. To reset a stuck redemption, send any non-zero
  *         amount of collateral token to this contract and call completeRedeem.
  */
-contract BUIDLTokenRedeemer is ITokenRedeemer {
+contract TransferTokenRedeemer is ITokenRedeemer {
 
     using SafeERC20 for IERC20;
 
@@ -54,7 +55,7 @@ contract BUIDLTokenRedeemer is ITokenRedeemer {
     }
 
     /**
-     * @param creditToken_       Address of the credit token (BUIDL).
+     * @param creditToken_       Address of the credit token.
      * @param redemptionAddress_ Address that receives credit tokens for offchain settlement.
      * @param basin_             Address of the GroveBasin contract.
      */

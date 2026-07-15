@@ -9,7 +9,7 @@ import { UsdsUsdcPocket }   from "src/pockets/UsdsUsdcPocket.sol";
 import { MorphoUsdtPocket } from "src/pockets/MorphoUsdtPocket.sol";
 import { AaveV3UsdtPocket } from "src/pockets/AaveV3UsdtPocket.sol";
 
-import { BUIDLTokenRedeemer } from "src/redeemers/BUIDLTokenRedeemer.sol";
+import { TransferTokenRedeemer } from "src/redeemers/TransferTokenRedeemer.sol";
 
 /**
  * @dev These libraries exist only to keep `GroveBasinFactory` under the EIP-170 contract size
@@ -87,10 +87,10 @@ library PocketDeployer {
 
 library RedeemerDeployer {
 
-    function deployBuidl(address creditToken, address redemptionAddress, address basin)
+    function deployTransfer(address creditToken, address redemptionAddress, address basin)
         external returns (address)
     {
-        return address(new BUIDLTokenRedeemer({
+        return address(new TransferTokenRedeemer({
             creditToken_       : creditToken,
             redemptionAddress_ : redemptionAddress,
             basin_             : basin
