@@ -19,9 +19,6 @@ contract GroveBasinFactory {
 
     enum PocketType { UsdsUsdc, MorphoUsdt, AaveUsdt, None }
 
-    uint256 public constant DEFAULT_MIN_FEE = 0;
-    uint256 public constant DEFAULT_MAX_FEE = 500;
-
     /// @notice Auto-incrementing CREATE2 salt counter for the full-setup deployment flow.
     uint256 public nonce;
 
@@ -46,8 +43,8 @@ contract GroveBasinFactory {
      * @param buidlRedemptionAddress      Non-zero deploys a BUIDLTokenRedeemer with this redemption address and registers it.
      * @param tokenRedeemer               Pre-deployed token redeemer to register (used only when buidlRedemptionAddress == address(0); address(0) skips).
      * @param issuerRedeemer              Address granted REDEEMER_ROLE (address(0) skips).
-     * @param minFee                      Lower fee bound; ignored when maxFee == 0 (defaults applied).
-     * @param maxFee                      Upper fee bound; 0 applies the defaults (DEFAULT_MIN_FEE, DEFAULT_MAX_FEE).
+     * @param minFee                      Lower fee bound applied to the Basin, in basis points.
+     * @param maxFee                      Upper fee bound applied to the Basin, in basis points.
      * @param pocketType                  Which pocket implementation to deploy and wire up (None deploys no pocket).
      * @param pausedFlags                 Flags applied via setPaused; empty pauses nothing.
      */
@@ -297,19 +294,16 @@ contract GroveBasinFactory {
             groveBasin.setPaused(params.pausedFlags[i]);
         }
 
-        uint256 minFee_ = params.minFee > 0 ? params.minFee : DEFAULT_MIN_FEE;
-        uint256 maxFee_ = params.maxFee > 0 ? params.maxFee : DEFAULT_MAX_FEE;
-
         // A fresh Basin starts with zero purchase/redemption fees, so setFeeBounds reverts with
-        // CurrentFeeOutOfNewBounds whenever minFee_ > 0. Raise the fees into range under a
+        // CurrentFeeOutOfNewBounds whenever params.minFee > 0. Raise the fees into range under a
         // temporary lower bound of zero before applying the final bounds.
-        if (minFee_ > 0) {
-            groveBasin.setFeeBounds(0, maxFee_);
-            groveBasin.setPurchaseFee(minFee_);
-            groveBasin.setRedemptionFee(minFee_);
+        if (params.minFee > 0) {
+            groveBasin.setFeeBounds(0, params.maxFee);
+            groveBasin.setPurchaseFee(params.minFee);
+            groveBasin.setRedemptionFee(params.minFee);
         }
 
-        groveBasin.setFeeBounds(minFee_, maxFee_);
+        groveBasin.setFeeBounds(params.minFee, params.maxFee);
 
         groveBasin.revokeRole(groveBasin.PAUSER_ROLE(), address(this));
 

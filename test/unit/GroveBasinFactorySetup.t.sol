@@ -96,7 +96,7 @@ contract GroveBasinFactorySetupTests is Test {
             issuerRedeemer              : address(0),
             pausedFlags                 : _defaultPausedFlags(),
             minFee                      : 0,
-            maxFee                      : 0
+            maxFee                      : 500
         });
     }
 
@@ -148,7 +148,7 @@ contract GroveBasinFactorySetupTests is Test {
         assertEq(swapToken.balanceOf(basin),  0);
         assertEq(swapToken.balanceOf(pocket), 10 ** swapToken.decimals());
 
-        // Default fee bounds (maxFee == 0 sentinel).
+        // Explicit fee bounds applied verbatim.
         assertEq(groveBasin.minFee(), 0);
         assertEq(groveBasin.maxFee(), 500);
 
@@ -188,7 +188,7 @@ contract GroveBasinFactorySetupTests is Test {
         assertTrue(pocket != address(0));
         assertEq(groveBasin.pocket(), pocket);
 
-        // Custom fee bounds applied (exercises the maxFee != 0 path).
+        // Custom fee bounds applied verbatim.
         assertEq(groveBasin.minFee(), 0);
         assertEq(groveBasin.maxFee(), 400);
 
@@ -265,6 +265,22 @@ contract GroveBasinFactorySetupTests is Test {
         assertEq(groveBasin.maxFee(),        400);
         assertEq(groveBasin.purchaseFee(),   100);
         assertEq(groveBasin.redemptionFee(), 100);
+    }
+
+    function test_deploy_zeroFeeBounds() public {
+        _seed();
+
+        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
+        params.minFee = 0;
+        params.maxFee = 0;
+
+        (address basin,,) = factory.deployAndInit(params, adminTimelock);
+
+        GroveBasin groveBasin = GroveBasin(basin);
+
+        // Explicit (0, 0) bounds are honored; no default is substituted for a zero maxFee.
+        assertEq(groveBasin.minFee(), 0);
+        assertEq(groveBasin.maxFee(), 0);
     }
 
     /**********************************************************************************************/
