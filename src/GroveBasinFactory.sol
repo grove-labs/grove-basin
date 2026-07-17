@@ -25,6 +25,11 @@ contract GroveBasinFactory {
     /// @notice Auto-incrementing CREATE2 salt counter for the full-setup deployment flow.
     uint256 public nonce;
 
+    /// @notice Upper bound of the salt range reserved for the sequential (nonce-based) flow.
+    ///         Caller-selected salts must be strictly greater so the two flows never share a
+    ///         CREATE2 address.
+    uint256 public constant MAX_AUTO_SALT = type(uint256).max / 2;
+
     /**
      * @param liquidityProvider           Address set as the Basin `liquidityProvider`.
      * @param swapToken                   Basin swap token.
@@ -72,6 +77,7 @@ contract GroveBasinFactory {
     error InvalidTimelockProposer();
     error InvalidLiquidityProvider();
     error InvalidManagerAdmin();
+    error InvalidCustomSalt();
 
     event GroveBasinDeployed(
         address indexed groveBasin,
@@ -97,7 +103,7 @@ contract GroveBasinFactory {
     )
         external returns (address groveBasin)
     {
-        return deploy({
+        return _deploy({
             salt                        : bytes32(nonce++),
             owner                       : owner,
             liquidityProvider           : liquidityProvider,
@@ -122,6 +128,37 @@ contract GroveBasinFactory {
         address creditTokenRateProvider
     )
         public returns (address groveBasin)
+    {
+        // Caller-selected salts share the CREATE2 namespace with the sequential deployAndInit
+        // salts. Restrict them to the upper half so a permissionless deploy cannot occupy an
+        // address the fixed-nonce deployAndInit path would compute and permanently block it.
+        if (uint256(salt) <= MAX_AUTO_SALT) revert InvalidCustomSalt();
+
+        return _deploy({
+            salt                        : salt,
+            owner                       : owner,
+            liquidityProvider           : liquidityProvider,
+            swapToken                   : swapToken,
+            collateralToken             : collateralToken,
+            creditToken                 : creditToken,
+            swapTokenRateProvider       : swapTokenRateProvider,
+            collateralTokenRateProvider : collateralTokenRateProvider,
+            creditTokenRateProvider     : creditTokenRateProvider
+        });
+    }
+
+    function _deploy(
+        bytes32 salt,
+        address owner,
+        address liquidityProvider,
+        address swapToken,
+        address collateralToken,
+        address creditToken,
+        address swapTokenRateProvider,
+        address collateralTokenRateProvider,
+        address creditTokenRateProvider
+    )
+        internal returns (address groveBasin)
     {
         uint256 seedAmount = 10 ** IERC20(swapToken).decimals();
 
@@ -181,7 +218,7 @@ contract GroveBasinFactory {
         if (params.liquidityProvider == address(this))                     revert InvalidLiquidityProvider();
         if (params.managerAdmin == address(0))                             revert InvalidManagerAdmin();
 
-        basin = deploy({
+        basin = _deploy({
             salt                        : bytes32(nonce++),
             owner                       : address(this),
             liquidityProvider           : params.liquidityProvider,
