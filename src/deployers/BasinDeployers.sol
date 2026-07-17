@@ -36,16 +36,16 @@ library GroveBasinDeployer {
     )
         external returns (address)
     {
-        return address(new GroveBasin{salt: salt}(
-            owner,
-            liquidityProvider,
-            swapToken,
-            collateralToken,
-            creditToken,
-            swapTokenRateProvider,
-            collateralTokenRateProvider,
-            creditTokenRateProvider
-        ));
+        return address(new GroveBasin{salt: salt}({
+            owner_                       : owner,
+            liquidityProvider_           : liquidityProvider,
+            swapToken_                   : swapToken,
+            collateralToken_             : collateralToken,
+            creditToken_                 : creditToken,
+            swapTokenRateProvider_       : swapTokenRateProvider,
+            collateralTokenRateProvider_ : collateralTokenRateProvider,
+            creditTokenRateProvider_     : creditTokenRateProvider
+        }));
     }
 
 }
@@ -55,17 +55,32 @@ library PocketDeployer {
     function deployUsdsUsdc(address basin, address usdc, address usds, address psm, address groveProxy)
         external returns (address)
     {
-        return address(new UsdsUsdcPocket(basin, usdc, usds, psm, groveProxy));
+        return address(new UsdsUsdcPocket({
+            basin_      : basin,
+            usdc_       : usdc,
+            usds_       : usds,
+            psm_        : psm,
+            groveProxy_ : groveProxy
+        }));
     }
 
     function deployMorphoUsdt(address basin, address usdt, address vault) external returns (address) {
-        return address(new MorphoUsdtPocket(basin, usdt, vault));
+        return address(new MorphoUsdtPocket({
+            basin_ : basin,
+            usdt_  : usdt,
+            vault_ : vault
+        }));
     }
 
     function deployAaveUsdt(address basin, address usdt, address aUsdt, address aaveV3Pool)
         external returns (address)
     {
-        return address(new AaveV3UsdtPocket(basin, usdt, aUsdt, aaveV3Pool));
+        return address(new AaveV3UsdtPocket({
+            basin_      : basin,
+            usdt_       : usdt,
+            aUsdt_      : aUsdt,
+            aaveV3Pool_ : aaveV3Pool
+        }));
     }
 
 }
@@ -75,7 +90,11 @@ library RedeemerDeployer {
     function deployBuidl(address creditToken, address redemptionAddress, address basin)
         external returns (address)
     {
-        return address(new BUIDLTokenRedeemer(creditToken, redemptionAddress, basin));
+        return address(new BUIDLTokenRedeemer({
+            creditToken_       : creditToken,
+            redemptionAddress_ : redemptionAddress,
+            basin_             : basin
+        }));
     }
 
 }
@@ -91,7 +110,12 @@ library TimelockDeployer {
         address[] memory executors = new address[](1);
         executors[0] = executor;
 
-        TimelockController timelock = new TimelockController(minDelay, proposers, executors, admin);
+        TimelockController timelock = new TimelockController({
+            minDelay  : minDelay,
+            proposers : proposers,
+            executors : executors,
+            admin     : admin
+        });
 
         // Constructor grants CANCELLER_ROLE to proposers by default; also grant it to the canceller.
         timelock.grantRole(timelock.CANCELLER_ROLE(), canceller);

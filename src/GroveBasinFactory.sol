@@ -126,9 +126,6 @@ contract GroveBasinFactory {
     )
         public returns (address groveBasin)
     {
-        // Caller-selected salts share the CREATE2 namespace with the sequential deployAndInit
-        // salts. Restrict them to the upper half so a permissionless deploy cannot occupy an
-        // address the fixed-nonce deployAndInit path would compute and permanently block it.
         if (uint256(salt) <= MAX_AUTO_SALT) revert InvalidCustomSalt();
 
         return _deploy({
@@ -161,17 +158,17 @@ contract GroveBasinFactory {
 
         IERC20(swapToken).safeTransferFrom(msg.sender, address(this), seedAmount);
 
-        groveBasin = GroveBasinDeployer.deploy(
-            salt,
-            owner,
-            liquidityProvider,
-            swapToken,
-            collateralToken,
-            creditToken,
-            swapTokenRateProvider,
-            collateralTokenRateProvider,
-            creditTokenRateProvider
-        );
+        groveBasin = GroveBasinDeployer.deploy({
+            salt                        : salt,
+            owner                       : owner,
+            liquidityProvider           : liquidityProvider,
+            swapToken                   : swapToken,
+            collateralToken             : collateralToken,
+            creditToken                 : creditToken,
+            swapTokenRateProvider       : swapTokenRateProvider,
+            collateralTokenRateProvider : collateralTokenRateProvider,
+            creditTokenRateProvider     : creditTokenRateProvider
+        });
 
         IERC20(swapToken).safeApprove(groveBasin, seedAmount);
         GroveBasin(groveBasin).depositInitial(swapToken, seedAmount);
@@ -190,13 +187,13 @@ contract GroveBasinFactory {
     {
         if (proposer == address(0)) revert InvalidTimelockProposer();
 
-        timelock = TimelockDeployer.deploy(
-            minDelay,
-            proposer,
-            params.managerAdmin,
-            address(this),
-            params.pauser
-        );
+        timelock = TimelockDeployer.deploy({
+            minDelay  : minDelay,
+            proposer  : proposer,
+            executor  : params.managerAdmin,
+            admin     : address(this),
+            canceller : params.pauser
+        });
 
         (basin, pocket, redeemer) = deployAndInit(params, timelock);
     }
@@ -208,9 +205,6 @@ contract GroveBasinFactory {
     function deployAndInit(DeployParams calldata params, address adminTimelock)
         public returns (address basin, address pocket, address redeemer)
     {
-        // Reject self-referential or unset configurations that would disable Basin functionality:
-        // a factory-owned timelock removes the only owner, a factory liquidity provider blocks all
-        // deposits, and a zero manager admin opens timelock execution to any account.
         if (adminTimelock == address(0) || adminTimelock == address(this)) revert InvalidAdminTimelock();
         if (params.liquidityProvider == address(this))                     revert InvalidLiquidityProvider();
         if (params.managerAdmin == address(0))                             revert InvalidManagerAdmin();
@@ -239,7 +233,11 @@ contract GroveBasinFactory {
         }
 
         redeemer = params.buidlRedemptionAddress != address(0)
-            ? RedeemerDeployer.deployBuidl(params.creditToken, params.buidlRedemptionAddress, basin)
+            ? RedeemerDeployer.deployBuidl({
+                creditToken       : params.creditToken,
+                redemptionAddress : params.buidlRedemptionAddress,
+                basin             : basin
+            })
             : params.tokenRedeemer;
 
         _initBasin(groveBasin, params, redeemer, adminTimelock);
@@ -251,17 +249,26 @@ contract GroveBasinFactory {
 
     function _deployPocket(DeployParams calldata params, address basin) internal returns (address) {
         if (params.pocketType == PocketType.UsdsUsdc) {
-            return PocketDeployer.deployUsdsUsdc(
-                basin,
-                params.collateralToken,
-                params.swapToken,
-                params.pocketAddress1,
-                params.managerAdmin
-            );
+            return PocketDeployer.deployUsdsUsdc({
+                basin      : basin,
+                usdc       : params.collateralToken,
+                usds       : params.swapToken,
+                psm        : params.pocketAddress1,
+                groveProxy : params.managerAdmin
+            });
         } else if (params.pocketType == PocketType.MorphoUsdt) {
-            return PocketDeployer.deployMorphoUsdt(basin, params.swapToken, params.pocketAddress1);
+            return PocketDeployer.deployMorphoUsdt({
+                basin : basin,
+                usdt  : params.swapToken,
+                vault : params.pocketAddress1
+            });
         } else if (params.pocketType == PocketType.AaveUsdt) {
-            return PocketDeployer.deployAaveUsdt(basin, params.swapToken, params.pocketAddress1, params.pocketAddress2);
+            return PocketDeployer.deployAaveUsdt({
+                basin      : basin,
+                usdt       : params.swapToken,
+                aUsdt      : params.pocketAddress1,
+                aaveV3Pool : params.pocketAddress2
+            });
         } else {
             return address(0);  // PocketType.None
         }
@@ -294,9 +301,6 @@ contract GroveBasinFactory {
             groveBasin.setPaused(params.pausedFlags[i]);
         }
 
-        // A fresh Basin starts with zero purchase/redemption fees, so setFeeBounds reverts with
-        // CurrentFeeOutOfNewBounds whenever params.minFee > 0. Raise the fees into range under a
-        // temporary lower bound of zero before applying the final bounds.
         if (params.minFee > 0) {
             groveBasin.setFeeBounds(0, params.maxFee);
             groveBasin.setPurchaseFee(params.minFee);
