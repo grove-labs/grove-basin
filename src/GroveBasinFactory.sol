@@ -263,6 +263,15 @@ contract GroveBasinFactory {
         uint256 minFee_ = params.minFee > 0 ? params.minFee : DEFAULT_MIN_FEE;
         uint256 maxFee_ = params.maxFee > 0 ? params.maxFee : DEFAULT_MAX_FEE;
 
+        // A fresh Basin starts with zero purchase/redemption fees, so setFeeBounds reverts with
+        // CurrentFeeOutOfNewBounds whenever minFee_ > 0. Raise the fees into range under a
+        // temporary lower bound of zero before applying the final bounds.
+        if (minFee_ > 0) {
+            groveBasin.setFeeBounds(0, maxFee_);
+            groveBasin.setPurchaseFee(minFee_);
+            groveBasin.setRedemptionFee(minFee_);
+        }
+
         groveBasin.setFeeBounds(minFee_, maxFee_);
 
         groveBasin.revokeRole(groveBasin.PAUSER_ROLE(), address(this));

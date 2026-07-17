@@ -246,6 +246,28 @@ contract GroveBasinFactorySetupTests is Test {
     }
 
     /**********************************************************************************************/
+    /*** Fee bounds                                                                             ***/
+    /**********************************************************************************************/
+
+    function test_deploy_nonZeroMinFee_setsFeesWithinBounds() public {
+        _seed();
+
+        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
+        params.minFee = 100;
+        params.maxFee = 400;
+
+        (address basin,,) = factory.deployAndInit(params, adminTimelock);
+
+        GroveBasin groveBasin = GroveBasin(basin);
+
+        // Fees raised into range so the tightened bounds apply without reverting.
+        assertEq(groveBasin.minFee(),        100);
+        assertEq(groveBasin.maxFee(),        400);
+        assertEq(groveBasin.purchaseFee(),   100);
+        assertEq(groveBasin.redemptionFee(), 100);
+    }
+
+    /**********************************************************************************************/
     /*** Timelock variant                                                                       ***/
     /**********************************************************************************************/
 
