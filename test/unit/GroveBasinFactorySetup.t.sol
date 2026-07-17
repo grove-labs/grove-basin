@@ -292,6 +292,29 @@ contract GroveBasinFactorySetupTests is Test {
         factory.deployAndInit(params, address(0));
     }
 
+    function test_deploy_revertsOnSelfAdminTimelock() public {
+        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.UsdsUsdc);
+
+        vm.expectRevert(GroveBasinFactory.InvalidAdminTimelock.selector);
+        factory.deployAndInit(params, address(factory));
+    }
+
+    function test_deploy_revertsOnSelfLiquidityProvider() public {
+        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.UsdsUsdc);
+        params.liquidityProvider = address(factory);
+
+        vm.expectRevert(GroveBasinFactory.InvalidLiquidityProvider.selector);
+        factory.deployAndInit(params, adminTimelock);
+    }
+
+    function test_deploy_revertsOnZeroManagerAdmin() public {
+        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.UsdsUsdc);
+        params.managerAdmin = address(0);
+
+        vm.expectRevert(GroveBasinFactory.InvalidManagerAdmin.selector);
+        factory.deployAndInit(params, adminTimelock);
+    }
+
     function test_deployWithTimelockAndInit_revertsOnZeroProposer() public {
         GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.MorphoUsdt);
 

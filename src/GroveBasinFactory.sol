@@ -35,7 +35,7 @@ contract GroveBasinFactory {
      * @param creditTokenRateProvider     Rate provider for the credit token.
      * @param pocketAddress1              UsdsUsdc: PSM wrapper | MorphoUsdt: ERC-4626 vault | AaveUsdt: aUSDT token.
      * @param pocketAddress2              AaveUsdt: Aave V3 pool | otherwise unused.
-     * @param managerAdmin                Granted MANAGER_ADMIN_ROLE; UsdsUsdc pocket owner and timelock executor.
+     * @param managerAdmin                Granted MANAGER_ADMIN_ROLE; UsdsUsdc pocket owner and timelock executor. Must be non-zero: a zero value would open timelock execution to any account.
      * @param manager                     Granted MANAGER_ROLE.
      * @param pauser                      Granted PAUSER_ROLE; timelock canceller.
      * @param buidlRedemptionAddress      Non-zero deploys a BUIDLTokenRedeemer with this redemption address and registers it.
@@ -70,6 +70,8 @@ contract GroveBasinFactory {
 
     error InvalidAdminTimelock();
     error InvalidTimelockProposer();
+    error InvalidLiquidityProvider();
+    error InvalidManagerAdmin();
 
     event GroveBasinDeployed(
         address indexed groveBasin,
@@ -172,7 +174,12 @@ contract GroveBasinFactory {
     function deployAndInit(DeployParams calldata params, address adminTimelock)
         public returns (address basin, address pocket, address redeemer)
     {
-        if (adminTimelock == address(0)) revert InvalidAdminTimelock();
+        // Reject self-referential or unset configurations that would disable Basin functionality:
+        // a factory-owned timelock removes the only owner, a factory liquidity provider blocks all
+        // deposits, and a zero manager admin opens timelock execution to any account.
+        if (adminTimelock == address(0) || adminTimelock == address(this)) revert InvalidAdminTimelock();
+        if (params.liquidityProvider == address(this))                     revert InvalidLiquidityProvider();
+        if (params.managerAdmin == address(0))                             revert InvalidManagerAdmin();
 
         basin = deploy({
             salt                        : bytes32(nonce++),
