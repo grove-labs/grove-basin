@@ -128,10 +128,10 @@ abstract contract UsdsUsdcBasinDeploymentForkTestBase is Test {
     function _redeemerAddr()                internal pure virtual returns (address);
     function _tokenRedeemerAddr()           internal pure virtual returns (address);
 
-    uint256 internal constant FORK_BLOCK_NUMBER = 25093011; // Thu, May 14, 7:33am EST
+    uint256 internal constant FORK_BLOCK_NUMBER = 25360000; // Sat, Jun 20 2026 (after v100 redeploy)
 
     function setUp() public virtual {
-        vm.createSelectFork(getChain("mainnet").rpcUrl);
+        vm.createSelectFork(getChain("mainnet").rpcUrl, FORK_BLOCK_NUMBER);
         basin  = GroveBasin(_basinAddr());
         pocket = UsdsUsdcPocket(basin.pocket());
         _postSetUp();
