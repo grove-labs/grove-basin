@@ -163,13 +163,31 @@ contract GroveBasinFactorySetupForkTest is Test {
         assertTrue(groveBasin.hasRole(groveBasin.REDEEMER_ROLE(),          issuer));
     }
 
-    function test_deploy_morphoUsdt_withExternalRedeemer() public {
+    function test_deploy_morphoUsdt_externalRedeemer_atomicRegistrationReverts() public {
+        // A faithful redeemer must be constructed against an already-deployed Basin, so it can
+        // only ever be bound to a different Basin than the one deployAndInit creates in the same
+        // call. Registration then reverts in setUp's onlyBasin check, so the atomic
+        // external-redeemer branch is unreachable for real redeemers; only the self-deployed
+        // BUIDL branch (test_deploy_usdsUsdc_withBuidlRedeemer) works.
+        _seed(Ethereum.USDT);
+        (address otherBasin,,) =
+            factory.deployAndInit(_baseParams(GroveBasinFactory.PocketType.MorphoUsdt), adminTimelock);
+
+        address externalRedeemer = address(new MockTokenRedeemer(address(creditToken), otherBasin));
+
+        _seed(Ethereum.USDT);
+        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.MorphoUsdt);
+        params.tokenRedeemer = externalRedeemer;
+
+        vm.expectRevert(MockTokenRedeemer.OnlyBasin.selector);
+        factory.deployAndInit(params, adminTimelock);
+    }
+
+    function test_deploy_morphoUsdt_externalRedeemerAddedPostDeployment() public {
         _seed(Ethereum.USDT);
 
-        address externalRedeemer = address(new MockTokenRedeemer());
-
         GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.MorphoUsdt);
-        params.tokenRedeemer  = externalRedeemer;
+        params.tokenRedeemer  = address(0);  // atomic external registration is impossible; skip it
         params.issuerRedeemer = issuer;
 
         (address basin, address pocket, address redeemer) = factory.deployAndInit(params, adminTimelock);
@@ -180,10 +198,18 @@ contract GroveBasinFactorySetupForkTest is Test {
 
         _assertCommonConfig(groveBasin, pocket, adminTimelock);
 
-        // The pre-deployed redeemer address is registered as-is.
-        assertEq(redeemer, externalRedeemer);
+        // No redeemer registered during setup; issuer still granted REDEEMER_ROLE.
+        assertEq(redeemer, address(0));
+        assertTrue(groveBasin.hasRole(groveBasin.REDEEMER_ROLE(), issuer));
+
+        // Real supported flow: build the redeemer against the now-existing Basin, then the
+        // MANAGER_ADMIN (GROVE_PROXY) registers it via addTokenRedeemer.
+        address externalRedeemer = address(new MockTokenRedeemer(address(creditToken), basin));
+
+        vm.prank(Ethereum.GROVE_PROXY);
+        groveBasin.addTokenRedeemer(externalRedeemer);
+
         assertTrue(groveBasin.hasRole(groveBasin.REDEEMER_CONTRACT_ROLE(), externalRedeemer));
-        assertTrue(groveBasin.hasRole(groveBasin.REDEEMER_ROLE(),          issuer));
     }
 
     function test_deploy_aaveUsdt_withoutRedeemer() public {
@@ -256,11 +282,33 @@ contract GroveBasinFactorySetupForkTest is Test {
 
 }
 
-/// @dev Minimal ITokenRedeemer stub: GroveBasin.addTokenRedeemer only invokes setUp on the
-///      registered redeemer, so a no-op setUp is enough to exercise the external-redeemer path.
+/// @dev Faithful ITokenRedeemer stand-in. Like the real redeemers (BUIDLTokenRedeemer /
+///      JTRSYTokenRedeemer), its constructor reads the Basin's token config, so it cannot be
+///      constructed before the Basin exists, and setUp/tearDown are gated by onlyBasin. This
+///      reproduces the circular existence dependency that makes atomic registration of a
+///      pre-deployed redeemer impossible inside deployAndInit.
 contract MockTokenRedeemer {
 
-    function setUp(address) external {}
-    function tearDown(address) external {}
+    error OnlyBasin();
+    error CreditTokenMismatch();
+
+    address public immutable basin;
+    address public immutable creditToken;
+    address public immutable collateralToken;
+
+    modifier onlyBasin() {
+        if (msg.sender != basin) revert OnlyBasin();
+        _;
+    }
+
+    constructor(address creditToken_, address basin_) {
+        if (GroveBasin(basin_).creditToken() != creditToken_) revert CreditTokenMismatch();
+        basin           = basin_;
+        creditToken     = creditToken_;
+        collateralToken = GroveBasin(basin_).collateralToken();
+    }
+
+    function setUp(address)    external onlyBasin {}
+    function tearDown(address) external onlyBasin {}
 
 }
