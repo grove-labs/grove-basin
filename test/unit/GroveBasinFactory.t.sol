@@ -142,7 +142,7 @@ contract GroveBasinFactoryTests is GroveBasinTestBase {
 
         _mintAndApprove();
         address basin2 = factory.deploy(
-            bytes32(uint256(1)),
+            bytes32(type(uint256).max),
             owner,
             lp,
             address(swapToken),
@@ -162,7 +162,7 @@ contract GroveBasinFactoryTests is GroveBasinTestBase {
     }
 
     function test_deploy_sameSaltReverts() public {
-        bytes32 salt = bytes32(uint256(1));
+        bytes32 salt = bytes32(type(uint256).max);
 
         _mintAndApprove();
         factory.deploy(
@@ -191,6 +191,42 @@ contract GroveBasinFactoryTests is GroveBasinTestBase {
             address(collateralTokenRateProvider),
             address(creditTokenRateProvider)
         );
+    }
+
+    function test_deploy_reservedSaltReverts() public {
+        // Salts in the auto-salt range [0, MAX_AUTO_SALT] are reserved for the sequential path.
+        bytes32 salt = bytes32(factory.MAX_AUTO_SALT());
+
+        vm.expectRevert(GroveBasinFactory.InvalidCustomSalt.selector);
+        factory.deploy(
+            salt,
+            owner,
+            lp,
+            address(swapToken),
+            address(collateralToken),
+            address(creditToken),
+            address(swapTokenRateProvider),
+            address(collateralTokenRateProvider),
+            address(creditTokenRateProvider)
+        );
+    }
+
+    function test_deploy_customSaltJustAboveBoundary() public {
+        _mintAndApprove();
+
+        address newBasin = factory.deploy(
+            bytes32(factory.MAX_AUTO_SALT() + 1),
+            owner,
+            lp,
+            address(swapToken),
+            address(collateralToken),
+            address(creditToken),
+            address(swapTokenRateProvider),
+            address(collateralTokenRateProvider),
+            address(creditTokenRateProvider)
+        );
+
+        assertEq(GroveBasin(newBasin).totalShares(), 1e18);
     }
 
 }

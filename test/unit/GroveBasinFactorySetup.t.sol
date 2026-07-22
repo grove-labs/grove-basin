@@ -96,7 +96,7 @@ contract GroveBasinFactorySetupTests is Test {
             issuerRedeemer              : address(0),
             pausedFlags                 : _defaultPausedFlags(),
             minFee                      : 0,
-            maxFee                      : 0
+            maxFee                      : 500
         });
     }
 
@@ -148,7 +148,7 @@ contract GroveBasinFactorySetupTests is Test {
         assertEq(swapToken.balanceOf(basin),  0);
         assertEq(swapToken.balanceOf(pocket), 10 ** swapToken.decimals());
 
-        // Default fee bounds (maxFee == 0 sentinel).
+        // Explicit fee bounds applied verbatim.
         assertEq(groveBasin.minFee(), 0);
         assertEq(groveBasin.maxFee(), 500);
 
@@ -166,13 +166,31 @@ contract GroveBasinFactorySetupTests is Test {
         assertTrue(groveBasin.hasRole(groveBasin.REDEEMER_ROLE(),          issuer));
     }
 
-    function test_deploy_morphoUsdt_withExternalRedeemer_customFeeBounds() public {
+    function test_deploy_morphoUsdt_externalRedeemer_atomicRegistrationReverts() public {
+        // A faithful redeemer must be constructed against an already-deployed Basin, so it can
+        // only ever be bound to a different Basin than the one deployAndInit creates in the same
+        // call. Registration then reverts in setUp's onlyBasin check, so the atomic
+        // external-redeemer branch is unreachable for real redeemers; only the self-deployed
+        // BUIDL branch (test_deploy_usdsUsdc_withBuidlRedeemer) works.
+        _seed();
+        (address otherBasin,,) =
+            factory.deployAndInit(_baseParams(GroveBasinFactory.PocketType.MorphoUsdt), adminTimelock);
+
+        address externalRedeemer = address(new MockTokenRedeemer(address(creditToken), otherBasin));
+
+        _seed();
+        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.MorphoUsdt);
+        params.tokenRedeemer = externalRedeemer;
+
+        vm.expectRevert(MockTokenRedeemer.OnlyBasin.selector);
+        factory.deployAndInit(params, adminTimelock);
+    }
+
+    function test_deploy_morphoUsdt_externalRedeemerAddedPostDeployment_customFeeBounds() public {
         _seed();
 
-        address externalRedeemer = address(new MockTokenRedeemer());
-
         GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.MorphoUsdt);
-        params.tokenRedeemer  = externalRedeemer;
+        params.tokenRedeemer  = address(0);  // atomic external registration is impossible; skip it
         params.issuerRedeemer = issuer;
         params.minFee         = 0;
         params.maxFee         = 400;
@@ -188,14 +206,22 @@ contract GroveBasinFactorySetupTests is Test {
         assertTrue(pocket != address(0));
         assertEq(groveBasin.pocket(), pocket);
 
-        // Custom fee bounds applied (exercises the maxFee != 0 path).
+        // Custom fee bounds applied verbatim.
         assertEq(groveBasin.minFee(), 0);
         assertEq(groveBasin.maxFee(), 400);
 
-        // Pre-deployed redeemer registered as-is; issuer granted REDEEMER_ROLE.
-        assertEq(redeemer, externalRedeemer);
+        // No redeemer registered during setup; issuer still granted REDEEMER_ROLE.
+        assertEq(redeemer, address(0));
+        assertTrue(groveBasin.hasRole(groveBasin.REDEEMER_ROLE(), issuer));
+
+        // Real supported flow: build the redeemer against the now-existing Basin, then the
+        // MANAGER_ADMIN (GROVE_PROXY) registers it via addTokenRedeemer.
+        address externalRedeemer = address(new MockTokenRedeemer(address(creditToken), basin));
+
+        vm.prank(groveProxy);
+        groveBasin.addTokenRedeemer(externalRedeemer);
+
         assertTrue(groveBasin.hasRole(groveBasin.REDEEMER_CONTRACT_ROLE(), externalRedeemer));
-        assertTrue(groveBasin.hasRole(groveBasin.REDEEMER_ROLE(),          issuer));
     }
 
     function test_deploy_aaveUsdt_noRedeemer_emptyPausedFlags() public {
@@ -246,6 +272,44 @@ contract GroveBasinFactorySetupTests is Test {
     }
 
     /**********************************************************************************************/
+    /*** Fee bounds                                                                             ***/
+    /**********************************************************************************************/
+
+    function test_deploy_nonZeroMinFee_setsFeesWithinBounds() public {
+        _seed();
+
+        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
+        params.minFee = 100;
+        params.maxFee = 400;
+
+        (address basin,,) = factory.deployAndInit(params, adminTimelock);
+
+        GroveBasin groveBasin = GroveBasin(basin);
+
+        // Fees raised into range so the tightened bounds apply without reverting.
+        assertEq(groveBasin.minFee(),        100);
+        assertEq(groveBasin.maxFee(),        400);
+        assertEq(groveBasin.purchaseFee(),   100);
+        assertEq(groveBasin.redemptionFee(), 100);
+    }
+
+    function test_deploy_zeroFeeBounds() public {
+        _seed();
+
+        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
+        params.minFee = 0;
+        params.maxFee = 0;
+
+        (address basin,,) = factory.deployAndInit(params, adminTimelock);
+
+        GroveBasin groveBasin = GroveBasin(basin);
+
+        // Explicit (0, 0) bounds are honored; no default is substituted for a zero maxFee.
+        assertEq(groveBasin.minFee(), 0);
+        assertEq(groveBasin.maxFee(), 0);
+    }
+
+    /**********************************************************************************************/
     /*** Timelock variant                                                                       ***/
     /**********************************************************************************************/
 
@@ -292,6 +356,29 @@ contract GroveBasinFactorySetupTests is Test {
         factory.deployAndInit(params, address(0));
     }
 
+    function test_deploy_revertsOnSelfAdminTimelock() public {
+        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.UsdsUsdc);
+
+        vm.expectRevert(GroveBasinFactory.InvalidAdminTimelock.selector);
+        factory.deployAndInit(params, address(factory));
+    }
+
+    function test_deploy_revertsOnSelfLiquidityProvider() public {
+        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.UsdsUsdc);
+        params.liquidityProvider = address(factory);
+
+        vm.expectRevert(GroveBasinFactory.InvalidLiquidityProvider.selector);
+        factory.deployAndInit(params, adminTimelock);
+    }
+
+    function test_deploy_revertsOnZeroManagerAdmin() public {
+        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.UsdsUsdc);
+        params.managerAdmin = address(0);
+
+        vm.expectRevert(GroveBasinFactory.InvalidManagerAdmin.selector);
+        factory.deployAndInit(params, adminTimelock);
+    }
+
     function test_deployWithTimelockAndInit_revertsOnZeroProposer() public {
         GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.MorphoUsdt);
 
@@ -301,11 +388,33 @@ contract GroveBasinFactorySetupTests is Test {
 
 }
 
-/// @dev Minimal ITokenRedeemer stub: GroveBasin.addTokenRedeemer only invokes setUp on the
-///      registered redeemer, so a no-op setUp is enough to exercise the external-redeemer path.
+/// @dev Faithful ITokenRedeemer stand-in. Like the real redeemers (BUIDLTokenRedeemer /
+///      JTRSYTokenRedeemer), its constructor reads the Basin's token config, so it cannot be
+///      constructed before the Basin exists, and setUp/tearDown are gated by onlyBasin. This
+///      reproduces the circular existence dependency that makes atomic registration of a
+///      pre-deployed redeemer impossible inside deployAndInit.
 contract MockTokenRedeemer {
 
-    function setUp(address) external {}
-    function tearDown(address) external {}
+    error OnlyBasin();
+    error CreditTokenMismatch();
+
+    address public immutable basin;
+    address public immutable creditToken;
+    address public immutable collateralToken;
+
+    modifier onlyBasin() {
+        if (msg.sender != basin) revert OnlyBasin();
+        _;
+    }
+
+    constructor(address creditToken_, address basin_) {
+        if (GroveBasin(basin_).creditToken() != creditToken_) revert CreditTokenMismatch();
+        basin           = basin_;
+        creditToken     = creditToken_;
+        collateralToken = GroveBasin(basin_).collateralToken();
+    }
+
+    function setUp(address)    external onlyBasin {}
+    function tearDown(address) external onlyBasin {}
 
 }
