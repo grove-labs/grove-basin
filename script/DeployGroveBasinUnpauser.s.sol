@@ -16,7 +16,8 @@ contract DeployGroveBasinUnpauser is Script {
      * @dev    Config format:
      *         {
      *           "owner": "0x...",
-     *           "unpausers": ["0x...", "0x..."]
+     *           "unpausers": ["0x...", "0x..."],
+     *           "globalUnpausers": ["0x...", "0x..."]
      *         }
      *         Usage:
      *         forge script script/DeployGroveBasinUnpauser.s.sol:DeployGroveBasinUnpauser \
@@ -27,8 +28,9 @@ contract DeployGroveBasinUnpauser is Script {
     function run(string memory configPath) external returns (address unpauser) {
         string memory config = vm.readFile(configPath);
 
-        address           owner     = config.readAddress(".owner");
-        address[] memory  unpausers = config.readAddressArray(".unpausers");
+        address           owner           = config.readAddress(".owner");
+        address[] memory  unpausers       = config.readAddressArray(".unpausers");
+        address[] memory  globalUnpausers = config.readAddressArray(".globalUnpausers");
 
         require(owner != address(0), "DeployGroveBasinUnpauser/zero-owner");
 
@@ -37,9 +39,12 @@ contract DeployGroveBasinUnpauser is Script {
         for (uint256 i = 0; i < unpausers.length; i++) {
             console.log("Unpauser:", unpausers[i]);
         }
+        for (uint256 i = 0; i < globalUnpausers.length; i++) {
+            console.log("Global unpauser:", globalUnpausers[i]);
+        }
 
         vm.startBroadcast();
-        unpauser = address(new GroveBasinUnpauser(owner, unpausers));
+        unpauser = address(new GroveBasinUnpauser(owner, unpausers, globalUnpausers));
         vm.stopBroadcast();
 
         console.log("GroveBasinUnpauser deployed at:", unpauser);
