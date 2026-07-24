@@ -5,14 +5,14 @@ import { IERC20 } from "erc20-helpers/interfaces/IERC20.sol";
 
 import { Ethereum } from "lib/grove-address-registry/src/Ethereum.sol";
 
-import { BUIDLTokenRedeemer } from "src/redeemers/BUIDLTokenRedeemer.sol";
+import { TransferTokenRedeemer } from "src/redeemers/TransferTokenRedeemer.sol";
 import { IGroveBasin }        from "src/interfaces/IGroveBasin.sol";
 
 import { BUIDLForkTestBase, IBUIDLLike } from "test/fork/BUIDLForkTest.sol";
 
-abstract contract BUIDLTokenRedeemerForkTestBase is BUIDLForkTestBase {
+abstract contract TransferTokenRedeemerForkTestBase is BUIDLForkTestBase {
 
-    BUIDLTokenRedeemer public redeemer;
+    TransferTokenRedeemer public redeemer;
 
     function _initTokens() internal override {
         swapToken       = IERC20(Ethereum.USDS);
@@ -25,7 +25,7 @@ abstract contract BUIDLTokenRedeemerForkTestBase is BUIDLForkTestBase {
     function _postDeploy() internal override {
         super._postDeploy();
 
-        redeemer = new BUIDLTokenRedeemer(
+        redeemer = new TransferTokenRedeemer(
             Ethereum.BUIDL,
             Ethereum.BUIDL_REDEEM,
             address(groveBasin)
@@ -43,7 +43,7 @@ abstract contract BUIDLTokenRedeemerForkTestBase is BUIDLForkTestBase {
 /*** Deployment tests                                                                       ***/
 /**********************************************************************************************/
 
-contract BUIDLTokenRedeemerForkTest_Deployment is BUIDLTokenRedeemerForkTestBase {
+contract TransferTokenRedeemerForkTest_Deployment is TransferTokenRedeemerForkTestBase {
 
     function test_deployment() public view {
         assertEq(redeemer.creditToken(),       Ethereum.BUIDL);
@@ -59,7 +59,7 @@ contract BUIDLTokenRedeemerForkTest_Deployment is BUIDLTokenRedeemerForkTestBase
 /*** InitiateRedeem tests                                                                   ***/
 /**********************************************************************************************/
 
-contract BUIDLTokenRedeemerForkTest_InitiateRedeem is BUIDLTokenRedeemerForkTestBase {
+contract TransferTokenRedeemerForkTest_InitiateRedeem is TransferTokenRedeemerForkTestBase {
 
     function test_initiateRedeem() public {
         uint256 depositAmount = 10_000e6;
@@ -99,7 +99,7 @@ contract BUIDLTokenRedeemerForkTest_InitiateRedeem is BUIDLTokenRedeemerForkTest
 /*** CompleteRedeem tests                                                                   ***/
 /**********************************************************************************************/
 
-contract BUIDLTokenRedeemerForkTest_CompleteRedeem is BUIDLTokenRedeemerForkTestBase {
+contract TransferTokenRedeemerForkTest_CompleteRedeem is TransferTokenRedeemerForkTestBase {
 
     function test_completeRedeem() public {
         uint256 depositAmount = 10_000e6;
@@ -175,7 +175,7 @@ contract BUIDLTokenRedeemerForkTest_CompleteRedeem is BUIDLTokenRedeemerForkTest
 /*** Full flow tests                                                                        ***/
 /**********************************************************************************************/
 
-contract BUIDLTokenRedeemerForkTest_FullFlow is BUIDLTokenRedeemerForkTestBase {
+contract TransferTokenRedeemerForkTest_FullFlow is TransferTokenRedeemerForkTestBase {
 
     function test_fullFlow_initiateAndComplete() public {
         uint256 depositAmount = 10_000e6;

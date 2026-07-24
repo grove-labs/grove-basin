@@ -9,7 +9,7 @@ import { TimelockController } from "openzeppelin-contracts/contracts/governance/
 
 import { GroveBasin }         from "src/GroveBasin.sol";
 import { GroveBasinFactory }  from "src/GroveBasinFactory.sol";
-import { BUIDLTokenRedeemer } from "src/redeemers/BUIDLTokenRedeemer.sol";
+import { TransferTokenRedeemer } from "src/redeemers/TransferTokenRedeemer.sol";
 
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 import { MockAToken }       from "test/mocks/MockAToken.sol";
@@ -91,7 +91,7 @@ contract GroveBasinFactorySetupTests is Test {
             managerAdmin                : groveProxy,
             manager                     : almRelayer,
             pauser                      : almFreezer,
-            buidlRedemptionAddress      : address(0),
+            redemptionAddress           : address(0),
             tokenRedeemer               : address(0),
             issuerRedeemer              : address(0),
             pausedFlags                 : _defaultPausedFlags(),
@@ -125,11 +125,11 @@ contract GroveBasinFactorySetupTests is Test {
     /*** Pocket variants                                                                        ***/
     /**********************************************************************************************/
 
-    function test_deploy_usdsUsdc_withBuidlRedeemer() public {
+    function test_deploy_usdsUsdc_withTransferRedeemer() public {
         _seed();
 
         GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.UsdsUsdc);
-        params.buidlRedemptionAddress = redemption;
+        params.redemptionAddress = redemption;
         params.issuerRedeemer         = issuer;
 
         (address basin, address pocket, address redeemer) = factory.deployAndInit(params, adminTimelock);
@@ -158,10 +158,10 @@ contract GroveBasinFactorySetupTests is Test {
         assertTrue(groveBasin.paused(groveBasin.PAUSED_DEPOSIT_CREDIT()));
         assertTrue(groveBasin.paused(groveBasin.PAUSED_WITHDRAW_CREDIT()));
 
-        // BUIDL redeemer deployed and registered; issuer granted REDEEMER_ROLE.
+        // Redeemer deployed and registered; issuer granted REDEEMER_ROLE.
         assertTrue(redeemer != address(0));
-        assertEq(BUIDLTokenRedeemer(redeemer).creditToken(),    address(creditToken));
-        assertEq(address(BUIDLTokenRedeemer(redeemer).basin()), basin);
+        assertEq(TransferTokenRedeemer(redeemer).creditToken(),    address(creditToken));
+        assertEq(address(TransferTokenRedeemer(redeemer).basin()), basin);
         assertTrue(groveBasin.hasRole(groveBasin.REDEEMER_CONTRACT_ROLE(), redeemer));
         assertTrue(groveBasin.hasRole(groveBasin.REDEEMER_ROLE(),          issuer));
     }

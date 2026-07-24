@@ -11,7 +11,7 @@ import { TimelockController } from "openzeppelin-contracts/contracts/governance/
 
 import { GroveBasin }            from "src/GroveBasin.sol";
 import { UsdsUsdcPocket }        from "src/pockets/UsdsUsdcPocket.sol";
-import { BUIDLTokenRedeemer }    from "src/redeemers/BUIDLTokenRedeemer.sol";
+import { TransferTokenRedeemer }    from "src/redeemers/TransferTokenRedeemer.sol";
 import { FixedRateProvider }     from "src/rate-providers/FixedRateProvider.sol";
 import { ChronicleRateProvider } from "src/rate-providers/ChronicleRateProvider.sol";
 import { IChronicleOracleLike }  from "src/interfaces/IChronicleOracleLike.sol";
@@ -992,7 +992,7 @@ contract BUIDLUsdsUsdcDeploymentForkTest_Redeemer is BUIDLUsdsUsdcDeploymentFork
 
     function test_redeemer_redemptionAddress() public {
         require(_tokenRedeemerAddr() != address(0), "TOKEN_REDEEMER not set");
-        assertEq(BUIDLTokenRedeemer(_tokenRedeemerAddr()).redemptionAddress(), Deployments.SECURITIZE_REDEMPTION_ADDRESS);
+        assertEq(TransferTokenRedeemer(_tokenRedeemerAddr()).redemptionAddress(), Deployments.SECURITIZE_REDEMPTION_ADDRESS);
     }
 
 }
@@ -1038,12 +1038,12 @@ contract BUIDLUsdsUsdcDeploymentForkTest_OldAddressesRevoked is BUIDLUsdsUsdcDep
         );
     }
 
-    /*** Old BUIDLTokenRedeemer must not hold REDEEMER_CONTRACT_ROLE on the basin ***/
+    /*** Old TransferTokenRedeemer must not hold REDEEMER_CONTRACT_ROLE on the basin ***/
 
     function test_oldTokenRedeemer_noRedeemerContractRole() public view {
         assertFalse(
             basin.hasRole(basin.REDEEMER_CONTRACT_ROLE(), Deployments.OLD_BUIDL_TOKEN_REDEEMER),
-            "old BUIDLTokenRedeemer should not have REDEEMER_CONTRACT_ROLE"
+            "old TransferTokenRedeemer should not have REDEEMER_CONTRACT_ROLE"
         );
     }
 

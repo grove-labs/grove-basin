@@ -7,7 +7,7 @@ import { Ethereum } from "lib/grove-address-registry/src/Ethereum.sol";
 
 import { GroveBasin }         from "src/GroveBasin.sol";
 import { GroveBasinFactory }  from "src/GroveBasinFactory.sol";
-import { BUIDLTokenRedeemer } from "src/redeemers/BUIDLTokenRedeemer.sol";
+import { TransferTokenRedeemer } from "src/redeemers/TransferTokenRedeemer.sol";
 
 import { BasinSetup } from "script/lib/BasinSetup.sol";
 
@@ -36,7 +36,7 @@ contract SetupBUIDLUsdsUsdcBasin is Script {
         GroveBasin basin = GroveBasin(groveBasin);
 
         if (BUIDL_REDEMPTION_ADDRESS != address(0)) {
-            BUIDLTokenRedeemer redeemer = new BUIDLTokenRedeemer(
+            TransferTokenRedeemer redeemer = new TransferTokenRedeemer(
                 BUIDL_TOKEN,
                 BUIDL_REDEMPTION_ADDRESS,
                 groveBasin
@@ -44,9 +44,9 @@ contract SetupBUIDLUsdsUsdcBasin is Script {
 
             basin.addTokenRedeemer(address(redeemer));
 
-            console.log("BUIDLTokenRedeemer deployed at: %s with redemption address: %s", address(redeemer), BUIDL_REDEMPTION_ADDRESS);
+            console.log("TransferTokenRedeemer deployed at: %s with redemption address: %s", address(redeemer), BUIDL_REDEMPTION_ADDRESS);
         } else {
-            console.log("BUIDL_REDEMPTION_ADDRESS is not set, skipping BUIDLTokenRedeemer deployment");
+            console.log("BUIDL_REDEMPTION_ADDRESS is not set, skipping TransferTokenRedeemer deployment");
         }
 
         if (SECURITIZE_REDEEMER_ADDRESS != address(0)) {
@@ -82,13 +82,13 @@ contract SetupBUIDLUsdsUsdcBasin is Script {
 
         address tokenRedeemer;
         if (BUIDL_REDEMPTION_ADDRESS != address(0)) {
-            tokenRedeemer = address(new BUIDLTokenRedeemer(
+            tokenRedeemer = address(new TransferTokenRedeemer(
                 BUIDL_TOKEN,
                 BUIDL_REDEMPTION_ADDRESS,
                 groveBasin
             ));
         } else {
-            console.log("BUIDL_REDEMPTION_ADDRESS is not set, skipping BUIDLTokenRedeemer deployment");
+            console.log("BUIDL_REDEMPTION_ADDRESS is not set, skipping TransferTokenRedeemer deployment");
         }
 
         BasinSetup.performBasinInit({
