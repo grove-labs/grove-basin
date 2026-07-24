@@ -43,8 +43,17 @@ contract DeployGroveBasinUnpauser is Script {
             console.log("Global unpauser:", globalUnpausers[i]);
         }
 
+        // Global unpausers also receive UNPAUSER_ROLE so they can unpause specific keys.
+        address[] memory allUnpausers = new address[](unpausers.length + globalUnpausers.length);
+        for (uint256 i = 0; i < unpausers.length; i++) {
+            allUnpausers[i] = unpausers[i];
+        }
+        for (uint256 i = 0; i < globalUnpausers.length; i++) {
+            allUnpausers[unpausers.length + i] = globalUnpausers[i];
+        }
+
         vm.startBroadcast();
-        unpauser = address(new GroveBasinUnpauser(owner, unpausers, globalUnpausers));
+        unpauser = address(new GroveBasinUnpauser(owner, allUnpausers, globalUnpausers));
         vm.stopBroadcast();
 
         console.log("GroveBasinUnpauser deployed at:", unpauser);
