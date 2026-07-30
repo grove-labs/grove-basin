@@ -48,6 +48,7 @@ contract GroveBasinFactory {
      * @param swapAllowlistEnabled        True enables the global swap allowlist before the factory relinquishes MANAGER_ADMIN_ROLE.
      * @param pocketType                  Which pocket implementation to deploy and wire up (None deploys no pocket).
      * @param pausedFlags                 Flags applied via setPaused; empty pauses nothing.
+     * @param allowlistManagers           Addresses granted ALLOWLIST_MANAGER_ROLE; empty grants none.
      */
     struct DeployParams {
         address    liquidityProvider;
@@ -70,6 +71,7 @@ contract GroveBasinFactory {
         bool       swapAllowlistEnabled;
         PocketType pocketType;
         bytes4[]   pausedFlags;
+        address[]  allowlistManagers;
     }
 
     error InvalidAdminTimelock();
@@ -293,6 +295,10 @@ contract GroveBasinFactory {
         groveBasin.grantRole(groveBasin.MANAGER_ROLE(), params.manager);
         groveBasin.grantRole(groveBasin.PAUSER_ROLE(),  params.pauser);
 
+        for (uint256 i; i < params.allowlistManagers.length; ++i) {
+            groveBasin.grantRole(groveBasin.ALLOWLIST_MANAGER_ROLE(), params.allowlistManagers[i]);
+        }
+
         if (params.issuerRedeemer != address(0)) {
             groveBasin.grantRole(groveBasin.REDEEMER_ROLE(), params.issuerRedeemer);
         }
@@ -304,7 +310,7 @@ contract GroveBasinFactory {
         }
 
         if (params.swapAllowlistEnabled) {
-            groveBasin.setSwapAllowlistEnabled(bytes32(0), true);
+            groveBasin.setGlobalSwapAllowlist(true);
         }
 
         if (params.minFee > 0) {

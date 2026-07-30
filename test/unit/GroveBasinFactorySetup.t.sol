@@ -30,6 +30,8 @@ contract GroveBasinFactorySetupTests is Test {
     address liquidityProvider = makeAddr("liquidityProvider");
     address groveProxy        = makeAddr("groveProxy");
     address almRelayer        = makeAddr("almRelayer");
+    address allowlistManager1 = makeAddr("allowlistManager1");
+    address allowlistManager2 = makeAddr("allowlistManager2");
     address almFreezer        = makeAddr("almFreezer");
     address adminTimelock     = makeAddr("adminTimelock");
     address proposer          = makeAddr("proposer");
@@ -67,6 +69,12 @@ contract GroveBasinFactorySetupTests is Test {
         flags[3] = bytes4(keccak256("PAUSED_WITHDRAW_CREDIT"));
     }
 
+    function _defaultAllowlistManagers() internal view returns (address[] memory allowlistManagers) {
+        allowlistManagers = new address[](2);
+        allowlistManagers[0] = allowlistManager1;
+        allowlistManagers[1] = allowlistManager2;
+    }
+
     function _pocketAddress1(GroveBasinFactory.PocketType pocketType) internal view returns (address) {
         if (pocketType == GroveBasinFactory.PocketType.UsdsUsdc)   return psm;
         if (pocketType == GroveBasinFactory.PocketType.MorphoUsdt) return morphoVault;
@@ -95,6 +103,7 @@ contract GroveBasinFactorySetupTests is Test {
             tokenRedeemer               : address(0),
             issuerRedeemer              : address(0),
             pausedFlags                 : _defaultPausedFlags(),
+            allowlistManagers           : _defaultAllowlistManagers(),
             minFee                      : 0,
             maxFee                      : 500,
             swapAllowlistEnabled        : false
@@ -114,9 +123,15 @@ contract GroveBasinFactorySetupTests is Test {
         assertFalse(basin.hasRole(basin.MANAGER_ADMIN_ROLE(), address(factory)));
 
         // Operational roles.
-        assertTrue(basin.hasRole(basin.MANAGER_ROLE(), almRelayer));
-        assertTrue(basin.hasRole(basin.PAUSER_ROLE(),  almFreezer));
+        assertTrue(basin.hasRole(basin.MANAGER_ROLE(),           almRelayer));
+        assertTrue(basin.hasRole(basin.ALLOWLIST_MANAGER_ROLE(), allowlistManager1));
+        assertTrue(basin.hasRole(basin.ALLOWLIST_MANAGER_ROLE(), allowlistManager2));
+        assertTrue(basin.hasRole(basin.PAUSER_ROLE(),            almFreezer));
         assertFalse(basin.hasRole(basin.PAUSER_ROLE(), address(factory)));
+
+        // The allowlist is a separate role from the manager role.
+        assertFalse(basin.hasRole(basin.ALLOWLIST_MANAGER_ROLE(), almRelayer));
+        assertFalse(basin.hasRole(basin.MANAGER_ROLE(),           allowlistManager1));
 
         assertEq(basin.totalShares(),      1e18);
         assertEq(basin.shares(address(0)), 1e18);
@@ -319,7 +334,7 @@ contract GroveBasinFactorySetupTests is Test {
 
         (address basin,,) = factory.deployAndInit(_baseParams(GroveBasinFactory.PocketType.None), adminTimelock);
 
-        assertFalse(GroveBasin(basin).swapAllowlistEnabled(bytes32(0)));
+        assertFalse(GroveBasin(basin).swapAllowlistEnabled(GroveBasin(basin).GLOBAL_ROUTE_KEY()));
     }
 
     function test_deploy_swapAllowlistEnabled() public {
@@ -332,13 +347,50 @@ contract GroveBasinFactorySetupTests is Test {
 
         GroveBasin groveBasin = GroveBasin(basin);
 
-        assertTrue(groveBasin.swapAllowlistEnabled(bytes32(0)));
+        assertTrue(groveBasin.swapAllowlistEnabled(groveBasin.GLOBAL_ROUTE_KEY()));
 
         // Enabling is atomic with deployment, so no caller is allowlisted on arrival.
         assertFalse(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), almRelayer));
 
         // The factory retains no power to change it afterwards.
         assertFalse(groveBasin.hasRole(groveBasin.MANAGER_ADMIN_ROLE(), address(factory)));
+    }
+
+    function test_deploy_noAllowlistManagers() public {
+        _seed();
+
+        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
+        params.allowlistManagers = new address[](0);
+
+        (address basin,,) = factory.deployAndInit(params, adminTimelock);
+
+        GroveBasin groveBasin = GroveBasin(basin);
+
+        assertFalse(groveBasin.hasRole(groveBasin.ALLOWLIST_MANAGER_ROLE(), allowlistManager1));
+        assertFalse(groveBasin.hasRole(groveBasin.ALLOWLIST_MANAGER_ROLE(), allowlistManager2));
+    }
+
+    function test_deploy_allowlistManagersCanManageAllowlist() public {
+        _seed();
+
+        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
+        params.swapAllowlistEnabled = true;
+
+        (address basin,,) = factory.deployAndInit(params, adminTimelock);
+
+        GroveBasin groveBasin = GroveBasin(basin);
+
+        bytes32 routeKey = groveBasin.getSwapRouteKey(address(swapToken), address(creditToken));
+
+        vm.prank(allowlistManager1);
+        groveBasin.addToSwapAllowlist(routeKey, almRelayer);
+
+        assertTrue(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), almRelayer));
+
+        vm.prank(allowlistManager2);
+        groveBasin.removeFromSwapAllowlist(routeKey, almRelayer);
+
+        assertFalse(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), almRelayer));
     }
 
     /**********************************************************************************************/

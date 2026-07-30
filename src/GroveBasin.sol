@@ -17,10 +17,10 @@ import { ITokenRedeemer, RedeemRequest } from "./interfaces/ITokenRedeemer.sol";
  * @notice Multi-asset liquidity pool that facilitates swaps between a swap token, collateral
  *         token, and a yield-bearing credit token. Liquidity providers deposit assets in exchange
  *         for shares that represent pro-rata ownership of the pool's total value.
- * @dev    Uses AccessControl for role-based permissioning across owner, manager
- *         admin, manager, liquidity provider, and redeemer roles. Asset values are determined by
- *         external rate providers that return conversion rates. Swap token
- *         custody can be delegated to a pocket contract for yield generation.
+ * @dev    Uses AccessControl for role-based permissioning across owner, manager admin, manager,
+ *         allowlist manager, liquidity provider, and redeemer roles. Asset values are determined
+ *         by external rate providers that return conversion rates. Swap token custody can be
+ *         delegated to a pocket contract for yield generation.
  */
 contract GroveBasin is IGroveBasin, AccessControl {
 
@@ -31,6 +31,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     bytes32 public constant override OWNER_ROLE              = DEFAULT_ADMIN_ROLE;
     bytes32 public constant override MANAGER_ADMIN_ROLE      = keccak256("MANAGER_ADMIN_ROLE");
     bytes32 public constant override MANAGER_ROLE            = keccak256("MANAGER_ROLE");
+    bytes32 public constant override ALLOWLIST_MANAGER_ROLE  = keccak256("ALLOWLIST_MANAGER_ROLE");
     bytes32 public constant override PAUSER_ROLE             = keccak256("PAUSER_ROLE");
     bytes32 public constant override REDEEMER_ROLE           = keccak256("REDEEMER_ROLE");
     bytes32 public constant override REDEEMER_CONTRACT_ROLE  = keccak256("REDEEMER_CONTRACT_ROLE");
@@ -42,6 +43,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
     bytes4 public constant PAUSED_SWAP_SWAP_TO_CREDIT       = bytes4(keccak256("PAUSED_SWAP_SWAP_TO_CREDIT"));
     bytes4 public constant PAUSED_DEPOSIT_CREDIT            = bytes4(keccak256("PAUSED_DEPOSIT_CREDIT"));
     bytes4 public constant PAUSED_WITHDRAW_CREDIT           = bytes4(keccak256("PAUSED_WITHDRAW_CREDIT"));
+
+    /// @dev Route key reserved for the global swap allowlist, which gates every route.
+    bytes32 public constant override GLOBAL_ROUTE_KEY = bytes32(0);
 
     uint256 internal immutable _swapTokenPrecision;
     uint256 internal immutable _collateralTokenPrecision;
@@ -85,7 +89,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     mapping(address redeemer  => uint256 count)         public override pendingRedemptions;
 
     /// @dev Mapping of route keys to allowlist state. Keys come from `getSwapRouteKey` and are
-    ///      unidirectional. bytes32(0) is reserved for the global allowlist.
+    ///      unidirectional. GLOBAL_ROUTE_KEY is reserved for the global allowlist.
     mapping(bytes32 routeKey => bool isEnabled)                            public override swapAllowlistEnabled;
     mapping(bytes32 routeKey => mapping(address caller => bool isAllowed)) public override swapAllowlist;
 
@@ -158,6 +162,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         maxStalenessThreshold = 2 weeks;
         stalenessThreshold    = 1 weeks;
 
+        _setRoleAdmin(ALLOWLIST_MANAGER_ROLE, MANAGER_ADMIN_ROLE);
         _setRoleAdmin(MANAGER_ROLE,           MANAGER_ADMIN_ROLE);
         _setRoleAdmin(PAUSER_ROLE,            MANAGER_ADMIN_ROLE);
         _setRoleAdmin(REDEEMER_CONTRACT_ROLE, MANAGER_ADMIN_ROLE);
@@ -319,11 +324,18 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     /// @inheritdoc IGroveBasin
-    function setSwapAllowlistEnabled(bytes32 routeKey, bool enabled)
+    function setGlobalSwapAllowlist(bool enabled) external override onlyRole(MANAGER_ADMIN_ROLE) {
+        _setSwapAllowlistEnabled(GLOBAL_ROUTE_KEY, enabled);
+    }
+
+    /// @inheritdoc IGroveBasin
+    function setSwapAllowlist(address assetIn, address assetOut, bool enabled)
         external override onlyRole(MANAGER_ADMIN_ROLE)
     {
-        swapAllowlistEnabled[routeKey] = enabled;
-        emit SwapAllowlistEnabledSet(routeKey, enabled);
+        _requireValidAsset(assetIn);
+        _requireValidAsset(assetOut);
+
+        _setSwapAllowlistEnabled(getSwapRouteKey(assetIn, assetOut), enabled);
     }
 
 
@@ -384,14 +396,18 @@ contract GroveBasin is IGroveBasin, AccessControl {
         emit StalenessThresholdSet(oldThreshold, newThreshold);
     }
 
+    /**********************************************************************************************/
+    /*** Allowlist manager functions                                                            ***/
+    /**********************************************************************************************/
+
     /// @inheritdoc IGroveBasin
-    function addToSwapAllowlist(bytes32 routeKey, address caller) external override onlyRole(MANAGER_ROLE) {
+    function addToSwapAllowlist(bytes32 routeKey, address caller) external override onlyRole(ALLOWLIST_MANAGER_ROLE) {
         swapAllowlist[routeKey][caller] = true;
         emit SwapAllowlistSet(routeKey, caller, true);
     }
 
     /// @inheritdoc IGroveBasin
-    function removeFromSwapAllowlist(bytes32 routeKey, address caller) external override onlyRole(MANAGER_ROLE) {
+    function removeFromSwapAllowlist(bytes32 routeKey, address caller) external override onlyRole(ALLOWLIST_MANAGER_ROLE) {
         swapAllowlist[routeKey][caller] = false;
         emit SwapAllowlistSet(routeKey, caller, false);
     }
@@ -679,7 +695,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
     {
         bytes32 routeKey = getSwapRouteKey(assetIn, assetOut);
 
-        if (!swapAllowlistEnabled[bytes32(0)] && !swapAllowlistEnabled[routeKey]) return true;
+        bool enforced = swapAllowlistEnabled[GLOBAL_ROUTE_KEY] || swapAllowlistEnabled[routeKey];
+
+        if (!enforced) return true;
 
         return swapAllowlist[routeKey][caller];
     }
@@ -758,10 +776,11 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /*** AccessControl overrides                                                                ***/
     /**********************************************************************************************/
 
-    /// @dev Extends revokeRole to allow PAUSER_ROLE holders to revoke MANAGER_ROLE and REDEEMER_ROLE.
+    /// @dev Extends revokeRole to allow PAUSER_ROLE holders to revoke MANAGER_ROLE,
+    ///      ALLOWLIST_MANAGER_ROLE and REDEEMER_ROLE.
     function revokeRole(bytes32 role, address account) public override {
         if (
-            (role == MANAGER_ROLE || role == REDEEMER_ROLE) &&
+            (role == MANAGER_ROLE || role == ALLOWLIST_MANAGER_ROLE || role == REDEEMER_ROLE) &&
             hasRole(PAUSER_ROLE, msg.sender)
         ) {
             _revokeRole(role, account);
@@ -983,6 +1002,12 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /// @dev Reverts if the route is gated and `msg.sender` is not allowlisted for it.
     function _checkSwapAllowlist(address assetIn, address assetOut) internal view {
         if (!isSwapCallerAllowlisted(assetIn, assetOut, msg.sender)) revert NotAllowlisted();
+    }
+
+    /// @dev Enables or disables the allowlist gate of a route key.
+    function _setSwapAllowlistEnabled(bytes32 routeKey, bool enabled) internal {
+        swapAllowlistEnabled[routeKey] = enabled;
+        emit SwapAllowlistEnabledSet(routeKey, enabled);
     }
 
     /// @dev Reverts if the global pause or the given key is active.

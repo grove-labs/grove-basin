@@ -66,6 +66,11 @@ contract GroveBasinFactorySetupForkTest is Test {
         flags[3] = bytes4(keccak256("PAUSED_WITHDRAW_CREDIT"));
     }
 
+    function _defaultAllowlistManagers() internal pure returns (address[] memory allowlistManagers) {
+        allowlistManagers = new address[](1);
+        allowlistManagers[0] = Ethereum.ALM_RELAYER;
+    }
+
     function _baseParams(GroveBasinFactory.PocketType pocketType)
         internal
         view
@@ -91,6 +96,7 @@ contract GroveBasinFactorySetupForkTest is Test {
             tokenRedeemer               : address(0),
             issuerRedeemer              : address(0),
             pausedFlags                 : _defaultPausedFlags(),
+            allowlistManagers           : _defaultAllowlistManagers(),
             minFee                      : 0,
             maxFee                      : 500,
             swapAllowlistEnabled        : false
@@ -116,7 +122,8 @@ contract GroveBasinFactorySetupForkTest is Test {
         assertFalse(basin.hasRole(basin.MANAGER_ADMIN_ROLE(), address(this)));
 
         // Operational roles.
-        assertTrue(basin.hasRole(basin.MANAGER_ROLE(), Ethereum.ALM_RELAYER));
+        assertTrue(basin.hasRole(basin.MANAGER_ROLE(),           Ethereum.ALM_RELAYER));
+        assertTrue(basin.hasRole(basin.ALLOWLIST_MANAGER_ROLE(), Ethereum.ALM_RELAYER));
         assertTrue(basin.hasRole(basin.PAUSER_ROLE(), Ethereum.ALM_FREEZER));
         assertFalse(basin.hasRole(basin.PAUSER_ROLE(), address(factory)));
 
