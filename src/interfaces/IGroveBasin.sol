@@ -49,6 +49,7 @@ interface IGroveBasin {
     error InvalidRedeemRequest();
     error PendingRedemptions();
     error InsufficientFunds();
+    error NotAllowlisted();
 
     /**********************************************************************************************/
     /*** Events                                                                                 ***/
@@ -222,6 +223,21 @@ interface IGroveBasin {
      *  @param paused Whether the key is paused.
      */
     event PausedSet(bytes4 indexed key, bool paused);
+
+    /**
+     *  @dev   Emitted when the allowlist flag for a route key is toggled.
+     *  @param routeKey The route key being toggled, or bytes32(0) for the global allowlist.
+     *  @param enabled  Whether the route key is restricted to allowlisted callers.
+     */
+    event SwapAllowlistEnabledSet(bytes32 indexed routeKey, bool enabled);
+
+    /**
+     *  @dev   Emitted when a caller is added to or removed from the allowlist of a route.
+     *  @param routeKey The route key whose allowlist changed.
+     *  @param caller   Address whose allowlist entry changed.
+     *  @param allowed  Whether the caller is allowlisted for the route.
+     */
+    event SwapAllowlistSet(bytes32 indexed routeKey, address indexed caller, bool allowed);
 
     /**
      *  @dev   Emitted when an asset is deposited into the GroveBasin.
@@ -520,6 +536,44 @@ interface IGroveBasin {
      */
     function maxFee() external view returns (uint256);
 
+    /**
+     *  @dev    Returns whether a route key is restricted to allowlisted callers. Use bytes32(0) to
+     *          check the global allowlist, which gates every route.
+     *  @param  routeKey The route key, or bytes32(0) for the global allowlist.
+     *  @return Whether the route key is restricted to allowlisted callers.
+     */
+    function swapAllowlistEnabled(bytes32 routeKey) external view returns (bool);
+
+    /**
+     *  @dev    Returns whether a caller is allowlisted for a route key. Entries are retained while
+     *          a route is ungated and take effect again as soon as the route is gated. The global
+     *          allowlist is an enable flag only, so entries under bytes32(0) are never read.
+     *  @param  routeKey The route key.
+     *  @param  caller   Address to query.
+     *  @return Whether the caller is allowlisted for the route key.
+     */
+    function swapAllowlist(bytes32 routeKey, address caller) external view returns (bool);
+
+    /**
+     *  @dev    Returns the route key for a swap direction. Routes are unidirectional, so the key
+     *          for (assetIn, assetOut) is distinct from the key for (assetOut, assetIn).
+     *  @param  assetIn  Address of the asset swapped in on the route.
+     *  @param  assetOut Address of the asset swapped out on the route.
+     *  @return The route key.
+     */
+    function getSwapRouteKey(address assetIn, address assetOut) external pure returns (bytes32);
+
+    /**
+     *  @dev    Returns whether `caller` may swap along a route, accounting for both the global and
+     *          the route-specific allowlist flags. Always true while the route is ungated.
+     *  @param  assetIn  Address of the asset swapped in on the route.
+     *  @param  assetOut Address of the asset swapped out on the route.
+     *  @param  caller   Address to query.
+     *  @return Whether the caller may swap along the route.
+     */
+    function isSwapCallerAllowlisted(address assetIn, address assetOut, address caller)
+        external view returns (bool);
+
     /**********************************************************************************************/
     /*** Manager admin functions                                                                ***/
     /**********************************************************************************************/
@@ -586,6 +640,17 @@ interface IGroveBasin {
      *  @param redeemer Address of the token redeemer to remove.
      */
     function removeTokenRedeemer(address redeemer) external;
+
+    /**
+     *  @dev   Enables or disables the allowlist for a route key. Route keys come from
+     *         `getSwapRouteKey` and are unidirectional, so gating (assetIn, assetOut) leaves
+     *         (assetOut, assetIn) untouched. Use bytes32(0) for the global allowlist, which gates
+     *         every route regardless of the route-specific flags. All flags are disabled on
+     *         deployment. Callable only by MANAGER_ADMIN_ROLE.
+     *  @param routeKey The route key, or bytes32(0) for the global allowlist.
+     *  @param enabled  Whether to restrict the route key to allowlisted callers.
+     */
+    function setSwapAllowlistEnabled(bytes32 routeKey, bool enabled) external;
 
     /**********************************************************************************************/
     /*** Owner functions                                                                        ***/
@@ -656,6 +721,22 @@ interface IGroveBasin {
      *  @param newThreshold The new staleness threshold in seconds.
      */
     function setStalenessThreshold(uint256 newThreshold) external;
+
+    /**
+     *  @dev   Adds a caller to the allowlist of a route key. Takes effect only while the route is
+     *         gated by the global or the route-specific allowlist flag. Callable only by
+     *         MANAGER_ROLE.
+     *  @param routeKey The route key, obtained from `getSwapRouteKey`.
+     *  @param caller   Address to add to the allowlist.
+     */
+    function addToSwapAllowlist(bytes32 routeKey, address caller) external;
+
+    /**
+     *  @dev   Removes a caller from the allowlist of a route key. Callable only by MANAGER_ROLE.
+     *  @param routeKey The route key, obtained from `getSwapRouteKey`.
+     *  @param caller   Address to remove from the allowlist.
+     */
+    function removeFromSwapAllowlist(bytes32 routeKey, address caller) external;
 
     /**********************************************************************************************/
     /*** Fee claimer functions                                                                  ***/

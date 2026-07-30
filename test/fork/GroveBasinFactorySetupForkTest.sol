@@ -92,7 +92,8 @@ contract GroveBasinFactorySetupForkTest is Test {
             issuerRedeemer              : address(0),
             pausedFlags                 : _defaultPausedFlags(),
             minFee                      : 0,
-            maxFee                      : 500
+            maxFee                      : 500,
+            swapAllowlistEnabled        : false
         });
     }
 

@@ -96,7 +96,8 @@ contract GroveBasinFactorySetupTests is Test {
             issuerRedeemer              : address(0),
             pausedFlags                 : _defaultPausedFlags(),
             minFee                      : 0,
-            maxFee                      : 500
+            maxFee                      : 500,
+            swapAllowlistEnabled        : false
         });
     }
 
@@ -307,6 +308,37 @@ contract GroveBasinFactorySetupTests is Test {
         // Explicit (0, 0) bounds are honored; no default is substituted for a zero maxFee.
         assertEq(groveBasin.minFee(), 0);
         assertEq(groveBasin.maxFee(), 0);
+    }
+
+    /**********************************************************************************************/
+    /*** Swap allowlist variant                                                                 ***/
+    /**********************************************************************************************/
+
+    function test_deploy_swapAllowlistDisabledByDefault() public {
+        _seed();
+
+        (address basin,,) = factory.deployAndInit(_baseParams(GroveBasinFactory.PocketType.None), adminTimelock);
+
+        assertFalse(GroveBasin(basin).swapAllowlistEnabled(bytes32(0)));
+    }
+
+    function test_deploy_swapAllowlistEnabled() public {
+        _seed();
+
+        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
+        params.swapAllowlistEnabled = true;
+
+        (address basin,,) = factory.deployAndInit(params, adminTimelock);
+
+        GroveBasin groveBasin = GroveBasin(basin);
+
+        assertTrue(groveBasin.swapAllowlistEnabled(bytes32(0)));
+
+        // Enabling is atomic with deployment, so no caller is allowlisted on arrival.
+        assertFalse(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), almRelayer));
+
+        // The factory retains no power to change it afterwards.
+        assertFalse(groveBasin.hasRole(groveBasin.MANAGER_ADMIN_ROLE(), address(factory)));
     }
 
     /**********************************************************************************************/

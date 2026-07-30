@@ -138,6 +138,8 @@ contract GroveBasinConstructorTests is GroveBasinTestBase {
         assertEq(groveBasin.maxSwapSize(),           50_000_000e18);
         assertEq(groveBasin.maxSwapSizeLowerBound(), 0);
         assertEq(groveBasin.maxSwapSizeUpperBound(), 1_000_000_000e18);
+
+        assertEq(groveBasin.swapAllowlistEnabled(bytes32(0)), false);
     }
 
 }

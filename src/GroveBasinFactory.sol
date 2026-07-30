@@ -45,6 +45,7 @@ contract GroveBasinFactory {
      * @param issuerRedeemer              Address granted REDEEMER_ROLE (address(0) skips).
      * @param minFee                      Lower fee bound applied to the Basin, in basis points.
      * @param maxFee                      Upper fee bound applied to the Basin, in basis points.
+     * @param swapAllowlistEnabled        True enables the global swap allowlist before the factory relinquishes MANAGER_ADMIN_ROLE.
      * @param pocketType                  Which pocket implementation to deploy and wire up (None deploys no pocket).
      * @param pausedFlags                 Flags applied via setPaused; empty pauses nothing.
      */
@@ -66,6 +67,7 @@ contract GroveBasinFactory {
         address    issuerRedeemer;
         uint256    minFee;
         uint256    maxFee;
+        bool       swapAllowlistEnabled;
         PocketType pocketType;
         bytes4[]   pausedFlags;
     }
@@ -299,6 +301,10 @@ contract GroveBasinFactory {
 
         for (uint256 i; i < params.pausedFlags.length; ++i) {
             groveBasin.setPaused(params.pausedFlags[i]);
+        }
+
+        if (params.swapAllowlistEnabled) {
+            groveBasin.setSwapAllowlistEnabled(bytes32(0), true);
         }
 
         if (params.minFee > 0) {
