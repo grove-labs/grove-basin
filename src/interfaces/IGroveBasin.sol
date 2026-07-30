@@ -233,7 +233,8 @@ interface IGroveBasin {
 
     /**
      *  @dev   Emitted when a caller is added to or removed from the allowlist of a route.
-     *  @param routeKey The route key whose allowlist changed.
+     *  @param routeKey The route key whose allowlist changed, or GLOBAL_ROUTE_KEY for the global
+     *                  allowlist.
      *  @param caller   Address whose allowlist entry changed.
      *  @param allowed  Whether the caller is allowlisted for the route.
      */
@@ -545,14 +546,16 @@ interface IGroveBasin {
     function maxFee() external view returns (uint256);
 
     /**
-     *  @dev    Returns the route key reserved for the global allowlist, which gates every route.
+     *  @dev    Returns the route key reserved for the global allowlist, which gates every route
+     *          that carries no gate of its own.
      *  @return The global route key.
      */
     function GLOBAL_ROUTE_KEY() external view returns (bytes32);
 
     /**
      *  @dev    Returns whether a route key is restricted to allowlisted callers. Use
-     *          GLOBAL_ROUTE_KEY to check the global allowlist, which gates every route.
+     *          GLOBAL_ROUTE_KEY to check the global allowlist, which gates every route that
+     *          carries no gate of its own.
      *  @param  routeKey The route key, or GLOBAL_ROUTE_KEY for the global allowlist.
      *  @return Whether the route key is restricted to allowlisted callers.
      */
@@ -560,8 +563,9 @@ interface IGroveBasin {
 
     /**
      *  @dev    Returns whether a caller is allowlisted for a route key. Entries are retained while
-     *          a route is ungated and take effect again as soon as the route is gated. The global
-     *          allowlist is an enable flag only, so entries under GLOBAL_ROUTE_KEY are never read.
+     *          a route is ungated and take effect again as soon as the route is gated. Entries
+     *          under GLOBAL_ROUTE_KEY form the set applied to every route that carries no gate of
+     *          its own.
      *  @param  routeKey The route key.
      *  @param  caller   Address to query.
      *  @return Whether the caller is allowlisted for the route key.
@@ -578,8 +582,9 @@ interface IGroveBasin {
     function getSwapRouteKey(address assetIn, address assetOut) external pure returns (bytes32);
 
     /**
-     *  @dev    Returns whether `caller` may swap along a route, accounting for both the global and
-     *          the route-specific allowlist flags. Always true while the route is ungated.
+     *  @dev    Returns whether `caller` may swap along a route. A gated route reads only its own
+     *          allowlist, superseding the global one; otherwise the global allowlist applies while
+     *          it is enabled. Always true while neither gate covers the route.
      *  @param  assetIn  Address of the asset swapped in on the route.
      *  @param  assetOut Address of the asset swapped out on the route.
      *  @param  caller   Address to query.
@@ -656,17 +661,17 @@ interface IGroveBasin {
     function removeTokenRedeemer(address redeemer) external;
 
     /**
-     *  @dev   Enables or disables the global allowlist, which gates every route regardless of the
-     *         route-specific flags. Disabled on deployment. Callable only by MANAGER_ADMIN_ROLE.
+     *  @dev   Enables or disables the global allowlist, which gates every route that carries no
+     *         gate of its own. Disabled on deployment. Callable only by MANAGER_ADMIN_ROLE.
      *  @param enabled Whether to restrict every route to allowlisted callers.
      */
     function setGlobalSwapAllowlist(bool enabled) external;
 
     /**
-     *  @dev   Enables or disables the allowlist of a single route. Routes are unidirectional, so
-     *         gating (assetIn, assetOut) leaves (assetOut, assetIn) untouched. All routes are
-     *         ungated on deployment. Callable only by MANAGER_ADMIN_ROLE. Reverts if either asset
-     *         is not a basin asset.
+     *  @dev   Enables or disables the allowlist of a single route, superseding the global allowlist
+     *         on that route. Routes are unidirectional, so gating (assetIn, assetOut) leaves
+     *         (assetOut, assetIn) untouched. All routes are ungated on deployment. Callable only by
+     *         MANAGER_ADMIN_ROLE. Reverts if either asset is not a basin asset.
      *  @param assetIn  Address of the asset swapped in on the route.
      *  @param assetOut Address of the asset swapped out on the route.
      *  @param enabled  Whether to restrict the route to allowlisted callers.
@@ -748,10 +753,11 @@ interface IGroveBasin {
     /**********************************************************************************************/
 
     /**
-     *  @dev   Adds a caller to the allowlist of a route key. Takes effect only while the route is
-     *         gated by the global or the route-specific allowlist flag. Callable only by
+     *  @dev   Adds a caller to the allowlist of a route key. A route entry takes effect only while
+     *         that route is gated; a GLOBAL_ROUTE_KEY entry takes effect only while the global
+     *         allowlist is enabled and the route carries no gate of its own. Callable only by
      *         ALLOWLIST_MANAGER_ROLE.
-     *  @param routeKey The route key, obtained from `getSwapRouteKey`.
+     *  @param routeKey The route key, obtained from `getSwapRouteKey`, or GLOBAL_ROUTE_KEY.
      *  @param caller   Address to add to the allowlist.
      */
     function addToSwapAllowlist(bytes32 routeKey, address caller) external;

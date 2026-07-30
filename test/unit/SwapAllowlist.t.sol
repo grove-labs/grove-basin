@@ -46,6 +46,13 @@ contract SwapAllowlistTestBase is GroveBasinTestBase {
         groveBasin.addToSwapAllowlist(routeKey, caller);
     }
 
+    function _allowGlobally(address caller) internal {
+        bytes32 globalRouteKey = groveBasin.GLOBAL_ROUTE_KEY();
+
+        vm.prank(allowlistManager);
+        groveBasin.addToSwapAllowlist(globalRouteKey, caller);
+    }
+
     function _gateRoute(address assetIn, address assetOut) internal {
         vm.prank(owner);
         groveBasin.setSwapAllowlist(assetIn, assetOut, true);
@@ -54,6 +61,18 @@ contract SwapAllowlistTestBase is GroveBasinTestBase {
     function _gateGlobally() internal {
         vm.prank(owner);
         groveBasin.setGlobalSwapAllowlist(true);
+    }
+
+    function _fundAllAssets(address caller) internal {
+        swapToken.mint(caller,       1_000e6);
+        collateralToken.mint(caller, 1_000e18);
+        creditToken.mint(caller,     1_000e18);
+
+        vm.startPrank(caller);
+        swapToken.approve(address(groveBasin),       type(uint256).max);
+        collateralToken.approve(address(groveBasin), type(uint256).max);
+        creditToken.approve(address(groveBasin),     type(uint256).max);
+        vm.stopPrank();
     }
 
 }
@@ -443,23 +462,49 @@ contract SwapAllowlistConfigTests is SwapAllowlistTestBase {
         assertEq(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), swapper), true);
     }
 
-    function test_isSwapCallerAllowlisted_globalKeySupersedesRouteKeys() public {
+    function test_isSwapCallerAllowlisted_globalKeyGatesRoutesWithoutOwnGate() public {
+        _gateGlobally();
+
+        assertEq(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), swapper), false);
+        assertEq(groveBasin.isSwapCallerAllowlisted(address(creditToken), address(swapToken), swapper), false);
+
+        _allowGlobally(swapper);
+
+        assertEq(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), swapper), true);
+        assertEq(groveBasin.isSwapCallerAllowlisted(address(creditToken), address(swapToken), swapper), true);
+    }
+
+    /// @dev A route with its own gate reads only its own entries, so the global set can neither
+    ///      widen nor narrow it.
+    function test_isSwapCallerAllowlisted_routeKeySupersedesGlobalKey() public {
+        _gateGlobally();
+        _allowGlobally(swapper);
+
+        _gateRoute(address(creditToken), address(swapToken));
+
+        assertEq(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), swapper), true);
+        assertEq(groveBasin.isSwapCallerAllowlisted(address(creditToken), address(swapToken), swapper), false);
+
+        _allow(address(creditToken), address(swapToken), swapper);
+
+        assertEq(groveBasin.isSwapCallerAllowlisted(address(creditToken), address(swapToken), swapper), true);
+    }
+
+    /// @dev Route entries stay dormant until the route is gated, so the global set governs a route
+    ///      that only the global gate covers.
+    function test_isSwapCallerAllowlisted_routeEntryDormantUnderGlobalGateOnly() public {
         _allow(address(swapToken), address(creditToken), swapper);
 
         _gateGlobally();
 
-        assertEq(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), swapper), true);
-        assertEq(groveBasin.isSwapCallerAllowlisted(address(creditToken), address(swapToken), swapper), false);
+        assertEq(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), swapper), false);
     }
 
-    /// @dev GLOBAL_ROUTE_KEY is an enable flag only; entries stored under it never grant access.
-    function test_isSwapCallerAllowlisted_globalKeyHoldsNoEntries() public {
-        bytes32 globalRouteKey = groveBasin.GLOBAL_ROUTE_KEY();
+    /// @dev Global entries never bypass a route that carries its own gate.
+    function test_isSwapCallerAllowlisted_globalEntryDoesNotBypassRouteGate() public {
+        _allowGlobally(swapper);
 
-        _gateGlobally();
-
-        vm.prank(allowlistManager);
-        groveBasin.addToSwapAllowlist(globalRouteKey, swapper);
+        _gateRoute(address(swapToken), address(creditToken));
 
         assertEq(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), swapper), false);
     }
@@ -553,17 +598,35 @@ contract SwapAllowlistEnforcementTests is SwapAllowlistTestBase {
         groveBasin.swapExactIn(address(creditToken), address(swapToken), 80e18, 0, receiver, 0);
     }
 
+    function test_swapExactIn_globalKeyWithGlobalAllowlistEntry() public {
+        _gateGlobally();
+        _allowGlobally(swapper);
+
+        vm.prank(swapper);
+        groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, receiver, 0);
+
+        vm.prank(swapper);
+        groveBasin.swapExactIn(address(creditToken), address(swapToken), 80e18, 0, receiver, 0);
+
+        assertEq(creditToken.balanceOf(receiver), 80e18);
+        assertEq(swapToken.balanceOf(receiver),   100e6);
+    }
+
     function test_swapExactIn_globalKeyWithRouteAllowlistEntry() public {
         _allow(address(swapToken), address(creditToken), swapper);
 
         _gateGlobally();
 
+        vm.expectRevert(IGroveBasin.NotAllowlisted.selector);
         vm.prank(swapper);
         groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, receiver, 0);
 
-        vm.expectRevert(IGroveBasin.NotAllowlisted.selector);
+        _gateRoute(address(swapToken), address(creditToken));
+
         vm.prank(swapper);
-        groveBasin.swapExactIn(address(creditToken), address(swapToken), 80e18, 0, receiver, 0);
+        groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, receiver, 0);
+
+        assertEq(creditToken.balanceOf(receiver), 80e18);
     }
 
     function test_swapExactIn_globalKeyDisabledLeavesRouteKeyActive() public {
@@ -693,6 +756,143 @@ contract SwapAllowlistGlobalEnabledTests is SwapAllowlistTestBase {
         groveBasin.withdraw(address(swapToken), receiver, 100e6);
 
         assertEq(swapToken.balanceOf(receiver), 100e6);
+    }
+
+}
+
+/// @dev Basin with permissionless subscriptions and every redemption route flowing through the
+///      advance rate module. No global gate, so only the two redemption routes carry an allowlist.
+contract SwapAllowlistOpenSubscriptionTests is SwapAllowlistTestBase {
+
+    address public customer          = makeAddr("customer");
+    address public advanceRateModule = makeAddr("advanceRateModule");
+
+    function setUp() public override {
+        super.setUp();
+
+        _fundAllAssets(customer);
+        _fundAllAssets(advanceRateModule);
+
+        _gateRoute(address(creditToken), address(swapToken));
+        _gateRoute(address(creditToken), address(collateralToken));
+
+        _allow(address(creditToken), address(swapToken),       advanceRateModule);
+        _allow(address(creditToken), address(collateralToken), advanceRateModule);
+    }
+
+    function test_swapExactIn_subscriptionsArePermissionless() public {
+        vm.prank(customer);
+        groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, receiver, 0);
+
+        vm.prank(customer);
+        groveBasin.swapExactIn(address(collateralToken), address(creditToken), 100e18, 0, receiver, 0);
+
+        vm.prank(swapper);
+        groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, receiver, 0);
+
+        assertEq(creditToken.balanceOf(receiver), 240e18);
+    }
+
+    function test_swapExactIn_redemptionsRestrictedToAdvanceRateModule() public {
+        vm.expectRevert(IGroveBasin.NotAllowlisted.selector);
+        vm.prank(customer);
+        groveBasin.swapExactIn(address(creditToken), address(swapToken), 80e18, 0, receiver, 0);
+
+        vm.expectRevert(IGroveBasin.NotAllowlisted.selector);
+        vm.prank(customer);
+        groveBasin.swapExactIn(address(creditToken), address(collateralToken), 80e18, 0, receiver, 0);
+
+        vm.prank(advanceRateModule);
+        groveBasin.swapExactIn(address(creditToken), address(swapToken), 80e18, 0, receiver, 0);
+
+        vm.prank(advanceRateModule);
+        groveBasin.swapExactIn(address(creditToken), address(collateralToken), 80e18, 0, receiver, 0);
+
+        assertEq(swapToken.balanceOf(receiver),       100e6);
+        assertEq(collateralToken.balanceOf(receiver), 100e18);
+    }
+
+}
+
+/// @dev Basin where every subscription route serves the same customer set and every redemption
+///      route flows through the advance rate module. The customer set is stored once under
+///      GLOBAL_ROUTE_KEY and the two redemption routes hold only the module, so a route-specific
+///      allowlist takes precedence over the global one rather than being unioned with it.
+contract SwapAllowlistGlobalCustomerSetTests is SwapAllowlistTestBase {
+
+    address public customerA         = makeAddr("customerA");
+    address public customerB         = makeAddr("customerB");
+    address public advanceRateModule = makeAddr("advanceRateModule");
+
+    function setUp() public override {
+        super.setUp();
+
+        _fundAllAssets(customerA);
+        _fundAllAssets(customerB);
+        _fundAllAssets(advanceRateModule);
+
+        _gateGlobally();
+        _gateRoute(address(creditToken), address(swapToken));
+        _gateRoute(address(creditToken), address(collateralToken));
+
+        _allowGlobally(customerA);
+        _allowGlobally(customerB);
+        _allow(address(creditToken), address(swapToken),       advanceRateModule);
+        _allow(address(creditToken), address(collateralToken), advanceRateModule);
+    }
+
+    function test_globalCustomerSetGatesSubscriptionRoutes() public view {
+        assertEq(groveBasin.isSwapCallerAllowlisted(address(swapToken),       address(creditToken), customerA), true);
+        assertEq(groveBasin.isSwapCallerAllowlisted(address(collateralToken), address(creditToken), customerA), true);
+        assertEq(groveBasin.isSwapCallerAllowlisted(address(swapToken),       address(creditToken), customerB), true);
+        assertEq(groveBasin.isSwapCallerAllowlisted(address(collateralToken), address(creditToken), customerB), true);
+
+        assertEq(groveBasin.isSwapCallerAllowlisted(address(swapToken),       address(creditToken), swapper), false);
+        assertEq(groveBasin.isSwapCallerAllowlisted(address(collateralToken), address(creditToken), swapper), false);
+    }
+
+    function test_redemptionRoutesOverrideGlobalCustomerSet() public view {
+        assertEq(groveBasin.isSwapCallerAllowlisted(address(creditToken), address(swapToken),       advanceRateModule), true);
+        assertEq(groveBasin.isSwapCallerAllowlisted(address(creditToken), address(collateralToken), advanceRateModule), true);
+
+        assertEq(groveBasin.isSwapCallerAllowlisted(address(creditToken), address(swapToken),       customerA), false);
+        assertEq(groveBasin.isSwapCallerAllowlisted(address(creditToken), address(collateralToken), customerA), false);
+    }
+
+    function test_swapExactIn_customerSubscribesOnEveryRoute() public {
+        vm.prank(customerA);
+        groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, customerA, 0);
+
+        vm.prank(customerB);
+        groveBasin.swapExactIn(address(collateralToken), address(creditToken), 100e18, 0, customerB, 0);
+
+        assertEq(creditToken.balanceOf(customerA), 1_080e18);
+        assertEq(creditToken.balanceOf(customerB), 1_080e18);
+    }
+
+    function test_swapExactIn_nonCustomerCannotSubscribe() public {
+        vm.expectRevert(IGroveBasin.NotAllowlisted.selector);
+        vm.prank(swapper);
+        groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, receiver, 0);
+    }
+
+    function test_swapExactIn_onlyAdvanceRateModuleRedeems() public {
+        vm.expectRevert(IGroveBasin.NotAllowlisted.selector);
+        vm.prank(customerA);
+        groveBasin.swapExactIn(address(creditToken), address(swapToken), 80e18, 0, customerA, 0);
+
+        vm.expectRevert(IGroveBasin.NotAllowlisted.selector);
+        vm.prank(customerA);
+        groveBasin.swapExactIn(address(creditToken), address(collateralToken), 80e18, 0, customerA, 0);
+
+        vm.prank(advanceRateModule);
+        groveBasin.swapExactIn(address(creditToken), address(swapToken), 80e18, 0, receiver, 0);
+
+        vm.prank(advanceRateModule);
+        groveBasin.swapExactIn(address(creditToken), address(collateralToken), 80e18, 0, receiver, 0);
+
+        assertEq(swapToken.balanceOf(receiver),       100e6);
+        assertEq(collateralToken.balanceOf(receiver), 100e18);
     }
 
 }

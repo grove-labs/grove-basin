@@ -44,7 +44,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
     bytes4 public constant PAUSED_DEPOSIT_CREDIT            = bytes4(keccak256("PAUSED_DEPOSIT_CREDIT"));
     bytes4 public constant PAUSED_WITHDRAW_CREDIT           = bytes4(keccak256("PAUSED_WITHDRAW_CREDIT"));
 
-    /// @dev Route key reserved for the global swap allowlist, which gates every route.
+    /// @dev Route key reserved for the global swap allowlist, which gates every route that carries
+    ///      no gate of its own.
     bytes32 public constant override GLOBAL_ROUTE_KEY = bytes32(0);
 
     uint256 internal immutable _swapTokenPrecision;
@@ -89,7 +90,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
     mapping(address redeemer  => uint256 count)         public override pendingRedemptions;
 
     /// @dev Mapping of route keys to allowlist state. Keys come from `getSwapRouteKey` and are
-    ///      unidirectional. GLOBAL_ROUTE_KEY is reserved for the global allowlist.
+    ///      unidirectional. GLOBAL_ROUTE_KEY holds both the flag and the caller set that apply to
+    ///      every route whose own flag is unset; a route whose flag is set reads only its own
+    ///      entries.
     mapping(bytes32 routeKey => bool isEnabled)                            public override swapAllowlistEnabled;
     mapping(bytes32 routeKey => mapping(address caller => bool isAllowed)) public override swapAllowlist;
 
@@ -695,11 +698,10 @@ contract GroveBasin is IGroveBasin, AccessControl {
     {
         bytes32 routeKey = getSwapRouteKey(assetIn, assetOut);
 
-        bool enforced = swapAllowlistEnabled[GLOBAL_ROUTE_KEY] || swapAllowlistEnabled[routeKey];
+        if (swapAllowlistEnabled[routeKey])         return swapAllowlist[routeKey][caller];
+        if (swapAllowlistEnabled[GLOBAL_ROUTE_KEY]) return swapAllowlist[GLOBAL_ROUTE_KEY][caller];
 
-        if (!enforced) return true;
-
-        return swapAllowlist[routeKey][caller];
+        return true;
     }
 
     /**********************************************************************************************/

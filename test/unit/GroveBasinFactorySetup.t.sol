@@ -380,15 +380,16 @@ contract GroveBasinFactorySetupTests is Test {
 
         GroveBasin groveBasin = GroveBasin(basin);
 
-        bytes32 routeKey = groveBasin.getSwapRouteKey(address(swapToken), address(creditToken));
+        // The deployment enables the global allowlist only, so the global set governs every route.
+        bytes32 globalRouteKey = groveBasin.GLOBAL_ROUTE_KEY();
 
         vm.prank(allowlistManager1);
-        groveBasin.addToSwapAllowlist(routeKey, almRelayer);
+        groveBasin.addToSwapAllowlist(globalRouteKey, almRelayer);
 
         assertTrue(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), almRelayer));
 
         vm.prank(allowlistManager2);
-        groveBasin.removeFromSwapAllowlist(routeKey, almRelayer);
+        groveBasin.removeFromSwapAllowlist(globalRouteKey, almRelayer);
 
         assertFalse(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), almRelayer));
     }
