@@ -310,7 +310,7 @@ contract GroveBasinFactory {
         }
 
         if (params.swapAllowlistEnabled) {
-            groveBasin.setGlobalSwapAllowlist(true);
+            groveBasin.setGlobalSwapAllowlistEnabled(true);
         }
 
         if (params.minFee > 0) {

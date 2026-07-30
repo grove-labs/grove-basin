@@ -327,12 +327,12 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     /// @inheritdoc IGroveBasin
-    function setGlobalSwapAllowlist(bool enabled) external override onlyRole(MANAGER_ADMIN_ROLE) {
+    function setGlobalSwapAllowlistEnabled(bool enabled) external override onlyRole(MANAGER_ADMIN_ROLE) {
         _setSwapAllowlistEnabled(GLOBAL_ROUTE_KEY, enabled);
     }
 
     /// @inheritdoc IGroveBasin
-    function setSwapAllowlist(address assetIn, address assetOut, bool enabled)
+    function setSwapAllowlistEnabled(address assetIn, address assetOut, bool enabled)
         external override onlyRole(MANAGER_ADMIN_ROLE)
     {
         _requireValidAsset(assetIn);

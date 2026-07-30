@@ -665,7 +665,7 @@ interface IGroveBasin {
      *         gate of its own. Disabled on deployment. Callable only by MANAGER_ADMIN_ROLE.
      *  @param enabled Whether to restrict every route to allowlisted callers.
      */
-    function setGlobalSwapAllowlist(bool enabled) external;
+    function setGlobalSwapAllowlistEnabled(bool enabled) external;
 
     /**
      *  @dev   Enables or disables the allowlist of a single route, superseding the global allowlist
@@ -676,7 +676,7 @@ interface IGroveBasin {
      *  @param assetOut Address of the asset swapped out on the route.
      *  @param enabled  Whether to restrict the route to allowlisted callers.
      */
-    function setSwapAllowlist(address assetIn, address assetOut, bool enabled) external;
+    function setSwapAllowlistEnabled(address assetIn, address assetOut, bool enabled) external;
 
     /**********************************************************************************************/
     /*** Owner functions                                                                        ***/
