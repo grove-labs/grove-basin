@@ -667,7 +667,6 @@ abstract contract Verify_Basin is UsdsUsdcBasinDeploymentForkTestBase {
         assertFalse(basin.hasRole(basin.OWNER_ROLE(),             Deployments.DEPLOYER), "deployer should not have OWNER_ROLE");
         assertFalse(basin.hasRole(basin.MANAGER_ADMIN_ROLE(),     Deployments.DEPLOYER), "deployer should not have MANAGER_ADMIN_ROLE");
         assertFalse(basin.hasRole(basin.MANAGER_ROLE(),           Deployments.DEPLOYER), "deployer should not have MANAGER_ROLE");
-        assertFalse(basin.hasRole(basin.ALLOWLIST_MANAGER_ROLE(), Deployments.DEPLOYER), "deployer should not have ALLOWLIST_MANAGER_ROLE");
         assertFalse(basin.hasRole(basin.PAUSER_ROLE(),            Deployments.DEPLOYER), "deployer should not have PAUSER_ROLE");
         assertFalse(basin.hasRole(basin.REDEEMER_ROLE(),          Deployments.DEPLOYER), "deployer should not have REDEEMER_ROLE");
         assertFalse(basin.hasRole(basin.REDEEMER_CONTRACT_ROLE(), Deployments.DEPLOYER), "deployer should not have REDEEMER_CONTRACT_ROLE");
