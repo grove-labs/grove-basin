@@ -992,7 +992,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         ITokenRedeemer(redeemer).initiateRedeem(creditTokenAmount);
         IERC20(creditToken).safeApprove(redeemer, 0);
 
-        emit RedeemInitiated(redeemer, msg.sender, creditTokenAmount);
+        emit RedeemInitiated(redeemer, msg.sender, creditTokenAmount, redeemRequestId);
     }
 
     /// @dev Completes an async redemption, decreasing the pending credit token balance.
@@ -1008,7 +1008,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         uint256 collateralTokenReturned = ITokenRedeemer(request.redeemer).completeRedeem(request);
 
-        emit RedeemCompleted(request.redeemer, msg.sender, collateralTokenReturned);
+        emit RedeemCompleted(request.redeemer, msg.sender, collateralTokenReturned, redeemRequestId);
     }
 
     /// @dev Calculates a fee on `amount` in basis points.

@@ -86,8 +86,15 @@ contract TransferTokenRedeemerForkTest_InitiateRedeem is TransferTokenRedeemerFo
 
         uint256 redeemAmount = 1_000e6;
 
-        vm.expectEmit(true, true, false, true);
-        emit IGroveBasin.RedeemInitiated(address(redeemer), owner, redeemAmount);
+        uint256 snapshot = vm.snapshot();
+
+        vm.prank(owner);
+        bytes32 requestId = groveBasin.initiateRedeem(address(redeemer), redeemAmount);
+
+        vm.revertTo(snapshot);
+
+        vm.expectEmit(true, true, true, true);
+        emit IGroveBasin.RedeemInitiated(address(redeemer), owner, redeemAmount, requestId);
 
         vm.prank(owner);
         groveBasin.initiateRedeem(address(redeemer), redeemAmount);
@@ -162,8 +169,8 @@ contract TransferTokenRedeemerForkTest_CompleteRedeem is TransferTokenRedeemerFo
 
         deal(Ethereum.USDC, address(redeemer), redeemAmount);
 
-        vm.expectEmit(true, true, false, true);
-        emit IGroveBasin.RedeemCompleted(address(redeemer), owner, redeemAmount);
+        vm.expectEmit(true, true, true, true);
+        emit IGroveBasin.RedeemCompleted(address(redeemer), owner, redeemAmount, requestId);
 
         vm.prank(owner);
         groveBasin.completeRedeem(requestId);

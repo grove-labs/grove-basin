@@ -179,8 +179,15 @@ contract JTRSYTokenRedeemerInitiateRedeemIntegrationTests is GroveBasinTestBase 
     function test_initiateRedeem_emitsEvent() public {
         uint256 amount = 1000e18;
 
-        vm.expectEmit(true, true, false, true);
-        emit IGroveBasin.RedeemInitiated(address(redeemer), owner, amount);
+        uint256 snapshot = vm.snapshot();
+
+        vm.prank(owner);
+        bytes32 requestId = groveBasin.initiateRedeem(address(redeemer), amount);
+
+        vm.revertTo(snapshot);
+
+        vm.expectEmit(true, true, true, true);
+        emit IGroveBasin.RedeemInitiated(address(redeemer), owner, amount, requestId);
 
         vm.prank(owner);
         groveBasin.initiateRedeem(address(redeemer), amount);
@@ -256,8 +263,8 @@ contract JTRSYTokenRedeemerCompleteRedeemIntegrationTests is GroveBasinTestBase 
 
         collateralToken.mint(address(vault), amount);
 
-        vm.expectEmit(true, true, false, true);
-        emit IGroveBasin.RedeemCompleted(address(redeemer), address(this), amount);
+        vm.expectEmit(true, true, true, true);
+        emit IGroveBasin.RedeemCompleted(address(redeemer), address(this), amount, requestId);
 
         groveBasin.completeRedeem(requestId);
     }

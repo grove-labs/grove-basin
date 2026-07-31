@@ -176,19 +176,21 @@ interface IGroveBasin {
 
     /**
      *  @dev   Emitted when a credit token redemption is initiated via a redeemer.
-     *  @param redeemer Address of the redeemer contract.
-     *  @param caller   Address of the caller that initiated the redemption.
-     *  @param amount   Amount of credit tokens sent to the redeemer.
+     *  @param redeemer        Address of the redeemer contract.
+     *  @param caller          Address of the caller that initiated the redemption.
+     *  @param amount          Amount of credit tokens sent to the redeemer.
+     *  @param redeemRequestId Identifier of the created redeem request.
      */
-    event RedeemInitiated(address indexed redeemer, address indexed caller, uint256 amount);
+    event RedeemInitiated(address indexed redeemer, address indexed caller, uint256 amount, bytes32 indexed redeemRequestId);
 
     /**
      *  @dev   Emitted when a credit token redemption is completed via a redeemer.
-     *  @param redeemer Address of the redeemer contract.
-     *  @param caller   Address of the caller that completed the redemption.
-     *  @param amount   Amount of collateral tokens returned from the redeemer.
+     *  @param redeemer        Address of the redeemer contract.
+     *  @param caller          Address of the caller that completed the redemption.
+     *  @param amount          Amount of collateral tokens returned from the redeemer.
+     *  @param redeemRequestId Identifier of the completed redeem request.
      */
-    event RedeemCompleted(address indexed redeemer, address indexed caller, uint256 amount);
+    event RedeemCompleted(address indexed redeemer, address indexed caller, uint256 amount, bytes32 indexed redeemRequestId);
 
     /**
      *  @dev   Emitted when fee shares are accrued to the fee claimer during a swap.
