@@ -207,6 +207,13 @@ interface IGroveBasin {
     event FeeClaimerSet(address indexed oldFeeClaimer, address indexed newFeeClaimer);
 
     /**
+     *  @dev   Emitted when an address is added to or removed from the fee denylist.
+     *  @param account    Address whose fee denylist status was updated.
+     *  @param denylisted Whether the address is on the fee denylist.
+     */
+    event FeeDenylistSet(address indexed account, bool denylisted);
+
+    /**
      *  @dev   Emitted when a pocket's depositLiquidity call fails. The tokens remain in the
      *         pocket for the manager to deposit at a later time.
      *  @param pocket Address of the pocket that failed.
@@ -455,6 +462,14 @@ interface IGroveBasin {
     function REDEEMER_CONTRACT_ROLE() external view returns (bytes32);
 
     /**
+     *  @dev    Returns the role identifier for the fee denylister role. Addresses with this role
+     *          can add addresses to and remove addresses from the fee denylist. The role is
+     *          administered by the MANAGER_ADMIN_ROLE.
+     *  @return The bytes32 role identifier.
+     */
+    function FEE_DENYLISTER_ROLE() external view returns (bytes32);
+
+    /**
      *  @dev    Returns the total credit token amount from pending redemptions. This is an estimate
      *          of the value that Basin is due to receive, not a firm amount.
      *  @return The credit token amount from pending redemptions.
@@ -475,6 +490,15 @@ interface IGroveBasin {
      *  @return The fee claimer address.
      */
     function feeClaimer() external view returns (address);
+
+    /**
+     *  @dev    Returns whether an address is on the fee denylist. Swaps where the caller is on the
+     *          fee denylist are not charged purchase or redemption fees. The denylist applies to
+     *          the caller only, not to the receiver of the swap.
+     *  @param  account The address to query.
+     *  @return Whether the address is on the fee denylist.
+     */
+    function feeDenylist(address account) external view returns (bool);
     
     /**
      *  @dev    Returns the redeem request for a specific request ID.
@@ -658,6 +682,24 @@ interface IGroveBasin {
      *  @param  newFeeClaimer The new fee claimer address.
      */
     function setFeeClaimer(address newFeeClaimer) external;
+
+    /**********************************************************************************************/
+    /*** Fee denylister functions                                                               ***/
+    /**********************************************************************************************/
+
+    /**
+     *  @dev   Adds an address to the fee denylist, exempting it from purchase and redemption fees
+     *         on swaps it initiates. Callable only by FEE_DENYLISTER_ROLE.
+     *  @param account Address to add to the fee denylist.
+     */
+    function addToFeeDenylist(address account) external;
+
+    /**
+     *  @dev   Removes an address from the fee denylist, subjecting it to purchase and redemption
+     *         fees again. Callable only by FEE_DENYLISTER_ROLE.
+     *  @param account Address to remove from the fee denylist.
+     */
+    function removeFromFeeDenylist(address account) external;
 
     /**********************************************************************************************/
     /*** Fee calculation functions                                                              ***/

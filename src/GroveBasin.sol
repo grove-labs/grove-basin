@@ -34,6 +34,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     bytes32 public constant override PAUSER_ROLE             = keccak256("PAUSER_ROLE");
     bytes32 public constant override REDEEMER_ROLE           = keccak256("REDEEMER_ROLE");
     bytes32 public constant override REDEEMER_CONTRACT_ROLE  = keccak256("REDEEMER_CONTRACT_ROLE");
+    bytes32 public constant override FEE_DENYLISTER_ROLE     = keccak256("FEE_DENYLISTER_ROLE");
 
     /// @dev Pause keys
     bytes4 public constant PAUSED_SWAP_CREDIT_TO_COLLATERAL = bytes4(keccak256("PAUSED_SWAP_CREDIT_TO_COLLATERAL"));
@@ -83,6 +84,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     mapping(address user      => uint256 shares)        public override shares;
     mapping(bytes32 requestId => RedeemRequest request) public override redeemRequests;
     mapping(address redeemer  => uint256 count)         public override pendingRedemptions;
+    mapping(address account   => bool isFeeDenylisted)  public override feeDenylist;
 
     constructor(
         address owner_,
@@ -157,6 +159,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         _setRoleAdmin(PAUSER_ROLE,            MANAGER_ADMIN_ROLE);
         _setRoleAdmin(REDEEMER_CONTRACT_ROLE, MANAGER_ADMIN_ROLE);
         _setRoleAdmin(REDEEMER_ROLE,          MANAGER_ADMIN_ROLE);
+        _setRoleAdmin(FEE_DENYLISTER_ROLE,    MANAGER_ADMIN_ROLE);
     }
 
     /**********************************************************************************************/
@@ -388,6 +391,22 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     /**********************************************************************************************/
+    /*** Fee denylister functions                                                               ***/
+    /**********************************************************************************************/
+
+    /// @inheritdoc IGroveBasin
+    function addToFeeDenylist(address account) external override onlyRole(FEE_DENYLISTER_ROLE) {
+        feeDenylist[account] = true;
+        emit FeeDenylistSet(account, true);
+    }
+
+    /// @inheritdoc IGroveBasin
+    function removeFromFeeDenylist(address account) external override onlyRole(FEE_DENYLISTER_ROLE) {
+        feeDenylist[account] = false;
+        emit FeeDenylistSet(account, false);
+    }
+
+    /**********************************************************************************************/
     /*** Fee calculation functions                                                              ***/
     /**********************************************************************************************/
 
@@ -614,10 +633,12 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
     
     /// @dev Returns the fee that will be deducted from a gross output amount (ExactIn). Rounds up.
+    ///      Returns zero if the caller is on the fee denylist.
     function previewSwapExactInFee(address assetOut, uint256 amountOut)
         public view returns (uint256)
     {
         _requireValidAsset(assetOut);
+        if (feeDenylist[msg.sender]) return 0;
         if (assetOut == creditToken) {
             return _calculateFee(amountOut, purchaseFee);
         }
@@ -625,10 +646,12 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     /// @dev Returns the fee that must be added to a net output amount to get the gross output (ExactOut). Rounds up.
+    ///      Returns zero if the caller is on the fee denylist.
     function previewSwapExactOutFee(address assetOut, uint256 amountOut)
         public view returns (uint256)
     {
         _requireValidAsset(assetOut);
+        if (feeDenylist[msg.sender]) return 0;
         if (assetOut == creditToken) {
             return _getGrossAmountFromNet(amountOut, purchaseFee) - amountOut;
         }
