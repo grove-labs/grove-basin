@@ -128,6 +128,10 @@ abstract contract UsdsUsdcBasinDeploymentForkTestBase is Test {
     function _redeemerAddr()                internal pure virtual returns (address);
     function _tokenRedeemerAddr()           internal pure virtual returns (address);
 
+    /// @dev False for basins whose live bytecode predates the swap allowlist, so tests skip
+    ///      assertions that would call selectors those deployments do not implement.
+    function _supportsSwapAllowlist()       internal pure virtual returns (bool);
+
     uint256 internal constant FORK_BLOCK_NUMBER = 25360000; // Sat, Jun 20 2026 (after v100 redeploy)
 
     function setUp() public virtual {
@@ -171,6 +175,7 @@ abstract contract JTRSYUsdsUsdcDeploymentForkTestBase is UsdsUsdcBasinDeployment
     function _issuerMultisigAddr()          internal pure override returns (address) { return Deployments.JTRSY_ISSUER_MULTISIG; }
     function _redeemerAddr()                internal pure override returns (address) { return Deployments.JTRSY_REDEEMER; }
     function _tokenRedeemerAddr()           internal pure override returns (address) { return Deployments.JTRSY_TOKEN_REDEEMER; }
+    function _supportsSwapAllowlist()       internal pure override returns (bool)    { return false; }
 
     function _postSetUp() internal override {
         timelock = TimelockController(payable(Deployments.JTRSY_TIMELOCK));
@@ -237,6 +242,7 @@ abstract contract BUIDLUsdsUsdcDeploymentForkTestBase is UsdsUsdcBasinDeployment
     function _issuerMultisigAddr()          internal pure override returns (address) { return Deployments.SECURITIZE_ISSUER_MULTISIG; }
     function _redeemerAddr()                internal pure override returns (address) { return Deployments.SECURITIZE_REDEEMER; }
     function _tokenRedeemerAddr()           internal pure override returns (address) { return Deployments.BUIDL_TOKEN_REDEEMER; }
+    function _supportsSwapAllowlist()       internal pure override returns (bool)    { return false; }
 
     function _postSetUp() internal override {
         timelock          = TimelockController(payable(Deployments.BUIDL_TIMELOCK));
@@ -670,6 +676,10 @@ abstract contract Verify_Basin is UsdsUsdcBasinDeploymentForkTestBase {
         assertFalse(basin.hasRole(basin.PAUSER_ROLE(),            Deployments.DEPLOYER), "deployer should not have PAUSER_ROLE");
         assertFalse(basin.hasRole(basin.REDEEMER_ROLE(),          Deployments.DEPLOYER), "deployer should not have REDEEMER_ROLE");
         assertFalse(basin.hasRole(basin.REDEEMER_CONTRACT_ROLE(), Deployments.DEPLOYER), "deployer should not have REDEEMER_CONTRACT_ROLE");
+
+        if (!_supportsSwapAllowlist()) return;
+
+        assertFalse(basin.hasRole(basin.ALLOWLIST_MANAGER_ROLE(), Deployments.DEPLOYER), "deployer should not have ALLOWLIST_MANAGER_ROLE");
     }
 
     /*** Redeemer roles ***/
