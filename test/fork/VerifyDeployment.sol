@@ -116,6 +116,9 @@ abstract contract UsdsUsdcBasinDeploymentForkTestBase is Test {
     GroveBasin     public basin;
     UsdsUsdcPocket public pocket;
 
+    bool    public feeDenylistImplemented;
+    bytes32 public feeDenylisterRole;
+
     function _basinAddr()                   internal pure virtual returns (address);
     function _pocketAddr()                  internal pure virtual returns (address);
     function _ownerAddr()                   internal pure virtual returns (address);
@@ -134,6 +137,14 @@ abstract contract UsdsUsdcBasinDeploymentForkTestBase is Test {
         vm.createSelectFork(getChain("mainnet").rpcUrl, FORK_BLOCK_NUMBER);
         basin  = GroveBasin(_basinAddr());
         pocket = UsdsUsdcPocket(basin.pocket());
+
+        // The live basins were deployed before the fee denylist existed, so the role is probed
+        // instead of assumed: denylist checks skip until the basin is redeployed with it.
+        try basin.FEE_DENYLISTER_ROLE() returns (bytes32 role) {
+            feeDenylistImplemented = true;
+            feeDenylisterRole      = role;
+        } catch {}
+
         _postSetUp();
     }
 
@@ -564,6 +575,16 @@ abstract contract Verify_Basin is UsdsUsdcBasinDeploymentForkTestBase {
         assertTrue(basin.hasRole(basin.PAUSER_ROLE(), Ethereum.ALM_FREEZER), "ALM Freezer should have PAUSER_ROLE");
     }
 
+    function test_basin_feeDenylisterRoleAdminIsManagerAdmin() public {
+        vm.skip(!feeDenylistImplemented);
+
+        assertEq(
+            basin.getRoleAdmin(feeDenylisterRole),
+            basin.MANAGER_ADMIN_ROLE(),
+            "MANAGER_ADMIN_ROLE should administer FEE_DENYLISTER_ROLE"
+        );
+    }
+
     function test_basin_liquidityProviderIsDpauAlmProxy() public view {
         assertEq(basin.liquidityProvider(), Deployments.PAU_ALM_PROXY);
     }
@@ -672,6 +693,12 @@ abstract contract Verify_Basin is UsdsUsdcBasinDeploymentForkTestBase {
         assertFalse(basin.hasRole(basin.REDEEMER_CONTRACT_ROLE(), Deployments.DEPLOYER), "deployer should not have REDEEMER_CONTRACT_ROLE");
     }
 
+    function test_basin_deployerDoesNotHaveFeeDenylisterRole() public {
+        vm.skip(!feeDenylistImplemented);
+
+        assertFalse(basin.hasRole(feeDenylisterRole, Deployments.DEPLOYER), "deployer should not have FEE_DENYLISTER_ROLE");
+    }
+
     /*** Redeemer roles ***/
 
     function test_basin_redeemerContractRoleIsRedeemer() public {
@@ -736,6 +763,33 @@ abstract contract Verify_Actions is UsdsUsdcBasinDeploymentForkTestBase {
         basin.revokeRole(basin.REDEEMER_ROLE(), testRedeemer);
         assertFalse(basin.hasRole(basin.REDEEMER_ROLE(), testRedeemer));
         vm.stopPrank();
+    }
+
+    /*** MANAGER_ADMIN_ROLE manages FEE_DENYLISTER_ROLE, which manages the fee denylist ***/
+
+    function test_action_managerAdminCanManageFeeDenylisterRole() public {
+        vm.skip(!feeDenylistImplemented);
+
+        address feeDenylister = makeAddr("feeDenylister");
+        address exemptAccount = makeAddr("exemptAccount");
+
+        vm.prank(Ethereum.GROVE_PROXY);
+        basin.grantRole(feeDenylisterRole, feeDenylister);
+        assertTrue(basin.hasRole(feeDenylisterRole, feeDenylister));
+
+        vm.startPrank(feeDenylister);
+
+        basin.addToFeeDenylist(exemptAccount);
+        assertTrue(basin.feeDenylist(exemptAccount));
+
+        basin.removeFromFeeDenylist(exemptAccount);
+        assertFalse(basin.feeDenylist(exemptAccount));
+
+        vm.stopPrank();
+
+        vm.prank(Ethereum.GROVE_PROXY);
+        basin.revokeRole(feeDenylisterRole, feeDenylister);
+        assertFalse(basin.hasRole(feeDenylisterRole, feeDenylister));
     }
 
     /*** Freezer can set all pause flags and revoke MANAGER_ROLE and REDEEMER_ROLE ***/
