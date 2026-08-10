@@ -18,7 +18,7 @@ contract SetupBUIDLUsdsUsdcBasin is Script {
     address constant USDS_PSM_WRAPPER              = 0xA188EEC8F81263234dA3622A406892F3D630f98c;
     address constant GROVE_BASIN_FACTORY           = 0x78Dc98D689Fe9A1b0056ac1cDFC14722bDA6D49a;
     address constant BUIDL_ADMIN_TIMELOCK          = 0xdB8C7c814E9780659B23478EF4Bda9032CC9Ff34;
-    address constant BUIDL_TOKEN                   = 0x7712c34205737192402172409a8F7ccef8aA2AEc;
+    address constant BUIDL_TOKEN                   = 0x6a9DA2D710BB9B700acde7Cb81F10F1fF8C89041; // Updated to BUIDL-I token
     address constant SECURITIZE_REDEEMER_ADDRESS   = 0x488F27168a19472c51f003fbC5b75B1ACc3B7b4c;
     address constant BUIDL_REDEMPTION_ADDRESS      = 0x8780Dd016171B91E4Df47075dA0a947959C34200;
 
