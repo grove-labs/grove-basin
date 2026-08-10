@@ -15,6 +15,7 @@ import { BUIDLTokenRedeemer }    from "src/redeemers/BUIDLTokenRedeemer.sol";
 import { FixedRateProvider }     from "src/rate-providers/FixedRateProvider.sol";
 import { ChronicleRateProvider } from "src/rate-providers/ChronicleRateProvider.sol";
 import { IChronicleOracleLike }  from "src/interfaces/IChronicleOracleLike.sol";
+import { IGroveBasin }           from "src/interfaces/IGroveBasin.sol";
 import { ITokenRedeemer }        from "src/interfaces/ITokenRedeemer.sol";
 
 library Deployments {
@@ -70,6 +71,18 @@ library Deployments {
 
     // External
     address internal constant BUIDL_TOKEN = 0x7712c34205737192402172409a8F7ccef8aA2AEc;
+
+    /**********************************************************************************************/
+    /*** BUIDL-I Basin                                                                          ***/
+    /**********************************************************************************************/
+
+    // Reuses the BUIDL timelock, Chronicle rate provider, and Securitize issuer addresses above.
+    address internal constant BUIDLI_BASIN            = 0xf1615aC3181a4a28D35fB2b9cea84dd4a199B9D7;
+    address internal constant BUIDLI_USDS_USDC_POCKET = 0xFe532a93BCa874B40184B0C4Ae8a3F74516Fe340;
+    address internal constant BUIDLI_TOKEN_REDEEMER   = 0xECa0FF40a7C01629CE5E2425800D1D618F31C565;
+
+    // External
+    address internal constant BUIDLI_TOKEN = 0x6a9DA2D710BB9B700acde7Cb81F10F1fF8C89041;
 
 }
 
@@ -128,14 +141,22 @@ abstract contract UsdsUsdcBasinDeploymentForkTestBase is Test {
     function _redeemerAddr()                internal pure virtual returns (address);
     function _tokenRedeemerAddr()           internal pure virtual returns (address);
 
-    uint256 internal constant FORK_BLOCK_NUMBER = 25093011; // Thu, May 14, 7:33am EST
+    uint256 internal constant FORK_BLOCK_NUMBER = 25360000; // Sat, Jun 20 2026 (after v100 redeploy)
 
     function setUp() public virtual {
-        vm.createSelectFork(getChain("mainnet").rpcUrl);
+        require(_basinAddr() != address(0), "BASIN not set: fill in the deployment addresses");
+
+        setChain(
+            "tenderly", ChainData("Tenderly", 9991, vm.envString("TENDERLY_RPC_URL"))
+        );
+
+        _createFork();
         basin  = GroveBasin(_basinAddr());
         pocket = UsdsUsdcPocket(basin.pocket());
         _postSetUp();
     }
+
+    function _createFork() internal virtual;
 
     function _postSetUp() internal virtual;
 
@@ -171,6 +192,10 @@ abstract contract JTRSYUsdsUsdcDeploymentForkTestBase is UsdsUsdcBasinDeployment
     function _issuerMultisigAddr()          internal pure override returns (address) { return Deployments.JTRSY_ISSUER_MULTISIG; }
     function _redeemerAddr()                internal pure override returns (address) { return Deployments.JTRSY_REDEEMER; }
     function _tokenRedeemerAddr()           internal pure override returns (address) { return Deployments.JTRSY_TOKEN_REDEEMER; }
+
+    function _createFork() internal virtual override {
+        vm.createSelectFork(getChain("mainnet").rpcUrl, FORK_BLOCK_NUMBER);
+    }
 
     function _postSetUp() internal override {
         timelock = TimelockController(payable(Deployments.JTRSY_TIMELOCK));
@@ -212,52 +237,54 @@ abstract contract JTRSYUsdsUsdcDeploymentForkTestBase is UsdsUsdcBasinDeployment
 }
 
 /**********************************************************************************************/
-/*** BUIDL deployment base                                                                  ***/
+/*** Securitize deployment base — shared by BUIDL and BUIDL-I                               ***/
 /**********************************************************************************************/
 
-abstract contract BUIDLUsdsUsdcDeploymentForkTestBase is UsdsUsdcBasinDeploymentForkTestBase {
+abstract contract SecuritizeUsdsUsdcDeploymentForkTestBase is UsdsUsdcBasinDeploymentForkTestBase {
 
-    IBUIDLLike public buidl = IBUIDLLike(Deployments.BUIDL_TOKEN);
+    IBUIDLLike public dsToken;
 
     TimelockController public timelock;
 
-    address public buidlMaster;
+    address public dsTokenMaster;
     address public complianceService;
     address public walletRegistrar;
     address public registryService;
 
-    function _basinAddr()                   internal pure override returns (address) { return Deployments.BUIDL_BASIN; }
-    function _pocketAddr()                  internal pure override returns (address) { return Deployments.BUIDL_USDS_USDC_POCKET; }
     function _ownerAddr()                   internal pure override returns (address) { return Deployments.BUIDL_TIMELOCK; }
     function _timelockAddr()                internal pure override returns (address) { return Deployments.BUIDL_TIMELOCK; }
-    function _creditToken()                 internal pure override returns (address) { return Deployments.BUIDL_TOKEN; }
     function _swapTokenRateProvider()       internal pure override returns (address) { return Deployments.USDS_USDC_FIXED_RATE_PROVIDER; }
     function _collateralTokenRateProvider() internal pure override returns (address) { return Deployments.USDS_USDC_FIXED_RATE_PROVIDER; }
     function _creditTokenRateProvider()     internal pure override returns (address) { return Deployments.BUIDL_CHRONICLE_RATE_PROVIDER; }
     function _issuerMultisigAddr()          internal pure override returns (address) { return Deployments.SECURITIZE_ISSUER_MULTISIG; }
     function _redeemerAddr()                internal pure override returns (address) { return Deployments.SECURITIZE_REDEEMER; }
-    function _tokenRedeemerAddr()           internal pure override returns (address) { return Deployments.BUIDL_TOKEN_REDEEMER; }
+
+    function _createFork() internal virtual override {
+        vm.createSelectFork(getChain("mainnet").rpcUrl, FORK_BLOCK_NUMBER);
+    }
 
     function _postSetUp() internal override {
-        timelock          = TimelockController(payable(Deployments.BUIDL_TIMELOCK));
-        buidlMaster       = buidl.owner();
-        complianceService = buidl.getDSService(buidl.COMPLIANCE_SERVICE());
-        walletRegistrar   = buidl.getDSService(buidl.WALLET_REGISTRAR());
-        registryService   = buidl.getDSService(buidl.REGISTRY_SERVICE());
+        dsToken = IBUIDLLike(_creditToken());
 
-        vm.prank(buidlMaster);
-        buidl.setCap(type(uint256).max);
+        timelock          = TimelockController(payable(_timelockAddr()));
+        dsTokenMaster     = dsToken.owner();
+        complianceService = dsToken.getDSService(dsToken.COMPLIANCE_SERVICE());
+        walletRegistrar   = dsToken.getDSService(dsToken.WALLET_REGISTRAR());
+        registryService   = dsToken.getDSService(dsToken.REGISTRY_SERVICE());
 
-        _mockBUIDLWalletRegistrar();
-        _mockBUIDLCompliance();
+        vm.prank(dsTokenMaster);
+        dsToken.setCap(type(uint256).max);
+
+        _mockDSTokenWalletRegistrar();
+        _mockDSTokenCompliance();
     }
 
     function _dealCreditToken(address to, uint256 amount) internal override {
-        vm.prank(buidlMaster);
-        buidl.issueTokensWithNoCompliance(to, amount);
+        vm.prank(dsTokenMaster);
+        dsToken.issueTokensWithNoCompliance(to, amount);
     }
 
-    function _mockBUIDLWalletRegistrar() internal {
+    function _mockDSTokenWalletRegistrar() internal {
         vm.mockCall(
             walletRegistrar,
             abi.encodeWithSignature("isWallet(address)"),
@@ -270,8 +297,39 @@ abstract contract BUIDLUsdsUsdcDeploymentForkTestBase is UsdsUsdcBasinDeployment
         );
     }
 
-    function _mockBUIDLCompliance() internal {
+    function _mockDSTokenCompliance() internal {
         vm.etch(complianceService, type(NoOpFallback).runtimeCode);
+    }
+
+}
+
+/**********************************************************************************************/
+/*** BUIDL deployment base                                                                  ***/
+/**********************************************************************************************/
+
+abstract contract BUIDLUsdsUsdcDeploymentForkTestBase is SecuritizeUsdsUsdcDeploymentForkTestBase {
+
+    function _basinAddr()         internal pure override returns (address) { return Deployments.BUIDL_BASIN; }
+    function _pocketAddr()        internal pure override returns (address) { return Deployments.BUIDL_USDS_USDC_POCKET; }
+    function _creditToken()       internal pure override returns (address) { return Deployments.BUIDL_TOKEN; }
+    function _tokenRedeemerAddr() internal pure override returns (address) { return Deployments.BUIDL_TOKEN_REDEEMER; }
+
+}
+
+/**********************************************************************************************/
+/*** BUIDL-I deployment base                                                                ***/
+/**********************************************************************************************/
+
+abstract contract BUIDLIUsdsUsdcDeploymentForkTestBase is SecuritizeUsdsUsdcDeploymentForkTestBase {
+
+    function _basinAddr()         internal pure override returns (address) { return Deployments.BUIDLI_BASIN; }
+    function _pocketAddr()        internal pure override returns (address) { return Deployments.BUIDLI_USDS_USDC_POCKET; }
+    function _creditToken()       internal pure override returns (address) { return Deployments.BUIDLI_TOKEN; }
+    function _tokenRedeemerAddr() internal pure override returns (address) { return Deployments.BUIDLI_TOKEN_REDEEMER; }
+
+    // BUIDL-I was deployed after FORK_BLOCK_NUMBER, so its contracts only exist at the chain tip.
+    function _createFork() internal override {
+        vm.createSelectFork(getChain("mainnet").rpcUrl);
     }
 
 }
@@ -1045,6 +1103,100 @@ contract BUIDLUsdsUsdcDeploymentForkTest_OldAddressesRevoked is BUIDLUsdsUsdcDep
             basin.hasRole(basin.REDEEMER_CONTRACT_ROLE(), Deployments.OLD_BUIDL_TOKEN_REDEEMER),
             "old BUIDLTokenRedeemer should not have REDEEMER_CONTRACT_ROLE"
         );
+    }
+
+}
+
+/**********************************************************************************************/
+/***                                                                                        ***/
+/*** BUIDL-I — Concrete test contracts                                                      ***/
+/***                                                                                        ***/
+/**********************************************************************************************/
+
+contract BUIDLIUsdsUsdcDeploymentForkTest_BurnAddress    is BUIDLIUsdsUsdcDeploymentForkTestBase, Verify_BurnAddress {}
+contract BUIDLIUsdsUsdcDeploymentForkTest_Timelock       is BUIDLIUsdsUsdcDeploymentForkTestBase, Verify_Timelock {}
+contract BUIDLIUsdsUsdcDeploymentForkTest_RateProviders  is BUIDLIUsdsUsdcDeploymentForkTestBase, Verify_RateProviders {}
+contract BUIDLIUsdsUsdcDeploymentForkTest_Pocket         is BUIDLIUsdsUsdcDeploymentForkTestBase, Verify_Pocket {}
+contract BUIDLIUsdsUsdcDeploymentForkTest_Basin          is BUIDLIUsdsUsdcDeploymentForkTestBase, Verify_Basin {}
+contract BUIDLIUsdsUsdcDeploymentForkTest_Actions        is BUIDLIUsdsUsdcDeploymentForkTestBase, Verify_Actions {}
+contract BUIDLIUsdsUsdcDeploymentForkTest_RelayerManager is BUIDLIUsdsUsdcDeploymentForkTestBase, Verify_RelayerManager {}
+
+contract BUIDLIUsdsUsdcDeploymentForkTest_Redeemer is BUIDLIUsdsUsdcDeploymentForkTestBase, Verify_Redeemer {
+
+    function test_redeemer_redemptionAddress() public {
+        require(_tokenRedeemerAddr() != address(0), "TOKEN_REDEEMER not set");
+        assertEq(BUIDLTokenRedeemer(_tokenRedeemerAddr()).redemptionAddress(), Deployments.SECURITIZE_REDEMPTION_ADDRESS);
+    }
+
+    function test_redeemer_creditTokenIsNotBuidl() public {
+        require(_tokenRedeemerAddr() != address(0), "TOKEN_REDEEMER not set");
+        assertTrue(ITokenRedeemer(_tokenRedeemerAddr()).creditToken() != Deployments.BUIDL_TOKEN, "BUIDL-I redeemer should not redeem BUIDL");
+    }
+
+}
+
+/**********************************************************************************************/
+/*** BUIDL-I must be a distinct deployment from BUIDL                                       ***/
+/**********************************************************************************************/
+
+contract BUIDLIUsdsUsdcDeploymentForkTest_DistinctFromBUIDL is BUIDLIUsdsUsdcDeploymentForkTestBase {
+
+    function test_buidlI_creditTokenIsBuidlI() public view {
+        assertEq(basin.creditToken(), Deployments.BUIDLI_TOKEN);
+        assertTrue(basin.creditToken() != Deployments.BUIDL_TOKEN, "BUIDL-I basin credit token should not be BUIDL");
+    }
+
+    function test_buidlI_basinIsDistinct() public pure {
+        assertTrue(Deployments.BUIDLI_BASIN != address(0),                "BUIDLI_BASIN not set");
+        assertTrue(Deployments.BUIDLI_BASIN != Deployments.BUIDL_BASIN,   "BUIDL-I basin should be a distinct contract from the BUIDL basin");
+    }
+
+    function test_buidlI_pocketIsDistinct() public view {
+        assertTrue(Deployments.BUIDLI_USDS_USDC_POCKET != address(0),                          "BUIDLI_USDS_USDC_POCKET not set");
+        assertTrue(Deployments.BUIDLI_USDS_USDC_POCKET != Deployments.BUIDL_USDS_USDC_POCKET,  "BUIDL-I pocket should be a distinct contract from the BUIDL pocket");
+        assertEq(basin.pocket(), Deployments.BUIDLI_USDS_USDC_POCKET);
+    }
+
+    function test_buidlI_tokenRedeemerIsDistinct() public pure {
+        assertTrue(Deployments.BUIDLI_TOKEN_REDEEMER != address(0),                        "BUIDLI_TOKEN_REDEEMER not set");
+        assertTrue(Deployments.BUIDLI_TOKEN_REDEEMER != Deployments.BUIDL_TOKEN_REDEEMER,  "BUIDL-I redeemer should be a distinct contract from the BUIDL redeemer");
+        assertTrue(Deployments.BUIDLI_TOKEN_REDEEMER != Deployments.OLD_BUIDL_TOKEN_REDEEMER);
+    }
+
+    /*** The BUIDL basin must not accept BUIDL-I, and vice versa ***/
+
+    function test_buidlI_buidlBasinDoesNotHoldBuidlIRoles() public view {
+        GroveBasin buidlBasin = GroveBasin(Deployments.BUIDL_BASIN);
+
+        assertFalse(
+            buidlBasin.hasRole(buidlBasin.REDEEMER_CONTRACT_ROLE(), Deployments.BUIDLI_TOKEN_REDEEMER),
+            "BUIDL-I redeemer should not have REDEEMER_CONTRACT_ROLE on the BUIDL basin"
+        );
+        assertFalse(
+            basin.hasRole(basin.REDEEMER_CONTRACT_ROLE(), Deployments.BUIDL_TOKEN_REDEEMER),
+            "BUIDL redeemer should not have REDEEMER_CONTRACT_ROLE on the BUIDL-I basin"
+        );
+    }
+
+    /*** The BUIDL-I basin must not price or swap BUIDL ***/
+
+    function test_buidlI_basinRejectsBuidlAsAssetIn() public {
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
+        basin.previewSwapExactIn(Deployments.BUIDL_TOKEN, Ethereum.USDS, 1_000e6);
+    }
+
+    function test_buidlI_basinRejectsBuidlAsAssetOut() public {
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
+        basin.previewSwapExactOut(Ethereum.USDS, Deployments.BUIDL_TOKEN, 1_000e6);
+    }
+
+    /*** The BUIDL-I basin must price BUIDL-I, and only ever hold BUIDL-I as credit ***/
+
+    function test_buidlI_basinPricesBuidlI() public {
+        _dealCreditToken(Deployments.DPAU_ALM_PROXY, 1_000e6);
+
+        assertGt(basin.previewSwapExactIn(Deployments.BUIDLI_TOKEN, Ethereum.USDS, 1_000e6), 0);
+        assertEq(IERC20(Deployments.BUIDLI_TOKEN).balanceOf(Deployments.DPAU_ALM_PROXY), 1_000e6);
     }
 
 }
