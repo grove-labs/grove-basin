@@ -317,7 +317,7 @@ interface IGroveBasin {
 
     /**
      *  @dev    Returns the address of the pocket, an address that holds custody of the swap
-     *          token in the GroveBasin and can deploy it to yield-bearing strategies. Settable by the manager admin.
+     *          token in the GroveBasin and can deploy it to an external venue. Settable by the manager admin.
      *  @return The address of the pocket.
      */
     function pocket() external view returns (address);
@@ -377,7 +377,10 @@ interface IGroveBasin {
 
     /**
      *  @dev    Returns the role identifier for the manager admin role. This role can update
-     *          bounds, oracle values, set the pocket, and grant/revoke the MANAGER_ROLE.
+     *          bounds, oracle values, set the pocket, set the fee claimer, unpause, and add or
+     *          remove token redeemers. It is also the role admin of MANAGER_ROLE, PAUSER_ROLE,
+     *          REDEEMER_ROLE, and REDEEMER_CONTRACT_ROLE, so it can grant and revoke all four
+     *          through the inherited AccessControl functions.
      *  @return The bytes32 role identifier.
      */
     function MANAGER_ADMIN_ROLE() external view returns (bytes32);
@@ -434,15 +437,17 @@ interface IGroveBasin {
     function paused(bytes4 key) external view returns (bool);
 
     /**
-     *  @dev    Returns the role identifier for the pauser role. Addresses with this role
-     *          can call setPaused and revoke MANAGER_ROLE and REDEEMER_ROLE.
+     *  @dev    Returns the role identifier for the pauser role. Addresses with this role can call
+     *          setPaused, and can revoke MANAGER_ROLE and REDEEMER_ROLE through the inherited
+     *          AccessControl `revokeRole` function, which the implementation overrides to grant
+     *          this role that capability.
      *  @return The bytes32 role identifier.
      */
     function PAUSER_ROLE() external view returns (bytes32);
 
     /**
      *  @dev    Returns the role identifier for the redeemer role. Addresses with this role
-     *          can call initiateRedeem.
+     *          can call initiateRedeem and completeRedeem.
      *  @return The bytes32 role identifier.
      */
     function REDEEMER_ROLE() external view returns (bytes32);
@@ -555,10 +560,13 @@ interface IGroveBasin {
     function setFeeBounds(uint256 newMinFee, uint256 newMaxFee) external;
 
     /**
-     *  @dev    Sets the address of the pocket, an address that holds custody of the swap token
-     *          in the GroveBasin and can deploy it to yield-bearing strategies. This function will
-     *          transfer the balance of the swap token in the GroveBasin to the new pocket.
-     *          Callable only by MANAGER_ADMIN_ROLE.
+     *  @dev    Sets the address of the pocket, an address that holds custody of the swap token in
+     *          the GroveBasin and can deploy it to an external venue. If an external pocket is
+     *          configured, this function first pulls its swap token liquidity back from the venue
+     *          into that pocket and then transfers the balance from the existing pocket to the new
+     *          pocket, so the tokens moved are held by the existing pocket rather than by the
+     *          GroveBasin. Only when the GroveBasin itself is the existing pocket is the balance
+     *          held by the GroveBasin transferred. Callable only by MANAGER_ADMIN_ROLE.
      *  @param  newPocket Address of the new pocket.
      */
     function setPocket(address newPocket) external;
@@ -571,8 +579,10 @@ interface IGroveBasin {
     function addTokenRedeemer(address redeemer) external;
 
     /**
-     *  @dev   Removes a token redeemer from the basin. Calls the redeemer's tearDown function and
-     *         revokes the REDEEMER_CONTRACT_ROLE. Callable only by the MANAGER_ADMIN_ROLE.
+     *  @dev   Removes a token redeemer from the basin. Attempts to call the redeemer's tearDown
+     *         function, ignoring any revert so that a misbehaving redeemer cannot block its own
+     *         removal, and revokes the REDEEMER_CONTRACT_ROLE. A successful removal therefore does
+     *         not imply that tearDown succeeded. Callable only by the MANAGER_ADMIN_ROLE.
      *  @param redeemer Address of the token redeemer to remove.
      */
     function removeTokenRedeemer(address redeemer) external;
@@ -822,6 +832,29 @@ interface IGroveBasin {
      */
     function previewSwapExactOut(address assetIn, address assetOut, uint256 amountOut)
         external view returns (uint256 amountIn);
+
+    /**
+     * @dev    View function that returns the fee deducted from the gross output amount of an
+     *         exactIn swap, using purchaseFee when assetOut is the credit token and redemptionFee
+     *         otherwise. Rounds up. The quote returned by previewSwapExactIn is net of this fee.
+     * @param  assetOut  Address of the ERC-20 asset to swap out.
+     * @param  amountOut Gross amount of the asset out, before the fee is deducted.
+     * @return fee       Fee amount in assetOut terms.
+     */
+    function previewSwapExactInFee(address assetOut, uint256 amountOut)
+        external view returns (uint256 fee);
+
+    /**
+     * @dev    View function that returns the fee added to a net output amount to derive the gross
+     *         output amount of an exactOut swap, using purchaseFee when assetOut is the credit
+     *         token and redemptionFee otherwise. Rounds up. previewSwapExactOut prices the gross
+     *         amount that includes this fee.
+     * @param  assetOut  Address of the ERC-20 asset to swap out.
+     * @param  amountOut Net amount of the asset out to be received from the swap.
+     * @return fee       Fee amount in assetOut terms.
+     */
+    function previewSwapExactOutFee(address assetOut, uint256 amountOut)
+        external view returns (uint256 fee);
 
     /**********************************************************************************************/
     /*** Conversion functions                                                                   ***/

@@ -8,10 +8,12 @@ pragma solidity ^0.8.24;
  */
 interface IPSMLike {
 
-    /// @notice Sells `gemAmt` of gem (USDC) for USDS. Caller must approve gem to the PSM.
+    /// @notice Sells `gemAmt` of gem (USDC) for USDS, sending the USDS to `usr`. Caller must
+    ///         approve gem to the PSM.
     function sellGem(address usr, uint256 gemAmt) external returns (uint256 usdsOutWad);
 
-    /// @notice Buys `gemAmt` of gem (USDC) with USDS. Caller must approve USDS to the PSM.
+    /// @notice Buys `gemAmt` of gem (USDC) with USDS, sending the gem to `usr`. Caller must
+    ///         approve USDS to the PSM.
     function buyGem(address usr, uint256 gemAmt) external returns (uint256 usdsInWad);
 
     /// @notice Returns the fee (in WAD) charged when buying gems (USDC) from the PSM.
