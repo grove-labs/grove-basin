@@ -406,13 +406,12 @@ contract GroveBasinStalenessCheckTests is GroveBasinTestBase {
     function test_deposit_staleRate() public {
         mockCreditTokenRateProvider.__setLastUpdated(block.timestamp - 1 hours - 1);
 
-        address lp_ = groveBasin.liquidityProvider();
-        creditToken.mint(lp_, 100e18);
-        vm.startPrank(lp_);
+        creditToken.mint(lp, 100e18);
+        vm.startPrank(lp);
         creditToken.approve(address(groveBasin), 100e18);
 
         vm.expectRevert(IGroveBasin.StaleRate.selector);
-        groveBasin.deposit(address(creditToken), lp_, 100e18);
+        groveBasin.deposit(address(creditToken), lp, 100e18);
     }
 
     /**********************************************************************************************/

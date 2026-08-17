@@ -17,6 +17,8 @@ import { ChronicleRateProvider } from "src/rate-providers/ChronicleRateProvider.
 import { IChronicleOracleLike }  from "src/interfaces/IChronicleOracleLike.sol";
 import { ITokenRedeemer }        from "src/interfaces/ITokenRedeemer.sol";
 
+import { ILegacyLiquidityProvider } from "test/interfaces/ILegacyLiquidityProvider.sol";
+
 library Deployments {
 
     /**********************************************************************************************/
@@ -146,12 +148,16 @@ abstract contract UsdsUsdcBasinDeploymentForkTestBase is Test {
     function _dealCreditToken(address to, uint256 amount) internal virtual;
 
     function _deposit(address asset, address receiver, uint256 amount) internal {
-        address lp_ = basin.liquidityProvider();
+        address lp_ = _liquidityProvider();
         deal(asset, lp_, amount);
         vm.startPrank(lp_);
         IERC20(asset).approve(address(basin), amount);
         basin.deposit(asset, receiver, amount);
         vm.stopPrank();
+    }
+
+    function _liquidityProvider() internal view returns (address) {
+        return ILegacyLiquidityProvider(address(basin)).liquidityProvider();
     }
 
 }
@@ -571,7 +577,7 @@ abstract contract Verify_Basin is UsdsUsdcBasinDeploymentForkTestBase {
     }
 
     function test_basin_liquidityProviderIsDpauAlmProxy() public view {
-        assertEq(basin.liquidityProvider(), Deployments.PAU_ALM_PROXY);
+        assertEq(_liquidityProvider(), Deployments.PAU_ALM_PROXY);
     }
 
     function test_basin_feeClaimerIsZero() public view {
@@ -788,7 +794,7 @@ abstract contract Verify_Actions is UsdsUsdcBasinDeploymentForkTestBase {
     /*** Full deposit and withdraw (50m USDS) ***/
 
     function test_action_depositAndWithdrawFull_50m() public {
-        address lp            = basin.liquidityProvider();
+        address lp            = _liquidityProvider();
         assertEq(lp, Deployments.PAU_ALM_PROXY);
 
         uint256 depositAmount = 50_000_000e18;

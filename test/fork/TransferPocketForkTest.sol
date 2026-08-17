@@ -107,9 +107,8 @@ abstract contract TransferPocketForkTestBase is Test {
     }
 
     function _deposit(address asset, address user, uint256 amount) internal {
-        address lp_ = groveBasin.liquidityProvider();
-        vm.startPrank(lp_);
-        deal(asset, lp_, amount);
+        vm.startPrank(lp);
+        deal(asset, lp, amount);
         SafeERC20.safeApprove(IERC20(asset), address(groveBasin), 0);
         SafeERC20.safeApprove(IERC20(asset), address(groveBasin), amount);
         groveBasin.deposit(asset, user, amount);
@@ -999,9 +998,8 @@ abstract contract TransferPocketForkTestBase_USDC is Test {
     }
 
     function _deposit(address asset, address user, uint256 amount) internal {
-        address lp_ = groveBasin.liquidityProvider();
-        vm.startPrank(lp_);
-        deal(asset, lp_, amount);
+        vm.startPrank(lp);
+        deal(asset, lp, amount);
         SafeERC20.safeApprove(IERC20(asset), address(groveBasin), 0);
         SafeERC20.safeApprove(IERC20(asset), address(groveBasin), amount);
         groveBasin.deposit(asset, user, amount);

@@ -93,9 +93,8 @@ abstract contract ForkTestBase is Test {
     }
 
     function _deposit(address asset, address user, address receiver, uint256 amount) internal {
-        address lp_ = groveBasin.liquidityProvider();
-        _dealToken(asset, lp_, amount);
-        vm.startPrank(lp_);
+        _dealToken(asset, lp, amount);
+        vm.startPrank(lp);
         IERC20(asset).approve(address(groveBasin), amount);
         groveBasin.deposit(asset, receiver, amount);
         vm.stopPrank();

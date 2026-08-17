@@ -111,7 +111,7 @@ contract GroveBasinFactorySetupTests is Test {
     }
 
     function _assertCommonConfig(GroveBasin basin, address expectedOwner) internal view {
-        assertEq(basin.liquidityProvider(), liquidityProvider);
+        assertTrue(basin.hasRole(basin.LIQUIDITY_PROVIDER_ROLE(), liquidityProvider));
 
         // Ownership handed to the admin timelock; factory and deployer hold nothing.
         assertTrue(basin.hasRole(basin.OWNER_ROLE(), expectedOwner));

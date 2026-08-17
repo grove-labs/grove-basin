@@ -102,7 +102,7 @@ contract PocketInvariantTest is Test {
         groveBasin.deposit(address(swapToken), BURN_ADDRESS, 1e6);
         vm.stopPrank();
 
-        lpHandler      = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner);
+        lpHandler      = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner, lp);
         swapperHandler = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
 
         targetContract(address(lpHandler));
@@ -237,7 +237,7 @@ contract AaveV3PocketInvariantTest is Test {
         groveBasin.deposit(address(swapToken), BURN_ADDRESS, 1e6);
         vm.stopPrank();
 
-        lpHandler      = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner);
+        lpHandler      = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner, lp);
         swapperHandler = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
 
         targetContract(address(lpHandler));
@@ -364,7 +364,7 @@ contract MorphoPocketInvariantTest is Test {
         groveBasin.deposit(address(swapToken), BURN_ADDRESS, 1e6);
         vm.stopPrank();
 
-        lpHandler      = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner);
+        lpHandler      = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner, lp);
         swapperHandler = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
 
         targetContract(address(lpHandler));
