@@ -28,7 +28,7 @@ contract GroveBasinFactory {
     uint256 public constant MAX_AUTO_SALT = type(uint256).max / 2;
 
     /**
-     * @param liquidityProvider           Address set as the Basin `liquidityProvider`.
+     * @param liquidityProvider           Granted LIQUIDITY_PROVIDER_ROLE on the Basin.
      * @param swapToken                   Basin swap token.
      * @param collateralToken             Basin collateral token.
      * @param creditToken                 Basin credit token.

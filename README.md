@@ -17,7 +17,7 @@ Each of the three assets has a dedicated rate provider contract that returns the
 
 The conversion rate between assets and shares is based on the total value of assets within Basin. The total value is calculated by converting the assets to their equivalent value in USD with 18 decimal precision. The shares represent the ownership of the underlying assets in Grove Basin. Since three assets are used, each with different precisions and values, they are converted to a common USD-denominated value for share conversions.
 
-The contract uses OpenZeppelin `AccessControl` for role-based permissioning with five roles: `OWNER_ROLE`, `MANAGER_ADMIN_ROLE`, `MANAGER_ROLE`, `PAUSER_ROLE`, `REDEEMER_ROLE`, and `REDEEMER_CONTRACT_ROLE`.
+The contract uses OpenZeppelin `AccessControl` for role-based permissioning with seven roles: `OWNER_ROLE`, `MANAGER_ADMIN_ROLE`, `MANAGER_ROLE`, `PAUSER_ROLE`, `REDEEMER_ROLE`, `REDEEMER_CONTRACT_ROLE`, and `LIQUIDITY_PROVIDER_ROLE`.
 
 For detailed implementation, refer to the contract code and `IGroveBasin` interface documentation.
 
@@ -62,11 +62,12 @@ The `depositInitial` function is provided for this purpose -- it mints shares to
 ### Roles
 
 - **`OWNER_ROLE`**: Equivalent to `DEFAULT_ADMIN_ROLE`. Can set purchase and redemption fees within bounds, and manage all other roles.
-- **`MANAGER_ADMIN_ROLE`**: Can set rate providers, swap size bounds, staleness threshold bounds, fee bounds, pocket, fee claimer, unpause individual functions or the entire contract, and add/remove token redeemers. Admin of `MANAGER_ROLE`, `PAUSER_ROLE`, `REDEEMER_ROLE`, and `REDEEMER_CONTRACT_ROLE`.
+- **`MANAGER_ADMIN_ROLE`**: Can set rate providers, swap size bounds, staleness threshold bounds, fee bounds, pocket, fee claimer, unpause individual functions or the entire contract, and add/remove token redeemers. Admin of `MANAGER_ROLE`, `PAUSER_ROLE`, `REDEEMER_ROLE`, `REDEEMER_CONTRACT_ROLE`, and `LIQUIDITY_PROVIDER_ROLE`.
 - **`MANAGER_ROLE`**: Can set max swap size and staleness threshold within their respective bounds.
-- **`PAUSER_ROLE`**: Can pause individual functions or the entire contract. Can also revoke `MANAGER_ROLE` and `REDEEMER_ROLE`.
+- **`PAUSER_ROLE`**: Can pause individual functions or the entire contract. Can also revoke `MANAGER_ROLE`, `REDEEMER_ROLE`, and `LIQUIDITY_PROVIDER_ROLE`.
 - **`REDEEMER_ROLE`**: Can initiate and complete credit token redemptions.
 - **`REDEEMER_CONTRACT_ROLE`**: Granted to token redeemer contracts that handle the actual redemption logic.
+- **`LIQUIDITY_PROVIDER_ROLE`**: Can call `deposit`. Granted at deployment to the address passed to the constructor, and afterwards granted/revoked by `MANAGER_ADMIN_ROLE`; `PAUSER_ROLE` can also revoke it to freeze a provider. Freezing only blocks new deposits, since `withdraw` is gated on share ownership rather than on the role.
 
 
 ### Functions
@@ -105,7 +106,7 @@ The `depositInitial` function is provided for this purpose -- it mints shares to
 #### Liquidity Provision Functions
 
 - **`depositInitial`**: Makes the initial seed deposit, minting shares to the zero address. Callable by anyone but only when `totalShares == 0`.
-- **`deposit`**: Deposits assets into Grove Basin, minting new shares to a specified receiver. Only callable by `liquidityProvider`.
+- **`deposit`**: Deposits assets into Grove Basin, minting new shares to a specified receiver. Only callable by `LIQUIDITY_PROVIDER_ROLE` holders.
 - **`withdraw`**: Withdraws assets from Grove Basin by burning shares. Ensures the user has sufficient shares for the withdrawal and adjusts the total shares accordingly.
 
 #### Redemption Functions

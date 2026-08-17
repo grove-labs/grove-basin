@@ -403,19 +403,22 @@ interface IGroveBasin {
      *  @dev    Returns the role identifier for the manager admin role. This role can update
      *          bounds, oracle values, set the pocket, set the fee claimer, unpause, toggle the
      *          swap allowlist gates, and add or remove token redeemers. It is also the role admin
-     *          of MANAGER_ROLE, ALLOWLIST_MANAGER_ROLE, PAUSER_ROLE, REDEEMER_ROLE, and
-     *          REDEEMER_CONTRACT_ROLE, so it can grant and revoke all five through the inherited
-     *          AccessControl functions.
+     *          of MANAGER_ROLE, ALLOWLIST_MANAGER_ROLE, PAUSER_ROLE, REDEEMER_ROLE,
+     *          REDEEMER_CONTRACT_ROLE, and LIQUIDITY_PROVIDER_ROLE, so it can grant and revoke
+     *          all six through the inherited AccessControl functions.
      *  @return The bytes32 role identifier.
      */
     function MANAGER_ADMIN_ROLE() external view returns (bytes32);
 
     /**
-     *  @dev    Returns the address of the single immutable liquidity provider that is the only
-     *          address allowed to call `deposit`.
-     *  @return The address of the liquidity provider.
+     *  @dev    Returns the role identifier for the liquidity provider role. Addresses with this
+     *          role are the only ones allowed to call `deposit`. Administered by
+     *          MANAGER_ADMIN_ROLE and also revocable by PAUSER_ROLE. Revoking the role only stops
+     *          new deposits: withdrawals are gated on share ownership, so a revoked provider keeps
+     *          access to the shares it already holds.
+     *  @return The bytes32 role identifier.
      */
-    function liquidityProvider() external view returns (address);
+    function LIQUIDITY_PROVIDER_ROLE() external view returns (bytes32);
 
     /**
      *  @dev    Pause key for credit-to-collateral swaps.
@@ -463,9 +466,9 @@ interface IGroveBasin {
 
     /**
      *  @dev    Returns the role identifier for the pauser role. Addresses with this role can call
-     *          setPaused, and can revoke MANAGER_ROLE, ALLOWLIST_MANAGER_ROLE and REDEEMER_ROLE
-     *          through the inherited AccessControl `revokeRole` function, which the implementation
-     *          overrides to grant this role that capability.
+     *          setPaused, and can revoke MANAGER_ROLE, ALLOWLIST_MANAGER_ROLE, REDEEMER_ROLE,
+     *          and LIQUIDITY_PROVIDER_ROLE through the inherited AccessControl `revokeRole`
+     *          function, which the implementation overrides to grant this role that capability.
      *  @return The bytes32 role identifier.
      */
     function PAUSER_ROLE() external view returns (bytes32);
@@ -864,9 +867,10 @@ interface IGroveBasin {
         external returns (uint256 newShares);
 
     /**
-     *  @dev    Deposits an amount of a given asset into the GroveBasin. Only callable by the
-     *          liquidity provider. Must be one of the supported assets in order to succeed.
-     *          The amount deposited is converted to shares based on the current exchange rate.
+     *  @dev    Deposits an amount of a given asset into the GroveBasin. Only callable by
+     *          LIQUIDITY_PROVIDER_ROLE holders. Must be one of the supported assets in order to
+     *          succeed. The amount deposited is converted to shares based on the current exchange
+     *          rate.
      *  @param  asset           Address of the ERC-20 asset to deposit.
      *  @param  receiver        Address of the receiver of the resulting shares from the deposit.
      *  @param  assetsToDeposit Amount of the asset to deposit into the GroveBasin.

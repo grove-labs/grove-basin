@@ -18,9 +18,11 @@ import { ITokenRedeemer, RedeemRequest } from "./interfaces/ITokenRedeemer.sol";
  *         token, and a yield-bearing credit token. Liquidity providers deposit assets in exchange
  *         for shares that represent pro-rata ownership of the pool's total value.
  * @dev    Uses AccessControl for role-based permissioning across owner, manager admin, manager,
- *         allowlist manager, liquidity provider, and redeemer roles. Asset values are determined
- *         by external rate providers that return conversion rates. Swap token custody can be
- *         delegated to a pocket contract for yield generation.
+ *         allowlist manager, liquidity provider, and redeemer roles. `LIQUIDITY_PROVIDER_ROLE` is
+ *         administered by MANAGER_ADMIN_ROLE and can additionally be revoked by PAUSER_ROLE to
+ *         freeze a provider. Asset values are determined by external rate providers that return
+ *         conversion rates. Swap token custody can be delegated to a pocket contract for yield
+ *         generation.
  */
 contract GroveBasin is IGroveBasin, AccessControl {
 
@@ -35,6 +37,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     bytes32 public constant override PAUSER_ROLE             = keccak256("PAUSER_ROLE");
     bytes32 public constant override REDEEMER_ROLE           = keccak256("REDEEMER_ROLE");
     bytes32 public constant override REDEEMER_CONTRACT_ROLE  = keccak256("REDEEMER_CONTRACT_ROLE");
+    bytes32 public constant override LIQUIDITY_PROVIDER_ROLE = keccak256("LIQUIDITY_PROVIDER_ROLE");
 
     /// @dev Pause keys
     bytes4 public constant PAUSED_SWAP_CREDIT_TO_COLLATERAL = bytes4(keccak256("PAUSED_SWAP_CREDIT_TO_COLLATERAL"));
@@ -51,8 +54,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
     uint256 internal immutable _swapTokenPrecision;
     uint256 internal immutable _collateralTokenPrecision;
     uint256 internal immutable _creditTokenPrecision;
-
-    address public override immutable liquidityProvider;
 
     address public override immutable swapToken;
     address public override immutable collateralToken;
@@ -122,8 +123,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
             collateralToken_ == creditToken_
         ) revert DuplicateTokens();
 
-        liquidityProvider = liquidityProvider_;
-
         swapToken       = swapToken_;
         collateralToken = collateralToken_;
         creditToken     = creditToken_;
@@ -165,11 +164,14 @@ contract GroveBasin is IGroveBasin, AccessControl {
         maxStalenessThreshold = 2 weeks;
         stalenessThreshold    = 1 weeks;
 
-        _setRoleAdmin(ALLOWLIST_MANAGER_ROLE, MANAGER_ADMIN_ROLE);
-        _setRoleAdmin(MANAGER_ROLE,           MANAGER_ADMIN_ROLE);
-        _setRoleAdmin(PAUSER_ROLE,            MANAGER_ADMIN_ROLE);
-        _setRoleAdmin(REDEEMER_CONTRACT_ROLE, MANAGER_ADMIN_ROLE);
-        _setRoleAdmin(REDEEMER_ROLE,          MANAGER_ADMIN_ROLE);
+        _setRoleAdmin(ALLOWLIST_MANAGER_ROLE,  MANAGER_ADMIN_ROLE);
+        _setRoleAdmin(MANAGER_ROLE,            MANAGER_ADMIN_ROLE);
+        _setRoleAdmin(PAUSER_ROLE,             MANAGER_ADMIN_ROLE);
+        _setRoleAdmin(REDEEMER_CONTRACT_ROLE,  MANAGER_ADMIN_ROLE);
+        _setRoleAdmin(REDEEMER_ROLE,           MANAGER_ADMIN_ROLE);
+        _setRoleAdmin(LIQUIDITY_PROVIDER_ROLE, MANAGER_ADMIN_ROLE);
+
+        _grantRole(LIQUIDITY_PROVIDER_ROLE, liquidityProvider_);
     }
 
     /**********************************************************************************************/
@@ -547,8 +549,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
         external override returns (uint256 newShares)
     {
         _checkPaused(msg.sig);
-        if (assetsToDeposit == 0)            revert ZeroAmount();
-        if (msg.sender != liquidityProvider) revert NotLiquidityProvider();
+        if (assetsToDeposit == 0)                          revert ZeroAmount();
+        if (!hasRole(LIQUIDITY_PROVIDER_ROLE, msg.sender)) revert NotLiquidityProvider();
 
         newShares = previewDeposit(asset, assetsToDeposit);
 
@@ -779,10 +781,13 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /**********************************************************************************************/
 
     /// @dev Extends revokeRole to allow PAUSER_ROLE holders to revoke MANAGER_ROLE,
-    ///      ALLOWLIST_MANAGER_ROLE and REDEEMER_ROLE.
+    ///      ALLOWLIST_MANAGER_ROLE, REDEEMER_ROLE, and LIQUIDITY_PROVIDER_ROLE. Freezing a
+    ///      liquidity provider only stops new deposits: `withdraw` is gated on share ownership,
+    ///      not on the role, so the frozen provider keeps access to the value of the shares it
+    ///      already holds.
     function revokeRole(bytes32 role, address account) public override {
         if (
-            (role == MANAGER_ROLE || role == ALLOWLIST_MANAGER_ROLE || role == REDEEMER_ROLE) &&
+            (role == MANAGER_ROLE || role == ALLOWLIST_MANAGER_ROLE || role == REDEEMER_ROLE || role == LIQUIDITY_PROVIDER_ROLE) &&
             hasRole(PAUSER_ROLE, msg.sender)
         ) {
             _revokeRole(role, account);

@@ -13,7 +13,7 @@ import { UsdsUsdcPocket }    from "src/pockets/UsdsUsdcPocket.sol";
 
 library BasinSetup {
 
-    /// @notice DPAU ALM Proxy, set as the `liquidityProvider` on deployed Basins.
+    /// @notice DPAU ALM Proxy, granted LIQUIDITY_PROVIDER_ROLE on deployed Basins.
     address internal constant DPAU_ALM_PROXY = 0x0DcD9298e163dFD3c0B5b00F0d9093C36e40A153;
 
     /// @notice Check the deployer has at least 1 USDS, then approve that amount to the factory
