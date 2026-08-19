@@ -10,7 +10,7 @@ interface IERC4626VaultLike {
     /// @notice Deposits `assets` into the vault, minting shares to `receiver`.
     function deposit(uint256 assets, address receiver) external returns (uint256 shares);
 
-    /// @notice Withdraws `assets` from the vault, burning shares from `owner`.
+    /// @notice Withdraws `assets` from the vault to `receiver`, burning shares from `owner`.
     function withdraw(uint256 assets, address receiver, address owner) external returns (uint256 shares);
 
     /// @notice Returns the amount of underlying assets equivalent to `shares`.

@@ -613,9 +613,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
         if (_getAssetValue(assetIn, amountIn, true) > maxSwapSize) revert SwapSizeExceeded();
     }
     
-    /// @dev Returns the fee that will be deducted from a gross output amount (ExactIn). Rounds up.
+    /// @inheritdoc IGroveBasin
     function previewSwapExactInFee(address assetOut, uint256 amountOut)
-        public view returns (uint256)
+        public view override returns (uint256)
     {
         _requireValidAsset(assetOut);
         if (assetOut == creditToken) {
@@ -624,9 +624,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
         return _calculateFee(amountOut, redemptionFee);
     }
 
-    /// @dev Returns the fee that must be added to a net output amount to get the gross output (ExactOut). Rounds up.
+    /// @inheritdoc IGroveBasin
     function previewSwapExactOutFee(address assetOut, uint256 amountOut)
-        public view returns (uint256)
+        public view override returns (uint256)
     {
         _requireValidAsset(assetOut);
         if (assetOut == creditToken) {
