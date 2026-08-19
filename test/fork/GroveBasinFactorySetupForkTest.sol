@@ -80,6 +80,7 @@ contract GroveBasinFactorySetupForkTest is Test {
 
         params = GroveBasinFactory.DeployParams({
             liquidityProvider           : PAU_ALM_PROXY,
+            extraLiquidityProviders     : new address[](0),
             swapToken                   : isUsds ? Ethereum.USDS : Ethereum.USDT,
             collateralToken             : Ethereum.USDC,
             creditToken                 : address(creditToken),

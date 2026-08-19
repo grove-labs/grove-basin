@@ -28,7 +28,8 @@ contract GroveBasinFactory {
     uint256 public constant MAX_AUTO_SALT = type(uint256).max / 2;
 
     /**
-     * @param liquidityProvider           Granted LIQUIDITY_PROVIDER_ROLE on the Basin.
+     * @param liquidityProvider           Granted LIQUIDITY_PROVIDER_ROLE by the Basin constructor.
+     * @param extraLiquidityProviders     Further addresses granted LIQUIDITY_PROVIDER_ROLE during init; empty grants none. Each must be non-zero and not the factory itself.
      * @param swapToken                   Basin swap token.
      * @param collateralToken             Basin collateral token.
      * @param creditToken                 Basin credit token.
@@ -52,6 +53,7 @@ contract GroveBasinFactory {
      */
     struct DeployParams {
         address    liquidityProvider;
+        address[]  extraLiquidityProviders;
         address    swapToken;
         address    collateralToken;
         address    creditToken;
@@ -297,6 +299,14 @@ contract GroveBasinFactory {
 
         for (uint256 i; i < params.allowlistManagers.length; ++i) {
             groveBasin.grantRole(groveBasin.ALLOWLIST_MANAGER_ROLE(), params.allowlistManagers[i]);
+        }
+
+        for (uint256 i; i < params.extraLiquidityProviders.length; ++i) {
+            address provider = params.extraLiquidityProviders[i];
+
+            if (provider == address(0) || provider == address(this)) revert InvalidLiquidityProvider();
+
+            groveBasin.grantRole(groveBasin.LIQUIDITY_PROVIDER_ROLE(), provider);
         }
 
         if (params.issuerRedeemer != address(0)) {
