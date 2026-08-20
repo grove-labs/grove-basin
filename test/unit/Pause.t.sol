@@ -637,7 +637,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
     }
 
     /**********************************************************************************************/
-    /*** PAUSER_ROLE revoke MANAGER_ROLE and REDEEMER_ROLE tests                                ***/
+    /*** PAUSER_ROLE revoke MANAGER_ROLE, ALLOWLIST_MANAGER_ROLE and REDEEMER_ROLE tests        ***/
     /**********************************************************************************************/
 
     function test_pauser_revokeManagerRole() public {
@@ -648,6 +648,20 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         groveBasin.revokeRole(managerRole, manager);
 
         assertFalse(groveBasin.hasRole(managerRole, manager));
+    }
+
+    function test_pauser_revokeAllowlistManagerRole() public {
+        bytes32 allowlistManagerRole = groveBasin.ALLOWLIST_MANAGER_ROLE();
+        address allowlistManager     = makeAddr("allowlistManager");
+
+        vm.prank(owner);
+        groveBasin.grantRole(allowlistManagerRole, allowlistManager);
+        assertTrue(groveBasin.hasRole(allowlistManagerRole, allowlistManager));
+
+        vm.prank(pauser);
+        groveBasin.revokeRole(allowlistManagerRole, allowlistManager);
+
+        assertFalse(groveBasin.hasRole(allowlistManagerRole, allowlistManager));
     }
 
     function test_pauser_revokeRedeemerRole() public {
