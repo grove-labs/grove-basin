@@ -37,7 +37,7 @@ contract ConstructorSeedDepositTests is GroveBasinTestBase {
 
     function test_constructor_liquidityProviderIsSet() public {
         GroveBasin newGroveBasin = _deploy();
-        assertEq(newGroveBasin.liquidityProvider(), lp);
+        assertTrue(newGroveBasin.hasRole(newGroveBasin.LIQUIDITY_PROVIDER_ROLE(), lp));
     }
 
     function test_deploy_seededAfterDeploy() public {

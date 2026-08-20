@@ -10,6 +10,7 @@ contract LpHandler is HandlerBase {
     MockERC20[3] public assets;
 
     address   public owner;
+    address   public liquidityProvider;
     address[] public lps;
 
     uint256 public depositCount;
@@ -24,12 +25,14 @@ contract LpHandler is HandlerBase {
         MockERC20  collateralToken,
         MockERC20  creditToken,
         uint256    lpCount,
-        address    owner_
+        address    owner_,
+        address    liquidityProvider_
     ) HandlerBase(groveBasin_) {
-        owner     = owner_;
-        assets[0] = swapToken;
-        assets[1] = collateralToken;
-        assets[2] = creditToken;
+        owner             = owner_;
+        liquidityProvider = liquidityProvider_;
+        assets[0]         = swapToken;
+        assets[1]         = collateralToken;
+        assets[2]         = creditToken;
 
         for (uint256 i = 0; i < lpCount; i++) {
             lps.push(makeAddr(string(abi.encodePacked("lp-", vm.toString(i)))));
@@ -56,14 +59,13 @@ contract LpHandler is HandlerBase {
         uint256 startingValue      = groveBasin.totalAssets();
 
         // 3. Perform action against protocol
-        address lp_ = groveBasin.liquidityProvider();
 
         // Skip deposits that would produce zero shares
         uint256 previewShares = groveBasin.previewDeposit(address(asset), amount);
         if (previewShares == 0) return;
 
-        vm.startPrank(lp_);
-        asset.mint(lp_, amount);
+        vm.startPrank(liquidityProvider);
+        asset.mint(liquidityProvider, amount);
         asset.approve(address(groveBasin), amount);
         groveBasin.deposit(address(asset), lp, amount);
         vm.stopPrank();

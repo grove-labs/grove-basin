@@ -80,6 +80,7 @@ contract GroveBasinFactorySetupForkTest is Test {
 
         params = GroveBasinFactory.DeployParams({
             liquidityProvider           : PAU_ALM_PROXY,
+            extraLiquidityProviders     : new address[](0),
             swapToken                   : isUsds ? Ethereum.USDS : Ethereum.USDT,
             collateralToken             : Ethereum.USDC,
             creditToken                 : address(creditToken),
@@ -105,7 +106,7 @@ contract GroveBasinFactorySetupForkTest is Test {
 
     function _assertCommonConfig(GroveBasin basin, address pocket, address expectedOwner) internal view {
         // Liquidity provider is the hardcoded DPAU ALM Proxy.
-        assertEq(basin.liquidityProvider(), PAU_ALM_PROXY);
+        assertTrue(basin.hasRole(basin.LIQUIDITY_PROVIDER_ROLE(), PAU_ALM_PROXY));
 
         // Pocket wired up and is not the basin itself.
         assertEq(basin.pocket(), pocket);

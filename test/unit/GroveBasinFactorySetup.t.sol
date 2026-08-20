@@ -75,6 +75,19 @@ contract GroveBasinFactorySetupTests is Test {
         allowlistManagers[1] = allowlistManager2;
     }
 
+    function _providers(address provider) internal pure returns (address[] memory providers) {
+        providers    = new address[](1);
+        providers[0] = provider;
+    }
+
+    function _providers(address provider1, address provider2)
+        internal pure returns (address[] memory providers)
+    {
+        providers    = new address[](2);
+        providers[0] = provider1;
+        providers[1] = provider2;
+    }
+
     function _pocketAddress1(GroveBasinFactory.PocketType pocketType) internal view returns (address) {
         if (pocketType == GroveBasinFactory.PocketType.UsdsUsdc)   return psm;
         if (pocketType == GroveBasinFactory.PocketType.MorphoUsdt) return morphoVault;
@@ -87,6 +100,7 @@ contract GroveBasinFactorySetupTests is Test {
     {
         params = GroveBasinFactory.DeployParams({
             liquidityProvider           : liquidityProvider,
+            extraLiquidityProviders     : new address[](0),
             swapToken                   : address(swapToken),
             collateralToken             : address(collateralToken),
             creditToken                 : address(creditToken),
@@ -111,7 +125,7 @@ contract GroveBasinFactorySetupTests is Test {
     }
 
     function _assertCommonConfig(GroveBasin basin, address expectedOwner) internal view {
-        assertEq(basin.liquidityProvider(), liquidityProvider);
+        assertTrue(basin.hasRole(basin.LIQUIDITY_PROVIDER_ROLE(), liquidityProvider));
 
         // Ownership handed to the admin timelock; factory and deployer hold nothing.
         assertTrue(basin.hasRole(basin.OWNER_ROLE(), expectedOwner));
@@ -392,6 +406,87 @@ contract GroveBasinFactorySetupTests is Test {
         groveBasin.removeFromSwapAllowlist(globalRouteKey, almRelayer);
 
         assertFalse(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), almRelayer));
+    }
+
+    /**********************************************************************************************/
+    /*** Extra liquidity providers                                                              ***/
+    /**********************************************************************************************/
+
+    function test_deploy_noExtraLiquidityProviders() public {
+        _seed();
+
+        (address basin,,) =
+            factory.deployAndInit(_baseParams(GroveBasinFactory.PocketType.None), adminTimelock);
+
+        GroveBasin groveBasin = GroveBasin(basin);
+
+        assertTrue(groveBasin.hasRole(groveBasin.LIQUIDITY_PROVIDER_ROLE(),  liquidityProvider));
+        assertFalse(groveBasin.hasRole(groveBasin.LIQUIDITY_PROVIDER_ROLE(), address(factory)));
+    }
+
+    function test_deploy_extraLiquidityProviders() public {
+        _seed();
+
+        address extraLp1 = makeAddr("extraLp1");
+        address extraLp2 = makeAddr("extraLp2");
+
+        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
+        params.extraLiquidityProviders = _providers(extraLp1, extraLp2);
+
+        (address basin,,) = factory.deployAndInit(params, adminTimelock);
+
+        GroveBasin groveBasin = GroveBasin(basin);
+
+        assertTrue(groveBasin.hasRole(groveBasin.LIQUIDITY_PROVIDER_ROLE(), liquidityProvider));
+        assertTrue(groveBasin.hasRole(groveBasin.LIQUIDITY_PROVIDER_ROLE(), extraLp1));
+        assertTrue(groveBasin.hasRole(groveBasin.LIQUIDITY_PROVIDER_ROLE(), extraLp2));
+
+        // The factory keeps no admin power over the role it just handed out.
+        assertFalse(groveBasin.hasRole(groveBasin.MANAGER_ADMIN_ROLE(), address(factory)));
+        assertTrue(groveBasin.hasRole(groveBasin.MANAGER_ADMIN_ROLE(),  groveProxy));
+    }
+
+    function test_deploy_extraLiquidityProvider_canDeposit() public {
+        _seed();
+
+        address extraLp = makeAddr("extraLp");
+
+        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
+        params.extraLiquidityProviders = _providers(extraLp);
+
+        (address basin,,) = factory.deployAndInit(params, adminTimelock);
+
+        GroveBasin groveBasin = GroveBasin(basin);
+
+        collateralToken.mint(extraLp, 100e6);
+
+        vm.startPrank(extraLp);
+        collateralToken.approve(basin, 100e6);
+        uint256 newShares = groveBasin.deposit(address(collateralToken), extraLp, 100e6);
+        vm.stopPrank();
+
+        assertEq(newShares,                  100e18);
+        assertEq(groveBasin.shares(extraLp), 100e18);
+    }
+
+    function test_deploy_revertsOnZeroExtraLiquidityProvider() public {
+        _seed();
+
+        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
+        params.extraLiquidityProviders = _providers(address(0));
+
+        vm.expectRevert(GroveBasinFactory.InvalidLiquidityProvider.selector);
+        factory.deployAndInit(params, adminTimelock);
+    }
+
+    function test_deploy_revertsOnSelfExtraLiquidityProvider() public {
+        _seed();
+
+        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
+        params.extraLiquidityProviders = _providers(address(factory));
+
+        vm.expectRevert(GroveBasinFactory.InvalidLiquidityProvider.selector);
+        factory.deployAndInit(params, adminTimelock);
     }
 
     /**********************************************************************************************/

@@ -117,9 +117,8 @@ abstract contract UsdsUsdcPocketForkTestBase is Test {
     }
 
     function _deposit(address asset, address user, uint256 amount) internal virtual {
-        address lp_ = groveBasin.liquidityProvider();
-        vm.startPrank(lp_);
-        deal(asset, lp_, amount);
+        vm.startPrank(lp);
+        deal(asset, lp, amount);
         SafeERC20.safeApprove(IERC20(asset), address(groveBasin), 0);
         SafeERC20.safeApprove(IERC20(asset), address(groveBasin), amount);
         groveBasin.deposit(asset, user, amount);
@@ -233,23 +232,21 @@ contract UsdsUsdcPocketForkTest_SwapE2E is UsdsUsdcPocketForkTestBase {
     function setUp() public override {
         super.setUp();
 
-        address lp_ = groveBasin.liquidityProvider();
-
         // Do initial deposit first
-        vm.startPrank(lp_);
-        deal(Ethereum.USDC, lp_, 100_000e6);
+        vm.startPrank(lp);
+        deal(Ethereum.USDC, lp, 100_000e6);
         SafeERC20.safeApprove(IERC20(Ethereum.USDC), address(groveBasin), 100_000e6);
         groveBasin.depositInitial(Ethereum.USDC, 100_000e6);
         vm.stopPrank();
 
         // Add LP addresses to JTRSY allowlist (must be done outside of prank)
-        _addToJTRSYAllowlist(lp_);
+        _addToJTRSYAllowlist(lp);
         _addToJTRSYAllowlist(swapper);
         _addToJTRSYAllowlist(receiver);
 
         // Deposit collateralToken (USDC) and creditToken (JTRSY)
-        _deposit(Ethereum.USDC, lp_, 100_000e6);
-        _deposit(JTRSY_TOKEN, lp_, 100_000e6);
+        _deposit(Ethereum.USDC, lp, 100_000e6);
+        _deposit(JTRSY_TOKEN, lp, 100_000e6);
 
         // Give pocket USDS so it can provide liquidity for swaps
         deal(Ethereum.USDS, address(pocket), 100_000e18);
@@ -305,13 +302,12 @@ contract UsdsUsdcPocketForkTest_SwapE2E is UsdsUsdcPocketForkTestBase {
     }
 
     function _deposit(address asset, address user, uint256 amount) internal override {
-        address lp_ = groveBasin.liquidityProvider();
         if (asset == JTRSY_TOKEN) {
-            _dealJTRSY(lp_, amount);
+            _dealJTRSY(lp, amount);
         } else {
-            deal(asset, lp_, amount);
+            deal(asset, lp, amount);
         }
-        vm.startPrank(lp_);
+        vm.startPrank(lp);
         SafeERC20.safeApprove(IERC20(asset), address(groveBasin), 0);
         SafeERC20.safeApprove(IERC20(asset), address(groveBasin), amount);
         groveBasin.deposit(asset, user, amount);

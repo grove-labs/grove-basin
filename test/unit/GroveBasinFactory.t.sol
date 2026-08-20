@@ -45,7 +45,7 @@ contract GroveBasinFactoryTests is GroveBasinTestBase {
         GroveBasin basin = GroveBasin(newBasin);
 
         assertTrue(basin.hasRole(basin.OWNER_ROLE(), owner));
-        assertEq(basin.liquidityProvider(), lp);
+        assertTrue(basin.hasRole(basin.LIQUIDITY_PROVIDER_ROLE(), lp));
 
         assertEq(basin.swapToken(),                   address(swapToken));
         assertEq(basin.collateralToken(),             address(collateralToken));
@@ -134,7 +134,7 @@ contract GroveBasinFactoryTests is GroveBasinTestBase {
 
         GroveBasin basin = GroveBasin(newBasin);
 
-        assertEq(basin.liquidityProvider(), lp);
+        assertTrue(basin.hasRole(basin.LIQUIDITY_PROVIDER_ROLE(), lp));
     }
 
     function test_deploy_multipleDeployments() public {

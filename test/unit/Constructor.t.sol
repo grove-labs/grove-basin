@@ -126,7 +126,7 @@ contract GroveBasinConstructorTests is GroveBasinTestBase {
         assertTrue(groveBasin.hasRole(groveBasin.OWNER_ROLE(), owner));
         assertEq(groveBasin.OWNER_ROLE(), groveBasin.DEFAULT_ADMIN_ROLE());
 
-        assertEq(groveBasin.liquidityProvider(), lp);
+        assertTrue(groveBasin.hasRole(groveBasin.LIQUIDITY_PROVIDER_ROLE(), lp));
 
         assertEq(groveBasin.swapToken(),                   address(swapToken));
         assertEq(groveBasin.collateralToken(),             address(collateralToken));

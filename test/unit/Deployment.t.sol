@@ -29,7 +29,7 @@ contract GroveBasinDeployTests is GroveBasinTestBase {
         ));
 
         assertTrue(newGroveBasin.hasRole(newGroveBasin.OWNER_ROLE(), owner));
-        assertEq(newGroveBasin.liquidityProvider(), lp);
+        assertTrue(newGroveBasin.hasRole(newGroveBasin.LIQUIDITY_PROVIDER_ROLE(), lp));
         
         assertEq(newGroveBasin.OWNER_ROLE(), newGroveBasin.DEFAULT_ADMIN_ROLE());
 

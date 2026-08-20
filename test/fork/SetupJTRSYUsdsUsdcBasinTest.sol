@@ -11,6 +11,8 @@ import { JTRSYTokenRedeemer }      from "src/redeemers/JTRSYTokenRedeemer.sol";
 import { SetupJTRSYUsdsUsdcBasin } from "script/SetupJTRSYUsdsUsdcBasin.s.sol";
 import { BasinSetup }              from "script/lib/BasinSetup.sol";
 
+import { ILegacyLiquidityProvider } from "test/interfaces/ILegacyLiquidityProvider.sol";
+
 contract SetupJTRSYUsdsUsdcBasinTest is Test, SetupJTRSYUsdsUsdcBasin {
 
     GroveBasin         public groveBasin;
@@ -73,7 +75,7 @@ contract SetupJTRSYUsdsUsdcBasinTest is Test, SetupJTRSYUsdsUsdcBasin {
 
         assertTrue(groveBasin.hasRole(groveBasin.MANAGER_ADMIN_ROLE(), address(this)));
 
-        assertEq(groveBasin.liquidityProvider(), BasinSetup.DPAU_ALM_PROXY);
+        assertEq(ILegacyLiquidityProvider(address(groveBasin)).liquidityProvider(), BasinSetup.DPAU_ALM_PROXY);
     }
 
     function test_deploy_initialShares() public view {

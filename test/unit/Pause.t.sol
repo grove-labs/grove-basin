@@ -554,7 +554,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         vm.prank(pauser);
         groveBasin.setPaused(groveBasin.deposit.selector);
 
-        address user = groveBasin.liquidityProvider();
+        address user = lp;
 
         swapToken.mint(user, 100e6);
         vm.startPrank(user);
@@ -574,7 +574,7 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         vm.prank(owner);
         groveBasin.setUnpaused(sig);
 
-        address user = groveBasin.liquidityProvider();
+        address user = lp;
 
         swapToken.mint(user, 100e6);
         vm.startPrank(user);

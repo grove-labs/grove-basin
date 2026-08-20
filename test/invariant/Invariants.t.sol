@@ -410,7 +410,7 @@ contract GroveBasinInvariants_ConstantRate_NoTransfer is GroveBasinInvariantTest
         super.setUp();
 
         feeSetterHandler = new FeeSetterHandler(groveBasin, 500, owner);  // 0-5% fees
-        lpHandler        = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner);
+        lpHandler        = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner, lp);
         swapperHandler   = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
 
         targetContract(address(feeSetterHandler));
@@ -461,7 +461,7 @@ contract GroveBasinInvariants_ConstantRate_WithTransfers is GroveBasinInvariantT
         super.setUp();
 
         feeSetterHandler = new FeeSetterHandler(groveBasin, 500, owner);  // 0-5% fees
-        lpHandler        = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner);
+        lpHandler        = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner, lp);
         swapperHandler   = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
         transferHandler  = new TransferHandler(groveBasin, swapToken, collateralToken, creditToken);
 
@@ -510,7 +510,7 @@ contract GroveBasinInvariants_RateSetting_NoTransfer is GroveBasinInvariantTestB
         super.setUp();
 
         feeSetterHandler  = new FeeSetterHandler(groveBasin, 500, owner);  // 0-5% fees
-        lpHandler         = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner);
+        lpHandler         = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner, lp);
         rateSetterHandler = new RateSetterHandler(groveBasin, address(creditTokenRateProvider), 1.25e27);
         swapperHandler    = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
 
@@ -558,7 +558,7 @@ contract GroveBasinInvariants_RateSetting_WithTransfers is GroveBasinInvariantTe
         super.setUp();
 
         feeSetterHandler  = new FeeSetterHandler(groveBasin, 500, owner);  // 0-5% fees
-        lpHandler         = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner);
+        lpHandler         = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner, lp);
         rateSetterHandler = new RateSetterHandler(groveBasin, address(creditTokenRateProvider), 1.25e27);
         swapperHandler    = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
         transferHandler   = new TransferHandler(groveBasin, swapToken, collateralToken, creditToken);
@@ -650,7 +650,7 @@ contract GroveBasinInvariants_TimeBasedRateSetting_NoTransfer is GroveBasinInvar
         seedDepositValue          = 2e18;
 
         feeSetterHandler     = new FeeSetterHandler(groveBasin, 500, owner);  // 0-5% fees
-        lpHandler            = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner);
+        lpHandler            = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner, lp);
         swapperHandler       = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
         timeBasedRateHandler = new TimeBasedRateHandler(groveBasin, ssrOracle);
 
@@ -756,7 +756,7 @@ contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinIn
         seedDepositValue          = 2e18;
 
         feeSetterHandler     = new FeeSetterHandler(groveBasin, 500, owner);  // 0-5% fees
-        lpHandler            = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner);
+        lpHandler            = new LpHandler(groveBasin, swapToken, collateralToken, creditToken, 3, owner, lp);
         swapperHandler       = new SwapperHandler(groveBasin, swapToken, collateralToken, creditToken, 3);
         timeBasedRateHandler = new TimeBasedRateHandler(groveBasin, ssrOracle);
         transferHandler      = new TransferHandler(groveBasin, swapToken, collateralToken, creditToken);
