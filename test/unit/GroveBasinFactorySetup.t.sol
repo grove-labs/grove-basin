@@ -62,11 +62,10 @@ contract GroveBasinFactorySetupTests is Test {
     }
 
     function _defaultPausedFlags() internal pure returns (bytes4[] memory flags) {
-        flags = new bytes4[](4);
+        flags = new bytes4[](3);
         flags[0] = bytes4(keccak256("PAUSED_SWAP_SWAP_TO_CREDIT"));
         flags[1] = bytes4(keccak256("PAUSED_SWAP_COLLATERAL_TO_CREDIT"));
-        flags[2] = bytes4(keccak256("PAUSED_DEPOSIT_CREDIT"));
-        flags[3] = bytes4(keccak256("PAUSED_WITHDRAW_CREDIT"));
+        flags[2] = bytes4(keccak256("PAUSED_WITHDRAW_CREDIT"));
     }
 
     function _defaultAllowlistManagers() internal view returns (address[] memory allowlistManagers) {
@@ -186,7 +185,6 @@ contract GroveBasinFactorySetupTests is Test {
         // Default pauses applied.
         assertTrue(groveBasin.paused(groveBasin.PAUSED_SWAP_SWAP_TO_CREDIT()));
         assertTrue(groveBasin.paused(groveBasin.PAUSED_SWAP_COLLATERAL_TO_CREDIT()));
-        assertTrue(groveBasin.paused(groveBasin.PAUSED_DEPOSIT_CREDIT()));
         assertTrue(groveBasin.paused(groveBasin.PAUSED_WITHDRAW_CREDIT()));
 
         // Redeemer deployed and registered; issuer granted REDEEMER_ROLE.
@@ -274,7 +272,6 @@ contract GroveBasinFactorySetupTests is Test {
 
         // Empty pausedFlags pauses nothing.
         assertFalse(groveBasin.paused(groveBasin.PAUSED_SWAP_SWAP_TO_CREDIT()));
-        assertFalse(groveBasin.paused(groveBasin.PAUSED_DEPOSIT_CREDIT()));
 
         // No token redeemer registered, no issuer granted.
         assertEq(redeemer, address(0));

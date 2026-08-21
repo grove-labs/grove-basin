@@ -303,21 +303,6 @@ contract GroveBasinPauseTests is GroveBasinTestBase {
         assertEq(groveBasin.paused(key), true);
     }
 
-    function test_setPaused_depositCredit() public {
-        bytes4 key = groveBasin.PAUSED_DEPOSIT_CREDIT();
-        assertEq(groveBasin.paused(key), false);
-
-        vm.prank(pauser);
-        groveBasin.setPaused(key);
-
-        assertEq(groveBasin.paused(key), true);
-
-        vm.prank(owner);
-        groveBasin.setUnpaused(key);
-
-        assertEq(groveBasin.paused(key), false);
-    }
-
     function test_setPaused_withdrawCredit() public {
         bytes4 key = groveBasin.PAUSED_WITHDRAW_CREDIT();
         assertEq(groveBasin.paused(key), false);

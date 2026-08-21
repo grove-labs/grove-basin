@@ -468,12 +468,6 @@ interface IGroveBasin {
     function PAUSED_SWAP_SWAP_TO_CREDIT() external view returns (bytes4);
 
     /**
-     *  @dev    Pause key for credit token deposits.
-     *  @return The bytes4 pause key.
-     */
-    function PAUSED_DEPOSIT_CREDIT() external view returns (bytes4);
-
-    /**
      *  @dev    Pause key for credit token withdrawals.
      *  @return The bytes4 pause key.
      */

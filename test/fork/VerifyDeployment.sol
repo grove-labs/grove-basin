@@ -594,10 +594,6 @@ abstract contract Verify_Basin is UsdsUsdcBasinDeploymentForkTestBase {
         assertTrue(basin.paused(basin.PAUSED_SWAP_SWAP_TO_CREDIT()));
     }
 
-    function test_basin_paused_depositCredit() public view {
-        assertTrue(basin.paused(basin.PAUSED_DEPOSIT_CREDIT()));
-    }
-
     function test_basin_paused_withdrawCredit() public view {
         assertTrue(basin.paused(basin.PAUSED_WITHDRAW_CREDIT()));
     }
@@ -771,7 +767,6 @@ abstract contract Verify_Actions is UsdsUsdcBasinDeploymentForkTestBase {
         basin.setPaused(basin.PAUSED_SWAP_CREDIT_TO_SWAP());
         basin.setPaused(basin.PAUSED_SWAP_COLLATERAL_TO_CREDIT());
         basin.setPaused(basin.PAUSED_SWAP_SWAP_TO_CREDIT());
-        basin.setPaused(basin.PAUSED_DEPOSIT_CREDIT());
         basin.setPaused(basin.PAUSED_WITHDRAW_CREDIT());
 
         basin.revokeRole(managerRole, Ethereum.ALM_RELAYER);
@@ -784,7 +779,6 @@ abstract contract Verify_Actions is UsdsUsdcBasinDeploymentForkTestBase {
         assertTrue(basin.paused(basin.PAUSED_SWAP_CREDIT_TO_SWAP()));
         assertTrue(basin.paused(basin.PAUSED_SWAP_COLLATERAL_TO_CREDIT()));
         assertTrue(basin.paused(basin.PAUSED_SWAP_SWAP_TO_CREDIT()));
-        assertTrue(basin.paused(basin.PAUSED_DEPOSIT_CREDIT()));
         assertTrue(basin.paused(basin.PAUSED_WITHDRAW_CREDIT()));
 
         assertFalse(basin.hasRole(managerRole, Ethereum.ALM_RELAYER));

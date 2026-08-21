@@ -44,7 +44,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
     bytes4 public constant PAUSED_SWAP_CREDIT_TO_SWAP       = bytes4(keccak256("PAUSED_SWAP_CREDIT_TO_SWAP"));
     bytes4 public constant PAUSED_SWAP_COLLATERAL_TO_CREDIT = bytes4(keccak256("PAUSED_SWAP_COLLATERAL_TO_CREDIT"));
     bytes4 public constant PAUSED_SWAP_SWAP_TO_CREDIT       = bytes4(keccak256("PAUSED_SWAP_SWAP_TO_CREDIT"));
-    bytes4 public constant PAUSED_DEPOSIT_CREDIT            = bytes4(keccak256("PAUSED_DEPOSIT_CREDIT"));
     bytes4 public constant PAUSED_WITHDRAW_CREDIT           = bytes4(keccak256("PAUSED_WITHDRAW_CREDIT"));
 
     /// @dev Route key reserved for the global swap allowlist, which gates every route that carries
@@ -643,7 +642,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
         public view override returns (uint256)
     {
         _checkPaused(IGroveBasin.deposit.selector);
-        if (asset == creditToken) _checkPaused(PAUSED_DEPOSIT_CREDIT);
         if (assetsToDeposit == 0) revert ZeroAmount();
 
         // Convert amount to 1e18 precision denominated in value of USD then convert to shares.

@@ -103,7 +103,6 @@ library BasinSetup {
 
         basin.setPaused(basin.PAUSED_SWAP_SWAP_TO_CREDIT());
         basin.setPaused(basin.PAUSED_SWAP_COLLATERAL_TO_CREDIT());
-        basin.setPaused(basin.PAUSED_DEPOSIT_CREDIT());
         basin.setPaused(basin.PAUSED_WITHDRAW_CREDIT());
 
         basin.setFeeBounds(0, 500);
