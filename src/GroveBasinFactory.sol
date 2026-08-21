@@ -30,6 +30,7 @@ contract GroveBasinFactory {
     /**
      * @param liquidityProvider           Granted LIQUIDITY_PROVIDER_ROLE by the Basin constructor.
      * @param extraLiquidityProviders     Further addresses granted LIQUIDITY_PROVIDER_ROLE during init; empty grants none. Each must be non-zero and not the factory itself.
+     * @param extraLpProhibitedTokens     Parallel array to extraLiquidityProviders. Each element lists tokens the LP is prohibited from depositing. Empty outer array means no prohibitions for any LP; otherwise must match extraLiquidityProviders length.
      * @param swapToken                   Basin swap token.
      * @param collateralToken             Basin collateral token.
      * @param creditToken                 Basin credit token.
@@ -54,6 +55,7 @@ contract GroveBasinFactory {
     struct DeployParams {
         address    liquidityProvider;
         address[]  extraLiquidityProviders;
+        address[][]  extraLpProhibitedTokens;
         address    swapToken;
         address    collateralToken;
         address    creditToken;
@@ -81,6 +83,7 @@ contract GroveBasinFactory {
     error InvalidLiquidityProvider();
     error InvalidManagerAdmin();
     error InvalidCustomSalt();
+    error LpProhibitedTokensLengthMismatch();
 
     event GroveBasinDeployed(
         address indexed groveBasin,
@@ -301,12 +304,20 @@ contract GroveBasinFactory {
             groveBasin.grantRole(groveBasin.ALLOWLIST_MANAGER_ROLE(), params.allowlistManagers[i]);
         }
 
+        if (params.extraLpProhibitedTokens.length != 0 &&
+            params.extraLpProhibitedTokens.length != params.extraLiquidityProviders.length
+        ) revert LpProhibitedTokensLengthMismatch();
+
         for (uint256 i; i < params.extraLiquidityProviders.length; ++i) {
             address provider = params.extraLiquidityProviders[i];
 
             if (provider == address(0) || provider == address(this)) revert InvalidLiquidityProvider();
 
-            groveBasin.grantRole(groveBasin.LIQUIDITY_PROVIDER_ROLE(), provider);
+            address[] memory prohibited = params.extraLpProhibitedTokens.length > 0
+                ? params.extraLpProhibitedTokens[i]
+                : new address[](0);
+
+            groveBasin.addLiquidityProvider(provider, prohibited);
         }
 
         if (params.issuerRedeemer != address(0)) {

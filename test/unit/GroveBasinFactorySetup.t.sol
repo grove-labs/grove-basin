@@ -101,6 +101,7 @@ contract GroveBasinFactorySetupTests is Test {
         params = GroveBasinFactory.DeployParams({
             liquidityProvider           : liquidityProvider,
             extraLiquidityProviders     : new address[](0),
+            extraLpProhibitedTokens     : new address[][](0),
             swapToken                   : address(swapToken),
             collateralToken             : address(collateralToken),
             creditToken                 : address(creditToken),

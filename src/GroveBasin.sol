@@ -97,6 +97,12 @@ contract GroveBasin is IGroveBasin, AccessControl {
     mapping(bytes32 routeKey => bool isEnabled)                            public override swapAllowlistEnabled;
     mapping(bytes32 routeKey => mapping(address caller => bool isAllowed)) public override swapAllowlist;
 
+    /// @dev Maps LP address to token address to whether deposits of that token are prohibited.
+    ///      Default (false) means the LP can deposit the token. When set to true, the LP cannot
+    ///      deposit that token. Granting LIQUIDITY_PROVIDER_ROLE via the inherited grantRole
+    ///      leaves this mapping at its default, so the LP can deposit all tokens.
+    mapping(address provider => mapping(address token => bool isProhibited)) public override lpDepositProhibited;
+
     constructor(
         address owner_,
         address liquidityProvider_,
@@ -171,7 +177,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         _setRoleAdmin(REDEEMER_ROLE,           MANAGER_ADMIN_ROLE);
         _setRoleAdmin(LIQUIDITY_PROVIDER_ROLE, MANAGER_ADMIN_ROLE);
 
-        _grantRole(LIQUIDITY_PROVIDER_ROLE, liquidityProvider_);
+        _addLiquidityProvider(liquidityProvider_, new address[](0));
     }
 
     /**********************************************************************************************/
@@ -343,6 +349,46 @@ contract GroveBasin is IGroveBasin, AccessControl {
         _setSwapAllowlistEnabled(getSwapRouteKey(assetIn, assetOut), enabled);
     }
 
+
+    /// @inheritdoc IGroveBasin
+    function addLiquidityProvider(address provider, address[] calldata prohibitedTokens)
+        external override onlyRole(MANAGER_ADMIN_ROLE)
+    {
+        _addLiquidityProvider(provider, prohibitedTokens);
+    }
+
+    /// @inheritdoc IGroveBasin
+    function setLpDepositProhibited(address provider, address[] calldata tokens, bool[] calldata prohibited)
+        external override onlyRole(MANAGER_ADMIN_ROLE)
+    {
+        if (!hasRole(LIQUIDITY_PROVIDER_ROLE, provider)) revert NotLiquidityProvider();
+        if (tokens.length != prohibited.length)          revert ArrayLengthMismatch();
+
+        for (uint256 i; i < tokens.length; ++i) {
+            _requireValidAsset(tokens[i]);
+            lpDepositProhibited[provider][tokens[i]] = prohibited[i];
+            emit LpDepositProhibitedSet(provider, tokens[i], prohibited[i]);
+        }
+    }
+
+    /// @inheritdoc IGroveBasin
+    function removeLiquidityProvider(address provider) external override {
+        if (!hasRole(MANAGER_ADMIN_ROLE, msg.sender) && !hasRole(PAUSER_ROLE, msg.sender)) {
+            revert NotAuthorizedToRemoveLp();
+        }
+
+        _revokeRole(LIQUIDITY_PROVIDER_ROLE, provider);
+
+        address[3] memory tokens = [swapToken, collateralToken, creditToken];
+        for (uint256 i; i < 3; ++i) {
+            if (lpDepositProhibited[provider][tokens[i]]) {
+                delete lpDepositProhibited[provider][tokens[i]];
+                emit LpDepositProhibitedSet(provider, tokens[i], false);
+            }
+        }
+
+        emit LiquidityProviderRemoved(provider);
+    }
 
     /**********************************************************************************************/
     /*** Owner functions                                                                        ***/
@@ -551,6 +597,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         _checkPaused(msg.sig);
         if (assetsToDeposit == 0)                          revert ZeroAmount();
         if (!hasRole(LIQUIDITY_PROVIDER_ROLE, msg.sender)) revert NotLiquidityProvider();
+        if (lpDepositProhibited[msg.sender][asset])        revert LpTokenDepositProhibited();
 
         newShares = previewDeposit(asset, assetsToDeposit);
 
@@ -999,6 +1046,22 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /// @dev Returns true if an external pocket is configured (i.e., pocket != address(this)).
     function _hasPocket() internal view returns (bool) {
         return pocket != address(this);
+    }
+
+    /// @dev Grants LIQUIDITY_PROVIDER_ROLE and sets deposit prohibitions.
+    function _addLiquidityProvider(address provider, address[] memory prohibitedTokens) internal {
+        if (provider == address(0)) revert InvalidLiquidityProvider();
+
+        _grantRole(LIQUIDITY_PROVIDER_ROLE, provider);
+
+        for (uint256 i; i < prohibitedTokens.length; ++i) {
+            address token = prohibitedTokens[i];
+            _requireValidAsset(token);
+            lpDepositProhibited[provider][token] = true;
+            emit LpDepositProhibitedSet(provider, token, true);
+        }
+
+        emit LiquidityProviderAdded(provider);
     }
 
     /// @dev Reverts if `asset` is not one of the three supported tokens.
