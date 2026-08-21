@@ -72,9 +72,9 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
     }
 
     function test_deposit_invalidAsset() public {
-        // NOTE: This reverts in _getAssetValue
+        // NOTE: The allowlist check fires first because an invalid asset is never in the allowlist.
         vm.prank(lp);
-        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
+        vm.expectRevert(IGroveBasin.LpTokenDepositNotAllowed.selector);
         groveBasin.deposit(makeAddr("new-asset"), lp, 100e6);
     }
 

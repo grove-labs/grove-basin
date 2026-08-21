@@ -50,7 +50,7 @@ interface IGroveBasin {
     error PendingRedemptions();
     error InsufficientFunds();
     error NotAllowlisted();
-    error LpTokenDepositProhibited();
+    error LpTokenDepositNotAllowed();
     error NotAuthorizedToRemoveLp();
     error ArrayLengthMismatch();
 
@@ -240,12 +240,12 @@ interface IGroveBasin {
     event LiquidityProviderRemoved(address indexed provider);
 
     /**
-     *  @dev   Emitted when a deposit prohibition is toggled for an LP and token.
-     *  @param provider   Address of the liquidity provider.
-     *  @param token      Address of the token.
-     *  @param prohibited Whether the LP is prohibited from depositing the token.
+     *  @dev   Emitted when a deposit allowance is toggled for an LP and token.
+     *  @param provider Address of the liquidity provider.
+     *  @param token    Address of the token.
+     *  @param allowed  Whether the LP is allowed to deposit the token.
      */
-    event LpDepositProhibitedSet(address indexed provider, address indexed token, bool prohibited);
+    event LpDepositAllowedSet(address indexed provider, address indexed token, bool allowed);
 
     /**
      *  @dev   Emitted when the allowlist flag for a route key is toggled.
@@ -589,17 +589,17 @@ interface IGroveBasin {
     function swapAllowlist(bytes32 routeKey, address caller) external view returns (bool);
 
     /**
-     *  @dev    Returns whether a liquidity provider is prohibited from depositing a given token.
-     *          By default all entries are false, meaning an LP with LIQUIDITY_PROVIDER_ROLE can
-     *          deposit all three supported tokens. When true, the LP cannot deposit that token.
-     *          Granting the role via the inherited AccessControl grantRole leaves the mapping at
-     *          its default (all tokens allowed); use addLiquidityProvider to set prohibitions
-     *          atomically.
+     *  @dev    Returns whether a liquidity provider is allowed to deposit a given token.
+     *          By default all entries are false, meaning an LP with LIQUIDITY_PROVIDER_ROLE cannot
+     *          deposit any token until explicitly allowed. When true, the LP can deposit that
+     *          token. Granting the role via the inherited AccessControl grantRole leaves the
+     *          mapping at its default (no tokens allowed); use addLiquidityProvider to grant the
+     *          role and set allowed tokens atomically.
      *  @param  provider Address of the liquidity provider.
      *  @param  token    Address of the token (swapToken, collateralToken, or creditToken).
-     *  @return Whether the LP is prohibited from depositing the token.
+     *  @return Whether the LP is allowed to deposit the token.
      */
-    function lpDepositProhibited(address provider, address token) external view returns (bool);
+    function lpDepositAllowed(address provider, address token) external view returns (bool);
 
     /**
      *  @dev    Returns the route key for a swap direction. Routes are unidirectional, so the key
@@ -690,27 +690,29 @@ interface IGroveBasin {
     function removeTokenRedeemer(address redeemer) external;
 
     /**
-     *  @dev   Adds a liquidity provider, granting LIQUIDITY_PROVIDER_ROLE and optionally
-     *         prohibiting specific token deposits. By default (empty prohibitedTokens), the LP
-     *         can deposit all three tokens. Callable only by MANAGER_ADMIN_ROLE.
-     *  @param provider        Address to grant LIQUIDITY_PROVIDER_ROLE.
-     *  @param prohibitedTokens Tokens the LP is prohibited from depositing. Each must be a
-     *                          supported asset. Empty means no prohibitions (all tokens allowed).
+     *  @dev   Adds a liquidity provider, granting LIQUIDITY_PROVIDER_ROLE and setting which
+     *         tokens the LP is allowed to deposit. By default (empty allowedTokens), the LP
+     *         cannot deposit any token. Callable only by MANAGER_ADMIN_ROLE.
+     *  @param provider      Address to grant LIQUIDITY_PROVIDER_ROLE.
+     *  @param allowedTokens Tokens the LP is allowed to deposit. Each must be a supported asset.
+     *                       Empty means no tokens allowed.
      */
-    function addLiquidityProvider(address provider, address[] calldata prohibitedTokens) external;
+    function addLiquidityProvider(address provider, address[] calldata allowedTokens) external;
 
     /**
-     *  @dev   Batch-updates whether a liquidity provider is prohibited from depositing specific
-     *         tokens. Callable only by MANAGER_ADMIN_ROLE.
-     *  @param provider   Address of the liquidity provider.
-     *  @param tokens     Tokens to update (each must be a supported asset).
-     *  @param prohibited Parallel array of booleans; true to prohibit, false to allow.
+     *  @dev   Batch-updates whether a liquidity provider is allowed to deposit specific tokens.
+     *         Callable only by MANAGER_ADMIN_ROLE.
+     *  @param provider Address of the liquidity provider.
+     *  @param tokens   Tokens to update (each must be a supported asset).
+     *  @param allowed  Parallel array of booleans; true to allow, false to disallow.
      */
-    function setLpDepositProhibited(address provider, address[] calldata tokens, bool[] calldata prohibited) external;
+    function setLpDepositAllowed(address provider, address[] calldata tokens, bool[] calldata allowed) external;
 
     /**
-     *  @dev   Removes a liquidity provider, revoking LIQUIDITY_PROVIDER_ROLE and clearing all
-     *         deposit prohibitions. Callable by MANAGER_ADMIN_ROLE or PAUSER_ROLE.
+     *  @dev   Removes a liquidity provider, revoking LIQUIDITY_PROVIDER_ROLE. Deposit allowances
+     *         are intentionally preserved so the removed LP can still withdraw assets
+     *         corresponding to shares it already holds. Callable by MANAGER_ADMIN_ROLE or
+     *         PAUSER_ROLE.
      *  @param provider Address to revoke LIQUIDITY_PROVIDER_ROLE from.
      */
     function removeLiquidityProvider(address provider) external;

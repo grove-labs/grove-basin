@@ -95,11 +95,12 @@ contract GroveBasin is IGroveBasin, AccessControl {
     mapping(bytes32 routeKey => bool isEnabled)                            public override swapAllowlistEnabled;
     mapping(bytes32 routeKey => mapping(address caller => bool isAllowed)) public override swapAllowlist;
 
-    /// @dev Maps LP address to token address to whether deposits of that token are prohibited.
-    ///      Default (false) means the LP can deposit the token. When set to true, the LP cannot
-    ///      deposit that token. Granting LIQUIDITY_PROVIDER_ROLE via the inherited grantRole
-    ///      leaves this mapping at its default, so the LP can deposit all tokens.
-    mapping(address provider => mapping(address token => bool isProhibited)) public override lpDepositProhibited;
+    /// @dev Maps LP address to token address to whether deposits of that token are allowed.
+    ///      Default (false) means the LP cannot deposit the token. When set to true, the LP can
+    ///      deposit that token. Use addLiquidityProvider to grant the role and set allowed tokens
+    ///      atomically; granting LIQUIDITY_PROVIDER_ROLE via grantRole alone leaves this mapping
+    ///      at its default, so the LP cannot deposit any token until explicitly allowed.
+    mapping(address provider => mapping(address token => bool isAllowed)) public override lpDepositAllowed;
 
     constructor(
         address owner_,
@@ -175,7 +176,11 @@ contract GroveBasin is IGroveBasin, AccessControl {
         _setRoleAdmin(REDEEMER_ROLE,           MANAGER_ADMIN_ROLE);
         _setRoleAdmin(LIQUIDITY_PROVIDER_ROLE, MANAGER_ADMIN_ROLE);
 
-        _addLiquidityProvider(liquidityProvider_, new address[](0));
+        address[] memory allTokens = new address[](3);
+        allTokens[0] = swapToken_;
+        allTokens[1] = collateralToken_;
+        allTokens[2] = creditToken_;
+        _addLiquidityProvider(liquidityProvider_, allTokens);
     }
 
     /**********************************************************************************************/
@@ -349,23 +354,23 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
 
     /// @inheritdoc IGroveBasin
-    function addLiquidityProvider(address provider, address[] calldata prohibitedTokens)
+    function addLiquidityProvider(address provider, address[] calldata allowedTokens)
         external override onlyRole(MANAGER_ADMIN_ROLE)
     {
-        _addLiquidityProvider(provider, prohibitedTokens);
+        _addLiquidityProvider(provider, allowedTokens);
     }
 
     /// @inheritdoc IGroveBasin
-    function setLpDepositProhibited(address provider, address[] calldata tokens, bool[] calldata prohibited)
+    function setLpDepositAllowed(address provider, address[] calldata tokens, bool[] calldata allowed)
         external override onlyRole(MANAGER_ADMIN_ROLE)
     {
         if (!hasRole(LIQUIDITY_PROVIDER_ROLE, provider)) revert NotLiquidityProvider();
-        if (tokens.length != prohibited.length)          revert ArrayLengthMismatch();
+        if (tokens.length != allowed.length)             revert ArrayLengthMismatch();
 
         for (uint256 i; i < tokens.length; ++i) {
             _requireValidAsset(tokens[i]);
-            lpDepositProhibited[provider][tokens[i]] = prohibited[i];
-            emit LpDepositProhibitedSet(provider, tokens[i], prohibited[i]);
+            lpDepositAllowed[provider][tokens[i]] = allowed[i];
+            emit LpDepositAllowedSet(provider, tokens[i], allowed[i]);
         }
     }
 
@@ -377,13 +382,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         _revokeRole(LIQUIDITY_PROVIDER_ROLE, provider);
 
-        address[3] memory tokens = [swapToken, collateralToken, creditToken];
-        for (uint256 i; i < 3; ++i) {
-            if (lpDepositProhibited[provider][tokens[i]]) {
-                delete lpDepositProhibited[provider][tokens[i]];
-                emit LpDepositProhibitedSet(provider, tokens[i], false);
-            }
-        }
+        // NOTE: lpDepositAllowed entries are intentionally preserved so the removed LP can still
+        // withdraw assets corresponding to shares it already holds. The role revocation alone
+        // prevents future deposits (deposit checks the role first).
 
         emit LiquidityProviderRemoved(provider);
     }
@@ -595,7 +596,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         _checkPaused(msg.sig);
         if (assetsToDeposit == 0)                          revert ZeroAmount();
         if (!hasRole(LIQUIDITY_PROVIDER_ROLE, msg.sender)) revert NotLiquidityProvider();
-        if (lpDepositProhibited[msg.sender][asset])        revert LpTokenDepositProhibited();
+        if (!lpDepositAllowed[msg.sender][asset])          revert LpTokenDepositNotAllowed();
 
         newShares = previewDeposit(asset, assetsToDeposit);
 
@@ -614,8 +615,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function withdraw(address asset, address receiver, uint256 maxAssetsToWithdraw)
         external override returns (uint256 assetsWithdrawn)
     {
-        if (maxAssetsToWithdraw == 0)                       revert ZeroAmount();
-        if (lpDepositProhibited[msg.sender][asset])         revert LpTokenDepositProhibited();
+        if (maxAssetsToWithdraw == 0) revert ZeroAmount();
 
         uint256 sharesToBurn;
 
@@ -1045,17 +1045,17 @@ contract GroveBasin is IGroveBasin, AccessControl {
         return pocket != address(this);
     }
 
-    /// @dev Grants LIQUIDITY_PROVIDER_ROLE and sets deposit prohibitions.
-    function _addLiquidityProvider(address provider, address[] memory prohibitedTokens) internal {
+    /// @dev Grants LIQUIDITY_PROVIDER_ROLE and sets deposit allowances.
+    function _addLiquidityProvider(address provider, address[] memory allowedTokens) internal {
         if (provider == address(0)) revert InvalidLiquidityProvider();
 
         _grantRole(LIQUIDITY_PROVIDER_ROLE, provider);
 
-        for (uint256 i; i < prohibitedTokens.length; ++i) {
-            address token = prohibitedTokens[i];
+        for (uint256 i; i < allowedTokens.length; ++i) {
+            address token = allowedTokens[i];
             _requireValidAsset(token);
-            lpDepositProhibited[provider][token] = true;
-            emit LpDepositProhibitedSet(provider, token, true);
+            lpDepositAllowed[provider][token] = true;
+            emit LpDepositAllowedSet(provider, token, true);
         }
 
         emit LiquidityProviderAdded(provider);

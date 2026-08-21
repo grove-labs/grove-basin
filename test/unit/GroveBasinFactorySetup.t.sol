@@ -99,7 +99,7 @@ contract GroveBasinFactorySetupTests is Test {
         params = GroveBasinFactory.DeployParams({
             liquidityProvider           : liquidityProvider,
             extraLiquidityProviders     : new address[](0),
-            extraLpProhibitedTokens     : new address[][](0),
+            extraLpAllowedTokens        : new address[][](0),
             swapToken                   : address(swapToken),
             collateralToken             : address(collateralToken),
             creditToken                 : address(creditToken),
@@ -449,6 +449,14 @@ contract GroveBasinFactorySetupTests is Test {
 
         GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
         params.extraLiquidityProviders = _providers(extraLp);
+
+        // Allow the extra LP to deposit all three tokens
+        address[][] memory allowedTokens = new address[][](1);
+        allowedTokens[0] = new address[](3);
+        allowedTokens[0][0] = address(swapToken);
+        allowedTokens[0][1] = address(collateralToken);
+        allowedTokens[0][2] = address(creditToken);
+        params.extraLpAllowedTokens = allowedTokens;
 
         (address basin,,) = factory.deployAndInit(params, adminTimelock);
 
