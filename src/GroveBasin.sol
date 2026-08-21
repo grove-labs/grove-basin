@@ -44,7 +44,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
     bytes4 public constant PAUSED_SWAP_CREDIT_TO_SWAP       = bytes4(keccak256("PAUSED_SWAP_CREDIT_TO_SWAP"));
     bytes4 public constant PAUSED_SWAP_COLLATERAL_TO_CREDIT = bytes4(keccak256("PAUSED_SWAP_COLLATERAL_TO_CREDIT"));
     bytes4 public constant PAUSED_SWAP_SWAP_TO_CREDIT       = bytes4(keccak256("PAUSED_SWAP_SWAP_TO_CREDIT"));
-    bytes4 public constant PAUSED_WITHDRAW_CREDIT           = bytes4(keccak256("PAUSED_WITHDRAW_CREDIT"));
 
     /// @dev Route key reserved for the global swap allowlist, which gates every route that carries
     ///      no gate of its own.
@@ -653,7 +652,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function previewWithdraw(address asset, uint256 maxAssetsToWithdraw)
         public view override returns (uint256 sharesToBurn, uint256 assetsWithdrawn)
     {
-        if (asset == creditToken) _checkPaused(PAUSED_WITHDRAW_CREDIT);
         if (maxAssetsToWithdraw == 0) revert ZeroAmount();
 
         uint256 assetBalance = _getAvailableBalance(asset);
