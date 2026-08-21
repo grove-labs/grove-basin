@@ -365,12 +365,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         external override onlyRole(MANAGER_ADMIN_ROLE)
     {
         if (tokens.length != allowed.length) revert ArrayLengthMismatch();
-
-        for (uint256 i; i < tokens.length; ++i) {
-            _requireValidAsset(tokens[i]);
-            lpDepositAllowed[provider][tokens[i]] = allowed[i];
-            emit LpDepositAllowedSet(provider, tokens[i], allowed[i]);
-        }
+        _setLpDepositAllowed(provider, tokens, allowed);
     }
 
     /// @inheritdoc IGroveBasin
@@ -1050,14 +1045,22 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         _grantRole(LIQUIDITY_PROVIDER_ROLE, provider);
 
+        bool[] memory flags = new bool[](allowedTokens.length);
         for (uint256 i; i < allowedTokens.length; ++i) {
-            address token = allowedTokens[i];
-            _requireValidAsset(token);
-            lpDepositAllowed[provider][token] = true;
-            emit LpDepositAllowedSet(provider, token, true);
+            flags[i] = true;
         }
+        _setLpDepositAllowed(provider, allowedTokens, flags);
 
         emit LiquidityProviderAdded(provider);
+    }
+
+    /// @dev Sets deposit allowances for `provider`. Each token must be a supported asset.
+    function _setLpDepositAllowed(address provider, address[] memory tokens, bool[] memory allowed) internal {
+        for (uint256 i; i < tokens.length; ++i) {
+            _requireValidAsset(tokens[i]);
+            lpDepositAllowed[provider][tokens[i]] = allowed[i];
+            emit LpDepositAllowedSet(provider, tokens[i], allowed[i]);
+        }
     }
 
     /// @dev Reverts if `asset` is not one of the three supported tokens.
