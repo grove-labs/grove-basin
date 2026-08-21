@@ -483,6 +483,22 @@ contract GroveBasinFactorySetupTests is Test {
         factory.deployAndInit(params, adminTimelock);
     }
 
+    function test_deploy_revertsOnLpAllowedTokensLengthMismatch() public {
+        _seed();
+
+        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
+        params.extraLiquidityProviders = _providers(makeAddr("extraLp1"), makeAddr("extraLp2"));
+
+        // One token list for two providers.
+        address[][] memory allowedTokens = new address[][](1);
+        allowedTokens[0] = new address[](1);
+        allowedTokens[0][0] = address(swapToken);
+        params.extraLpAllowedTokens = allowedTokens;
+
+        vm.expectRevert(GroveBasinFactory.LpAllowedTokensLengthMismatch.selector);
+        factory.deployAndInit(params, adminTimelock);
+    }
+
     function test_deploy_revertsOnSelfExtraLiquidityProvider() public {
         _seed();
 

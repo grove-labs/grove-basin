@@ -606,4 +606,22 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         assertEq(_depositAs(newLp, address(creditToken), newLp, 100e18), 125e18);
     }
 
+    function test_setLpDepositAllowed_arrayLengthMismatch() public {
+        address[] memory allowed = new address[](0);
+
+        vm.prank(managerAdmin);
+        groveBasin.addLiquidityProvider(newLp, allowed);
+
+        address[] memory tokens = new address[](2);
+        tokens[0] = address(collateralToken);
+        tokens[1] = address(creditToken);
+
+        bool[] memory flags = new bool[](1);
+        flags[0] = true;
+
+        vm.prank(managerAdmin);
+        vm.expectRevert(IGroveBasin.ArrayLengthMismatch.selector);
+        groveBasin.setLpDepositAllowed(newLp, tokens, flags);
+    }
+
 }
