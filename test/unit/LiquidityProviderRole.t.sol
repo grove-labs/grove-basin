@@ -508,7 +508,7 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         assertEq(_depositAs(newLp, address(swapToken), newLp, 100e6), 100e18);
     }
 
-    function test_depositProhibited_creditToken_canStillWithdrawCreditToken() public {
+    function test_depositProhibited_creditToken_cannotWithdrawCreditToken() public {
         // First, add LP with no prohibitions and deposit credit
         address[] memory noProhibited = new address[](0);
         vm.prank(managerAdmin);
@@ -517,7 +517,7 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         _depositAs(newLp, address(creditToken), newLp, 100e18);
         assertEq(groveBasin.shares(newLp), 125e18);
 
-        // Now prohibit credit deposits
+        // Now prohibit credit
         address[] memory tokens = new address[](1);
         tokens[0] = address(creditToken);
         bool[] memory flags = new bool[](1);
@@ -526,12 +526,34 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         vm.prank(managerAdmin);
         groveBasin.setLpDepositProhibited(newLp, tokens, flags);
 
-        // LP can still withdraw credit token
+        // LP cannot withdraw credit token
         vm.prank(newLp);
-        uint256 withdrawn = groveBasin.withdraw(address(creditToken), newLp, 100e18);
+        vm.expectRevert(IGroveBasin.LpTokenDepositProhibited.selector);
+        groveBasin.withdraw(address(creditToken), newLp, 100e18);
+    }
 
+    function test_depositProhibited_creditToken_canStillWithdrawOtherTokens() public {
+        // Add LP, deposit collateral and credit
+        address[] memory noProhibited = new address[](0);
+        vm.prank(managerAdmin);
+        groveBasin.addLiquidityProvider(newLp, noProhibited);
+
+        _depositAs(newLp, address(collateralToken), newLp, 100e18);
+        _depositAs(newLp, address(creditToken), newLp, 100e18);
+
+        // Prohibit credit only
+        address[] memory tokens = new address[](1);
+        tokens[0] = address(creditToken);
+        bool[] memory flags = new bool[](1);
+        flags[0] = true;
+
+        vm.prank(managerAdmin);
+        groveBasin.setLpDepositProhibited(newLp, tokens, flags);
+
+        // LP can still withdraw collateral
+        vm.prank(newLp);
+        uint256 withdrawn = groveBasin.withdraw(address(collateralToken), newLp, 100e18);
         assertEq(withdrawn, 100e18);
-        assertEq(creditToken.balanceOf(newLp), 100e18);
     }
 
     function test_setLpDepositProhibited_reEnablesDeposit() public {
