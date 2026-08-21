@@ -493,4 +493,74 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         assertEq(groveBasin.shares(newLp), 0);
     }
 
+    /**********************************************************************************************/
+    /*** Deposit prohibition does not block other tokens or withdrawals                         ***/
+    /**********************************************************************************************/
+
+    function test_depositProhibited_creditToken_canStillDepositSwapToken() public {
+        address[] memory prohibited = new address[](1);
+        prohibited[0] = address(creditToken);
+
+        vm.prank(managerAdmin);
+        groveBasin.addLiquidityProvider(newLp, prohibited);
+
+        // Swap token deposit succeeds despite credit prohibition
+        assertEq(_depositAs(newLp, address(swapToken), newLp, 100e6), 100e18);
+    }
+
+    function test_depositProhibited_creditToken_canStillWithdrawCreditToken() public {
+        // First, add LP with no prohibitions and deposit credit
+        address[] memory noProhibited = new address[](0);
+        vm.prank(managerAdmin);
+        groveBasin.addLiquidityProvider(newLp, noProhibited);
+
+        _depositAs(newLp, address(creditToken), newLp, 100e18);
+        assertEq(groveBasin.shares(newLp), 125e18);
+
+        // Now prohibit credit deposits
+        address[] memory tokens = new address[](1);
+        tokens[0] = address(creditToken);
+        bool[] memory flags = new bool[](1);
+        flags[0] = true;
+
+        vm.prank(managerAdmin);
+        groveBasin.setLpDepositProhibited(newLp, tokens, flags);
+
+        // LP can still withdraw credit token
+        vm.prank(newLp);
+        uint256 withdrawn = groveBasin.withdraw(address(creditToken), newLp, 100e18);
+
+        assertEq(withdrawn, 100e18);
+        assertEq(creditToken.balanceOf(newLp), 100e18);
+    }
+
+    function test_setLpDepositProhibited_reEnablesDeposit() public {
+        // Add LP with credit prohibited
+        address[] memory prohibited = new address[](1);
+        prohibited[0] = address(creditToken);
+
+        vm.prank(managerAdmin);
+        groveBasin.addLiquidityProvider(newLp, prohibited);
+
+        // Confirm deposit blocked
+        creditToken.mint(newLp, 100e18);
+        vm.startPrank(newLp);
+        creditToken.approve(address(groveBasin), 100e18);
+        vm.expectRevert(IGroveBasin.LpTokenDepositProhibited.selector);
+        groveBasin.deposit(address(creditToken), newLp, 100e18);
+        vm.stopPrank();
+
+        // Remove prohibition
+        address[] memory tokens = new address[](1);
+        tokens[0] = address(creditToken);
+        bool[] memory flags = new bool[](1);
+        flags[0] = false;
+
+        vm.prank(managerAdmin);
+        groveBasin.setLpDepositProhibited(newLp, tokens, flags);
+
+        // Deposit now succeeds
+        assertEq(_depositAs(newLp, address(creditToken), newLp, 100e18), 125e18);
+    }
+
 }
