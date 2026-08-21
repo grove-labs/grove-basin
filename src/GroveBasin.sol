@@ -609,6 +609,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function withdraw(address asset, address receiver, uint256 maxAssetsToWithdraw)
         external override returns (uint256 assetsWithdrawn)
     {
+        _checkPaused(bytes4(0));
         if (maxAssetsToWithdraw == 0) revert ZeroAmount();
 
         uint256 sharesToBurn;

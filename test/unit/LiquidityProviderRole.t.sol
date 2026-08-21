@@ -288,6 +288,17 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         assertEq(groveBasin.shares(lp),         0);
     }
 
+    function test_withdraw_revertsWhenGloballyPaused() public {
+        _depositAs(lp, address(collateralToken), lp, 100e18);
+
+        vm.prank(pauser);
+        groveBasin.setPaused(bytes4(0));
+
+        vm.prank(lp);
+        vm.expectRevert(IGroveBasin.Paused.selector);
+        groveBasin.withdraw(address(collateralToken), lp, 100e18);
+    }
+
     function testFuzz_freeze_liquidityProviderCanWithdrawFullPosition(uint256 amount) public {
         amount = _bound(amount, 1e18, COLLATERAL_TOKEN_MAX);
 
