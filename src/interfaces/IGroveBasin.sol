@@ -700,9 +700,10 @@ interface IGroveBasin {
     function addLiquidityProvider(address provider, address[] calldata allowedTokens) external;
 
     /**
-     *  @dev   Batch-updates whether a liquidity provider is allowed to deposit specific tokens.
-     *         Callable only by MANAGER_ADMIN_ROLE.
-     *  @param provider Address of the liquidity provider.
+     *  @dev   Batch-updates whether an address is allowed to deposit specific tokens. Can be
+     *         called on any address, not only current LPs, so that non-LP share recipients can
+     *         have allowances pre-configured or adjusted. Callable only by MANAGER_ADMIN_ROLE.
+     *  @param provider Address whose deposit allowances are being updated.
      *  @param tokens   Tokens to update (each must be a supported asset).
      *  @param allowed  Parallel array of booleans; true to allow, false to disallow.
      */

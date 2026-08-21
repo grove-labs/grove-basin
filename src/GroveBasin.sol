@@ -364,8 +364,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function setLpDepositAllowed(address provider, address[] calldata tokens, bool[] calldata allowed)
         external override onlyRole(MANAGER_ADMIN_ROLE)
     {
-        if (!hasRole(LIQUIDITY_PROVIDER_ROLE, provider)) revert NotLiquidityProvider();
-        if (tokens.length != allowed.length)             revert ArrayLengthMismatch();
+        if (tokens.length != allowed.length) revert ArrayLengthMismatch();
 
         for (uint256 i; i < tokens.length; ++i) {
             _requireValidAsset(tokens[i]);
