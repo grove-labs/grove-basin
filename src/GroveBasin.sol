@@ -115,7 +115,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
         if (owner_ == address(0)) revert InvalidOwner();
         _grantRole(OWNER_ROLE, owner_);
 
-        if (liquidityProvider_ == address(0)) revert InvalidLiquidityProvider();
         if (
             swapToken_       == address(0) ||
             collateralToken_ == address(0) ||
@@ -176,11 +175,16 @@ contract GroveBasin is IGroveBasin, AccessControl {
         _setRoleAdmin(REDEEMER_ROLE,           MANAGER_ADMIN_ROLE);
         _setRoleAdmin(LIQUIDITY_PROVIDER_ROLE, MANAGER_ADMIN_ROLE);
 
-        address[] memory allTokens = new address[](3);
-        allTokens[0] = swapToken_;
-        allTokens[1] = collateralToken_;
-        allTokens[2] = creditToken_;
-        _addLiquidityProvider(liquidityProvider_, allTokens);
+        if (liquidityProvider_ == address(0)) revert InvalidLiquidityProvider();
+
+        _grantRole(LIQUIDITY_PROVIDER_ROLE, liquidityProvider_);
+
+        // The three tokens were validated above, so `_requireValidAsset` would be redundant here.
+        _allowLpDeposit(liquidityProvider_, swapToken_);
+        _allowLpDeposit(liquidityProvider_, collateralToken_);
+        _allowLpDeposit(liquidityProvider_, creditToken_);
+
+        emit LiquidityProviderAdded(liquidityProvider_);
     }
 
     /**********************************************************************************************/
@@ -1041,26 +1045,42 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     /// @dev Grants LIQUIDITY_PROVIDER_ROLE and sets deposit allowances.
-    function _addLiquidityProvider(address provider, address[] memory allowedTokens) internal {
+    function _addLiquidityProvider(address provider, address[] calldata allowedTokens) internal {
         if (provider == address(0)) revert InvalidLiquidityProvider();
 
         _grantRole(LIQUIDITY_PROVIDER_ROLE, provider);
 
-        bool[] memory flags = new bool[](allowedTokens.length);
-        for (uint256 i; i < allowedTokens.length; ++i) {
-            flags[i] = true;
+        uint256 length = allowedTokens.length;
+
+        for (uint256 i; i < length; ++i) {
+            address token = allowedTokens[i];
+
+            _requireValidAsset(token);
+            _allowLpDeposit(provider, token);
         }
-        _setLpDepositAllowed(provider, allowedTokens, flags);
 
         emit LiquidityProviderAdded(provider);
     }
 
+    /// @dev Enables `provider` to deposit `token`. Callers are responsible for validating `token`.
+    function _allowLpDeposit(address provider, address token) internal {
+        lpDepositAllowed[provider][token] = true;
+
+        emit LpDepositAllowedSet(provider, token, true);
+    }
+
     /// @dev Sets deposit allowances for `provider`. Each token must be a supported asset.
-    function _setLpDepositAllowed(address provider, address[] memory tokens, bool[] memory allowed) internal {
-        for (uint256 i; i < tokens.length; ++i) {
-            _requireValidAsset(tokens[i]);
-            lpDepositAllowed[provider][tokens[i]] = allowed[i];
-            emit LpDepositAllowedSet(provider, tokens[i], allowed[i]);
+    function _setLpDepositAllowed(address provider, address[] calldata tokens, bool[] calldata allowed) internal {
+        uint256 length = tokens.length;
+
+        for (uint256 i; i < length; ++i) {
+            address token   = tokens[i];
+            bool    isAllowed = allowed[i];
+
+            _requireValidAsset(token);
+            lpDepositAllowed[provider][token] = isAllowed;
+
+            emit LpDepositAllowedSet(provider, token, isAllowed);
         }
     }
 
