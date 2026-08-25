@@ -181,9 +181,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
         _grantRole(LIQUIDITY_PROVIDER_ROLE, liquidityProvider_);
 
         // The three tokens were validated above, so `_requireValidAsset` would be redundant here.
-        _allowLpAsset(liquidityProvider_, swapToken_);
-        _allowLpAsset(liquidityProvider_, collateralToken_);
-        _allowLpAsset(liquidityProvider_, creditToken_);
+        _setLpAssetAllowedToken(liquidityProvider_, swapToken_,       true);
+        _setLpAssetAllowedToken(liquidityProvider_, collateralToken_, true);
+        _setLpAssetAllowedToken(liquidityProvider_, creditToken_,     true);
 
         emit LiquidityProviderAdded(liquidityProvider_);
     }
@@ -369,7 +369,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         external override onlyRole(MANAGER_ADMIN_ROLE)
     {
         if (tokens.length != allowed.length) revert ArrayLengthMismatch();
-        _setLpAssetAllowed(provider, tokens, allowed);
+        _setLpAssetAllowedTokens(provider, tokens, allowed);
     }
 
     /// @inheritdoc IGroveBasin
@@ -576,17 +576,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         if (totalShares != 0)                                 revert AlreadySeeded();
         if (assetsToDeposit < 10 ** IERC20(asset).decimals()) revert InsufficientInitialDeposit();
 
-        newShares = previewDeposit(asset, assetsToDeposit);
-
-        if (newShares == 0) revert NoNewShares();
-
-        shares[address(0)] += newShares;
-        totalShares        += newShares;
-
-        _pullAsset(asset, assetsToDeposit);
-        _depositLiquidityInPocket(assetsToDeposit, asset);
-
-        emit Deposit(asset, msg.sender, address(0), assetsToDeposit, newShares);
+        newShares = _deposit(asset, address(0), assetsToDeposit);
     }
 
     /// @inheritdoc IGroveBasin
@@ -602,24 +592,13 @@ contract GroveBasin is IGroveBasin, AccessControl {
         // asset keeps the shares it is credited redeemable.
         if (!lpAssetAllowed[receiver][asset]) revert ReceiverTokenDepositNotAllowed();
 
-        newShares = previewDeposit(asset, assetsToDeposit);
-
-        if (newShares == 0) revert NoNewShares();
-
-        shares[receiver] += newShares;
-        totalShares      += newShares;
-
-        _pullAsset(asset, assetsToDeposit);
-        _depositLiquidityInPocket(assetsToDeposit, asset);
-
-        emit Deposit(asset, msg.sender, receiver, assetsToDeposit, newShares);
+        newShares = _deposit(asset, receiver, assetsToDeposit);
     }
 
     /// @inheritdoc IGroveBasin
     function withdraw(address asset, address receiver, uint256 maxAssetsToWithdraw)
         external override returns (uint256 assetsWithdrawn)
     {
-        _checkPaused(bytes4(0));
         if (maxAssetsToWithdraw == 0) revert ZeroAmount();
 
         // The fee claimer is exempt because its shares accrue from swap fees, not from deposits.
@@ -661,6 +640,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function previewWithdraw(address asset, uint256 maxAssetsToWithdraw)
         public view override returns (uint256 sharesToBurn, uint256 assetsWithdrawn)
     {
+        _checkPaused(bytes4(0));
         if (maxAssetsToWithdraw == 0) revert ZeroAmount();
 
         uint256 assetBalance = _getAvailableBalance(asset);
@@ -1065,32 +1045,47 @@ contract GroveBasin is IGroveBasin, AccessControl {
             address token = allowedTokens[i];
 
             _requireValidAsset(token);
-            _allowLpAsset(provider, token);
+            _setLpAssetAllowedToken(provider, token, true);
         }
 
         emit LiquidityProviderAdded(provider);
     }
 
-    /// @dev Enables `provider` to deposit and withdraw `token`. Callers are responsible for
-    ///      validating `token`.
-    function _allowLpAsset(address provider, address token) internal {
-        lpAssetAllowed[provider][token] = true;
+    /// @dev Credits `newShares` to `receiver` and moves `assetsToDeposit` into the pocket. Callers
+    ///      are responsible for the pause, role, and allowlist checks.
+    function _deposit(address asset, address receiver, uint256 assetsToDeposit)
+        internal returns (uint256 newShares)
+    {
+        newShares = previewDeposit(asset, assetsToDeposit);
 
-        emit LpAssetAllowedSet(provider, token, true);
+        if (newShares == 0) revert NoNewShares();
+
+        shares[receiver] += newShares;
+        totalShares      += newShares;
+
+        _pullAsset(asset, assetsToDeposit);
+        _depositLiquidityInPocket(assetsToDeposit, asset);
+
+        emit Deposit(asset, msg.sender, receiver, assetsToDeposit, newShares);
+    }
+
+    /// @dev Sets whether `provider` can deposit and withdraw `token`. Callers are responsible for
+    ///      validating `token`.
+    function _setLpAssetAllowedToken(address provider, address token, bool allowed) internal {
+        lpAssetAllowed[provider][token] = allowed;
+
+        emit LpAssetAllowedSet(provider, token, allowed);
     }
 
     /// @dev Sets asset allowances for `provider`. Each token must be a supported asset.
-    function _setLpAssetAllowed(address provider, address[] calldata tokens, bool[] calldata allowed) internal {
+    function _setLpAssetAllowedTokens(address provider, address[] calldata tokens, bool[] calldata allowed) internal {
         uint256 length = tokens.length;
 
         for (uint256 i; i < length; ++i) {
-            address token   = tokens[i];
-            bool    isAllowed = allowed[i];
+            address token = tokens[i];
 
             _requireValidAsset(token);
-            lpAssetAllowed[provider][token] = isAllowed;
-
-            emit LpAssetAllowedSet(provider, token, isAllowed);
+            _setLpAssetAllowedToken(provider, token, allowed[i]);
         }
     }
 
