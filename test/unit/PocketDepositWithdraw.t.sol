@@ -11,7 +11,9 @@ import { UsdsUsdcPocket }   from "src/pockets/UsdsUsdcPocket.sol";
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 import { MockPSM }          from "test/mocks/MockPSM.sol";
 
-contract PocketDepositWithdrawTestBase is Test {
+import { AssetAllowlistHelper } from "test/AssetAllowlistHelper.sol";
+
+contract PocketDepositWithdrawTestBase is AssetAllowlistHelper {
 
     address public owner      = makeAddr("owner");
     address public lp         = makeAddr("liquidityProvider");
@@ -87,6 +89,9 @@ contract PocketDepositWithdrawTestBase is Test {
     }
 
     function _deposit(address asset, address user, address receiver, uint256 amount) internal {
+        // Deposits require the receiver to be allowed the asset as well as the depositor
+        _allowAsset(groveBasin, owner, receiver, asset);
+
         vm.startPrank(lp);
         MockERC20(asset).mint(lp, amount);
         MockERC20(asset).approve(address(groveBasin), amount);

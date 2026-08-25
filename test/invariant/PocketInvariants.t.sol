@@ -16,6 +16,8 @@ import { MockAToken }        from "test/mocks/MockAToken.sol";
 import { MockAaveV3Pool }    from "test/mocks/MockAaveV3Pool.sol";
 import { MockERC4626Vault }  from "test/mocks/MockERC4626Vault.sol";
 
+import { AssetAllowlistHelper } from "test/AssetAllowlistHelper.sol";
+
 import { LpHandler }      from "test/invariant/handlers/LpHandler.sol";
 import { SwapperHandler } from "test/invariant/handlers/SwapperHandler.sol";
 
@@ -23,7 +25,7 @@ import { SwapperHandler } from "test/invariant/handlers/SwapperHandler.sol";
 /*** UsdsUsdcPocket invariant test                                                          ***/
 /**********************************************************************************************/
 
-contract PocketInvariantTest is Test {
+contract PocketInvariantTest is AssetAllowlistHelper {
 
     address public owner      = makeAddr("owner");
     address public lp         = makeAddr("liquidityProvider");
@@ -95,7 +97,9 @@ contract PocketInvariantTest is Test {
         groveBasin.setPocket(address(pocket));
         vm.stopPrank();
 
-        // Initial LP deposit for baseline liquidity
+        // Initial LP deposit for baseline liquidity, the seed receiver has to be allowed the asset
+        _allowAsset(groveBasin, owner, BURN_ADDRESS, address(swapToken));
+
         swapToken.mint(lp, 1e6);
         vm.startPrank(lp);
         swapToken.approve(address(groveBasin), 1e6);
@@ -158,7 +162,7 @@ contract PocketInvariantTest is Test {
 /*** AaveV3UsdtPocket invariant test                                                        ***/
 /**********************************************************************************************/
 
-contract AaveV3PocketInvariantTest is Test {
+contract AaveV3PocketInvariantTest is AssetAllowlistHelper {
 
     address public owner = makeAddr("owner");
     address public lp    = makeAddr("liquidityProvider");
@@ -230,7 +234,9 @@ contract AaveV3PocketInvariantTest is Test {
         groveBasin.setPocket(address(pocket));
         vm.stopPrank();
 
-        // Initial LP deposit for baseline liquidity
+        // Initial LP deposit for baseline liquidity, the seed receiver has to be allowed the asset
+        _allowAsset(groveBasin, owner, BURN_ADDRESS, address(swapToken));
+
         swapToken.mint(lp, 1e6);
         vm.startPrank(lp);
         swapToken.approve(address(groveBasin), 1e6);
@@ -293,7 +299,7 @@ contract AaveV3PocketInvariantTest is Test {
 /*** MorphoUsdtPocket invariant test                                                        ***/
 /**********************************************************************************************/
 
-contract MorphoPocketInvariantTest is Test {
+contract MorphoPocketInvariantTest is AssetAllowlistHelper {
 
     address public owner = makeAddr("owner");
     address public lp    = makeAddr("liquidityProvider");
@@ -357,7 +363,9 @@ contract MorphoPocketInvariantTest is Test {
         groveBasin.setPocket(address(pocket));
         vm.stopPrank();
 
-        // Initial LP deposit for baseline liquidity
+        // Initial LP deposit for baseline liquidity, the seed receiver has to be allowed the asset
+        _allowAsset(groveBasin, owner, BURN_ADDRESS, address(swapToken));
+
         swapToken.mint(lp, 1e6);
         vm.startPrank(lp);
         swapToken.approve(address(groveBasin), 1e6);

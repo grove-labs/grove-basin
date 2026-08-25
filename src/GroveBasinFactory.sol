@@ -30,7 +30,7 @@ contract GroveBasinFactory {
     /**
      * @param liquidityProvider           Granted LIQUIDITY_PROVIDER_ROLE by the Basin constructor.
      * @param extraLiquidityProviders     Further addresses granted LIQUIDITY_PROVIDER_ROLE during init; empty grants none. Each must be non-zero and not the factory itself.
-     * @param extraLpAllowedTokens        Parallel array to extraLiquidityProviders. Each element lists tokens the LP is allowed to deposit. Empty outer array means no tokens allowed for any extra LP; otherwise must match extraLiquidityProviders length.
+     * @param extraLpAllowedTokens        Parallel array to extraLiquidityProviders. Each element lists tokens the LP is allowed to deposit and withdraw. Empty outer array means no tokens allowed for any extra LP; otherwise must match extraLiquidityProviders length.
      * @param swapToken                   Basin swap token.
      * @param collateralToken             Basin collateral token.
      * @param creditToken                 Basin credit token.

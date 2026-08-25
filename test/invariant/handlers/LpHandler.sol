@@ -34,8 +34,25 @@ contract LpHandler is HandlerBase {
         assets[1]         = collateralToken;
         assets[2]         = creditToken;
 
+        address[] memory allAssets = new address[](3);
+        allAssets[0] = address(swapToken);
+        allAssets[1] = address(collateralToken);
+        allAssets[2] = address(creditToken);
+
+        bool[] memory allowed = new bool[](3);
+        allowed[0] = true;
+        allowed[1] = true;
+        allowed[2] = true;
+
         for (uint256 i = 0; i < lpCount; i++) {
-            lps.push(makeAddr(string(abi.encodePacked("lp-", vm.toString(i)))));
+            address lp = makeAddr(string(abi.encodePacked("lp-", vm.toString(i))));
+
+            lps.push(lp);
+
+            // Withdrawals are gated on the asset allowlist, so every LP is allowed every asset to
+            // keep the handler free of reverts
+            vm.prank(owner_);
+            groveBasin_.setLpAssetAllowed(lp, allAssets, allowed);
         }
     }
 

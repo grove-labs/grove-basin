@@ -257,6 +257,9 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
     }
 
     function test_freeze_shareholderThatNeverHeldTheRoleKeepsAccess() public {
+        // The receiver holds no role, only the allowance needed to receive and redeem the asset
+        _allowAllAssets(notLp);
+
         _depositAs(lp, address(collateralToken), notLp, 100e18);
 
         vm.prank(pauser);
@@ -329,9 +332,9 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         groveBasin.addLiquidityProvider(newLp, allowed);
 
         assertTrue(groveBasin.hasRole(lpRole, newLp));
-        assertTrue(groveBasin.lpDepositAllowed(newLp, address(swapToken)));
-        assertTrue(groveBasin.lpDepositAllowed(newLp, address(collateralToken)));
-        assertTrue(groveBasin.lpDepositAllowed(newLp, address(creditToken)));
+        assertTrue(groveBasin.lpAssetAllowed(newLp, address(swapToken)));
+        assertTrue(groveBasin.lpAssetAllowed(newLp, address(collateralToken)));
+        assertTrue(groveBasin.lpAssetAllowed(newLp, address(creditToken)));
 
         assertEq(_depositAs(newLp, address(collateralToken), newLp, 100e18), 100e18);
     }
@@ -345,9 +348,9 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         groveBasin.addLiquidityProvider(newLp, allowed);
 
         assertTrue(groveBasin.hasRole(lpRole, newLp));
-        assertTrue(groveBasin.lpDepositAllowed(newLp, address(swapToken)));
-        assertTrue(groveBasin.lpDepositAllowed(newLp, address(collateralToken)));
-        assertFalse(groveBasin.lpDepositAllowed(newLp, address(creditToken)));
+        assertTrue(groveBasin.lpAssetAllowed(newLp, address(swapToken)));
+        assertTrue(groveBasin.lpAssetAllowed(newLp, address(collateralToken)));
+        assertFalse(groveBasin.lpAssetAllowed(newLp, address(creditToken)));
 
         // Can deposit allowed tokens
         assertEq(_depositAs(newLp, address(collateralToken), newLp, 100e18), 100e18);
@@ -368,9 +371,9 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         vm.prank(managerAdmin);
         groveBasin.addLiquidityProvider(newLp, allowed);
 
-        assertFalse(groveBasin.lpDepositAllowed(newLp, address(swapToken)));
-        assertTrue(groveBasin.lpDepositAllowed(newLp, address(collateralToken)));
-        assertFalse(groveBasin.lpDepositAllowed(newLp, address(creditToken)));
+        assertFalse(groveBasin.lpAssetAllowed(newLp, address(swapToken)));
+        assertTrue(groveBasin.lpAssetAllowed(newLp, address(collateralToken)));
+        assertFalse(groveBasin.lpAssetAllowed(newLp, address(creditToken)));
 
         // Can deposit collateral
         assertEq(_depositAs(newLp, address(collateralToken), newLp, 100e18), 100e18);
@@ -406,9 +409,9 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         vm.prank(managerAdmin);
         groveBasin.grantRole(lpRole, newLp);
 
-        assertFalse(groveBasin.lpDepositAllowed(newLp, address(swapToken)));
-        assertFalse(groveBasin.lpDepositAllowed(newLp, address(collateralToken)));
-        assertFalse(groveBasin.lpDepositAllowed(newLp, address(creditToken)));
+        assertFalse(groveBasin.lpAssetAllowed(newLp, address(swapToken)));
+        assertFalse(groveBasin.lpAssetAllowed(newLp, address(collateralToken)));
+        assertFalse(groveBasin.lpAssetAllowed(newLp, address(creditToken)));
 
         // Verify deposits fail for all three tokens
         collateralToken.mint(newLp, 100e18);
@@ -432,16 +435,16 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         groveBasin.addLiquidityProvider(newLp, allowed);
 
         assertTrue(groveBasin.hasRole(lpRole, newLp));
-        assertTrue(groveBasin.lpDepositAllowed(newLp, address(swapToken)));
-        assertTrue(groveBasin.lpDepositAllowed(newLp, address(collateralToken)));
+        assertTrue(groveBasin.lpAssetAllowed(newLp, address(swapToken)));
+        assertTrue(groveBasin.lpAssetAllowed(newLp, address(collateralToken)));
 
         vm.prank(managerAdmin);
         groveBasin.removeLiquidityProvider(newLp);
 
         assertFalse(groveBasin.hasRole(lpRole, newLp));
         // Allowances preserved so LP can still withdraw
-        assertTrue(groveBasin.lpDepositAllowed(newLp, address(swapToken)));
-        assertTrue(groveBasin.lpDepositAllowed(newLp, address(collateralToken)));
+        assertTrue(groveBasin.lpAssetAllowed(newLp, address(swapToken)));
+        assertTrue(groveBasin.lpAssetAllowed(newLp, address(collateralToken)));
     }
 
     function test_removeLiquidityProvider_byPauser() public {
@@ -457,8 +460,8 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
 
         assertFalse(groveBasin.hasRole(lpRole, newLp));
         // Allowances preserved
-        assertTrue(groveBasin.lpDepositAllowed(newLp, address(swapToken)));
-        assertTrue(groveBasin.lpDepositAllowed(newLp, address(collateralToken)));
+        assertTrue(groveBasin.lpAssetAllowed(newLp, address(swapToken)));
+        assertTrue(groveBasin.lpAssetAllowed(newLp, address(collateralToken)));
     }
 
     function test_removeLiquidityProvider_revertsIfUnauthorized() public {
@@ -476,17 +479,17 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         vm.prank(managerAdmin);
         groveBasin.addLiquidityProvider(newLp, allowed);
 
-        assertTrue(groveBasin.lpDepositAllowed(newLp, address(swapToken)));
-        assertTrue(groveBasin.lpDepositAllowed(newLp, address(collateralToken)));
-        assertTrue(groveBasin.lpDepositAllowed(newLp, address(creditToken)));
+        assertTrue(groveBasin.lpAssetAllowed(newLp, address(swapToken)));
+        assertTrue(groveBasin.lpAssetAllowed(newLp, address(collateralToken)));
+        assertTrue(groveBasin.lpAssetAllowed(newLp, address(creditToken)));
 
         vm.prank(managerAdmin);
         groveBasin.removeLiquidityProvider(newLp);
 
         // Allowances preserved so the removed LP can still withdraw existing positions
-        assertTrue(groveBasin.lpDepositAllowed(newLp, address(swapToken)));
-        assertTrue(groveBasin.lpDepositAllowed(newLp, address(collateralToken)));
-        assertTrue(groveBasin.lpDepositAllowed(newLp, address(creditToken)));
+        assertTrue(groveBasin.lpAssetAllowed(newLp, address(swapToken)));
+        assertTrue(groveBasin.lpAssetAllowed(newLp, address(collateralToken)));
+        assertTrue(groveBasin.lpAssetAllowed(newLp, address(creditToken)));
     }
 
     function test_removeLiquidityProvider_canBeReadded() public {
@@ -506,7 +509,7 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         vm.stopPrank();
 
         assertTrue(groveBasin.hasRole(lpRole, newLp));
-        assertTrue(groveBasin.lpDepositAllowed(newLp, address(creditToken)));
+        assertTrue(groveBasin.lpAssetAllowed(newLp, address(creditToken)));
 
         assertEq(_depositAs(newLp, address(creditToken), newLp, 100e18), 125e18);
     }
@@ -535,7 +538,111 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
     }
 
     /**********************************************************************************************/
-    /*** Deposit allowlist does not block other allowed tokens or withdrawals                   ***/
+    /*** Asset allowlist gates withdrawals                                                      ***/
+    /**********************************************************************************************/
+
+    function test_withdraw_assetNotAllowed() public {
+        address[] memory allowed = new address[](1);
+        allowed[0] = address(collateralToken);
+
+        vm.prank(managerAdmin);
+        groveBasin.addLiquidityProvider(newLp, allowed);
+
+        _depositAs(newLp, address(collateralToken), newLp, 100e18);
+
+        // lp seeds creditToken liquidity so only the allowlist can block the withdrawal
+        _depositAs(lp, address(creditToken), lp, 100e18);
+
+        vm.prank(newLp);
+        vm.expectRevert(IGroveBasin.LpTokenWithdrawNotAllowed.selector);
+        groveBasin.withdraw(address(creditToken), newLp, 1e18);
+
+        // The allowed asset can still be withdrawn
+        vm.prank(newLp);
+        assertEq(groveBasin.withdraw(address(collateralToken), newLp, 100e18), 100e18);
+    }
+
+    function test_withdraw_assetDisallowedAfterDepositing() public {
+        _depositAs(lp, address(collateralToken), lp, 100e18);
+
+        address[] memory tokens = new address[](1);
+        tokens[0] = address(collateralToken);
+        bool[] memory flags = new bool[](1);
+        flags[0] = false;
+
+        vm.prank(managerAdmin);
+        groveBasin.setLpAssetAllowed(lp, tokens, flags);
+
+        vm.prank(lp);
+        vm.expectRevert(IGroveBasin.LpTokenWithdrawNotAllowed.selector);
+        groveBasin.withdraw(address(collateralToken), lp, 100e18);
+    }
+
+    function test_deposit_receiverNotAllowed() public {
+        assertFalse(groveBasin.lpAssetAllowed(notLp, address(collateralToken)));
+
+        collateralToken.mint(lp, 100e18);
+
+        vm.startPrank(lp);
+        collateralToken.approve(address(groveBasin), 100e18);
+
+        vm.expectRevert(IGroveBasin.ReceiverTokenDepositNotAllowed.selector);
+        groveBasin.deposit(address(collateralToken), notLp, 100e18);
+        vm.stopPrank();
+    }
+
+    function test_withdraw_receiverAllowedAssetsOnly() public {
+        // lp seeds creditToken liquidity so only the allowlist can block the withdrawal
+        _depositAs(lp, address(creditToken), lp, 100e18);
+
+        address[] memory tokens = new address[](1);
+        tokens[0] = address(collateralToken);
+        bool[] memory flags = new bool[](1);
+        flags[0] = true;
+
+        vm.prank(managerAdmin);
+        groveBasin.setLpAssetAllowed(notLp, tokens, flags);
+
+        _depositAs(lp, address(collateralToken), notLp, 100e18);
+
+        assertTrue(groveBasin.lpAssetAllowed(notLp,  address(collateralToken)));
+        assertFalse(groveBasin.lpAssetAllowed(notLp, address(creditToken)));
+
+        vm.prank(notLp);
+        vm.expectRevert(IGroveBasin.LpTokenWithdrawNotAllowed.selector);
+        groveBasin.withdraw(address(creditToken), notLp, 1e18);
+
+        vm.prank(notLp);
+        assertEq(groveBasin.withdraw(address(collateralToken), notLp, 100e18), 100e18);
+    }
+
+    function test_withdraw_feeClaimerExemptFromAllowlist() public {
+        address feeClaimer = makeAddr("feeClaimer");
+
+        vm.startPrank(managerAdmin);
+        groveBasin.setFeeClaimer(feeClaimer);
+        groveBasin.setFeeBounds(0, 500);
+        vm.stopPrank();
+
+        vm.prank(owner);
+        groveBasin.setRedemptionFee(100);
+
+        _depositAs(lp, address(collateralToken), lp, 1000e18);
+
+        // Swap in creditToken so that the fee claimer accrues shares without ever depositing
+        creditToken.mint(address(this), 100e18);
+        creditToken.approve(address(groveBasin), 100e18);
+        groveBasin.swapExactIn(address(creditToken), address(collateralToken), 100e18, 0, address(this), 0);
+
+        assertGt(groveBasin.shares(feeClaimer),                       0);
+        assertFalse(groveBasin.lpAssetAllowed(feeClaimer, address(creditToken)));
+
+        vm.prank(feeClaimer);
+        assertGt(groveBasin.withdraw(address(creditToken), feeClaimer, 100e18), 0);
+    }
+
+    /**********************************************************************************************/
+    /*** Asset allowlist does not block other allowed tokens                                    ***/
     /**********************************************************************************************/
 
     function test_depositAllowed_partialAllowance_canStillDepositAllowedToken() public {
@@ -549,7 +656,7 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         assertEq(_depositAs(newLp, address(swapToken), newLp, 100e6), 100e18);
     }
 
-    function test_depositAllowed_disallowedToken_canStillWithdraw() public {
+    function test_depositAllowed_disallowedToken_cannotWithdrawIt() public {
         // First, add LP with all tokens allowed and deposit credit
         address[] memory allAllowed = new address[](3);
         allAllowed[0] = address(swapToken);
@@ -569,15 +676,20 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         flags[0] = false;
 
         vm.prank(managerAdmin);
-        groveBasin.setLpDepositAllowed(newLp, tokens, flags);
+        groveBasin.setLpAssetAllowed(newLp, tokens, flags);
 
-        // LP can still withdraw credit token (allowlist only gates deposits, not withdrawals)
+        // Credit token withdrawals are blocked, leaving the position redeemable in the other assets
         vm.prank(newLp);
-        uint256 withdrawn = groveBasin.withdraw(address(creditToken), newLp, 100e18);
-        assertEq(withdrawn, 100e18);
+        vm.expectRevert(IGroveBasin.LpTokenWithdrawNotAllowed.selector);
+        groveBasin.withdraw(address(creditToken), newLp, 100e18);
+
+        _depositAs(lp, address(collateralToken), lp, 125e18);
+
+        vm.prank(newLp);
+        assertEq(groveBasin.withdraw(address(collateralToken), newLp, 125e18), 125e18);
     }
 
-    function test_setLpDepositAllowed_enablesDeposit() public {
+    function test_setLpAssetAllowed_enablesDeposit() public {
         // Add LP with only collateral allowed (credit not allowed)
         address[] memory allowed = new address[](1);
         allowed[0] = address(collateralToken);
@@ -600,13 +712,13 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         flags[0] = true;
 
         vm.prank(managerAdmin);
-        groveBasin.setLpDepositAllowed(newLp, tokens, flags);
+        groveBasin.setLpAssetAllowed(newLp, tokens, flags);
 
         // Deposit now succeeds
         assertEq(_depositAs(newLp, address(creditToken), newLp, 100e18), 125e18);
     }
 
-    function test_setLpDepositAllowed_arrayLengthMismatch() public {
+    function test_setLpAssetAllowed_arrayLengthMismatch() public {
         address[] memory allowed = new address[](0);
 
         vm.prank(managerAdmin);
@@ -621,7 +733,7 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
 
         vm.prank(managerAdmin);
         vm.expectRevert(IGroveBasin.ArrayLengthMismatch.selector);
-        groveBasin.setLpDepositAllowed(newLp, tokens, flags);
+        groveBasin.setLpAssetAllowed(newLp, tokens, flags);
     }
 
 }

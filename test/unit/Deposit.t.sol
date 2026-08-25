@@ -14,6 +14,14 @@ contract GroveBasinDepositTests is GroveBasinTestBase {
     address receiver1 = makeAddr("receiver1");
     address receiver2 = makeAddr("receiver2");
 
+    function setUp() public override {
+        super.setUp();
+
+        // Deposits require the receiver to be allowed the asset as well as the depositor
+        _allowAllAssets(receiver1);
+        _allowAllAssets(receiver2);
+    }
+
     function test_deposit_firstDeposit_nonLp() public {
         GroveBasin freshBasin = new GroveBasin(
             owner, lp,

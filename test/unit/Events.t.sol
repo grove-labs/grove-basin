@@ -36,6 +36,13 @@ contract GroveBasinEventTests is GroveBasinTestBase {
     address sender   = makeAddr("sender");
     address receiver = makeAddr("receiver");
 
+    function setUp() public override {
+        super.setUp();
+
+        // Deposits require the receiver to be allowed the asset as well as the depositor
+        _allowAllAssets(receiver);
+    }
+
     function test_deposit_events() public {
         vm.startPrank(lp);
 

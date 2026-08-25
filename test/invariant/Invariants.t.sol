@@ -345,6 +345,10 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
         assertApproxEqAbs(sumLpValue, sumStartingValue, seedValue - startingSeedValue + 3 + feeClaimerValue);
 
         // NOTE: Below logic is not realistic, shown to demonstrate precision.
+        // The seed position only received swapToken and collateralToken, so it has to be allowed
+        // every asset to redeem the seed shares across all three.
+        _allowAllAssets(BURN_ADDRESS);
+
         _withdraw(address(collateralToken), BURN_ADDRESS, type(uint256).max);
         _withdraw(address(swapToken),       BURN_ADDRESS, type(uint256).max);
         _withdraw(address(creditToken),     BURN_ADDRESS, type(uint256).max);

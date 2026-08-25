@@ -20,11 +20,13 @@ import { MockAToken }       from  "test/mocks/MockAToken.sol";
 import { MockERC4626Vault } from  "test/mocks/MockERC4626Vault.sol";
 import { MockPSM }          from  "test/mocks/MockPSM.sol";
 
+import { AssetAllowlistHelper } from "test/AssetAllowlistHelper.sol";
+
 /**********************************************************************************************/
 /*** Base for USDT basin transfer pocket tests                                              ***/
 /**********************************************************************************************/
 
-abstract contract TransferPocketForkTestBase is Test {
+abstract contract TransferPocketForkTestBase is AssetAllowlistHelper {
 
     using SafeERC20 for IERC20;
 
@@ -107,6 +109,9 @@ abstract contract TransferPocketForkTestBase is Test {
     }
 
     function _deposit(address asset, address user, uint256 amount) internal {
+        // Deposits require the receiver to be allowed the asset as well as the depositor
+        _allowAsset(groveBasin, owner, user, asset);
+
         vm.startPrank(lp);
         deal(asset, lp, amount);
         SafeERC20.safeApprove(IERC20(asset), address(groveBasin), 0);
@@ -928,7 +933,7 @@ contract TransferPocketForkTest_ApprovalChain is TransferPocketForkTestBase {
 /*** USDC Basin Transitions (UsdsUsdcPocket)                                                ***/
 /**********************************************************************************************/
 
-abstract contract TransferPocketForkTestBase_USDC is Test {
+abstract contract TransferPocketForkTestBase_USDC is AssetAllowlistHelper {
 
     using SafeERC20 for IERC20;
 
@@ -998,6 +1003,9 @@ abstract contract TransferPocketForkTestBase_USDC is Test {
     }
 
     function _deposit(address asset, address user, uint256 amount) internal {
+        // Deposits require the receiver to be allowed the asset as well as the depositor
+        _allowAsset(groveBasin, owner, user, asset);
+
         vm.startPrank(lp);
         deal(asset, lp, amount);
         SafeERC20.safeApprove(IERC20(asset), address(groveBasin), 0);

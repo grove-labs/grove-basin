@@ -9,7 +9,9 @@ import { GroveBasin }        from "src/GroveBasin.sol";
 
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 
-abstract contract ForkTestBase is Test {
+import { AssetAllowlistHelper } from "test/AssetAllowlistHelper.sol";
+
+abstract contract ForkTestBase is AssetAllowlistHelper {
 
     address public owner  = makeAddr("owner");
     address public lp     = makeAddr("liquidityProvider");
@@ -93,6 +95,9 @@ abstract contract ForkTestBase is Test {
     }
 
     function _deposit(address asset, address user, address receiver, uint256 amount) internal {
+        // Deposits require the receiver to be allowed the asset as well as the depositor
+        _allowAsset(groveBasin, owner, receiver, asset);
+
         _dealToken(asset, lp, amount);
         vm.startPrank(lp);
         IERC20(asset).approve(address(groveBasin), amount);

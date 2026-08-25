@@ -51,6 +51,8 @@ interface IGroveBasin {
     error InsufficientFunds();
     error NotAllowlisted();
     error LpTokenDepositNotAllowed();
+    error LpTokenWithdrawNotAllowed();
+    error ReceiverTokenDepositNotAllowed();
     error NotAuthorizedToRemoveLp();
     error ArrayLengthMismatch();
 
@@ -240,12 +242,12 @@ interface IGroveBasin {
     event LiquidityProviderRemoved(address indexed provider);
 
     /**
-     *  @dev   Emitted when a deposit allowance is toggled for an LP and token.
-     *  @param provider Address of the liquidity provider.
+     *  @dev   Emitted when an asset allowance is toggled for an address.
+     *  @param provider Address whose asset allowance changed.
      *  @param token    Address of the token.
-     *  @param allowed  Whether the LP is allowed to deposit the token.
+     *  @param allowed  Whether the address is allowed to deposit and withdraw the token.
      */
-    event LpDepositAllowedSet(address indexed provider, address indexed token, bool allowed);
+    event LpAssetAllowedSet(address indexed provider, address indexed token, bool allowed);
 
     /**
      *  @dev   Emitted when the allowlist flag for a route key is toggled.
@@ -589,17 +591,19 @@ interface IGroveBasin {
     function swapAllowlist(bytes32 routeKey, address caller) external view returns (bool);
 
     /**
-     *  @dev    Returns whether a liquidity provider is allowed to deposit a given token.
+     *  @dev    Returns whether an address is allowed to deposit and withdraw a given token.
      *          By default all entries are false, meaning an LP with LIQUIDITY_PROVIDER_ROLE cannot
-     *          deposit any token until explicitly allowed. When true, the LP can deposit that
-     *          token. Granting the role via the inherited AccessControl grantRole leaves the
-     *          mapping at its default (no tokens allowed); use addLiquidityProvider to grant the
-     *          role and set allowed tokens atomically.
-     *  @param  provider Address of the liquidity provider.
+     *          deposit any token until explicitly allowed, and a shareholder cannot withdraw a
+     *          token it was never allowed to deposit. Granting the role via the inherited
+     *          AccessControl grantRole leaves the mapping at its default (no tokens allowed); use
+     *          addLiquidityProvider to grant the role and set allowed tokens atomically. Deposits
+     *          on behalf of a receiver require the receiver to be allowed the token as well, so
+     *          allowances are only ever set by MANAGER_ADMIN_ROLE.
+     *  @param  provider Address to query.
      *  @param  token    Address of the token (swapToken, collateralToken, or creditToken).
-     *  @return Whether the LP is allowed to deposit the token.
+     *  @return Whether the address is allowed to deposit and withdraw the token.
      */
-    function lpDepositAllowed(address provider, address token) external view returns (bool);
+    function lpAssetAllowed(address provider, address token) external view returns (bool);
 
     /**
      *  @dev    Returns the route key for a swap direction. Routes are unidirectional, so the key
@@ -691,28 +695,30 @@ interface IGroveBasin {
 
     /**
      *  @dev   Adds a liquidity provider, granting LIQUIDITY_PROVIDER_ROLE and setting which
-     *         tokens the LP is allowed to deposit. By default (empty allowedTokens), the LP
-     *         cannot deposit any token. Callable only by MANAGER_ADMIN_ROLE.
+     *         tokens the LP is allowed to deposit and withdraw. By default (empty allowedTokens),
+     *         the LP cannot deposit or withdraw any token. Callable only by MANAGER_ADMIN_ROLE.
      *  @param provider      Address to grant LIQUIDITY_PROVIDER_ROLE.
-     *  @param allowedTokens Tokens the LP is allowed to deposit. Each must be a supported asset.
-     *                       Empty means no tokens allowed.
+     *  @param allowedTokens Tokens the LP is allowed to deposit and withdraw. Each must be a
+     *                       supported asset. Empty means no tokens allowed.
      */
     function addLiquidityProvider(address provider, address[] calldata allowedTokens) external;
 
     /**
-     *  @dev   Batch-updates whether an address is allowed to deposit specific tokens. Can be
-     *         called on any address, not only current LPs, so that non-LP share recipients can
-     *         have allowances pre-configured or adjusted. Callable only by MANAGER_ADMIN_ROLE.
-     *  @param provider Address whose deposit allowances are being updated.
+     *  @dev   Batch-updates whether an address is allowed to deposit and withdraw specific tokens.
+     *         Can be called on any address, not only current LPs, so that non-LP share recipients
+     *         can have allowances pre-configured or adjusted. Disallowing a token an address still
+     *         holds shares against blocks its withdrawals of that token, leaving it to withdraw its
+     *         shares in the tokens it is still allowed. Callable only by MANAGER_ADMIN_ROLE.
+     *  @param provider Address whose asset allowances are being updated.
      *  @param tokens   Tokens to update (each must be a supported asset).
      *  @param allowed  Parallel array of booleans; true to allow, false to disallow.
      */
-    function setLpDepositAllowed(address provider, address[] calldata tokens, bool[] calldata allowed) external;
+    function setLpAssetAllowed(address provider, address[] calldata tokens, bool[] calldata allowed) external;
 
     /**
-     *  @dev   Removes a liquidity provider, revoking LIQUIDITY_PROVIDER_ROLE. Deposit allowances
-     *         are intentionally preserved so the removed LP can still withdraw assets
-     *         corresponding to shares it already holds. Callable by MANAGER_ADMIN_ROLE or
+     *  @dev   Removes a liquidity provider, revoking LIQUIDITY_PROVIDER_ROLE. Asset allowances are
+     *         intentionally preserved so the removed LP can still withdraw the assets it was
+     *         allowed, corresponding to shares it already holds. Callable by MANAGER_ADMIN_ROLE or
      *         PAUSER_ROLE.
      *  @param provider Address to revoke LIQUIDITY_PROVIDER_ROLE from.
      */
@@ -923,9 +929,11 @@ interface IGroveBasin {
 
     /**
      *  @dev    Deposits an amount of a given asset into the GroveBasin. Only callable by
-     *          LIQUIDITY_PROVIDER_ROLE holders. Must be one of the supported assets in order to
-     *          succeed. The amount deposited is converted to shares based on the current exchange
-     *          rate.
+     *          LIQUIDITY_PROVIDER_ROLE holders that are allowed the asset. Must be one of the
+     *          supported assets in order to succeed. The receiver must be allowed the asset as
+     *          well, since withdrawals are gated on the same allowlist, so that the shares it is
+     *          credited stay redeemable. The amount deposited is converted to shares based on the
+     *          current exchange rate.
      *  @param  asset           Address of the ERC-20 asset to deposit.
      *  @param  receiver        Address of the receiver of the resulting shares from the deposit.
      *  @param  assetsToDeposit Amount of the asset to deposit into the GroveBasin.
@@ -936,9 +944,12 @@ interface IGroveBasin {
 
     /**
      *  @dev    Withdraws an amount of a given asset from the GroveBasin up to `maxAssetsToWithdraw`.
-     *          Must be one of the supported assets in order to succeed. The amount withdrawn is
-     *          the minimum of the balance of the GroveBasin, the max amount, and the max amount of assets
-     *          that the user's shares can be converted to.
+     *          Must be one of the supported assets in order to succeed. The caller must be allowed
+     *          the asset, so shares can only be redeemed for assets the caller deposited or was
+     *          allowed by MANAGER_ADMIN_ROLE; the fee claimer is exempt because its shares accrue
+     *          from fees rather than deposits. The amount withdrawn is the minimum of the balance
+     *          of the GroveBasin, the max amount, and the max amount of assets that the user's
+     *          shares can be converted to.
      *  @param  asset               Address of the ERC-20 asset to withdraw.
      *  @param  receiver            Address of the receiver of the withdrawn assets.
      *  @param  maxAssetsToWithdraw Max amount that the user is willing to withdraw.
