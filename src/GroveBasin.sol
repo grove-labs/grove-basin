@@ -356,7 +356,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
         _setSwapAllowlistEnabled(getSwapRouteKey(assetIn, assetOut), enabled);
     }
 
-
     /// @inheritdoc IGroveBasin
     function addLiquidityProvider(address provider, address[] calldata allowedTokens)
         external override onlyRole(MANAGER_ADMIN_ROLE)
@@ -379,10 +378,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
         }
 
         _revokeRole(LIQUIDITY_PROVIDER_ROLE, provider);
-
-        // NOTE: lpDepositAllowed entries are intentionally preserved so the removed LP can still
-        // withdraw assets corresponding to shares it already holds. The role revocation alone
-        // prevents future deposits (deposit checks the role first).
 
         emit LiquidityProviderRemoved(provider);
     }
