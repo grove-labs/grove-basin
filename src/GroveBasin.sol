@@ -588,8 +588,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
         if (!hasRole(LIQUIDITY_PROVIDER_ROLE, msg.sender)) revert NotLiquidityProvider();
         if (!lpAssetAllowed[msg.sender][asset])            revert LpTokenDepositNotAllowed();
 
-        // Withdrawals are gated on the same mapping, so requiring the receiver to be allowed the
-        // asset keeps the shares it is credited redeemable.
         if (!lpAssetAllowed[receiver][asset]) revert ReceiverTokenDepositNotAllowed();
 
         newShares = _deposit(asset, receiver, assetsToDeposit);
