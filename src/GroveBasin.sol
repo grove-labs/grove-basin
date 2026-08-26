@@ -813,7 +813,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /**********************************************************************************************/
 
     /// @dev Extends revokeRole to allow PAUSER_ROLE holders to revoke MANAGER_ROLE,
-    ///      ALLOWLIST_MANAGER_ROLE, REDEEMER_ROLE, and LIQUIDITY_PROVIDER_ROLE. Freezing a
+    ///      ALLOWLIST_MANAGER_ROLE, REDEEMER_ROLE, and LIQUIDITY_PROVIDER_ROLE. Revoking a
     ///      liquidity provider only stops new deposits: `withdraw` is gated on share ownership and
     ///      on `lpAssetAllowed`, not on the role, so the revoked provider keeps access to the value
     ///      of the shares it already holds.
