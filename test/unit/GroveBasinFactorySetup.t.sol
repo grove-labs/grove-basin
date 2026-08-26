@@ -9,6 +9,7 @@ import { TimelockController } from "openzeppelin-contracts/contracts/governance/
 
 import { GroveBasin }         from "src/GroveBasin.sol";
 import { GroveBasinFactory }  from "src/GroveBasinFactory.sol";
+import { IGroveBasin }        from "src/interfaces/IGroveBasin.sol";
 import { TransferTokenRedeemer } from "src/redeemers/TransferTokenRedeemer.sol";
 
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
@@ -73,43 +74,42 @@ contract GroveBasinFactorySetupTests is Test {
         allowlistManagers[1] = allowlistManager2;
     }
 
-    function _providers(address provider) internal pure returns (address[] memory providers) {
-        providers    = new address[](1);
-        providers[0] = provider;
-    }
-
-    function _providers(address provider1, address provider2)
-        internal pure returns (address[] memory providers)
-    {
-        providers    = new address[](2);
-        providers[0] = provider1;
-        providers[1] = provider2;
-    }
-
-    /// @dev setLiquidityProvider takes every Basin asset exactly once, so each extra LP gets a full
+    /// @dev setLiquidityProvider takes every Basin asset exactly once, so each config carries a full
     ///      token list and a parallel flag list.
-    function _lpTokens(uint256 providerCount) internal view returns (address[][] memory tokens) {
-        tokens = new address[][](providerCount);
+    function _lpConfig(address provider, bool isDepositor, bool isAllowed)
+        internal view returns (GroveBasinFactory.LpConfig memory config)
+    {
+        address[] memory tokens = new address[](3);
+        tokens[0] = address(swapToken);
+        tokens[1] = address(collateralToken);
+        tokens[2] = address(creditToken);
 
-        for (uint256 i; i < providerCount; ++i) {
-            tokens[i]    = new address[](3);
-            tokens[i][0] = address(swapToken);
-            tokens[i][1] = address(collateralToken);
-            tokens[i][2] = address(creditToken);
-        }
+        bool[] memory allowed = new bool[](3);
+        allowed[0] = isAllowed;
+        allowed[1] = isAllowed;
+        allowed[2] = isAllowed;
+
+        config = GroveBasinFactory.LpConfig({
+            liquidityProvider : provider,
+            isDepositor       : isDepositor,
+            tokens            : tokens,
+            allowed           : allowed
+        });
     }
 
-    function _lpAllowed(uint256 providerCount, bool isAllowed)
-        internal pure returns (bool[][] memory allowed)
+    function _lpConfigs(GroveBasinFactory.LpConfig memory config)
+        internal pure returns (GroveBasinFactory.LpConfig[] memory configs)
     {
-        allowed = new bool[][](providerCount);
+        configs    = new GroveBasinFactory.LpConfig[](1);
+        configs[0] = config;
+    }
 
-        for (uint256 i; i < providerCount; ++i) {
-            allowed[i]    = new bool[](3);
-            allowed[i][0] = isAllowed;
-            allowed[i][1] = isAllowed;
-            allowed[i][2] = isAllowed;
-        }
+    function _lpConfigs(GroveBasinFactory.LpConfig memory config1, GroveBasinFactory.LpConfig memory config2)
+        internal pure returns (GroveBasinFactory.LpConfig[] memory configs)
+    {
+        configs    = new GroveBasinFactory.LpConfig[](2);
+        configs[0] = config1;
+        configs[1] = config2;
     }
 
     function _pocketAddress1(GroveBasinFactory.PocketType pocketType) internal view returns (address) {
@@ -124,9 +124,7 @@ contract GroveBasinFactorySetupTests is Test {
     {
         params = GroveBasinFactory.DeployParams({
             liquidityProvider           : liquidityProvider,
-            extraLiquidityProviders     : new address[](0),
-            extraLpTokens               : new address[][](0),
-            extraLpAllowed              : new bool[][](0),
+            lpConfigs                   : new GroveBasinFactory.LpConfig[](0),
             swapToken                   : address(swapToken),
             collateralToken             : address(collateralToken),
             creditToken                 : address(creditToken),
@@ -432,10 +430,10 @@ contract GroveBasinFactorySetupTests is Test {
     }
 
     /**********************************************************************************************/
-    /*** Extra liquidity providers                                                              ***/
+    /*** LP setups                                                                              ***/
     /**********************************************************************************************/
 
-    function test_deploy_noExtraLiquidityProviders() public {
+    function test_deploy_noLpConfigs() public {
         _seed();
 
         (address basin,,) =
@@ -447,16 +445,14 @@ contract GroveBasinFactorySetupTests is Test {
         assertFalse(groveBasin.hasRole(groveBasin.LIQUIDITY_PROVIDER_ROLE(), address(factory)));
     }
 
-    function test_deploy_extraLiquidityProviders() public {
+    function test_deploy_lpConfigs_grantLiquidityProviderRole() public {
         _seed();
 
         address extraLp1 = makeAddr("extraLp1");
         address extraLp2 = makeAddr("extraLp2");
 
         GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
-        params.extraLiquidityProviders = _providers(extraLp1, extraLp2);
-        params.extraLpTokens           = _lpTokens(2);
-        params.extraLpAllowed          = _lpAllowed(2, true);
+        params.lpConfigs = _lpConfigs(_lpConfig(extraLp1, true, true), _lpConfig(extraLp2, true, true));
 
         (address basin,,) = factory.deployAndInit(params, adminTimelock);
 
@@ -471,17 +467,15 @@ contract GroveBasinFactorySetupTests is Test {
         assertTrue(groveBasin.hasRole(groveBasin.MANAGER_ADMIN_ROLE(),  groveProxy));
     }
 
-    function test_deploy_extraLiquidityProvider_canDeposit() public {
+    function test_deploy_lpConfig_canDeposit() public {
         _seed();
 
         address extraLp = makeAddr("extraLp");
 
         GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
-        params.extraLiquidityProviders = _providers(extraLp);
 
         // Allow the extra LP to deposit all three tokens
-        params.extraLpTokens  = _lpTokens(1);
-        params.extraLpAllowed = _lpAllowed(1, true);
+        params.lpConfigs = _lpConfigs(_lpConfig(extraLp, true, true));
 
         (address basin,,) = factory.deployAndInit(params, adminTimelock);
 
@@ -498,39 +492,68 @@ contract GroveBasinFactorySetupTests is Test {
         assertEq(groveBasin.shares(extraLp), 100e18);
     }
 
-    function test_deploy_revertsOnZeroExtraLiquidityProvider() public {
+    function test_deploy_lpConfig_receiverAlongsideLp() public {
+        _seed();
+
+        address extraLp = makeAddr("extraLp");
+        address receiver = makeAddr("receiver");
+
+        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
+        params.lpConfigs = _lpConfigs(_lpConfig(extraLp, true, true), _lpConfig(receiver, false, true));
+
+        (address basin,,) = factory.deployAndInit(params, adminTimelock);
+
+        GroveBasin groveBasin = GroveBasin(basin);
+
+        // The receiver is permissioned for every asset without becoming a depositor
+        assertFalse(groveBasin.hasRole(groveBasin.LIQUIDITY_PROVIDER_ROLE(), receiver));
+        assertTrue(groveBasin.lpAssetAllowed(receiver, address(swapToken)));
+        assertTrue(groveBasin.lpAssetAllowed(receiver, address(collateralToken)));
+        assertTrue(groveBasin.lpAssetAllowed(receiver, address(creditToken)));
+
+        collateralToken.mint(extraLp, 100e6);
+
+        vm.startPrank(extraLp);
+        collateralToken.approve(basin, 100e6);
+        groveBasin.deposit(address(collateralToken), receiver, 100e6);
+        vm.stopPrank();
+
+        assertEq(groveBasin.shares(receiver), 100e18);
+
+        vm.prank(receiver);
+        assertEq(groveBasin.withdraw(address(collateralToken), receiver, 100e6), 100e6);
+    }
+
+    function test_deploy_revertsOnZeroLiquidityProvider() public {
         _seed();
 
         GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
-        params.extraLiquidityProviders = _providers(address(0));
-        params.extraLpTokens           = _lpTokens(1);
-        params.extraLpAllowed          = _lpAllowed(1, true);
+        params.lpConfigs = _lpConfigs(_lpConfig(address(0), true, true));
 
-        vm.expectRevert(GroveBasinFactory.InvalidLiquidityProvider.selector);
+        // Enforced by the Basin, which only permissions the zero address as a receiver
+        vm.expectRevert(IGroveBasin.InvalidLiquidityProvider.selector);
         factory.deployAndInit(params, adminTimelock);
     }
 
-    function test_deploy_revertsOnLpAllowedTokensLengthMismatch() public {
+    function test_deploy_revertsOnPartialLpTokenList() public {
         _seed();
 
         GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
-        params.extraLiquidityProviders = _providers(makeAddr("extraLp1"), makeAddr("extraLp2"));
+        params.lpConfigs = _lpConfigs(_lpConfig(makeAddr("extraLp"), true, true));
 
-        // One token list for two providers.
-        params.extraLpTokens  = _lpTokens(1);
-        params.extraLpAllowed = _lpAllowed(1, true);
+        // Every Basin asset has to be listed, so a short list fails the deployment
+        params.lpConfigs[0].tokens  = new address[](1);
+        params.lpConfigs[0].allowed = new bool[](1);
 
-        vm.expectRevert(GroveBasinFactory.LpAllowedTokensLengthMismatch.selector);
+        vm.expectRevert(IGroveBasin.InvalidAssetListLength.selector);
         factory.deployAndInit(params, adminTimelock);
     }
 
-    function test_deploy_revertsOnSelfExtraLiquidityProvider() public {
+    function test_deploy_revertsOnSelfLpConfig() public {
         _seed();
 
         GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
-        params.extraLiquidityProviders = _providers(address(factory));
-        params.extraLpTokens           = _lpTokens(1);
-        params.extraLpAllowed          = _lpAllowed(1, true);
+        params.lpConfigs = _lpConfigs(_lpConfig(address(factory), true, true));
 
         vm.expectRevert(GroveBasinFactory.InvalidLiquidityProvider.selector);
         factory.deployAndInit(params, adminTimelock);
