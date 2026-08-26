@@ -50,9 +50,10 @@ contract LpHandler is HandlerBase {
             lps.push(lp);
 
             // Withdrawals are gated on the asset allowlist, so every LP is allowed every asset to
-            // keep the handler free of reverts
+            // keep the handler free of reverts. They only ever receive and redeem shares, so they
+            // are permissioned as receivers rather than depositors.
             vm.prank(owner_);
-            groveBasin_.setLpAssetAllowed(lp, allAssets, allowed);
+            groveBasin_.setLiquidityProvider(lp, false, allAssets, allowed);
         }
     }
 

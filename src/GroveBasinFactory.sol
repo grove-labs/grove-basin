@@ -30,7 +30,8 @@ contract GroveBasinFactory {
     /**
      * @param liquidityProvider           Granted LIQUIDITY_PROVIDER_ROLE by the Basin constructor.
      * @param extraLiquidityProviders     Further addresses granted LIQUIDITY_PROVIDER_ROLE during init; empty grants none. Each must be non-zero and not the factory itself.
-     * @param extraLpAllowedTokens        Parallel array to extraLiquidityProviders. Each element lists tokens the LP is allowed to deposit and withdraw. Empty outer array means no tokens allowed for any extra LP; otherwise must match extraLiquidityProviders length.
+     * @param extraLpTokens               Parallel array to extraLiquidityProviders. Each element lists every Basin asset exactly once; the Basin rejects anything else.
+     * @param extraLpAllowed              Parallel array to extraLpTokens. Each element flags, per token, whether the LP may deposit and withdraw it.
      * @param swapToken                   Basin swap token.
      * @param collateralToken             Basin collateral token.
      * @param creditToken                 Basin credit token.
@@ -53,29 +54,30 @@ contract GroveBasinFactory {
      * @param allowlistManagers           Addresses granted ALLOWLIST_MANAGER_ROLE; empty grants none.
      */
     struct DeployParams {
-        address    liquidityProvider;
-        address[]  extraLiquidityProviders;
-        address[][]  extraLpAllowedTokens;
-        address    swapToken;
-        address    collateralToken;
-        address    creditToken;
-        address    swapTokenRateProvider;
-        address    collateralTokenRateProvider;
-        address    creditTokenRateProvider;
-        address    pocketAddress1;
-        address    pocketAddress2;
-        address    managerAdmin;
-        address    manager;
-        address    pauser;
-        address    redemptionAddress;
-        address    tokenRedeemer;
-        address    issuerRedeemer;
-        uint256    minFee;
-        uint256    maxFee;
-        bool       swapAllowlistEnabled;
-        PocketType pocketType;
-        bytes4[]   pausedFlags;
-        address[]  allowlistManagers;
+        address     liquidityProvider;
+        address[]   extraLiquidityProviders;
+        address[][] extraLpTokens;
+        bool[][]    extraLpAllowed;
+        address     swapToken;
+        address     collateralToken;
+        address     creditToken;
+        address     swapTokenRateProvider;
+        address     collateralTokenRateProvider;
+        address     creditTokenRateProvider;
+        address     pocketAddress1;
+        address     pocketAddress2;
+        address     managerAdmin;
+        address     manager;
+        address     pauser;
+        address     redemptionAddress;
+        address     tokenRedeemer;
+        address     issuerRedeemer;
+        uint256     minFee;
+        uint256     maxFee;
+        bool        swapAllowlistEnabled;
+        PocketType  pocketType;
+        bytes4[]    pausedFlags;
+        address[]   allowlistManagers;
     }
 
     error InvalidAdminTimelock();
@@ -304,8 +306,9 @@ contract GroveBasinFactory {
             groveBasin.grantRole(groveBasin.ALLOWLIST_MANAGER_ROLE(), params.allowlistManagers[i]);
         }
 
-        if (params.extraLpAllowedTokens.length != 0 &&
-            params.extraLpAllowedTokens.length != params.extraLiquidityProviders.length
+        if (
+            params.extraLpTokens.length  != params.extraLiquidityProviders.length ||
+            params.extraLpAllowed.length != params.extraLiquidityProviders.length
         ) revert LpAllowedTokensLengthMismatch();
 
         for (uint256 i; i < params.extraLiquidityProviders.length; ++i) {
@@ -313,11 +316,8 @@ contract GroveBasinFactory {
 
             if (provider == address(0) || provider == address(this)) revert InvalidLiquidityProvider();
 
-            address[] memory allowed = params.extraLpAllowedTokens.length > 0
-                ? params.extraLpAllowedTokens[i]
-                : new address[](0);
-
-            groveBasin.addLiquidityProvider(provider, allowed);
+            // The Basin validates the token list, so a bad asset or a missing one fails the deployment.
+            groveBasin.setLiquidityProvider(provider, true, params.extraLpTokens[i], params.extraLpAllowed[i]);
         }
 
         if (params.issuerRedeemer != address(0)) {

@@ -54,7 +54,7 @@ interface IGroveBasin {
     error LpTokenWithdrawNotAllowed();
     error ReceiverTokenDepositNotAllowed();
     error NotAuthorizedToRemoveLp();
-    error ArrayLengthMismatch();
+    error InvalidAssetListLength();
 
     /**********************************************************************************************/
     /*** Events                                                                                 ***/
@@ -230,10 +230,11 @@ interface IGroveBasin {
     event PausedSet(bytes4 indexed key, bool paused);
 
     /**
-     *  @dev   Emitted when a liquidity provider is added via addLiquidityProvider.
-     *  @param provider Address of the liquidity provider.
+     *  @dev   Emitted when an address is configured via setLiquidityProvider.
+     *  @param provider    Address that was configured.
+     *  @param isDepositor Whether the address holds LIQUIDITY_PROVIDER_ROLE after the call.
      */
-    event LiquidityProviderAdded(address indexed provider);
+    event LiquidityProviderSet(address indexed provider, bool isDepositor);
 
     /**
      *  @dev   Emitted when a liquidity provider is removed via removeLiquidityProvider.
@@ -595,14 +596,14 @@ interface IGroveBasin {
      *          By default all entries are false, meaning an LP with LIQUIDITY_PROVIDER_ROLE cannot
      *          deposit or withdraw any token without explicit permission. Granting or revoking the role via the inherited
      *          AccessControl grantRole leaves the mapping at its default (no tokens allowed); use
-     *          addLiquidityProvider to grant the role and set allowed tokens atomically. Deposits
+     *          setLiquidityProvider to grant the role and set allowed tokens atomically. Deposits
      *          on behalf of a receiver require the receiver to be allowed the token as well.
      *          Allowances are only ever set by MANAGER_ADMIN_ROLE.
-     *  @param  provider Address to query.
-     *  @param  token    Address of the token (swapToken, collateralToken, or creditToken).
-     *  @return Whether the address is allowed to deposit and withdraw the token.
+     *  @param  provider  Address to query.
+     *  @param  token     Address of the token (swapToken, collateralToken, or creditToken).
+     *  @return isAllowed Whether the address is allowed to deposit and withdraw the token.
      */
-    function lpAssetAllowed(address provider, address token) external view returns (bool);
+    function lpAssetAllowed(address provider, address token) external view returns (bool isAllowed);
 
     /**
      *  @dev    Returns the route key for a swap direction. Routes are unidirectional, so the key
@@ -693,32 +694,33 @@ interface IGroveBasin {
     function removeTokenRedeemer(address redeemer) external;
 
     /**
-     *  @dev   Adds a liquidity provider, granting LIQUIDITY_PROVIDER_ROLE and setting which
-     *         tokens the LP is allowed to deposit and withdraw. By default (empty allowedTokens),
-     *         the LP cannot deposit or withdraw any token. Callable only by MANAGER_ADMIN_ROLE.
-     *  @param provider      Address to grant LIQUIDITY_PROVIDER_ROLE.
-     *  @param allowedTokens Tokens the LP is allowed to deposit and withdraw. Each must be a
-     *                       supported asset. Empty means no tokens allowed.
+     *  @dev   Sets whether an address holds LIQUIDITY_PROVIDER_ROLE and which of the supported
+     *         assets it is allowed to deposit and withdraw. `tokens` must list every supported
+     *         asset exactly once, so a call always states the full permission set of the address
+     *         and never leaves an entry from an earlier call in place. Can be called on any
+     *         address, not only current LPs: passing `isDepositor` false permissions a share
+     *         recipient without letting it deposit, and revokes LIQUIDITY_PROVIDER_ROLE if the
+     *         address holds it. The zero address, which holds the seed shares, can be permissioned
+     *         this way but never as a depositor. Disallowing a token an address still holds shares
+     *         against blocks its withdrawals of that token, leaving it to redeem those shares in
+     *         the tokens it is still allowed. Callable only by MANAGER_ADMIN_ROLE.
+     *  @param provider    Address whose role and asset allowances are being set.
+     *  @param isDepositor Whether the address should hold LIQUIDITY_PROVIDER_ROLE.
+     *  @param tokens      The supported assets, in any order, each listed exactly once.
+     *  @param allowed     Parallel array of booleans; true to allow, false to disallow.
      */
-    function addLiquidityProvider(address provider, address[] calldata allowedTokens) external;
+    function setLiquidityProvider(
+        address            provider,
+        bool               isDepositor,
+        address[] calldata tokens,
+        bool[]    calldata allowed
+    ) external;
 
     /**
-     *  @dev   Batch-updates whether an address is allowed to deposit and withdraw specific tokens.
-     *         Can be called on any address, not only current LPs, so that non-LP share recipients
-     *         can have allowances pre-configured or adjusted. Disallowing a token an address still
-     *         holds shares against blocks its withdrawals of that token, leaving it to withdraw its
-     *         shares in the tokens it is still allowed. Callable only by MANAGER_ADMIN_ROLE.
-     *  @param provider Address whose asset allowances are being updated.
-     *  @param tokens   Tokens to update (each must be a supported asset).
-     *  @param allowed  Parallel array of booleans; true to allow, false to disallow.
-     */
-    function setLpAssetAllowed(address provider, address[] calldata tokens, bool[] calldata allowed) external;
-
-    /**
-     *  @dev   Removes a liquidity provider, revoking LIQUIDITY_PROVIDER_ROLE. Asset allowances are
-     *         intentionally preserved so the removed LP can still withdraw the assets it was
-     *         allowed. Callable by MANAGER_ADMIN_ROLE or
-     *         PAUSER_ROLE.
+     *  @dev   Removes a liquidity provider, revoking LIQUIDITY_PROVIDER_ROLE. Unlike
+     *         setLiquidityProvider, asset allowances are intentionally left in place so the
+     *         removed LP can still withdraw the assets it was allowed. Callable by
+     *         MANAGER_ADMIN_ROLE or PAUSER_ROLE.
      *  @param provider Address to revoke LIQUIDITY_PROVIDER_ROLE from.
      */
     function removeLiquidityProvider(address provider) external;

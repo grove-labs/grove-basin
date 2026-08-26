@@ -19,17 +19,31 @@ abstract contract AssetAllowlistHelper is Test {
         _allowAssets(basin, managerAdmin, user, assets);
     }
 
+    /// @dev setLiquidityProvider states the whole permission set of an address in one call, so the
+    ///      allowances and the role the user already has are read back and preserved to keep the
+    ///      helper additive.
     function _allowAssets(GroveBasin basin, address managerAdmin, address user, address[] memory assets)
         internal
     {
-        bool[] memory allowed = new bool[](assets.length);
+        address[] memory tokens = new address[](3);
+        tokens[0] = basin.swapToken();
+        tokens[1] = basin.collateralToken();
+        tokens[2] = basin.creditToken();
 
-        for (uint256 i; i < assets.length; ++i) {
-            allowed[i] = true;
+        bool[] memory allowed = new bool[](3);
+
+        for (uint256 i; i < tokens.length; ++i) {
+            allowed[i] = basin.lpAssetAllowed(user, tokens[i]);
+
+            for (uint256 j; j < assets.length; ++j) {
+                if (assets[j] == tokens[i]) allowed[i] = true;
+            }
         }
 
+        bool isDepositor = basin.hasRole(basin.LIQUIDITY_PROVIDER_ROLE(), user);
+
         vm.prank(managerAdmin);
-        basin.setLpAssetAllowed(user, assets, allowed);
+        basin.setLiquidityProvider(user, isDepositor, tokens, allowed);
     }
 
 }

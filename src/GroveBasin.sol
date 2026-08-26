@@ -98,7 +98,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /// @dev Maps an address to token address to whether deposits and withdrawals of that token are
     ///      allowed. Default (false) means the address can neither deposit nor withdraw the token,
     ///      and cannot receive shares from a deposit of it, so shares are only redeemable for
-    ///      tokens the holder is allowed. Use addLiquidityProvider to grant the role and set allowed
+    ///      tokens the holder is allowed. Use setLiquidityProvider to grant the role and set allowed
     ///      tokens atomically; granting LIQUIDITY_PROVIDER_ROLE via grantRole alone leaves this
     ///      mapping at its default, so the LP cannot deposit any token until explicitly allowed.
     mapping(address provider => mapping(address token => bool isAllowed)) public override lpAssetAllowed;
@@ -185,7 +185,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         _setLpAssetAllowedToken(liquidityProvider_, collateralToken_, true);
         _setLpAssetAllowedToken(liquidityProvider_, creditToken_,     true);
 
-        emit LiquidityProviderAdded(liquidityProvider_);
+        emit LiquidityProviderSet(liquidityProvider_, true);
     }
 
     /**********************************************************************************************/
@@ -358,18 +358,36 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     /// @inheritdoc IGroveBasin
-    function addLiquidityProvider(address provider, address[] calldata allowedTokens)
+    function setLiquidityProvider(
+        address            provider,
+        bool               isDepositor,
+        address[] calldata tokens,
+        bool[]    calldata allowed
+    )
         external override onlyRole(MANAGER_ADMIN_ROLE)
     {
-        _addLiquidityProvider(provider, allowedTokens);
-    }
+        // The zero address holds the seed shares, so it can be permissioned as a receiver, but it
+        // must never hold the depositor role.
+        if (isDepositor && provider == address(0)) revert InvalidLiquidityProvider();
 
-    /// @inheritdoc IGroveBasin
-    function setLpAssetAllowed(address provider, address[] calldata tokens, bool[] calldata allowed)
-        external override onlyRole(MANAGER_ADMIN_ROLE)
-    {
-        if (tokens.length != allowed.length) revert ArrayLengthMismatch();
-        _setLpAssetAllowedTokens(provider, tokens, allowed);
+        // Every supported asset has to be listed exactly once, so a call always states the full
+        // permission set of `provider` instead of layering onto whatever was set before.
+        if (tokens.length != 3 || allowed.length != 3) revert InvalidAssetListLength();
+        if (
+            tokens[0] == tokens[1] ||
+            tokens[0] == tokens[2] ||
+            tokens[1] == tokens[2]
+        ) revert DuplicateTokens();
+
+        if (isDepositor) _grantRole(LIQUIDITY_PROVIDER_ROLE,  provider);
+        else             _revokeRole(LIQUIDITY_PROVIDER_ROLE, provider);
+
+        for (uint256 i; i < 3; ++i) {
+            _requireValidAsset(tokens[i]);
+            _setLpAssetAllowedToken(provider, tokens[i], allowed[i]);
+        }
+
+        emit LiquidityProviderSet(provider, isDepositor);
     }
 
     /// @inheritdoc IGroveBasin
@@ -1031,24 +1049,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
         return pocket != address(this);
     }
 
-    /// @dev Grants LIQUIDITY_PROVIDER_ROLE and sets asset allowances.
-    function _addLiquidityProvider(address provider, address[] calldata allowedTokens) internal {
-        if (provider == address(0)) revert InvalidLiquidityProvider();
-
-        _grantRole(LIQUIDITY_PROVIDER_ROLE, provider);
-
-        uint256 length = allowedTokens.length;
-
-        for (uint256 i; i < length; ++i) {
-            address token = allowedTokens[i];
-
-            _requireValidAsset(token);
-            _setLpAssetAllowedToken(provider, token, true);
-        }
-
-        emit LiquidityProviderAdded(provider);
-    }
-
     /// @dev Credits `newShares` to `receiver` and moves `assetsToDeposit` into the pocket. Callers
     ///      are responsible for the pause, role, and allowlist checks.
     function _deposit(address asset, address receiver, uint256 assetsToDeposit)
@@ -1073,18 +1073,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
         lpAssetAllowed[provider][token] = allowed;
 
         emit LpAssetAllowedSet(provider, token, allowed);
-    }
-
-    /// @dev Sets asset allowances for `provider`. Each token must be a supported asset.
-    function _setLpAssetAllowedTokens(address provider, address[] calldata tokens, bool[] calldata allowed) internal {
-        uint256 length = tokens.length;
-
-        for (uint256 i; i < length; ++i) {
-            address token = tokens[i];
-
-            _requireValidAsset(token);
-            _setLpAssetAllowedToken(provider, token, allowed[i]);
-        }
     }
 
     /// @dev Reverts if `asset` is not one of the three supported tokens.
