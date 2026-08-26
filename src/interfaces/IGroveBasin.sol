@@ -593,12 +593,11 @@ interface IGroveBasin {
     /**
      *  @dev    Returns whether an address is allowed to deposit and withdraw a given token.
      *          By default all entries are false, meaning an LP with LIQUIDITY_PROVIDER_ROLE cannot
-     *          deposit any token until explicitly allowed, and a shareholder cannot withdraw a
-     *          token it was never allowed to deposit. Granting the role via the inherited
+     *          deposit or withdraw any token without explicit permission. Granting or revoking the role via the inherited
      *          AccessControl grantRole leaves the mapping at its default (no tokens allowed); use
      *          addLiquidityProvider to grant the role and set allowed tokens atomically. Deposits
-     *          on behalf of a receiver require the receiver to be allowed the token as well, so
-     *          allowances are only ever set by MANAGER_ADMIN_ROLE.
+     *          on behalf of a receiver require the receiver to be allowed the token as well.
+     *          Allowances are only ever set by MANAGER_ADMIN_ROLE.
      *  @param  provider Address to query.
      *  @param  token    Address of the token (swapToken, collateralToken, or creditToken).
      *  @return Whether the address is allowed to deposit and withdraw the token.
@@ -718,7 +717,7 @@ interface IGroveBasin {
     /**
      *  @dev   Removes a liquidity provider, revoking LIQUIDITY_PROVIDER_ROLE. Asset allowances are
      *         intentionally preserved so the removed LP can still withdraw the assets it was
-     *         allowed, corresponding to shares it already holds. Callable by MANAGER_ADMIN_ROLE or
+     *         allowed. Callable by MANAGER_ADMIN_ROLE or
      *         PAUSER_ROLE.
      *  @param provider Address to revoke LIQUIDITY_PROVIDER_ROLE from.
      */
