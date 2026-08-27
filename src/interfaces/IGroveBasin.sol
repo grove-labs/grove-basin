@@ -519,8 +519,10 @@ interface IGroveBasin {
 
     /**
      *  @dev    Returns the address that accrues fee shares on every swap. The fee claimer can
-     *          withdraw their shares like any other shareholder. Note: if the fee claimer is
-     *          changed via `setFeeClaimer`, the previous claimer may still hold unclaimed shares.
+     *          withdraw their shares like any other shareholder, subject to the same
+     *          `lpAssetAllowed` gate. Note: if the fee claimer is changed via `setFeeClaimer`, the
+     *          previous claimer may still hold unclaimed shares, and keeps the allowances it needs
+     *          to withdraw them.
      *  @return The fee claimer address.
      */
     function feeClaimer() external view returns (address);
@@ -598,7 +600,9 @@ interface IGroveBasin {
      *          AccessControl grantRole leaves the mapping at its default (no tokens allowed); use
      *          setLiquidityProvider to grant the role and set allowed tokens atomically. Deposits
      *          on behalf of a receiver require the receiver to be allowed the token as well.
-     *          Allowances are only ever set by MANAGER_ADMIN_ROLE.
+     *          Allowances are only ever set by MANAGER_ADMIN_ROLE, either directly through
+     *          setLiquidityProvider or through setFeeClaimer, which allows the new claimer every
+     *          token as a non-depositor.
      *  @param  provider  Address to query.
      *  @param  token     Address of the token (swapToken, collateralToken, or creditToken).
      *  @return isAllowed Whether the address is allowed to deposit and withdraw the token.
@@ -841,8 +845,14 @@ interface IGroveBasin {
 
     /**
      *  @dev    Sets the address that accrues fee shares on swaps. Callable only by MANAGER_ADMIN_ROLE.
+     *          Allows the new claimer every supported token, since fee shares are a claim on value
+     *          rather than on any one asset, and revokes LIQUIDITY_PROVIDER_ROLE from it: a claimer
+     *          that could also deposit would be able to convert between assets through deposit and
+     *          withdraw without paying the swap fee. Pass the zero address to stop fee accrual;
+     *          no permissions are set in that case.
      *          Note: if the previous fee claimer holds shares, those shares remain; they are not
-     *          transferred or burned. The previous claimer can still withdraw their shares.
+     *          transferred or burned. Its allowances are left in place as well, so it can still
+     *          withdraw them. Clear them with setLiquidityProvider once it has claimed.
      *  @param  newFeeClaimer The new fee claimer address.
      */
     function setFeeClaimer(address newFeeClaimer) external;
@@ -947,8 +957,7 @@ interface IGroveBasin {
      *  @dev    Withdraws an amount of a given asset from the GroveBasin up to `maxAssetsToWithdraw`.
      *          Must be one of the supported assets in order to succeed. The caller must be allowed
      *          the asset, so shares can only be redeemed for assets the caller deposited or was
-     *          allowed by MANAGER_ADMIN_ROLE; the fee claimer is exempt because its shares accrue
-     *          from fees rather than deposits. The amount withdrawn is the minimum of the balance
+     *          allowed by MANAGER_ADMIN_ROLE. The amount withdrawn is the minimum of the balance
      *          of the GroveBasin, the max amount, and the max amount of assets that the user's
      *          shares can be converted to.
      *  @param  asset               Address of the ERC-20 asset to withdraw.

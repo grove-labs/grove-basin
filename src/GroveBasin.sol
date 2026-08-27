@@ -339,6 +339,28 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function setFeeClaimer(address newFeeClaimer) external override onlyRole(MANAGER_ADMIN_ROLE) {
         address oldFeeClaimer = feeClaimer;
         feeClaimer = newFeeClaimer;
+
+        // Fee shares are a claim on value rather than on any one asset, so the claimer is
+        // permissioned for all three. It is set as a non-depositor because a claimer that could
+        // also deposit would be able to convert between assets through `deposit` and `withdraw`
+        // without paying the swap fee. `oldFeeClaimer` keeps its permissions so that it can still
+        // claim the shares it accrued before the rotation. Skipped for the zero address, which
+        // disables fee accrual and holds the seed shares: permissioning it would let liquidity
+        // providers deposit into a position no one can withdraw from.
+        if (newFeeClaimer != address(0)) {
+            address[] memory tokens = new address[](3);
+            tokens[0] = swapToken;
+            tokens[1] = collateralToken;
+            tokens[2] = creditToken;
+
+            bool[] memory allowed = new bool[](3);
+            allowed[0] = true;
+            allowed[1] = true;
+            allowed[2] = true;
+
+            _setLiquidityProvider(newFeeClaimer, false, tokens, allowed);
+        }
+
         emit FeeClaimerSet(oldFeeClaimer, newFeeClaimer);
     }
 
@@ -366,28 +388,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     )
         external override onlyRole(MANAGER_ADMIN_ROLE)
     {
-        // The zero address holds the seed shares, so it can be permissioned as a receiver, but it
-        // must never hold the depositor role.
-        if (isDepositor && provider == address(0)) revert InvalidLiquidityProvider();
-
-        // Every supported asset has to be listed exactly once, so a call always states the full
-        // permission set of `provider` instead of layering onto whatever was set before.
-        if (tokens.length != 3 || allowed.length != 3) revert InvalidAssetListLength();
-        if (
-            tokens[0] == tokens[1] ||
-            tokens[0] == tokens[2] ||
-            tokens[1] == tokens[2]
-        ) revert DuplicateTokens();
-
-        if (isDepositor) _grantRole(LIQUIDITY_PROVIDER_ROLE,  provider);
-        else             _revokeRole(LIQUIDITY_PROVIDER_ROLE, provider);
-
-        for (uint256 i; i < 3; ++i) {
-            _requireValidAsset(tokens[i]);
-            _setLpAssetAllowedToken(provider, tokens[i], allowed[i]);
-        }
-
-        emit LiquidityProviderSet(provider, isDepositor);
+        _setLiquidityProvider(provider, isDepositor, tokens, allowed);
     }
 
     /// @inheritdoc IGroveBasin
@@ -617,8 +618,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     {
         if (maxAssetsToWithdraw == 0) revert ZeroAmount();
 
-        // The fee claimer is exempt because its shares accrue from swap fees, not from deposits.
-        if (msg.sender != feeClaimer && !lpAssetAllowed[msg.sender][asset]) revert LpTokenWithdrawNotAllowed();
+        if (!lpAssetAllowed[msg.sender][asset]) revert LpTokenWithdrawNotAllowed();
 
         uint256 sharesToBurn;
 
@@ -1065,6 +1065,38 @@ contract GroveBasin is IGroveBasin, AccessControl {
         _depositLiquidityInPocket(assetsToDeposit, asset);
 
         emit Deposit(asset, msg.sender, receiver, assetsToDeposit, newShares);
+    }
+
+    /// @dev Sets the role and the full asset permission set of `provider`. Callers are responsible
+    ///      for the access control check.
+    function _setLiquidityProvider(
+        address          provider,
+        bool             isDepositor,
+        address[] memory tokens,
+        bool[]    memory allowed
+    ) internal {
+        // The zero address holds the seed shares, so it can be permissioned as a receiver, but it
+        // must never hold the depositor role.
+        if (isDepositor && provider == address(0)) revert InvalidLiquidityProvider();
+
+        // Every supported asset has to be listed exactly once, so a call always states the full
+        // permission set of `provider` instead of layering onto whatever was set before.
+        if (tokens.length != 3 || allowed.length != 3) revert InvalidAssetListLength();
+        if (
+            tokens[0] == tokens[1] ||
+            tokens[0] == tokens[2] ||
+            tokens[1] == tokens[2]
+        ) revert DuplicateTokens();
+
+        if (isDepositor) _grantRole(LIQUIDITY_PROVIDER_ROLE,  provider);
+        else             _revokeRole(LIQUIDITY_PROVIDER_ROLE, provider);
+
+        for (uint256 i; i < 3; ++i) {
+            _requireValidAsset(tokens[i]);
+            _setLpAssetAllowedToken(provider, tokens[i], allowed[i]);
+        }
+
+        emit LiquidityProviderSet(provider, isDepositor);
     }
 
     /// @dev Sets whether `provider` can deposit and withdraw `token`. Callers are responsible for

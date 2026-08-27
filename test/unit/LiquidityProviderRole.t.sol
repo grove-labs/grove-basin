@@ -86,6 +86,22 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         );
     }
 
+    /// @dev Accrues fee shares to the current fee claimer through a swap, so that it holds shares
+    ///      it never deposited for.
+    function _accrueFeeShares() internal {
+        vm.prank(managerAdmin);
+        groveBasin.setFeeBounds(0, 500);
+
+        vm.prank(owner);
+        groveBasin.setRedemptionFee(100);
+
+        _depositAs(lp, address(collateralToken), lp, 1000e18);
+
+        creditToken.mint(address(this), 100e18);
+        creditToken.approve(address(groveBasin), 100e18);
+        groveBasin.swapExactIn(address(creditToken), address(collateralToken), 100e18, 0, address(this), 0);
+    }
+
     function _expectDepositRejected(address depositor) internal {
         collateralToken.mint(depositor, 100e18);
 
@@ -663,29 +679,103 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         assertEq(groveBasin.withdraw(address(collateralToken), notLp, 100e18), 100e18);
     }
 
-    function test_withdraw_feeClaimerExemptFromAllowlist() public {
+    function test_setFeeClaimer_allowsAllAssetsAsNonDepositor() public {
         address feeClaimer = makeAddr("feeClaimer");
 
-        vm.startPrank(managerAdmin);
+        vm.prank(managerAdmin);
         groveBasin.setFeeClaimer(feeClaimer);
-        groveBasin.setFeeBounds(0, 500);
+
+        assertTrue(groveBasin.lpAssetAllowed(feeClaimer, address(swapToken)));
+        assertTrue(groveBasin.lpAssetAllowed(feeClaimer, address(collateralToken)));
+        assertTrue(groveBasin.lpAssetAllowed(feeClaimer, address(creditToken)));
+
+        assertFalse(groveBasin.hasRole(lpRole, feeClaimer));
+    }
+
+    function test_setFeeClaimer_revokesLiquidityProviderRole() public {
+        _setLp(newLp, true, true, true, true);
+
+        assertTrue(groveBasin.hasRole(lpRole, newLp));
+
+        vm.prank(managerAdmin);
+        groveBasin.setFeeClaimer(newLp);
+
+        assertFalse(groveBasin.hasRole(lpRole, newLp));
+
+        collateralToken.mint(newLp, 100e18);
+
+        vm.startPrank(newLp);
+        collateralToken.approve(address(groveBasin), 100e18);
+        vm.expectRevert(IGroveBasin.NotLiquidityProvider.selector);
+        groveBasin.deposit(address(collateralToken), newLp, 100e18);
         vm.stopPrank();
+    }
 
-        vm.prank(owner);
-        groveBasin.setRedemptionFee(100);
+    function test_setFeeClaimer_toZero_doesNotPermissionZeroAddress() public {
+        vm.prank(managerAdmin);
+        groveBasin.setFeeClaimer(address(0));
 
-        _depositAs(lp, address(collateralToken), lp, 1000e18);
+        assertFalse(groveBasin.lpAssetAllowed(address(0), address(swapToken)));
+        assertFalse(groveBasin.lpAssetAllowed(address(0), address(collateralToken)));
+        assertFalse(groveBasin.lpAssetAllowed(address(0), address(creditToken)));
+    }
 
-        // Swap in creditToken so that the fee claimer accrues shares without ever depositing
-        creditToken.mint(address(this), 100e18);
-        creditToken.approve(address(groveBasin), 100e18);
-        groveBasin.swapExactIn(address(creditToken), address(collateralToken), 100e18, 0, address(this), 0);
+    function test_withdraw_feeClaimerUsesAllowlist() public {
+        address feeClaimer = makeAddr("feeClaimer");
 
-        assertGt(groveBasin.shares(feeClaimer),                       0);
-        assertFalse(groveBasin.lpAssetAllowed(feeClaimer, address(creditToken)));
+        vm.prank(managerAdmin);
+        groveBasin.setFeeClaimer(feeClaimer);
+
+        _accrueFeeShares();
+
+        assertGt(groveBasin.shares(feeClaimer), 0);
+        assertTrue(groveBasin.lpAssetAllowed(feeClaimer, address(creditToken)));
 
         vm.prank(feeClaimer);
         assertGt(groveBasin.withdraw(address(creditToken), feeClaimer, 100e18), 0);
+    }
+
+    function test_withdraw_feeClaimerDisallowedAsset() public {
+        address feeClaimer = makeAddr("feeClaimer");
+
+        vm.prank(managerAdmin);
+        groveBasin.setFeeClaimer(feeClaimer);
+
+        _accrueFeeShares();
+
+        // The fee claimer carries no carve-out, so revoking its credit allowance blocks it exactly
+        // as it would any other shareholder
+        _setLp(feeClaimer, false, true, true, false);
+
+        vm.prank(feeClaimer);
+        vm.expectRevert(IGroveBasin.LpTokenWithdrawNotAllowed.selector);
+        groveBasin.withdraw(address(creditToken), feeClaimer, 1e18);
+
+        vm.prank(feeClaimer);
+        assertGt(groveBasin.withdraw(address(collateralToken), feeClaimer, 100e18), 0);
+    }
+
+    function test_withdraw_previousFeeClaimerKeepsAllowances() public {
+        address oldClaimer = makeAddr("oldFeeClaimer");
+        address newClaimer = makeAddr("newFeeClaimer");
+
+        vm.prank(managerAdmin);
+        groveBasin.setFeeClaimer(oldClaimer);
+
+        _accrueFeeShares();
+
+        uint256 accruedShares = groveBasin.shares(oldClaimer);
+
+        assertGt(accruedShares, 0);
+
+        vm.prank(managerAdmin);
+        groveBasin.setFeeClaimer(newClaimer);
+
+        assertEq(groveBasin.shares(oldClaimer), accruedShares);
+        assertTrue(groveBasin.lpAssetAllowed(oldClaimer, address(collateralToken)));
+
+        vm.prank(oldClaimer);
+        assertGt(groveBasin.withdraw(address(collateralToken), oldClaimer, 100e18), 0);
     }
 
     /**********************************************************************************************/
