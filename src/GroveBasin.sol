@@ -391,19 +391,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /**********************************************************************************************/
 
     /// @inheritdoc IGroveBasin
-    function removeLiquidityProvider(address provider) external override {
-        if (!hasRole(MANAGER_ADMIN_ROLE, msg.sender) && !hasRole(PAUSER_ROLE, msg.sender)) {
-            revert NotAuthorizedToRemoveLp();
-        }
-
-        // NOTE: lpAssetAllowed entries are intentionally preserved so the removed LP can still
-        // withdraw the assets it was allowed against shares it already holds.
-        _revokeRole(LIQUIDITY_PROVIDER_ROLE, provider);
-
-        emit LiquidityProviderSet(provider, false);
-    }
-
-    /// @inheritdoc IGroveBasin
     function removeAssetAllowed(address provider) external override {
         if (!hasRole(MANAGER_ADMIN_ROLE, msg.sender) && !hasRole(PAUSER_ROLE, msg.sender)) {
             revert NotAuthorizedToRemoveAssetAllowed();
@@ -830,9 +817,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
     /// @dev Extends revokeRole to allow PAUSER_ROLE holders to revoke MANAGER_ROLE,
     ///      ALLOWLIST_MANAGER_ROLE, REDEEMER_ROLE, and LIQUIDITY_PROVIDER_ROLE. Revoking a
-    ///      liquidity provider only stops new deposits: `withdraw` is gated on share ownership and
-    ///      on `lpAssetAllowed`, not on the role, so the revoked provider keeps access to the value
-    ///      of the shares it already holds.
+    ///      liquidity provider only stops new deposits. Use `removeAssetAllowed` to cut 
+    ///      off withdrawals as well.
     function revokeRole(bytes32 role, address account) public override {
         if (
             (role == MANAGER_ROLE || role == ALLOWLIST_MANAGER_ROLE || role == REDEEMER_ROLE || role == LIQUIDITY_PROVIDER_ROLE) &&

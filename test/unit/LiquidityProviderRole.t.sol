@@ -523,64 +523,43 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
     }
 
     /**********************************************************************************************/
-    /*** removeLiquidityProvider                                                                ***/
+    /*** Revoking LIQUIDITY_PROVIDER_ROLE preserves asset allowances                            ***/
     /**********************************************************************************************/
 
-    function test_removeLiquidityProvider_byManagerAdmin() public {
-        _setLp(newLp, true, true, true, false);
-
-        assertTrue(groveBasin.hasRole(lpRole, newLp));
-        assertTrue(groveBasin.lpAssetAllowed(newLp, address(swapToken)));
-        assertTrue(groveBasin.lpAssetAllowed(newLp, address(collateralToken)));
-
-        vm.prank(managerAdmin);
-        groveBasin.removeLiquidityProvider(newLp);
-
-        assertFalse(groveBasin.hasRole(lpRole, newLp));
-        // Allowances preserved so LP can still withdraw
-        assertTrue(groveBasin.lpAssetAllowed(newLp, address(swapToken)));
-        assertTrue(groveBasin.lpAssetAllowed(newLp, address(collateralToken)));
-    }
-
-    function test_removeLiquidityProvider_byPauser() public {
-        _setLp(newLp, true, true, true, false);
-
-        vm.prank(pauser);
-        groveBasin.removeLiquidityProvider(newLp);
-
-        assertFalse(groveBasin.hasRole(lpRole, newLp));
-        // Allowances preserved
-        assertTrue(groveBasin.lpAssetAllowed(newLp, address(swapToken)));
-        assertTrue(groveBasin.lpAssetAllowed(newLp, address(collateralToken)));
-    }
-
-    function test_removeLiquidityProvider_revertsIfUnauthorized() public {
-        vm.expectRevert(IGroveBasin.NotAuthorizedToRemoveLp.selector);
-        vm.prank(notLp);
-        groveBasin.removeLiquidityProvider(lp);
-    }
-
-    function test_removeLiquidityProvider_preservesAllowances() public {
+    function test_revokeLiquidityProviderRole_byManagerAdmin_preservesAllowances() public {
         _setLp(newLp, true, true, true, true);
 
-        assertTrue(groveBasin.lpAssetAllowed(newLp, address(swapToken)));
-        assertTrue(groveBasin.lpAssetAllowed(newLp, address(collateralToken)));
-        assertTrue(groveBasin.lpAssetAllowed(newLp, address(creditToken)));
+        assertTrue(groveBasin.hasRole(lpRole, newLp));
 
         vm.prank(managerAdmin);
-        groveBasin.removeLiquidityProvider(newLp);
+        groveBasin.revokeRole(lpRole, newLp);
 
-        // Allowances preserved so the removed LP can still withdraw existing positions
+        assertFalse(groveBasin.hasRole(lpRole, newLp));
+
+        // Allowances preserved so the revoked LP can still withdraw existing positions
         assertTrue(groveBasin.lpAssetAllowed(newLp, address(swapToken)));
         assertTrue(groveBasin.lpAssetAllowed(newLp, address(collateralToken)));
         assertTrue(groveBasin.lpAssetAllowed(newLp, address(creditToken)));
     }
 
-    function test_removeLiquidityProvider_canBeReadded() public {
+    function test_revokeLiquidityProviderRole_byPauser_preservesAllowances() public {
+        _setLp(newLp, true, true, true, true);
+
+        vm.prank(pauser);
+        groveBasin.revokeRole(lpRole, newLp);
+
+        assertFalse(groveBasin.hasRole(lpRole, newLp));
+
+        assertTrue(groveBasin.lpAssetAllowed(newLp, address(swapToken)));
+        assertTrue(groveBasin.lpAssetAllowed(newLp, address(collateralToken)));
+        assertTrue(groveBasin.lpAssetAllowed(newLp, address(creditToken)));
+    }
+
+    function test_revokeLiquidityProviderRole_canBeReadded() public {
         _setLp(newLp, true, false, true, false);
 
         vm.prank(managerAdmin);
-        groveBasin.removeLiquidityProvider(newLp);
+        groveBasin.revokeRole(lpRole, newLp);
 
         // Re-add with all tokens allowed
         _setLp(newLp, true, true, true, true);
@@ -589,23 +568,6 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         assertTrue(groveBasin.lpAssetAllowed(newLp, address(creditToken)));
 
         assertEq(_depositAs(newLp, address(creditToken), newLp, 100e18), 125e18);
-    }
-
-    function test_removeLiquidityProvider_lpKeepsSharesAndCanWithdraw() public {
-        _setLp(newLp, true, true, true, true);
-
-        _depositAs(newLp, address(collateralToken), newLp, 100e18);
-        assertEq(groveBasin.shares(newLp), 100e18);
-
-        vm.prank(managerAdmin);
-        groveBasin.removeLiquidityProvider(newLp);
-
-        // LP can still withdraw because allowances are preserved on removal
-        vm.prank(newLp);
-        uint256 withdrawn = groveBasin.withdraw(address(collateralToken), newLp, 100e18);
-
-        assertEq(withdrawn, 100e18);
-        assertEq(groveBasin.shares(newLp), 0);
     }
 
     /**********************************************************************************************/

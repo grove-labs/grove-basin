@@ -53,7 +53,6 @@ interface IGroveBasin {
     error LpTokenDepositNotAllowed();
     error LpTokenWithdrawNotAllowed();
     error ReceiverTokenDepositNotAllowed();
-    error NotAuthorizedToRemoveLp();
     error NotAuthorizedToRemoveAssetAllowed();
     error InvalidAssetListLength();
 
@@ -231,8 +230,7 @@ interface IGroveBasin {
     event PausedSet(bytes4 indexed key, bool paused);
 
     /**
-     *  @dev   Emitted when an address is configured via setLiquidityProvider or removed via
-     *         removeLiquidityProvider.
+     *  @dev   Emitted when an address is configured via setLiquidityProvider.
      *  @param provider    Address that was configured.
      *  @param isDepositor Whether the address holds LIQUIDITY_PROVIDER_ROLE after the call.
      */
@@ -478,10 +476,10 @@ interface IGroveBasin {
 
     /**
      *  @dev    Returns the role identifier for the pauser role. Addresses with this role can call
-     *          setPaused, removeLiquidityProvider and removeAssetAllowed, and can revoke
-     *          MANAGER_ROLE, ALLOWLIST_MANAGER_ROLE, REDEEMER_ROLE, and LIQUIDITY_PROVIDER_ROLE
-     *          through the inherited AccessControl `revokeRole` function, which the implementation
-     *          overrides to grant this role that capability.
+     *          setPaused and removeAssetAllowed, and can revoke MANAGER_ROLE,
+     *          ALLOWLIST_MANAGER_ROLE, REDEEMER_ROLE, and LIQUIDITY_PROVIDER_ROLE through the
+     *          inherited AccessControl `revokeRole` function, which the implementation overrides
+     *          to grant this role that capability.
      *  @return The bytes32 role identifier.
      */
     function PAUSER_ROLE() external view returns (bytes32);
@@ -717,19 +715,8 @@ interface IGroveBasin {
     ) external;
 
     /**
-     *  @dev   Removes a liquidity provider, revoking LIQUIDITY_PROVIDER_ROLE. Unlike
-     *         setLiquidityProvider, asset allowances are intentionally left in place so the
-     *         removed LP can still withdraw the assets it was allowed. Callable by
-     *         MANAGER_ADMIN_ROLE or PAUSER_ROLE.
-     *  @param provider Address to revoke LIQUIDITY_PROVIDER_ROLE from.
-     */
-    function removeLiquidityProvider(address provider) external;
-
-    /**
      *  @dev   Disallows every supported asset for an address, blocking both deposits and
-     *         withdrawals for it. Unlike removeLiquidityProvider this cuts off withdrawals of
-     *         shares the address already holds, so it is the stronger of the two levers. Callable
-     *         by MANAGER_ADMIN_ROLE or PAUSER_ROLE.
+     *         withdrawals for it. Callable by MANAGER_ADMIN_ROLE or PAUSER_ROLE.
      *  @param provider Address whose asset allowances are being cleared.
      */
     function removeAssetAllowed(address provider) external;
