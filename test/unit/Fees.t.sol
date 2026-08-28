@@ -1216,6 +1216,9 @@ contract GroveBasinFeeShareAccrualTests is GroveBasinTestBase {
     }
 
     function test_feeClaimerCanWithdraw() public {
+        // setFeeClaimer sets no allowances of its own, so the claimer is permissioned separately
+        _allowAllAssets(feeClaimer);
+
         swapToken.mint(swapper, 100e6);
         vm.startPrank(swapper);
         swapToken.approve(address(groveBasin), 100e6);

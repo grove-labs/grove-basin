@@ -661,26 +661,47 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         assertEq(groveBasin.withdraw(address(collateralToken), notLp, 100e18), 100e18);
     }
 
-    function test_setFeeClaimer_allowsAllAssetsAsNonDepositor() public {
+    function test_setFeeClaimer_doesNotPermissionClaimer() public {
         address feeClaimer = makeAddr("feeClaimer");
 
         vm.prank(managerAdmin);
         groveBasin.setFeeClaimer(feeClaimer);
 
-        assertTrue(groveBasin.lpAssetAllowed(feeClaimer, address(swapToken)));
-        assertTrue(groveBasin.lpAssetAllowed(feeClaimer, address(collateralToken)));
-        assertTrue(groveBasin.lpAssetAllowed(feeClaimer, address(creditToken)));
+        // setFeeClaimer sets no permissions, so the claimer accrues shares it cannot withdraw until
+        // it is permissioned through setLiquidityProvider
+        assertFalse(groveBasin.lpAssetAllowed(feeClaimer, address(swapToken)));
+        assertFalse(groveBasin.lpAssetAllowed(feeClaimer, address(collateralToken)));
+        assertFalse(groveBasin.lpAssetAllowed(feeClaimer, address(creditToken)));
 
         assertFalse(groveBasin.hasRole(lpRole, feeClaimer));
+
+        _accrueFeeShares();
+
+        assertGt(groveBasin.shares(feeClaimer), 0);
+
+        vm.prank(feeClaimer);
+        vm.expectRevert(IGroveBasin.LpTokenWithdrawNotAllowed.selector);
+        groveBasin.withdraw(address(collateralToken), feeClaimer, 100e18);
+
+        _setLp(feeClaimer, false, true, true, true);
+
+        vm.prank(feeClaimer);
+        assertGt(groveBasin.withdraw(address(collateralToken), feeClaimer, 100e18), 0);
     }
 
-    function test_setFeeClaimer_revokesLiquidityProviderRole() public {
+    function test_setFeeClaimer_leavesLiquidityProviderRoleUntouched() public {
         _setLp(newLp, true, true, true, true);
 
         assertTrue(groveBasin.hasRole(lpRole, newLp));
 
         vm.prank(managerAdmin);
         groveBasin.setFeeClaimer(newLp);
+
+        // A claimer that can also deposit could convert between assets through deposit and withdraw
+        // without paying the swap fee, so it is on the manager admin to drop the role
+        assertTrue(groveBasin.hasRole(lpRole, newLp));
+
+        _setLp(newLp, false, true, true, true);
 
         assertFalse(groveBasin.hasRole(lpRole, newLp));
 
@@ -693,20 +714,13 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         vm.stopPrank();
     }
 
-    function test_setFeeClaimer_toZero_doesNotPermissionZeroAddress() public {
-        vm.prank(managerAdmin);
-        groveBasin.setFeeClaimer(address(0));
-
-        assertFalse(groveBasin.lpAssetAllowed(address(0), address(swapToken)));
-        assertFalse(groveBasin.lpAssetAllowed(address(0), address(collateralToken)));
-        assertFalse(groveBasin.lpAssetAllowed(address(0), address(creditToken)));
-    }
-
     function test_withdraw_feeClaimerUsesAllowlist() public {
         address feeClaimer = makeAddr("feeClaimer");
 
         vm.prank(managerAdmin);
         groveBasin.setFeeClaimer(feeClaimer);
+
+        _setLp(feeClaimer, false, true, true, true);
 
         _accrueFeeShares();
 
@@ -722,6 +736,8 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
 
         vm.prank(managerAdmin);
         groveBasin.setFeeClaimer(feeClaimer);
+
+        _setLp(feeClaimer, false, true, true, true);
 
         _accrueFeeShares();
 
@@ -743,6 +759,8 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
 
         vm.prank(managerAdmin);
         groveBasin.setFeeClaimer(oldClaimer);
+
+        _setLp(oldClaimer, false, true, true, true);
 
         _accrueFeeShares();
 

@@ -353,7 +353,9 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
         _withdraw(address(swapToken),       BURN_ADDRESS, type(uint256).max);
         _withdraw(address(creditToken),     BURN_ADDRESS, type(uint256).max);
 
-        // Withdraw fee claimer position
+        // Withdraw fee claimer position, which setFeeClaimer does not permission on its own
+        _allowAllAssets(FEE_CLAIMER);
+
         _withdraw(address(collateralToken), FEE_CLAIMER, type(uint256).max);
         _withdraw(address(swapToken),       FEE_CLAIMER, type(uint256).max);
         _withdraw(address(creditToken),     FEE_CLAIMER, type(uint256).max);

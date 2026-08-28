@@ -336,29 +336,10 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     /// @inheritdoc IGroveBasin
+    /// @dev NOTE: Must call `setLiquidityProvider` before able to call `withdraw` to claim fees
     function setFeeClaimer(address newFeeClaimer) external override onlyRole(MANAGER_ADMIN_ROLE) {
         address oldFeeClaimer = feeClaimer;
         feeClaimer = newFeeClaimer;
-
-        // Fee shares are a claim on value rather than on any one asset, so the claimer is
-        // permissioned for all three. It is set as a non-depositor because a claimer that could
-        // also deposit would be able to convert between assets through `deposit` and `withdraw`
-        // without paying the swap fee. `oldFeeClaimer` keeps its permissions so that it can still
-        // withdraw the shares it accrued before the rotation. The zero address disables fee
-        // accrual, so there is no claimer to permission.
-        if (newFeeClaimer != address(0)) {
-            address[] memory tokens = new address[](3);
-            tokens[0] = swapToken;
-            tokens[1] = collateralToken;
-            tokens[2] = creditToken;
-
-            bool[] memory allowed = new bool[](3);
-            allowed[0] = true;
-            allowed[1] = true;
-            allowed[2] = true;
-
-            _setLiquidityProvider(newFeeClaimer, false, tokens, allowed);
-        }
 
         emit FeeClaimerSet(oldFeeClaimer, newFeeClaimer);
     }
@@ -964,8 +945,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /*** Internal helper functions                                                              ***/
     /**********************************************************************************************/
 
-    /// @dev Converts a fee amount in `asset` terms to shares and assigns them to the fee claimer.
-    ///      Rounds down to protect existing shareholders from dilution.
     function _accrueFeeShares(address asset, uint256 feeAmount) internal {
         if (feeAmount == 0) return;
 
