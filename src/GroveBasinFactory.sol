@@ -28,10 +28,14 @@ contract GroveBasinFactory {
     uint256 public constant MAX_AUTO_SALT = type(uint256).max / 2;
 
     /**
-     * @param liquidityProvider Address of the liquidity provider or share receiver being configured. Must not be the factory itself.
-     * @param isDepositor       True grants LIQUIDITY_PROVIDER_ROLE; false permissions the address as a share receiver only.
-     * @param tokens            Every Basin asset, ordered [swapToken, collateralToken, creditToken]; the Basin rejects anything else.
-     * @param allowed           Parallel array to tokens, flagging whether the address may deposit and withdraw each one.
+     * @param liquidityProvider Address of the liquidity provider or share receiver being
+     *                          configured. Must not be the factory itself.
+     * @param isDepositor       True grants LIQUIDITY_PROVIDER_ROLE; false permissions the address
+     *                          as a share receiver only.
+     * @param tokens            Every Basin asset, ordered [swapToken, collateralToken,
+     *                          creditToken]; the Basin rejects anything else.
+     * @param allowed           Parallel array to tokens, flagging whether the address may deposit
+     *                          and withdraw each one.
      */
     struct LpConfig {
         address   liquidityProvider;
@@ -42,27 +46,37 @@ contract GroveBasinFactory {
 
     /**
      * @param liquidityProvider           Granted LIQUIDITY_PROVIDER_ROLE by the Basin constructor.
-     * @param lpConfigs                   Addresses configured via setLiquidityProvider during init, so LPs and their share receivers are set up together; empty configures none.
+     * @param lpConfigs                   Addresses configured via setLiquidityProvider during
+     *                                    init, so LPs and their share receivers are set up
+     *                                    together; empty configures none.
      * @param swapToken                   Basin swap token.
      * @param collateralToken             Basin collateral token.
      * @param creditToken                 Basin credit token.
      * @param swapTokenRateProvider       Rate provider for the swap token.
      * @param collateralTokenRateProvider Rate provider for the collateral token.
      * @param creditTokenRateProvider     Rate provider for the credit token.
-     * @param pocketAddress1              UsdsUsdc: PSM wrapper | MorphoUsdt: ERC-4626 vault | AaveUsdt: aUSDT token.
+     * @param pocketAddress1              UsdsUsdc: PSM wrapper | MorphoUsdt: ERC-4626 vault |
+     *                                    AaveUsdt: aUSDT token.
      * @param pocketAddress2              AaveUsdt: Aave V3 pool | otherwise unused.
-     * @param managerAdmin                Granted MANAGER_ADMIN_ROLE; UsdsUsdc pocket owner and timelock executor. Must be non-zero: a zero value would open timelock execution to any account.
+     * @param managerAdmin                Granted MANAGER_ADMIN_ROLE; UsdsUsdc pocket owner and
+     *                                    timelock executor. Must be non-zero: a zero value would
+     *                                    open timelock execution to any account.
      * @param manager                     Granted MANAGER_ROLE.
      * @param pauser                      Granted PAUSER_ROLE; timelock canceller.
-     * @param redemptionAddress           Non-zero deploys a TransferTokenRedeemer with this redemption address and registers it.
-     * @param tokenRedeemer               Pre-deployed token redeemer to register (used only when redemptionAddress == address(0); address(0) skips).
+     * @param redemptionAddress           Non-zero deploys a TransferTokenRedeemer with this
+     *                                    redemption address and registers it.
+     * @param tokenRedeemer               Pre-deployed token redeemer to register (used only when
+     *                                    redemptionAddress == address(0); address(0) skips).
      * @param issuerRedeemer              Address granted REDEEMER_ROLE (address(0) skips).
      * @param minFee                      Lower fee bound applied to the Basin, in basis points.
      * @param maxFee                      Upper fee bound applied to the Basin, in basis points.
-     * @param swapAllowlistEnabled        True enables the global swap allowlist before the factory relinquishes MANAGER_ADMIN_ROLE.
-     * @param pocketType                  Which pocket implementation to deploy and wire up (None deploys no pocket).
+     * @param swapAllowlistEnabled        True enables the global swap allowlist before the factory
+     *                                    relinquishes MANAGER_ADMIN_ROLE.
+     * @param pocketType                  Which pocket implementation to deploy and wire up (None
+     *                                    deploys no pocket).
      * @param pausedFlags                 Flags applied via setPaused; empty pauses nothing.
-     * @param allowlistManagers           Addresses granted ALLOWLIST_MANAGER_ROLE; empty grants none.
+     * @param allowlistManagers           Addresses granted ALLOWLIST_MANAGER_ROLE; empty grants
+     *                                    none.
      */
     struct DeployParams {
         address    liquidityProvider;
