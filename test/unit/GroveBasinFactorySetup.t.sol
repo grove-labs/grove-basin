@@ -538,6 +538,16 @@ contract GroveBasinFactorySetupTests is Test {
         factory.deployAndInit(params, adminTimelock);
     }
 
+    function test_deploy_revertsOnZeroAddressLp() public {
+        _seed();
+
+        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
+        params.lpConfigs = _lpConfigs(_lpConfig(address(0), true, true));
+
+        vm.expectRevert(GroveBasinFactory.InvalidLiquidityProvider.selector);
+        factory.deployAndInit(params, adminTimelock);
+    }
+
     function test_deploy_revertsOnSelfLpConfig() public {
         _seed();
 
