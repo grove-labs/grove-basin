@@ -1045,7 +1045,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     /// @dev Credits `newShares` to `receiver` and pulls `assetsToDeposit` into the custodian of the
-    ///      asset. Callers are responsible for the role and allowlist checks.
+    ///      asset.
     function _deposit(address asset, address receiver, uint256 assetsToDeposit)
         internal returns (uint256 newShares)
     {
@@ -1062,8 +1062,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         emit Deposit(asset, msg.sender, receiver, assetsToDeposit, newShares);
     }
 
-    /// @dev Sets whether `provider` can deposit and withdraw `token`. Callers are responsible for
-    ///      validating `token`.
+    /// @dev Sets whether `provider` can deposit and withdraw `token`. Tokens are assumed validated
     function _setLpAssetAllowedToken(address provider, address token, bool allowed) internal {
         lpAssetAllowed[provider][token] = allowed;
 

@@ -845,12 +845,9 @@ interface IGroveBasin {
 
     /**
      *  @dev    Sets the address that accrues fee shares on swaps. Callable only by MANAGER_ADMIN_ROLE.
-     *          Sets no permissions of its own: pair it with a setLiquidityProvider call allowing the
-     *          new claimer the assets it should be able to withdraw its fee shares in, since fee
-     *          shares are a claim on value rather than on any one asset. Permission it as a
-     *          non-depositor, because a claimer that could also deposit would be able to convert
-     *          between assets through deposit and withdraw without paying the swap fee. Pass the
-     *          zero address to stop fee accrual.
+     *          Pair it with a setLiquidityProvider call allowing the new claimer the assets it should 
+     *          be able to withdraw its fee shares in, since fee shares are a claim on value rather 
+     *          than on any one asset. Pass the zero address to stop fee accrual.
      *          Note: if the previous fee claimer holds shares, those shares remain; they are not
      *          transferred or burned. Its allowances are left in place as well, so it can still
      *          withdraw them. Clear them with setLiquidityProvider once it has claimed.
