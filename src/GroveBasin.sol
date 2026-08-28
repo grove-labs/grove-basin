@@ -368,7 +368,24 @@ contract GroveBasin is IGroveBasin, AccessControl {
     )
         external override onlyRole(MANAGER_ADMIN_ROLE)
     {
-        _setLiquidityProvider(provider, isDepositor, tokens, allowed);
+        // Every supported asset has to be listed exactly once, so a call always states the full
+        // permission set of `provider` instead of layering onto whatever was set before.
+        if (tokens.length != 3 || allowed.length != 3) revert InvalidAssetListLength();
+        if (
+            tokens[0] == tokens[1] ||
+            tokens[0] == tokens[2] ||
+            tokens[1] == tokens[2]
+        ) revert DuplicateTokens();
+
+        if (isDepositor) _grantRole(LIQUIDITY_PROVIDER_ROLE,  provider);
+        else             _revokeRole(LIQUIDITY_PROVIDER_ROLE, provider);
+
+        for (uint256 i; i < 3; ++i) {
+            _requireValidAsset(tokens[i]);
+            _setLpAssetAllowedToken(provider, tokens[i], allowed[i]);
+        }
+
+        emit LiquidityProviderSet(provider, isDepositor);
     }
 
     /// @inheritdoc IGroveBasin
@@ -1043,34 +1060,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
         _depositLiquidityInPocket(assetsToDeposit, asset);
 
         emit Deposit(asset, msg.sender, receiver, assetsToDeposit, newShares);
-    }
-
-    /// @dev Sets the role and the full asset permission set of `provider`. Callers are responsible
-    ///      for the access control check.
-    function _setLiquidityProvider(
-        address          provider,
-        bool             isDepositor,
-        address[] memory tokens,
-        bool[]    memory allowed
-    ) internal {
-        // Every supported asset has to be listed exactly once, so a call always states the full
-        // permission set of `provider` instead of layering onto whatever was set before.
-        if (tokens.length != 3 || allowed.length != 3) revert InvalidAssetListLength();
-        if (
-            tokens[0] == tokens[1] ||
-            tokens[0] == tokens[2] ||
-            tokens[1] == tokens[2]
-        ) revert DuplicateTokens();
-
-        if (isDepositor) _grantRole(LIQUIDITY_PROVIDER_ROLE,  provider);
-        else             _revokeRole(LIQUIDITY_PROVIDER_ROLE, provider);
-
-        for (uint256 i; i < 3; ++i) {
-            _requireValidAsset(tokens[i]);
-            _setLpAssetAllowedToken(provider, tokens[i], allowed[i]);
-        }
-
-        emit LiquidityProviderSet(provider, isDepositor);
     }
 
     /// @dev Sets whether `provider` can deposit and withdraw `token`. Callers are responsible for
