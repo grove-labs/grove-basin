@@ -429,7 +429,7 @@ interface IGroveBasin {
      *  @dev    Returns the role identifier for the manager admin role. This role can update
      *          bounds, oracle values, set the pocket, set the fee claimer, unpause, toggle the
      *          swap allowlist gates, add or remove token redeemers, and configure liquidity
-     *          providers and their asset permissions. It is also the role admin of MANAGER_ROLE,
+     *          providers and address asset permissions. It is also the role admin of MANAGER_ROLE,
      *          ALLOWLIST_MANAGER_ROLE, PAUSER_ROLE, REDEEMER_ROLE, REDEEMER_CONTRACT_ROLE, and
      *          LIQUIDITY_PROVIDER_ROLE, so it can grant and revoke all six through the inherited
      *          AccessControl functions.
@@ -943,8 +943,7 @@ interface IGroveBasin {
      *  @dev    Deposits an amount of a given asset into the GroveBasin. Only callable by
      *          LIQUIDITY_PROVIDER_ROLE holders that are allowed the asset. Must be one of the
      *          supported assets in order to succeed. The receiver must be allowed the asset as
-     *          well, since withdrawals are gated on the same allowlist, so that the shares it is
-     *          credited stay redeemable. The amount deposited is converted to shares based on the
+     *          well, since withdrawals are gated on the same allowlist. The amount deposited is converted to shares based on the
      *          current exchange rate.
      *  @param  asset           Address of the ERC-20 asset to deposit.
      *  @param  receiver        Address of the receiver of the resulting shares from the deposit.
