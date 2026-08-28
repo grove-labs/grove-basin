@@ -592,9 +592,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
         _checkPaused(msg.sig);
         if (assetsToDeposit == 0)                          revert ZeroAmount();
         if (!hasRole(LIQUIDITY_PROVIDER_ROLE, msg.sender)) revert NotLiquidityProvider();
-        if (!lpAssetAllowed[msg.sender][asset])            revert LpTokenDepositNotAllowed();
-
-        if (!lpAssetAllowed[receiver][asset]) revert ReceiverTokenDepositNotAllowed();
+        if (!lpAssetAllowed[msg.sender][asset] || !lpAssetAllowed[receiver][asset]) {
+            revert LpTokenDepositNotAllowed();
+        }
 
         newShares = _deposit(asset, receiver, assetsToDeposit);
     }

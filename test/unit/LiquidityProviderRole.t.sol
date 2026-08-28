@@ -696,7 +696,7 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         vm.startPrank(lp);
         collateralToken.approve(address(groveBasin), 100e18);
 
-        vm.expectRevert(IGroveBasin.ReceiverTokenDepositNotAllowed.selector);
+        vm.expectRevert(IGroveBasin.LpTokenDepositNotAllowed.selector);
         groveBasin.deposit(address(collateralToken), notLp, 100e18);
         vm.stopPrank();
     }

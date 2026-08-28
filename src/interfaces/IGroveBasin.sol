@@ -52,7 +52,6 @@ interface IGroveBasin {
     error NotAllowlisted();
     error LpTokenDepositNotAllowed();
     error LpTokenWithdrawNotAllowed();
-    error ReceiverTokenDepositNotAllowed();
     error NotAuthorizedToRemoveAssetAllowed();
     error InvalidAssetListLength();
 
