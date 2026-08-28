@@ -15,14 +15,9 @@ import { ITokenRedeemer, RedeemRequest } from "./interfaces/ITokenRedeemer.sol";
 /**
  * @title  GroveBasin
  * @notice Multi-asset liquidity pool that facilitates swaps between a swap token, collateral
- *         token, and a yield-bearing credit token. Liquidity providers deposit assets in exchange
- *         for shares that represent pro-rata ownership of the pool's total value.
- * @dev    Uses AccessControl for role-based permissioning across owner, manager admin, manager,
- *         allowlist manager, liquidity provider, and redeemer roles. `LIQUIDITY_PROVIDER_ROLE` is
- *         administered by MANAGER_ADMIN_ROLE and can additionally be revoked by PAUSER_ROLE to
- *         stop a provider from depositing. Asset values are determined by external rate providers
- *         that return conversion rates. Swap token custody can be delegated to a pocket contract
- *         for yield generation.
+ *         token, and a yield-bearing credit token. Allowlisted liquidity providers can deposit
+ *         and withdraw assets in exchange for shares that represent pro-rata ownership of the 
+ *         pool's total value. 
  */
 contract GroveBasin is IGroveBasin, AccessControl {
 
@@ -98,9 +93,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /// @dev Maps an address to token address to whether deposits and withdrawals of that token are
     ///      allowed. Default (false) means the address can neither deposit nor withdraw the token,
     ///      and cannot receive shares from a deposit of it, so shares are only redeemable for
-    ///      tokens the holder is allowed. Use setLiquidityProvider to grant the role and set allowed
-    ///      tokens atomically; granting LIQUIDITY_PROVIDER_ROLE via grantRole alone leaves this
-    ///      mapping untouched, so the LP cannot deposit any token until explicitly allowed.
+    ///      tokens the holder is allowed.
     mapping(address provider => mapping(address token => bool isAllowed)) public override lpAssetAllowed;
 
     constructor(
@@ -336,7 +329,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     /// @inheritdoc IGroveBasin
-    /// @dev NOTE: Must call `setLiquidityProvider` before able to call `withdraw` to claim fees
     function setFeeClaimer(address newFeeClaimer) external override onlyRole(MANAGER_ADMIN_ROLE) {
         address oldFeeClaimer = feeClaimer;
         feeClaimer = newFeeClaimer;
@@ -962,6 +954,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /*** Internal helper functions                                                              ***/
     /**********************************************************************************************/
 
+    /// @dev Converts a fee amount in `asset` terms to shares and assigns them to the fee claimer.
+    ///      Rounds down to protect existing shareholders from dilution.
     function _accrueFeeShares(address asset, uint256 feeAmount) internal {
         if (feeAmount == 0) return;
 
