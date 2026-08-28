@@ -523,7 +523,7 @@ interface IGroveBasin {
      *          withdraw their shares like any other shareholder, subject to the same
      *          `lpAssetAllowed` gate. Note: if the fee claimer is changed via `setFeeClaimer`, the
      *          previous claimer may still hold unclaimed shares, and keeps the allowances it needs
-     *          to withdraw them.
+     *          to withdraw them until `lpAssetAllowed` changes.
      *  @return The fee claimer address.
      */
     function feeClaimer() external view returns (address);
