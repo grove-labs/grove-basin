@@ -17,7 +17,7 @@ Each of the three assets has a dedicated rate provider contract that returns the
 
 The conversion rate between assets and shares is based on the total value of assets within Basin. The total value is calculated by converting the assets to their equivalent value in USD with 18 decimal precision. The shares represent the ownership of the underlying assets in Grove Basin. Since three assets are used, each with different precisions and values, they are converted to a common USD-denominated value for share conversions.
 
-The contract uses OpenZeppelin `AccessControl` for role-based permissioning with seven roles: `OWNER_ROLE`, `MANAGER_ADMIN_ROLE`, `MANAGER_ROLE`, `PAUSER_ROLE`, `REDEEMER_ROLE`, `REDEEMER_CONTRACT_ROLE`, and `LIQUIDITY_PROVIDER_ROLE`.
+The contract uses OpenZeppelin `AccessControl` for role-based permissioning with eight roles: `OWNER_ROLE`, `MANAGER_ADMIN_ROLE`, `MANAGER_ROLE`, `ALLOWLIST_MANAGER_ROLE`, `PAUSER_ROLE`, `REDEEMER_ROLE`, `REDEEMER_CONTRACT_ROLE`, and `LIQUIDITY_PROVIDER_ROLE`. On top of roles, liquidity provision is gated per address and per asset by the `lpAssetAllowed` allowlist.
 
 For detailed implementation, refer to the contract code and `IGroveBasin` interface documentation.
 
@@ -26,7 +26,7 @@ For detailed implementation, refer to the contract code and `IGroveBasin` interf
 ### Core
 
 - **`src/GroveBasin.sol`**: The core contract implementing the `IGroveBasin` interface, providing functionality for swapping, depositing, and withdrawing assets.
-- **`src/GroveBasinFactory.sol`**: Factory contract for deploying Grove Basin with an initial deposit to prevent first-depositor attacks.
+- **`src/GroveBasinFactory.sol`**: Factory contract for deploying Grove Basin with an initial deposit to prevent first-depositor attacks. Takes a non-empty `LpConfig[]` (`liquidityProvider`, `isDepositor`, `allowed[3]`) so liquidity providers and their share receivers are permissioned at deployment; the first entry is the provider passed to the Basin constructor.
 
 ### Pockets
 
@@ -62,12 +62,22 @@ The `depositInitial` function is provided for this purpose -- it mints shares to
 ### Roles
 
 - **`OWNER_ROLE`**: Equivalent to `DEFAULT_ADMIN_ROLE`. Can set purchase and redemption fees within bounds, and manage all other roles.
-- **`MANAGER_ADMIN_ROLE`**: Can set rate providers, swap size bounds, staleness threshold bounds, fee bounds, pocket, fee claimer, unpause individual functions or the entire contract, and add/remove token redeemers. Admin of `MANAGER_ROLE`, `PAUSER_ROLE`, `REDEEMER_ROLE`, `REDEEMER_CONTRACT_ROLE`, and `LIQUIDITY_PROVIDER_ROLE`.
+- **`MANAGER_ADMIN_ROLE`**: Can set rate providers, swap size bounds, staleness threshold bounds, fee bounds, pocket, fee claimer, unpause individual functions or the entire contract, add/remove token redeemers, and configure liquidity providers and their asset permissions. Admin of `MANAGER_ROLE`, `ALLOWLIST_MANAGER_ROLE`, `PAUSER_ROLE`, `REDEEMER_ROLE`, `REDEEMER_CONTRACT_ROLE`, and `LIQUIDITY_PROVIDER_ROLE`.
 - **`MANAGER_ROLE`**: Can set max swap size and staleness threshold within their respective bounds.
-- **`PAUSER_ROLE`**: Can pause individual functions or the entire contract. Can also revoke `MANAGER_ROLE`, `REDEEMER_ROLE`, and `LIQUIDITY_PROVIDER_ROLE`.
+- **`ALLOWLIST_MANAGER_ROLE`**: Can add and remove callers from the swap allowlist.
+- **`PAUSER_ROLE`**: Can pause individual functions or the entire contract, and call `removeAssetAllowed`. Can also revoke `MANAGER_ROLE`, `ALLOWLIST_MANAGER_ROLE`, `REDEEMER_ROLE`, and `LIQUIDITY_PROVIDER_ROLE`.
 - **`REDEEMER_ROLE`**: Can initiate and complete credit token redemptions.
 - **`REDEEMER_CONTRACT_ROLE`**: Granted to token redeemer contracts that handle the actual redemption logic.
-- **`LIQUIDITY_PROVIDER_ROLE`**: Can call `deposit`. Granted at deployment to the address passed to the constructor, and afterwards granted/revoked by `MANAGER_ADMIN_ROLE`; `PAUSER_ROLE` can also revoke it to freeze a provider. Freezing only blocks new deposits, since `withdraw` is gated on share ownership rather than on the role.
+- **`LIQUIDITY_PROVIDER_ROLE`**: Required to call `deposit`. Granted at deployment to the address passed to the constructor (along with allowances for all three assets), and afterwards set by `MANAGER_ADMIN_ROLE` via `setLiquidityProvider`; `PAUSER_ROLE` can also revoke it to freeze a provider. Revoking only blocks new deposits, since `withdraw` is gated on share ownership and the asset allowlist rather than on the role.
+
+### LP Asset Allowlist
+
+`lpAssetAllowed[address][token]` controls which of the three assets an address may deposit and withdraw. All entries default to false, so the role alone grants nothing.
+
+- `deposit` requires the caller to hold `LIQUIDITY_PROVIDER_ROLE` and requires both the caller and the receiver to be allowed the asset, since withdrawals are gated on the same mapping.
+- `withdraw` requires the caller to be allowed the asset, so shares can only be redeemed for assets the address is permissioned for. Disallowing an asset for an address that still holds shares leaves it to redeem in the assets it is still allowed.
+- Allowances are set only through `setLiquidityProvider` (or cleared via `removeAssetAllowed`). Granting the role with the inherited `grantRole` leaves the mapping untouched.
+- Share receivers that never deposit are permissioned with `setLiquidityProvider(provider, false, ...)`. This is also how the fee claimer is permissioned to withdraw the shares it accrues.
 
 
 ### Functions
@@ -81,7 +91,8 @@ The `depositInitial` function is provided for this purpose -- it mints shares to
 - **`setPocket`**: Sets the `pocket` address, transferring the entire swap token balance to the new pocket. Only callable by `MANAGER_ADMIN_ROLE`.
 - **`addTokenRedeemer`**: Adds a token redeemer contract, granting it `REDEEMER_CONTRACT_ROLE` and calling its `setUp` function. Only callable by `MANAGER_ADMIN_ROLE`.
 - **`removeTokenRedeemer`**: Removes a token redeemer contract, revoking `REDEEMER_CONTRACT_ROLE` and calling its `tearDown` function. Only callable by `MANAGER_ADMIN_ROLE`.
-- **`setFeeClaimer`**: Sets the address that accrues fee shares on swaps. Only callable by `MANAGER_ADMIN_ROLE`.
+- **`setFeeClaimer`**: Sets the address that accrues fee shares on swaps. Shares and asset allowances already held by the previous claimer are left in place so it can still withdraw them. Only callable by `MANAGER_ADMIN_ROLE`.
+- **`setLiquidityProvider`**: Sets whether an address holds `LIQUIDITY_PROVIDER_ROLE` and which assets it may deposit and withdraw. `tokens` must be exactly `[swapToken, collateralToken, creditToken]`, so every call states the address's full permission set. Only callable by `MANAGER_ADMIN_ROLE`.
 - **`setUnpaused`**: Unsets a pause flag. Supports global pause (`bytes4(0)`) and per-function/per-direction pause keys. Only callable by `MANAGER_ADMIN_ROLE`.
 
 #### Owner Functions
@@ -97,6 +108,7 @@ The `depositInitial` function is provided for this purpose -- it mints shares to
 #### Pauser Functions
 
 - **`setPaused`**: Sets a pause flag. Supports global pause (`bytes4(0)`) and per-function/per-direction pause keys. Only callable by `PAUSER_ROLE`.
+- **`removeAssetAllowed`**: Disallows every supported asset for an address, blocking both its deposits and withdrawals. Callable by `PAUSER_ROLE` or `MANAGER_ADMIN_ROLE`.
 
 #### Swap Functions
 
@@ -106,8 +118,8 @@ The `depositInitial` function is provided for this purpose -- it mints shares to
 #### Liquidity Provision Functions
 
 - **`depositInitial`**: Makes the initial seed deposit, minting shares to the zero address. Callable by anyone but only when `totalShares == 0`.
-- **`deposit`**: Deposits assets into Grove Basin, minting new shares to a specified receiver. Only callable by `LIQUIDITY_PROVIDER_ROLE` holders.
-- **`withdraw`**: Withdraws assets from Grove Basin by burning shares. Ensures the user has sufficient shares for the withdrawal and adjusts the total shares accordingly.
+- **`deposit`**: Deposits assets into Grove Basin, minting new shares to a specified receiver. Only callable by `LIQUIDITY_PROVIDER_ROLE` holders, and only when both the caller and the receiver are allowed the asset.
+- **`withdraw`**: Withdraws assets from Grove Basin by burning shares. Requires the caller to be allowed the asset, ensures it has sufficient shares for the withdrawal, and adjusts the total shares accordingly. Blocked while the contract is globally paused.
 
 #### Redemption Functions
 
