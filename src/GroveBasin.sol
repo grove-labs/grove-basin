@@ -368,20 +368,20 @@ contract GroveBasin is IGroveBasin, AccessControl {
     )
         external override onlyRole(MANAGER_ADMIN_ROLE)
     {
-        // Every supported asset has to be listed exactly once, so a call always states the full
-        // permission set of `provider` instead of layering onto whatever was set before.
+        // Every supported asset has to be listed exactly once, in the order the tokens are declared
+        // on the basin, so a call always states the full permission set of `provider` instead of
+        // layering onto whatever was set before.
         if (tokens.length != 3 || allowed.length != 3) revert InvalidAssetListLength();
         if (
-            tokens[0] == tokens[1] ||
-            tokens[0] == tokens[2] ||
-            tokens[1] == tokens[2]
-        ) revert DuplicateTokens();
+            tokens[0] != swapToken       ||
+            tokens[1] != collateralToken ||
+            tokens[2] != creditToken
+        ) revert InvalidAsset();
 
         if (isDepositor) _grantRole(LIQUIDITY_PROVIDER_ROLE,  provider);
         else             _revokeRole(LIQUIDITY_PROVIDER_ROLE, provider);
 
         for (uint256 i; i < 3; ++i) {
-            _requireValidAsset(tokens[i]);
             _setLpAssetAllowedToken(provider, tokens[i], allowed[i]);
         }
 

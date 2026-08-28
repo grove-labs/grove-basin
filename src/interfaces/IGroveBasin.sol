@@ -700,17 +700,17 @@ interface IGroveBasin {
 
     /**
      *  @dev   Sets whether an address holds LIQUIDITY_PROVIDER_ROLE and which of the supported
-     *         assets it is allowed to deposit and withdraw. `tokens` must list every supported
-     *         asset exactly once, so a call always states the full permission set of the address
-     *         and never leaves an entry from an earlier call in place. Can be called on any
-     *         address, not only current LPs: passing `isDepositor` false permissions a share
-     *         recipient without letting it deposit, and revokes LIQUIDITY_PROVIDER_ROLE if the
-     *         address holds it. Disallowing a token for an address that still holds shares blocks
-     *         its withdrawals of that token, leaving it to redeem those shares in the tokens it is
-     *         still allowed. Callable only by MANAGER_ADMIN_ROLE.
+     *         assets it is allowed to deposit and withdraw. `tokens` must be exactly
+     *         [swapToken, collateralToken, creditToken], so a call always states the full
+     *         permission set of the address and never leaves an entry from an earlier call in
+     *         place. Can be called on any address, not only current LPs: passing `isDepositor`
+     *         false permissions a share recipient without letting it deposit, and revokes
+     *         LIQUIDITY_PROVIDER_ROLE if the address holds it. Disallowing a token for an address
+     *         that still holds shares blocks its withdrawals of that token, leaving it to redeem
+     *         those shares in the tokens it is still allowed. Callable only by MANAGER_ADMIN_ROLE.
      *  @param provider    Address whose role and asset allowances are being set.
      *  @param isDepositor Whether the address should hold LIQUIDITY_PROVIDER_ROLE.
-     *  @param tokens      The supported assets, in any order, each listed exactly once.
+     *  @param tokens      The supported assets, ordered [swapToken, collateralToken, creditToken].
      *  @param allowed     Parallel array of booleans; true to allow, false to disallow.
      */
     function setLiquidityProvider(

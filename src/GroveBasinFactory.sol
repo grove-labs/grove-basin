@@ -30,7 +30,7 @@ contract GroveBasinFactory {
     /**
      * @param liquidityProvider Address of the liquidity provider or share receiver being configured. Must not be the factory itself.
      * @param isDepositor       True grants LIQUIDITY_PROVIDER_ROLE; false permissions the address as a share receiver only.
-     * @param tokens            Every Basin asset, exactly once; the Basin rejects anything else.
+     * @param tokens            Every Basin asset, ordered [swapToken, collateralToken, creditToken]; the Basin rejects anything else.
      * @param allowed           Parallel array to tokens, flagging whether the address may deposit and withdraw each one.
      */
     struct LpConfig {

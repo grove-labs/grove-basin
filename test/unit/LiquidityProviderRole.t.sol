@@ -459,7 +459,17 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         address[] memory tokens = _allTokens();
         tokens[2] = address(swapToken);
 
-        vm.expectRevert(IGroveBasin.DuplicateTokens.selector);
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
+        vm.prank(managerAdmin);
+        groveBasin.setLiquidityProvider(newLp, true, tokens, _allowedFlags(true, true, true));
+    }
+
+    function test_setLiquidityProvider_revertsOnUnorderedTokens() public {
+        address[] memory tokens = _allTokens();
+        tokens[0] = address(collateralToken);
+        tokens[1] = address(swapToken);
+
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
         vm.prank(managerAdmin);
         groveBasin.setLiquidityProvider(newLp, true, tokens, _allowedFlags(true, true, true));
     }
