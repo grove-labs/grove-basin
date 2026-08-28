@@ -330,9 +330,7 @@ contract GroveBasinFactory {
 
         for (uint256 i; i < params.lpConfigs.length; ++i) {
             LpConfig calldata config = params.lpConfigs[i];
-
-            // The factory holds MANAGER_ADMIN_ROLE only for the length of this call, so any
-            // permission it grants itself would outlive its authority to remove it.
+            
             if (config.liquidityProvider == address(0) || config.liquidityProvider == address(this)) revert InvalidLiquidityProvider();
 
             groveBasin.setLiquidityProvider(
