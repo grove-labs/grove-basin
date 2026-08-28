@@ -400,7 +400,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         // withdraw the assets it was allowed against shares it already holds.
         _revokeRole(LIQUIDITY_PROVIDER_ROLE, provider);
 
-        emit LiquidityProviderRemoved(provider);
+        emit LiquidityProviderSet(provider, false);
     }
 
     /**********************************************************************************************/

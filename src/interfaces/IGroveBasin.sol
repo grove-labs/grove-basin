@@ -230,17 +230,12 @@ interface IGroveBasin {
     event PausedSet(bytes4 indexed key, bool paused);
 
     /**
-     *  @dev   Emitted when an address is configured via setLiquidityProvider.
+     *  @dev   Emitted when an address is configured via setLiquidityProvider or removed via
+     *         removeLiquidityProvider.
      *  @param provider    Address that was configured.
      *  @param isDepositor Whether the address holds LIQUIDITY_PROVIDER_ROLE after the call.
      */
     event LiquidityProviderSet(address indexed provider, bool isDepositor);
-
-    /**
-     *  @dev   Emitted when a liquidity provider is removed via removeLiquidityProvider.
-     *  @param provider Address of the liquidity provider.
-     */
-    event LiquidityProviderRemoved(address indexed provider);
 
     /**
      *  @dev   Emitted when an asset allowance is toggled for an address.
