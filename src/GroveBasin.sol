@@ -20,9 +20,9 @@ import { ITokenRedeemer, RedeemRequest } from "./interfaces/ITokenRedeemer.sol";
  * @dev    Uses AccessControl for role-based permissioning across owner, manager admin, manager,
  *         allowlist manager, liquidity provider, and redeemer roles. `LIQUIDITY_PROVIDER_ROLE` is
  *         administered by MANAGER_ADMIN_ROLE and can additionally be revoked by PAUSER_ROLE to
- *         freeze a provider. Asset values are determined by external rate providers that return
- *         conversion rates. Swap token custody can be delegated to a pocket contract for yield
- *         generation.
+ *         stop a provider from depositing. Asset values are determined by external rate providers
+ *         that return conversion rates. Swap token custody can be delegated to a pocket contract
+ *         for yield generation.
  */
 contract GroveBasin is IGroveBasin, AccessControl {
 
@@ -100,7 +100,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     ///      and cannot receive shares from a deposit of it, so shares are only redeemable for
     ///      tokens the holder is allowed. Use setLiquidityProvider to grant the role and set allowed
     ///      tokens atomically; granting LIQUIDITY_PROVIDER_ROLE via grantRole alone leaves this
-    ///      mapping at its default, so the LP cannot deposit any token until explicitly allowed.
+    ///      mapping untouched, so the LP cannot deposit any token until explicitly allowed.
     mapping(address provider => mapping(address token => bool isAllowed)) public override lpAssetAllowed;
 
     constructor(
@@ -344,9 +344,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
         // permissioned for all three. It is set as a non-depositor because a claimer that could
         // also deposit would be able to convert between assets through `deposit` and `withdraw`
         // without paying the swap fee. `oldFeeClaimer` keeps its permissions so that it can still
-        // claim the shares it accrued before the rotation. Skipped for the zero address, which
-        // disables fee accrual and holds the seed shares: permissioning it would let liquidity
-        // providers deposit into a position no one can withdraw from.
+        // withdraw the shares it accrued before the rotation. The zero address disables fee
+        // accrual, so there is no claimer to permission.
         if (newFeeClaimer != address(0)) {
             address[] memory tokens = new address[](3);
             tokens[0] = swapToken;
@@ -1049,8 +1048,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
         return pocket != address(this);
     }
 
-    /// @dev Credits `newShares` to `receiver` and moves `assetsToDeposit` into the pocket. Callers
-    ///      are responsible for the pause, role, and allowlist checks.
+    /// @dev Credits `newShares` to `receiver` and pulls `assetsToDeposit` into the custodian of the
+    ///      asset. Callers are responsible for the role and allowlist checks.
     function _deposit(address asset, address receiver, uint256 assetsToDeposit)
         internal returns (uint256 newShares)
     {

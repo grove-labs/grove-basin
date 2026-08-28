@@ -69,8 +69,9 @@ library BasinSetup {
     }
 
     /// @notice Universal post-deployment configuration sequence shared by GroveBasin setup
-    ///         scripts: register the token redeemer, grant operational roles, pause credit-side
-    ///         flows, set fee bounds, and hand ownership over to the admin timelock.
+    ///         scripts: register the token redeemer, grant operational roles, pause the two swap
+    ///         routes into the credit token, set fee bounds, and hand ownership over to the admin
+    ///         timelock.
     /// @param  basin           The freshly deployed GroveBasin (pocket must already be wired up
     ///                         by the caller).
     /// @param  deployer        The deploying EOA. Must currently hold OWNER_ROLE and

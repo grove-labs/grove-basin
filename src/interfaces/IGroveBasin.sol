@@ -428,20 +428,22 @@ interface IGroveBasin {
     /**
      *  @dev    Returns the role identifier for the manager admin role. This role can update
      *          bounds, oracle values, set the pocket, set the fee claimer, unpause, toggle the
-     *          swap allowlist gates, and add or remove token redeemers. It is also the role admin
-     *          of MANAGER_ROLE, ALLOWLIST_MANAGER_ROLE, PAUSER_ROLE, REDEEMER_ROLE,
-     *          REDEEMER_CONTRACT_ROLE, and LIQUIDITY_PROVIDER_ROLE, so it can grant and revoke
-     *          all six through the inherited AccessControl functions.
+     *          swap allowlist gates, add or remove token redeemers, and configure liquidity
+     *          providers and their asset permissions. It is also the role admin of MANAGER_ROLE,
+     *          ALLOWLIST_MANAGER_ROLE, PAUSER_ROLE, REDEEMER_ROLE, REDEEMER_CONTRACT_ROLE, and
+     *          LIQUIDITY_PROVIDER_ROLE, so it can grant and revoke all six through the inherited
+     *          AccessControl functions.
      *  @return The bytes32 role identifier.
      */
     function MANAGER_ADMIN_ROLE() external view returns (bytes32);
 
     /**
      *  @dev    Returns the role identifier for the liquidity provider role. Addresses with this
-     *          role are the only ones allowed to call `deposit`. Administered by
-     *          MANAGER_ADMIN_ROLE and also revocable by PAUSER_ROLE. Revoking the role only stops
-     *          new deposits: withdrawals are gated on share ownership, so a revoked provider keeps
-     *          access to the shares it already holds.
+     *          role are the only ones allowed to call `deposit`, and only for the assets they are
+     *          allowed in `lpAssetAllowed`. Administered by MANAGER_ADMIN_ROLE and also revocable
+     *          by PAUSER_ROLE. Revoking the role only stops new deposits: withdrawals are gated on
+     *          share ownership and on `lpAssetAllowed`, so a revoked provider keeps access to the
+     *          shares it already holds.
      *  @return The bytes32 role identifier.
      */
     function LIQUIDITY_PROVIDER_ROLE() external view returns (bytes32);
@@ -470,8 +472,6 @@ interface IGroveBasin {
      */
     function PAUSED_SWAP_SWAP_TO_CREDIT() external view returns (bytes4);
 
-
-
     /**
      *  @dev    Returns whether a specific pause key is active. Pause keys can be function
      *          selectors or arbitrary bytes4 keys. Use bytes4(0) to check the global pause.
@@ -482,9 +482,10 @@ interface IGroveBasin {
 
     /**
      *  @dev    Returns the role identifier for the pauser role. Addresses with this role can call
-     *          setPaused, and can revoke MANAGER_ROLE, ALLOWLIST_MANAGER_ROLE, REDEEMER_ROLE,
-     *          and LIQUIDITY_PROVIDER_ROLE through the inherited AccessControl `revokeRole`
-     *          function, which the implementation overrides to grant this role that capability.
+     *          setPaused and removeLiquidityProvider, and can revoke MANAGER_ROLE,
+     *          ALLOWLIST_MANAGER_ROLE, REDEEMER_ROLE, and LIQUIDITY_PROVIDER_ROLE through the
+     *          inherited AccessControl `revokeRole` function, which the implementation overrides to
+     *          grant this role that capability.
      *  @return The bytes32 role identifier.
      */
     function PAUSER_ROLE() external view returns (bytes32);
@@ -596,11 +597,11 @@ interface IGroveBasin {
     /**
      *  @dev    Returns whether an address is allowed to deposit and withdraw a given token.
      *          By default all entries are false, meaning an LP with LIQUIDITY_PROVIDER_ROLE cannot
-     *          deposit or withdraw any token without explicit permission. Granting or revoking the role via the inherited
-     *          AccessControl grantRole leaves the mapping at its default (no tokens allowed); use
+     *          deposit or withdraw any token without explicit permission. Granting the role through
+     *          the inherited AccessControl grantRole leaves this mapping untouched, so use
      *          setLiquidityProvider to grant the role and set allowed tokens atomically. Deposits
      *          on behalf of a receiver require the receiver to be allowed the token as well.
-     *          Allowances are only ever set by MANAGER_ADMIN_ROLE, either directly through
+     *          Allowances are set by MANAGER_ADMIN_ROLE, either directly through
      *          setLiquidityProvider or through setFeeClaimer, which allows the new claimer every
      *          token as a non-depositor.
      *  @param  provider  Address to query.
@@ -705,9 +706,9 @@ interface IGroveBasin {
      *         address, not only current LPs: passing `isDepositor` false permissions a share
      *         recipient without letting it deposit, and revokes LIQUIDITY_PROVIDER_ROLE if the
      *         address holds it. The zero address, which holds the seed shares, can be permissioned
-     *         this way but never as a depositor. Disallowing a token an address still holds shares
-     *         against blocks its withdrawals of that token, leaving it to redeem those shares in
-     *         the tokens it is still allowed. Callable only by MANAGER_ADMIN_ROLE.
+     *         this way but never as a depositor. Disallowing a token for an address that still
+     *         holds shares blocks its withdrawals of that token, leaving it to redeem those shares
+     *         in the tokens it is still allowed. Callable only by MANAGER_ADMIN_ROLE.
      *  @param provider    Address whose role and asset allowances are being set.
      *  @param isDepositor Whether the address should hold LIQUIDITY_PROVIDER_ROLE.
      *  @param tokens      The supported assets, in any order, each listed exactly once.
