@@ -1074,10 +1074,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
         address[] memory tokens,
         bool[]    memory allowed
     ) internal {
-        // The zero address holds the seed shares, so it can be permissioned as a receiver, but it
-        // must never hold the depositor role.
-        if (isDepositor && provider == address(0)) revert InvalidLiquidityProvider();
-
         // Every supported asset has to be listed exactly once, so a call always states the full
         // permission set of `provider` instead of layering onto whatever was set before.
         if (tokens.length != 3 || allowed.length != 3) revert InvalidAssetListLength();

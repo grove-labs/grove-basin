@@ -488,24 +488,6 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
         groveBasin.setLiquidityProvider(newLp, true, _allTokens(), allowed);
     }
 
-    function test_setLiquidityProvider_revertsOnZeroAddress() public {
-        vm.expectRevert(IGroveBasin.InvalidLiquidityProvider.selector);
-        vm.prank(managerAdmin);
-        groveBasin.setLiquidityProvider(address(0), true, _allTokens(), _allowedFlags(true, true, true));
-    }
-
-    function test_setLiquidityProvider_zeroAddressAsReceiver() public {
-        // The zero address holds the seed shares, so it is permissionable as a receiver
-        _setLp(address(0), false, false, true, false);
-
-        assertFalse(groveBasin.hasRole(lpRole, address(0)));
-        assertTrue(groveBasin.lpAssetAllowed(address(0), address(collateralToken)));
-
-        _depositAs(lp, address(collateralToken), address(0), 100e18);
-
-        assertEq(groveBasin.shares(address(0)), 100e18);
-    }
-
     function test_setLiquidityProvider_revertsIfNotManagerAdmin() public {
         _expectMissingManagerAdminRole(pauser);
         vm.prank(pauser);

@@ -705,10 +705,9 @@ interface IGroveBasin {
      *         and never leaves an entry from an earlier call in place. Can be called on any
      *         address, not only current LPs: passing `isDepositor` false permissions a share
      *         recipient without letting it deposit, and revokes LIQUIDITY_PROVIDER_ROLE if the
-     *         address holds it. The zero address, which holds the seed shares, can be permissioned
-     *         this way but never as a depositor. Disallowing a token for an address that still
-     *         holds shares blocks its withdrawals of that token, leaving it to redeem those shares
-     *         in the tokens it is still allowed. Callable only by MANAGER_ADMIN_ROLE.
+     *         address holds it. Disallowing a token for an address that still holds shares blocks
+     *         its withdrawals of that token, leaving it to redeem those shares in the tokens it is
+     *         still allowed. Callable only by MANAGER_ADMIN_ROLE.
      *  @param provider    Address whose role and asset allowances are being set.
      *  @param isDepositor Whether the address should hold LIQUIDITY_PROVIDER_ROLE.
      *  @param tokens      The supported assets, in any order, each listed exactly once.

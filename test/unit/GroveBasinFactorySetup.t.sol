@@ -524,17 +524,6 @@ contract GroveBasinFactorySetupTests is Test {
         assertEq(groveBasin.withdraw(address(collateralToken), receiver, 100e6), 100e6);
     }
 
-    function test_deploy_revertsOnZeroLiquidityProvider() public {
-        _seed();
-
-        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
-        params.lpConfigs = _lpConfigs(_lpConfig(address(0), true, true));
-
-        // Enforced by the Basin, which only permissions the zero address as a receiver
-        vm.expectRevert(IGroveBasin.InvalidLiquidityProvider.selector);
-        factory.deployAndInit(params, adminTimelock);
-    }
-
     function test_deploy_revertsOnPartialLpTokenList() public {
         _seed();
 

@@ -321,8 +321,7 @@ contract GroveBasinFactory {
             // permission it grants itself would outlive its authority to remove it.
             if (config.liquidityProvider == address(this)) revert InvalidLiquidityProvider();
 
-            // The Basin validates the config, so a zero depositor or a bad token list fails the
-            // deployment.
+            // The Basin validates the token list, so a bad one fails the deployment.
             groveBasin.setLiquidityProvider(
                 config.liquidityProvider,
                 config.isDepositor,
