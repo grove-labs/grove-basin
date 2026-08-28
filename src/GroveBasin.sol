@@ -403,6 +403,17 @@ contract GroveBasin is IGroveBasin, AccessControl {
         emit LiquidityProviderSet(provider, false);
     }
 
+    /// @inheritdoc IGroveBasin
+    function removeAssetAllowed(address provider) external override {
+        if (!hasRole(MANAGER_ADMIN_ROLE, msg.sender) && !hasRole(PAUSER_ROLE, msg.sender)) {
+            revert NotAuthorizedToRemoveAssetAllowed();
+        }
+
+        _setLpAssetAllowedToken(provider, swapToken,       false);
+        _setLpAssetAllowedToken(provider, collateralToken, false);
+        _setLpAssetAllowedToken(provider, creditToken,     false);
+    }
+
     /**********************************************************************************************/
     /*** Owner functions                                                                        ***/
     /**********************************************************************************************/

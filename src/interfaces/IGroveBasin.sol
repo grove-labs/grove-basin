@@ -54,6 +54,7 @@ interface IGroveBasin {
     error LpTokenWithdrawNotAllowed();
     error ReceiverTokenDepositNotAllowed();
     error NotAuthorizedToRemoveLp();
+    error NotAuthorizedToRemoveAssetAllowed();
     error InvalidAssetListLength();
 
     /**********************************************************************************************/
@@ -477,10 +478,10 @@ interface IGroveBasin {
 
     /**
      *  @dev    Returns the role identifier for the pauser role. Addresses with this role can call
-     *          setPaused and removeLiquidityProvider, and can revoke MANAGER_ROLE,
-     *          ALLOWLIST_MANAGER_ROLE, REDEEMER_ROLE, and LIQUIDITY_PROVIDER_ROLE through the
-     *          inherited AccessControl `revokeRole` function, which the implementation overrides to
-     *          grant this role that capability.
+     *          setPaused, removeLiquidityProvider and removeAssetAllowed, and can revoke
+     *          MANAGER_ROLE, ALLOWLIST_MANAGER_ROLE, REDEEMER_ROLE, and LIQUIDITY_PROVIDER_ROLE
+     *          through the inherited AccessControl `revokeRole` function, which the implementation
+     *          overrides to grant this role that capability.
      *  @return The bytes32 role identifier.
      */
     function PAUSER_ROLE() external view returns (bytes32);
@@ -723,6 +724,15 @@ interface IGroveBasin {
      *  @param provider Address to revoke LIQUIDITY_PROVIDER_ROLE from.
      */
     function removeLiquidityProvider(address provider) external;
+
+    /**
+     *  @dev   Disallows every supported asset for an address, blocking both deposits and
+     *         withdrawals for it. Unlike removeLiquidityProvider this cuts off withdrawals of
+     *         shares the address already holds, so it is the stronger of the two levers. Callable
+     *         by MANAGER_ADMIN_ROLE or PAUSER_ROLE.
+     *  @param provider Address whose asset allowances are being cleared.
+     */
+    function removeAssetAllowed(address provider) external;
 
     /**
      *  @dev   Enables or disables the global allowlist, which gates every route that carries no

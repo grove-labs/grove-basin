@@ -609,6 +609,93 @@ contract GroveBasinLiquidityProviderRoleTests is GroveBasinTestBase {
     }
 
     /**********************************************************************************************/
+    /*** removeAssetAllowed                                                                     ***/
+    /**********************************************************************************************/
+
+    function test_removeAssetAllowed_byManagerAdmin() public {
+        _setLp(newLp, true, true, true, true);
+
+        vm.prank(managerAdmin);
+        groveBasin.removeAssetAllowed(newLp);
+
+        assertFalse(groveBasin.lpAssetAllowed(newLp, address(swapToken)));
+        assertFalse(groveBasin.lpAssetAllowed(newLp, address(collateralToken)));
+        assertFalse(groveBasin.lpAssetAllowed(newLp, address(creditToken)));
+
+        // The role is untouched, only the asset allowances are cleared
+        assertTrue(groveBasin.hasRole(lpRole, newLp));
+    }
+
+    function test_removeAssetAllowed_byPauser() public {
+        _setLp(newLp, true, true, true, true);
+
+        vm.prank(pauser);
+        groveBasin.removeAssetAllowed(newLp);
+
+        assertFalse(groveBasin.lpAssetAllowed(newLp, address(swapToken)));
+        assertFalse(groveBasin.lpAssetAllowed(newLp, address(collateralToken)));
+        assertFalse(groveBasin.lpAssetAllowed(newLp, address(creditToken)));
+
+        assertTrue(groveBasin.hasRole(lpRole, newLp));
+    }
+
+    function test_removeAssetAllowed_revertsIfUnauthorized() public {
+        vm.expectRevert(IGroveBasin.NotAuthorizedToRemoveAssetAllowed.selector);
+        vm.prank(notLp);
+        groveBasin.removeAssetAllowed(lp);
+    }
+
+    function test_removeAssetAllowed_blocksDepositAndWithdraw() public {
+        _setLp(newLp, true, true, true, true);
+
+        _depositAs(newLp, address(collateralToken), newLp, 100e18);
+        assertEq(groveBasin.shares(newLp), 100e18);
+
+        vm.prank(pauser);
+        groveBasin.removeAssetAllowed(newLp);
+
+        collateralToken.mint(newLp, 100e18);
+
+        vm.startPrank(newLp);
+        collateralToken.approve(address(groveBasin), 100e18);
+
+        vm.expectRevert(IGroveBasin.LpTokenDepositNotAllowed.selector);
+        groveBasin.deposit(address(collateralToken), newLp, 100e18);
+
+        vm.expectRevert(IGroveBasin.LpTokenWithdrawNotAllowed.selector);
+        groveBasin.withdraw(address(collateralToken), newLp, 100e18);
+        vm.stopPrank();
+    }
+
+    function test_removeAssetAllowed_isIdempotent() public {
+        _setLp(newLp, true, true, false, false);
+
+        vm.startPrank(pauser);
+        groveBasin.removeAssetAllowed(newLp);
+        groveBasin.removeAssetAllowed(newLp);
+        vm.stopPrank();
+
+        assertFalse(groveBasin.lpAssetAllowed(newLp, address(swapToken)));
+        assertFalse(groveBasin.lpAssetAllowed(newLp, address(collateralToken)));
+        assertFalse(groveBasin.lpAssetAllowed(newLp, address(creditToken)));
+    }
+
+    function test_removeAssetAllowed_canBeReallowed() public {
+        _setLp(newLp, true, true, true, true);
+
+        vm.prank(pauser);
+        groveBasin.removeAssetAllowed(newLp);
+
+        _setLp(newLp, true, true, true, true);
+
+        assertTrue(groveBasin.lpAssetAllowed(newLp, address(swapToken)));
+        assertTrue(groveBasin.lpAssetAllowed(newLp, address(collateralToken)));
+        assertTrue(groveBasin.lpAssetAllowed(newLp, address(creditToken)));
+
+        assertEq(_depositAs(newLp, address(collateralToken), newLp, 100e18), 100e18);
+    }
+
+    /**********************************************************************************************/
     /*** Asset allowlist gates withdrawals                                                      ***/
     /**********************************************************************************************/
 
