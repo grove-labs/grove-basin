@@ -69,6 +69,24 @@ contract GroveBasinFactorySetupForkTest is Test {
         allowlistManagers[0] = Ethereum.ALM_RELAYER;
     }
 
+    /// @dev The first config is the address handed to the Basin constructor, which grants it the
+    ///      role and allows it every asset.
+    function _lpConfigs(address provider)
+        internal pure returns (GroveBasinFactory.LpConfig[] memory configs)
+    {
+        bool[] memory allowed = new bool[](3);
+        allowed[0] = true;
+        allowed[1] = true;
+        allowed[2] = true;
+
+        configs    = new GroveBasinFactory.LpConfig[](1);
+        configs[0] = GroveBasinFactory.LpConfig({
+            liquidityProvider : provider,
+            isDepositor       : true,
+            allowed           : allowed
+        });
+    }
+
     function _baseParams(GroveBasinFactory.PocketType pocketType)
         internal
         view
@@ -77,8 +95,7 @@ contract GroveBasinFactorySetupForkTest is Test {
         bool isUsds = pocketType == GroveBasinFactory.PocketType.UsdsUsdc;
 
         params = GroveBasinFactory.DeployParams({
-            liquidityProvider           : PAU_ALM_PROXY,
-            lpConfigs                   : new GroveBasinFactory.LpConfig[](0),
+            lpConfigs                   : _lpConfigs(PAU_ALM_PROXY),
             swapToken                   : isUsds ? Ethereum.USDS : Ethereum.USDT,
             collateralToken             : Ethereum.USDC,
             creditToken                 : address(creditToken),

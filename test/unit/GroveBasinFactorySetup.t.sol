@@ -74,16 +74,11 @@ contract GroveBasinFactorySetupTests is Test {
         allowlistManagers[1] = allowlistManager2;
     }
 
-    /// @dev setLiquidityProvider takes every Basin asset exactly once, so each config carries a full
-    ///      token list and a parallel flag list.
+    /// @dev setLiquidityProvider states the permission of every Basin asset in one call, so each
+    ///      config carries a flag per asset.
     function _lpConfig(address provider, bool isDepositor, bool isAllowed)
-        internal view returns (GroveBasinFactory.LpConfig memory config)
+        internal pure returns (GroveBasinFactory.LpConfig memory config)
     {
-        address[] memory tokens = new address[](3);
-        tokens[0] = address(swapToken);
-        tokens[1] = address(collateralToken);
-        tokens[2] = address(creditToken);
-
         bool[] memory allowed = new bool[](3);
         allowed[0] = isAllowed;
         allowed[1] = isAllowed;
@@ -92,24 +87,32 @@ contract GroveBasinFactorySetupTests is Test {
         config = GroveBasinFactory.LpConfig({
             liquidityProvider : provider,
             isDepositor       : isDepositor,
-            tokens            : tokens,
             allowed           : allowed
         });
     }
 
-    function _lpConfigs(GroveBasinFactory.LpConfig memory config)
-        internal pure returns (GroveBasinFactory.LpConfig[] memory configs)
-    {
+    /// @dev The first config is the one handed to the Basin constructor, so every params set starts
+    ///      with the default liquidity provider.
+    function _lpConfigs() internal view returns (GroveBasinFactory.LpConfig[] memory configs) {
         configs    = new GroveBasinFactory.LpConfig[](1);
-        configs[0] = config;
+        configs[0] = _lpConfig(liquidityProvider, true, true);
+    }
+
+    function _lpConfigs(GroveBasinFactory.LpConfig memory config)
+        internal view returns (GroveBasinFactory.LpConfig[] memory configs)
+    {
+        configs    = new GroveBasinFactory.LpConfig[](2);
+        configs[0] = _lpConfig(liquidityProvider, true, true);
+        configs[1] = config;
     }
 
     function _lpConfigs(GroveBasinFactory.LpConfig memory config1, GroveBasinFactory.LpConfig memory config2)
-        internal pure returns (GroveBasinFactory.LpConfig[] memory configs)
+        internal view returns (GroveBasinFactory.LpConfig[] memory configs)
     {
-        configs    = new GroveBasinFactory.LpConfig[](2);
-        configs[0] = config1;
-        configs[1] = config2;
+        configs    = new GroveBasinFactory.LpConfig[](3);
+        configs[0] = _lpConfig(liquidityProvider, true, true);
+        configs[1] = config1;
+        configs[2] = config2;
     }
 
     function _pocketAddress1(GroveBasinFactory.PocketType pocketType) internal view returns (address) {
@@ -123,8 +126,7 @@ contract GroveBasinFactorySetupTests is Test {
         internal view returns (GroveBasinFactory.DeployParams memory params)
     {
         params = GroveBasinFactory.DeployParams({
-            liquidityProvider           : liquidityProvider,
-            lpConfigs                   : new GroveBasinFactory.LpConfig[](0),
+            lpConfigs                   : _lpConfigs(),
             swapToken                   : address(swapToken),
             collateralToken             : address(collateralToken),
             creditToken                 : address(creditToken),
@@ -433,7 +435,7 @@ contract GroveBasinFactorySetupTests is Test {
     /*** LP setups                                                                              ***/
     /**********************************************************************************************/
 
-    function test_deploy_noLpConfigs() public {
+    function test_deploy_onlyConstructorLpConfig() public {
         _seed();
 
         (address basin,,) =
@@ -443,6 +445,58 @@ contract GroveBasinFactorySetupTests is Test {
 
         assertTrue(groveBasin.hasRole(groveBasin.LIQUIDITY_PROVIDER_ROLE(),  liquidityProvider));
         assertFalse(groveBasin.hasRole(groveBasin.LIQUIDITY_PROVIDER_ROLE(), address(factory)));
+
+        // The constructor allows the first config every asset.
+        assertTrue(groveBasin.lpAssetAllowed(liquidityProvider, address(swapToken)));
+        assertTrue(groveBasin.lpAssetAllowed(liquidityProvider, address(collateralToken)));
+        assertTrue(groveBasin.lpAssetAllowed(liquidityProvider, address(creditToken)));
+    }
+
+    function test_deploy_constructorLpConfig_withholdsCreditToken() public {
+        _seed();
+
+        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
+
+        // The constructor allows every asset, so init has to apply the first config to take the
+        // credit token back off the provider.
+        params.lpConfigs[0].allowed[2] = false;
+
+        (address basin,,) = factory.deployAndInit(params, adminTimelock);
+
+        GroveBasin groveBasin = GroveBasin(basin);
+
+        assertTrue(groveBasin.hasRole(groveBasin.LIQUIDITY_PROVIDER_ROLE(), liquidityProvider));
+
+        assertTrue(groveBasin.lpAssetAllowed(liquidityProvider,  address(swapToken)));
+        assertTrue(groveBasin.lpAssetAllowed(liquidityProvider,  address(collateralToken)));
+        assertFalse(groveBasin.lpAssetAllowed(liquidityProvider, address(creditToken)));
+
+        creditToken.mint(liquidityProvider, 100e18);
+
+        vm.startPrank(liquidityProvider);
+        creditToken.approve(basin, 100e18);
+
+        vm.expectRevert(IGroveBasin.LpTokenDepositNotAllowed.selector);
+        groveBasin.deposit(address(creditToken), liquidityProvider, 100e18);
+
+        vm.expectRevert(IGroveBasin.LpTokenWithdrawNotAllowed.selector);
+        groveBasin.withdraw(address(creditToken), liquidityProvider, 100e18);
+        vm.stopPrank();
+    }
+
+    function test_deploy_constructorLpConfig_receiverOnly() public {
+        _seed();
+
+        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
+        params.lpConfigs[0].isDepositor = false;
+
+        (address basin,,) = factory.deployAndInit(params, adminTimelock);
+
+        GroveBasin groveBasin = GroveBasin(basin);
+
+        // The constructor grants the role, so init has to revoke it to leave a receiver only.
+        assertFalse(groveBasin.hasRole(groveBasin.LIQUIDITY_PROVIDER_ROLE(), liquidityProvider));
+        assertTrue(groveBasin.lpAssetAllowed(liquidityProvider, address(collateralToken)));
     }
 
     function test_deploy_lpConfigs_grantLiquidityProviderRole() public {
@@ -524,17 +578,36 @@ contract GroveBasinFactorySetupTests is Test {
         assertEq(groveBasin.withdraw(address(collateralToken), receiver, 100e6), 100e6);
     }
 
-    function test_deploy_revertsOnPartialLpTokenList() public {
+    function test_deploy_revertsOnPartialLpAllowedList() public {
         _seed();
 
         GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
         params.lpConfigs = _lpConfigs(_lpConfig(makeAddr("extraLp"), true, true));
 
-        // Every Basin asset has to be listed, so a short list fails the deployment
-        params.lpConfigs[0].tokens  = new address[](1);
-        params.lpConfigs[0].allowed = new bool[](1);
+        // Every Basin asset has to be flagged, so a short list fails the deployment
+        params.lpConfigs[1].allowed = new bool[](1);
 
         vm.expectRevert(IGroveBasin.InvalidAssetListLength.selector);
+        factory.deployAndInit(params, adminTimelock);
+    }
+
+    function test_deploy_revertsOnEmptyLpConfigs() public {
+        _seed();
+
+        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
+        params.lpConfigs = new GroveBasinFactory.LpConfig[](0);
+
+        vm.expectRevert(GroveBasinFactory.InvalidLiquidityProvider.selector);
+        factory.deployAndInit(params, adminTimelock);
+    }
+
+    function test_deploy_revertsOnZeroAddressConstructorLp() public {
+        _seed();
+
+        GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.None);
+        params.lpConfigs[0].liquidityProvider = address(0);
+
+        vm.expectRevert(IGroveBasin.InvalidLiquidityProvider.selector);
         factory.deployAndInit(params, adminTimelock);
     }
 
@@ -614,7 +687,7 @@ contract GroveBasinFactorySetupTests is Test {
 
     function test_deploy_revertsOnSelfLiquidityProvider() public {
         GroveBasinFactory.DeployParams memory params = _baseParams(GroveBasinFactory.PocketType.UsdsUsdc);
-        params.liquidityProvider = address(factory);
+        params.lpConfigs[0].liquidityProvider = address(factory);
 
         vm.expectRevert(GroveBasinFactory.InvalidLiquidityProvider.selector);
         factory.deployAndInit(params, adminTimelock);

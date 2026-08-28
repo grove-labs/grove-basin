@@ -32,23 +32,21 @@ contract GroveBasinFactory {
      *                          configured. Must not be the factory itself.
      * @param isDepositor       True grants LIQUIDITY_PROVIDER_ROLE; false permissions the address
      *                          as a share receiver only.
-     * @param tokens            Every Basin asset, ordered [swapToken, collateralToken,
-     *                          creditToken]; the Basin rejects anything else.
-     * @param allowed           Parallel array to tokens, flagging whether the address may deposit
-     *                          and withdraw each one.
+     * @param allowed           Whether the address may deposit and withdraw each Basin asset, in
+     *                          the order the assets are declared on the Basin
+     *                          ([swapToken, collateralToken, creditToken]); the Basin rejects any
+     *                          other length.
      */
     struct LpConfig {
-        address   liquidityProvider;
-        bool      isDepositor;
-        address[] tokens;
-        bool[]    allowed;
+        address liquidityProvider;
+        bool    isDepositor;
+        bool[]  allowed;
     }
 
     /**
-     * @param liquidityProvider           Granted LIQUIDITY_PROVIDER_ROLE by the Basin constructor.
-     * @param lpConfigs                   Addresses configured via setLiquidityProvider during
-     *                                    init, so LPs and their share receivers are set up
-     *                                    together; empty configures none.
+     * @param lpConfigs                   Liquidity providers and share receivers to configure, so
+     *                                    LPs and their share receivers are set up together. Must
+     *                                    not be empty. 
      * @param swapToken                   Basin swap token.
      * @param collateralToken             Basin collateral token.
      * @param creditToken                 Basin credit token.
@@ -79,7 +77,6 @@ contract GroveBasinFactory {
      *                                    none.
      */
     struct DeployParams {
-        address    liquidityProvider;
         LpConfig[] lpConfigs;
         address    swapToken;
         address    collateralToken;
@@ -239,13 +236,14 @@ contract GroveBasinFactory {
         public returns (address basin, address pocket, address redeemer)
     {
         if (adminTimelock == address(0) || adminTimelock == address(this)) revert InvalidAdminTimelock();
-        if (params.liquidityProvider == address(this))                     revert InvalidLiquidityProvider();
+        if (params.lpConfigs.length == 0)                                  revert InvalidLiquidityProvider();
+        if (params.lpConfigs[0].liquidityProvider == address(this))        revert InvalidLiquidityProvider();
         if (params.managerAdmin == address(0))                             revert InvalidManagerAdmin();
 
         basin = _deploy({
             salt                        : bytes32(nonce++),
             owner                       : address(this),
-            liquidityProvider           : params.liquidityProvider,
+            liquidityProvider           : params.lpConfigs[0].liquidityProvider,
             swapToken                   : params.swapToken,
             collateralToken             : params.collateralToken,
             creditToken                 : params.creditToken,
@@ -328,15 +326,22 @@ contract GroveBasinFactory {
             groveBasin.grantRole(groveBasin.ALLOWLIST_MANAGER_ROLE(), params.allowlistManagers[i]);
         }
 
+        address[] memory tokens = new address[](3);
+
+        tokens[0] = params.swapToken;
+        tokens[1] = params.collateralToken;
+        tokens[2] = params.creditToken;
+
+        // liquidityProvider constructor allowlists all tokens by default; apply allowlists here
         for (uint256 i; i < params.lpConfigs.length; ++i) {
             LpConfig calldata config = params.lpConfigs[i];
-            
+
             if (config.liquidityProvider == address(0) || config.liquidityProvider == address(this)) revert InvalidLiquidityProvider();
 
             groveBasin.setLiquidityProvider(
                 config.liquidityProvider,
                 config.isDepositor,
-                config.tokens,
+                tokens,
                 config.allowed
             );
         }
