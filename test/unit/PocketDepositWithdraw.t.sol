@@ -11,7 +11,9 @@ import { UsdsUsdcPocket }   from "src/pockets/UsdsUsdcPocket.sol";
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 import { MockPSM }          from "test/mocks/MockPSM.sol";
 
-contract PocketDepositWithdrawTestBase is Test {
+import { AssetAllowlistHelper } from "test/AssetAllowlistHelper.sol";
+
+contract PocketDepositWithdrawTestBase is AssetAllowlistHelper {
 
     address public owner      = makeAddr("owner");
     address public lp         = makeAddr("liquidityProvider");
@@ -80,6 +82,7 @@ contract PocketDepositWithdrawTestBase is Test {
         groveBasin.setPocket(address(pocket));
         vm.stopPrank();
 
+        _allowAllAssets(groveBasin, owner, lp);
     }
 
     function _deposit(address asset, address user, uint256 amount) internal {
@@ -87,6 +90,9 @@ contract PocketDepositWithdrawTestBase is Test {
     }
 
     function _deposit(address asset, address user, address receiver, uint256 amount) internal {
+        // Deposits require the receiver to be allowed the asset as well as the depositor
+        _allowAsset(groveBasin, owner, receiver, asset);
+
         vm.startPrank(lp);
         MockERC20(asset).mint(lp, amount);
         MockERC20(asset).approve(address(groveBasin), amount);
@@ -302,7 +308,7 @@ contract BasinWithdrawThroughPocketTests is PocketDepositWithdrawTestBase {
 /*** Basin deposit through pocket with USDT collateral tests                                ***/
 /**********************************************************************************************/
 
-contract BasinUsdtCollateralPocketTests is Test {
+contract BasinUsdtCollateralPocketTests is AssetAllowlistHelper {
 
     address public owner      = makeAddr("owner");
     address public lp         = makeAddr("liquidityProvider");
@@ -372,6 +378,7 @@ contract BasinUsdtCollateralPocketTests is Test {
         groveBasin.setPocket(address(pocket));
         vm.stopPrank();
 
+        _allowAllAssets(groveBasin, owner, lp);
     }
 
     function test_deposit_usdc_staysInBasin() public {

@@ -14,7 +14,9 @@ import { MockPocket }       from "test/mocks/MockPocket.sol";
 import { MockPSM }          from "test/mocks/MockPSM.sol";
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 
-contract GroveBasinTestBase is Test {
+import { AssetAllowlistHelper } from "test/AssetAllowlistHelper.sol";
+
+contract GroveBasinTestBase is AssetAllowlistHelper {
 
     address public owner       = makeAddr("owner");
     address public lp          = makeAddr("liquidityProvider");
@@ -95,6 +97,10 @@ contract GroveBasinTestBase is Test {
         groveBasin.setPocket(pocket);
         vm.stopPrank();
 
+        // The constructor only grants LIQUIDITY_PROVIDER_ROLE, so the asset allowances of the
+        // provider have to be set explicitly
+        _allowAllAssets(lp);
+
         vm.label(address(swapToken),       "swapToken");
         vm.label(address(collateralToken), "collateralToken");
         vm.label(address(creditToken),     "creditToken");
@@ -115,11 +121,20 @@ contract GroveBasinTestBase is Test {
     }
 
     function _deposit(address asset, address user, address receiver, uint256 amount) internal {
+        // Deposits require the receiver to be allowed the asset as well as the depositor
+        _allowAsset(groveBasin, owner, receiver, asset);
+
         vm.startPrank(lp);
         MockERC20(asset).mint(lp, amount);
         MockERC20(asset).approve(address(groveBasin), amount);
         groveBasin.deposit(asset, receiver, amount);
         vm.stopPrank();
+    }
+
+    /// @dev Withdrawals are gated on the same allowlist as deposits, so tests that move a user's
+    ///      value from one asset into another have to allow the user every asset up front.
+    function _allowAllAssets(address user) internal {
+        _allowAllAssets(groveBasin, owner, user);
     }
 
     function _withdraw(address asset, address user, uint256 amount) internal {

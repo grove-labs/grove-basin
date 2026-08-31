@@ -9,7 +9,9 @@ import { GroveBasin }        from "src/GroveBasin.sol";
 
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 
-abstract contract ForkTestBase is Test {
+import { AssetAllowlistHelper } from "test/AssetAllowlistHelper.sol";
+
+abstract contract ForkTestBase is AssetAllowlistHelper {
 
     address public owner  = makeAddr("owner");
     address public lp     = makeAddr("liquidityProvider");
@@ -54,6 +56,10 @@ abstract contract ForkTestBase is Test {
         }
         vm.stopPrank();
 
+        // The constructor only grants LIQUIDITY_PROVIDER_ROLE, so the asset allowances of the
+        // provider have to be set explicitly
+        _allowAllAssets(lp);
+
         if (pocket != address(groveBasin)) {
             vm.prank(pocket);
             swapToken.approve(address(groveBasin), type(uint256).max);
@@ -88,11 +94,20 @@ abstract contract ForkTestBase is Test {
         deal(token, to, amount);
     }
 
+    /// @dev Withdrawals are gated on the same allowlist as deposits, so tests that move a user's
+    ///      value from one asset into another have to allow the user every asset up front.
+    function _allowAllAssets(address user) internal {
+        _allowAllAssets(groveBasin, owner, user);
+    }
+
     function _deposit(address asset, address user, uint256 amount) internal {
         _deposit(asset, user, user, amount);
     }
 
     function _deposit(address asset, address user, address receiver, uint256 amount) internal {
+        // Deposits require the receiver to be allowed the asset as well as the depositor
+        _allowAsset(groveBasin, owner, receiver, asset);
+
         _dealToken(asset, lp, amount);
         vm.startPrank(lp);
         IERC20(asset).approve(address(groveBasin), amount);

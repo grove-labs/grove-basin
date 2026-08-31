@@ -14,6 +14,8 @@ import { UsdsUsdcPocket }  from "src/pockets/UsdsUsdcPocket.sol";
 
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 
+import { AssetAllowlistHelper } from "test/AssetAllowlistHelper.sol";
+
 interface IFullRestrictionsLike {
     function updateMember(address token, address user, uint64 validUntil) external;
     function isMember(address token, address user) external view returns (bool isValid, uint64 validUntil);
@@ -24,7 +26,7 @@ interface IShareTokenLike {
     function hookDataOf(address) external view returns (bytes16);
 }
 
-abstract contract UsdsUsdcPocketForkTestBase is Test {
+abstract contract UsdsUsdcPocketForkTestBase is AssetAllowlistHelper {
 
     address public owner      = makeAddr("owner");
     address public lp         = makeAddr("liquidityProvider");
@@ -117,6 +119,9 @@ abstract contract UsdsUsdcPocketForkTestBase is Test {
     }
 
     function _deposit(address asset, address user, uint256 amount) internal virtual {
+        // Deposits require the receiver to be allowed the asset as well as the depositor
+        _allowAsset(groveBasin, owner, user, asset);
+
         vm.startPrank(lp);
         deal(asset, lp, amount);
         SafeERC20.safeApprove(IERC20(asset), address(groveBasin), 0);
@@ -302,6 +307,9 @@ contract UsdsUsdcPocketForkTest_SwapE2E is UsdsUsdcPocketForkTestBase {
     }
 
     function _deposit(address asset, address user, uint256 amount) internal override {
+        // Deposits require the receiver to be allowed the asset as well as the depositor
+        _allowAsset(groveBasin, owner, user, asset);
+
         if (asset == JTRSY_TOKEN) {
             _dealJTRSY(lp, amount);
         } else {

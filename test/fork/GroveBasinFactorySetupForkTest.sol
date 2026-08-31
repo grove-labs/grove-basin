@@ -59,16 +59,32 @@ contract GroveBasinFactorySetupForkTest is Test {
     }
 
     function _defaultPausedFlags() internal pure returns (bytes4[] memory flags) {
-        flags = new bytes4[](4);
+        flags = new bytes4[](2);
         flags[0] = bytes4(keccak256("PAUSED_SWAP_SWAP_TO_CREDIT"));
         flags[1] = bytes4(keccak256("PAUSED_SWAP_COLLATERAL_TO_CREDIT"));
-        flags[2] = bytes4(keccak256("PAUSED_DEPOSIT_CREDIT"));
-        flags[3] = bytes4(keccak256("PAUSED_WITHDRAW_CREDIT"));
     }
 
     function _defaultAllowlistManagers() internal pure returns (address[] memory allowlistManagers) {
         allowlistManagers = new address[](1);
         allowlistManagers[0] = Ethereum.ALM_RELAYER;
+    }
+
+    /// @dev The first config is the address handed to the Basin constructor, which grants it the
+    ///      role and allows it every asset.
+    function _lpConfigs(address provider)
+        internal pure returns (GroveBasinFactory.LpConfig[] memory configs)
+    {
+        bool[] memory allowed = new bool[](3);
+        allowed[0] = true;
+        allowed[1] = true;
+        allowed[2] = true;
+
+        configs    = new GroveBasinFactory.LpConfig[](1);
+        configs[0] = GroveBasinFactory.LpConfig({
+            liquidityProvider : provider,
+            isDepositor       : true,
+            allowed           : allowed
+        });
     }
 
     function _baseParams(GroveBasinFactory.PocketType pocketType)
@@ -79,8 +95,7 @@ contract GroveBasinFactorySetupForkTest is Test {
         bool isUsds = pocketType == GroveBasinFactory.PocketType.UsdsUsdc;
 
         params = GroveBasinFactory.DeployParams({
-            liquidityProvider           : PAU_ALM_PROXY,
-            extraLiquidityProviders     : new address[](0),
+            lpConfigs                   : _lpConfigs(PAU_ALM_PROXY),
             swapToken                   : isUsds ? Ethereum.USDS : Ethereum.USDT,
             collateralToken             : Ethereum.USDC,
             creditToken                 : address(creditToken),
@@ -131,8 +146,6 @@ contract GroveBasinFactorySetupForkTest is Test {
         // Pause flags.
         assertTrue(basin.paused(basin.PAUSED_SWAP_SWAP_TO_CREDIT()));
         assertTrue(basin.paused(basin.PAUSED_SWAP_COLLATERAL_TO_CREDIT()));
-        assertTrue(basin.paused(basin.PAUSED_DEPOSIT_CREDIT()));
-        assertTrue(basin.paused(basin.PAUSED_WITHDRAW_CREDIT()));
         assertFalse(basin.paused(basin.PAUSED_SWAP_CREDIT_TO_COLLATERAL()));
         assertFalse(basin.paused(basin.PAUSED_SWAP_CREDIT_TO_SWAP()));
 

@@ -50,6 +50,10 @@ interface IGroveBasin {
     error PendingRedemptions();
     error InsufficientFunds();
     error NotAllowlisted();
+    error LpTokenDepositNotAllowed();
+    error LpTokenWithdrawNotAllowed();
+    error NotAuthorizedToRemoveAssetAllowed();
+    error InvalidAssetListLength();
 
     /**********************************************************************************************/
     /*** Events                                                                                 ***/
@@ -223,6 +227,21 @@ interface IGroveBasin {
      *  @param paused Whether the key is paused.
      */
     event PausedSet(bytes4 indexed key, bool paused);
+
+    /**
+     *  @dev   Emitted when an address is configured via setLiquidityProvider.
+     *  @param provider    Address that was configured.
+     *  @param isDepositor Whether the address holds LIQUIDITY_PROVIDER_ROLE after the call.
+     */
+    event LiquidityProviderSet(address indexed provider, bool isDepositor);
+
+    /**
+     *  @dev   Emitted when an asset allowance is toggled for an address.
+     *  @param provider Address whose asset allowance changed.
+     *  @param token    Address of the token.
+     *  @param allowed  Whether the address is allowed to deposit and withdraw the token.
+     */
+    event LpAssetAllowedSet(address indexed provider, address indexed token, bool allowed);
 
     /**
      *  @dev   Emitted when the allowlist flag for a route key is toggled.
@@ -402,20 +421,22 @@ interface IGroveBasin {
     /**
      *  @dev    Returns the role identifier for the manager admin role. This role can update
      *          bounds, oracle values, set the pocket, set the fee claimer, unpause, toggle the
-     *          swap allowlist gates, and add or remove token redeemers. It is also the role admin
-     *          of MANAGER_ROLE, ALLOWLIST_MANAGER_ROLE, PAUSER_ROLE, REDEEMER_ROLE,
-     *          REDEEMER_CONTRACT_ROLE, and LIQUIDITY_PROVIDER_ROLE, so it can grant and revoke
-     *          all six through the inherited AccessControl functions.
+     *          swap allowlist gates, add or remove token redeemers, and configure liquidity
+     *          providers and address asset permissions. It is also the role admin of MANAGER_ROLE,
+     *          ALLOWLIST_MANAGER_ROLE, PAUSER_ROLE, REDEEMER_ROLE, REDEEMER_CONTRACT_ROLE, and
+     *          LIQUIDITY_PROVIDER_ROLE, so it can grant and revoke all six through the inherited
+     *          AccessControl functions.
      *  @return The bytes32 role identifier.
      */
     function MANAGER_ADMIN_ROLE() external view returns (bytes32);
 
     /**
      *  @dev    Returns the role identifier for the liquidity provider role. Addresses with this
-     *          role are the only ones allowed to call `deposit`. Administered by
-     *          MANAGER_ADMIN_ROLE and also revocable by PAUSER_ROLE. Revoking the role only stops
-     *          new deposits: withdrawals are gated on share ownership, so a revoked provider keeps
-     *          access to the shares it already holds.
+     *          role are the only ones allowed to call `deposit`, and only for the assets they are
+     *          allowed in `lpAssetAllowed`. Administered by MANAGER_ADMIN_ROLE and also revocable
+     *          by PAUSER_ROLE. Revoking the role only stops new deposits: withdrawals are gated on
+     *          share ownership and on `lpAssetAllowed`, so a revoked provider keeps access to the
+     *          shares it already holds.
      *  @return The bytes32 role identifier.
      */
     function LIQUIDITY_PROVIDER_ROLE() external view returns (bytes32);
@@ -445,18 +466,6 @@ interface IGroveBasin {
     function PAUSED_SWAP_SWAP_TO_CREDIT() external view returns (bytes4);
 
     /**
-     *  @dev    Pause key for credit token deposits.
-     *  @return The bytes4 pause key.
-     */
-    function PAUSED_DEPOSIT_CREDIT() external view returns (bytes4);
-
-    /**
-     *  @dev    Pause key for credit token withdrawals.
-     *  @return The bytes4 pause key.
-     */
-    function PAUSED_WITHDRAW_CREDIT() external view returns (bytes4);
-
-    /**
      *  @dev    Returns whether a specific pause key is active. Pause keys can be function
      *          selectors or arbitrary bytes4 keys. Use bytes4(0) to check the global pause.
      *  @param  key The pause key (function selector, arbitrary key, or bytes4(0) for global pause).
@@ -466,9 +475,10 @@ interface IGroveBasin {
 
     /**
      *  @dev    Returns the role identifier for the pauser role. Addresses with this role can call
-     *          setPaused, and can revoke MANAGER_ROLE, ALLOWLIST_MANAGER_ROLE, REDEEMER_ROLE,
-     *          and LIQUIDITY_PROVIDER_ROLE through the inherited AccessControl `revokeRole`
-     *          function, which the implementation overrides to grant this role that capability.
+     *          setPaused and removeAssetAllowed, and can revoke MANAGER_ROLE,
+     *          ALLOWLIST_MANAGER_ROLE, REDEEMER_ROLE, and LIQUIDITY_PROVIDER_ROLE through the
+     *          inherited AccessControl `revokeRole` function, which the implementation overrides
+     *          to grant this role that capability.
      *  @return The bytes32 role identifier.
      */
     function PAUSER_ROLE() external view returns (bytes32);
@@ -503,8 +513,11 @@ interface IGroveBasin {
 
     /**
      *  @dev    Returns the address that accrues fee shares on every swap. The fee claimer can
-     *          withdraw their shares like any other shareholder. Note: if the fee claimer is
-     *          changed via `setFeeClaimer`, the previous claimer may still hold unclaimed shares.
+     *          withdraw their shares like any other shareholder, subject to the same
+     *          `lpAssetAllowed` gate, so it has to be permissioned through setLiquidityProvider
+     *          before it can withdraw anything. Note: if the fee claimer is changed via
+     *          `setFeeClaimer`, the previous claimer may still hold unclaimed shares, and keeps the
+     *          allowances it needs to withdraw them until `lpAssetAllowed` changes.
      *  @return The fee claimer address.
      */
     function feeClaimer() external view returns (address);
@@ -574,6 +587,21 @@ interface IGroveBasin {
      *  @return Whether the caller is allowlisted for the route key.
      */
     function swapAllowlist(bytes32 routeKey, address caller) external view returns (bool);
+
+    /**
+     *  @dev    Returns whether an address is allowed to deposit and withdraw a given token.
+     *          By default all entries are false, meaning an LP with LIQUIDITY_PROVIDER_ROLE cannot
+     *          deposit or withdraw any token without explicit permission. Granting the role through
+     *          the inherited AccessControl grantRole leaves this mapping untouched, so use
+     *          setLiquidityProvider to grant the role and set allowed tokens atomically. Deposits
+     *          on behalf of a receiver require the receiver to be allowed the token as well.
+     *          Allowances are set by MANAGER_ADMIN_ROLE through setLiquidityProvider, which is also
+     *          how the fee claimer is permissioned to withdraw the shares it accrues.
+     *  @param  provider  Address to query.
+     *  @param  token     Address of the token (swapToken, collateralToken, or creditToken).
+     *  @return isAllowed Whether the address is allowed to deposit and withdraw the token.
+     */
+    function lpAssetAllowed(address provider, address token) external view returns (bool isAllowed);
 
     /**
      *  @dev    Returns the route key for a swap direction. Routes are unidirectional, so the key
@@ -662,6 +690,35 @@ interface IGroveBasin {
      *  @param redeemer Address of the token redeemer to remove.
      */
     function removeTokenRedeemer(address redeemer) external;
+
+    /**
+     *  @dev   Sets whether an address holds LIQUIDITY_PROVIDER_ROLE and which of the supported
+     *         assets it is allowed to deposit and withdraw. `tokens` must be exactly
+     *         [swapToken, collateralToken, creditToken], so a call always states the full
+     *         permission set of the address and never leaves an entry from an earlier call in
+     *         place. Can be called on any address, not only current LPs: passing `isDepositor`
+     *         false permissions a share recipient without letting it deposit, and revokes
+     *         LIQUIDITY_PROVIDER_ROLE if the address holds it. Disallowing a token for an address
+     *         that still holds shares blocks its withdrawals of that token, leaving it to redeem
+     *         those shares in the tokens it is still allowed. Callable only by MANAGER_ADMIN_ROLE.
+     *  @param provider    Address whose role and asset allowances are being set.
+     *  @param isDepositor Whether the address should hold LIQUIDITY_PROVIDER_ROLE.
+     *  @param tokens      The supported assets, ordered [swapToken, collateralToken, creditToken].
+     *  @param allowed     Parallel array of booleans; true to allow, false to disallow.
+     */
+    function setLiquidityProvider(
+        address            provider,
+        bool               isDepositor,
+        address[] calldata tokens,
+        bool[]    calldata allowed
+    ) external;
+
+    /**
+     *  @dev   Disallows every supported asset for an address, blocking both deposits and
+     *         withdrawals for it. Callable by MANAGER_ADMIN_ROLE or PAUSER_ROLE.
+     *  @param provider Address whose asset allowances are being cleared.
+     */
+    function removeAssetAllowed(address provider) external;
 
     /**
      *  @dev   Enables or disables the global allowlist, which gates every route that carries no
@@ -779,8 +836,12 @@ interface IGroveBasin {
 
     /**
      *  @dev    Sets the address that accrues fee shares on swaps. Callable only by MANAGER_ADMIN_ROLE.
+     *          Pair it with a setLiquidityProvider call allowing the new claimer the assets it should 
+     *          be able to withdraw its fee shares in, since fee shares are a claim on value rather 
+     *          than on any one asset. Pass the zero address to stop fee accrual.
      *          Note: if the previous fee claimer holds shares, those shares remain; they are not
-     *          transferred or burned. The previous claimer can still withdraw their shares.
+     *          transferred or burned. Its allowances are left in place as well, so it can still
+     *          withdraw them. Clear them with setLiquidityProvider once it has claimed.
      *  @param  newFeeClaimer The new fee claimer address.
      */
     function setFeeClaimer(address newFeeClaimer) external;
@@ -868,9 +929,10 @@ interface IGroveBasin {
 
     /**
      *  @dev    Deposits an amount of a given asset into the GroveBasin. Only callable by
-     *          LIQUIDITY_PROVIDER_ROLE holders. Must be one of the supported assets in order to
-     *          succeed. The amount deposited is converted to shares based on the current exchange
-     *          rate.
+     *          LIQUIDITY_PROVIDER_ROLE holders that are allowed the asset. Must be one of the
+     *          supported assets in order to succeed. The receiver must be allowed the asset as
+     *          well, since withdrawals are gated on the same allowlist. The amount deposited is converted to shares based on the
+     *          current exchange rate.
      *  @param  asset           Address of the ERC-20 asset to deposit.
      *  @param  receiver        Address of the receiver of the resulting shares from the deposit.
      *  @param  assetsToDeposit Amount of the asset to deposit into the GroveBasin.
@@ -881,9 +943,11 @@ interface IGroveBasin {
 
     /**
      *  @dev    Withdraws an amount of a given asset from the GroveBasin up to `maxAssetsToWithdraw`.
-     *          Must be one of the supported assets in order to succeed. The amount withdrawn is
-     *          the minimum of the balance of the GroveBasin, the max amount, and the max amount of assets
-     *          that the user's shares can be converted to.
+     *          Must be one of the supported assets in order to succeed. The caller must be allowed
+     *          the asset, so shares can only be redeemed for assets the caller deposited or was
+     *          allowed by MANAGER_ADMIN_ROLE. The amount withdrawn is the minimum of the balance
+     *          of the GroveBasin, the max amount, and the max amount of assets that the user's
+     *          shares can be converted to.
      *  @param  asset               Address of the ERC-20 asset to withdraw.
      *  @param  receiver            Address of the receiver of the withdrawn assets.
      *  @param  maxAssetsToWithdraw Max amount that the user is willing to withdraw.

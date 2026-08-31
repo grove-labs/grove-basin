@@ -11,6 +11,15 @@ contract InflationAttackTests is GroveBasinTestBase {
     address frontRunner    = makeAddr("frontRunner");
     address deployer       = makeAddr("deployer");
 
+    function setUp() public override {
+        super.setUp();
+
+        // These scenarios extract value in swapToken against shares minted from other assets
+        _allowAllAssets(firstDepositor);
+        _allowAllAssets(frontRunner);
+        _allowAllAssets(deployer);
+    }
+
     function test_inflationAttack_noInitialDeposit_creditToken() public {
         // Front runner deposits 1 creditToken to get 1 share
         _deposit(address(creditToken), frontRunner, 1);

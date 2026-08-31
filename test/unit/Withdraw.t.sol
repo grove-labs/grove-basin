@@ -480,6 +480,9 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
     }
 
     function test_withdraw_changeConversionRate() public {
+        // user1 redeems its swapToken position in creditToken as well
+        _allowAllAssets(user1);
+
         _deposit(address(swapToken),   user1, 100e6);
         _deposit(address(creditToken), user2, 100e18);
 
@@ -574,6 +577,9 @@ contract GroveBasinWithdrawTests is GroveBasinTestBase {
         swapTokenAmount   = _bound(swapTokenAmount,   1e6,     SWAP_TOKEN_MAX);
         creditTokenAmount = _bound(creditTokenAmount, 1e18,    CREDIT_TOKEN_MAX);
         conversionRate    = _bound(conversionRate,    1.26e27, 1000e27);
+
+        // user1 redeems its swapToken position in creditToken as well
+        _allowAllAssets(user1);
 
         _deposit(address(swapToken), user1, swapTokenAmount);
         _deposit(address(creditToken), user2, creditTokenAmount);

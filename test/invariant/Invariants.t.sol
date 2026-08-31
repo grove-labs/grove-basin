@@ -345,11 +345,17 @@ abstract contract GroveBasinInvariantTestBase is GroveBasinTestBase {
         assertApproxEqAbs(sumLpValue, sumStartingValue, seedValue - startingSeedValue + 3 + feeClaimerValue);
 
         // NOTE: Below logic is not realistic, shown to demonstrate precision.
+        // The seed position only received swapToken and collateralToken, so it has to be allowed
+        // every asset to redeem the seed shares across all three.
+        _allowAllAssets(BURN_ADDRESS);
+
         _withdraw(address(collateralToken), BURN_ADDRESS, type(uint256).max);
         _withdraw(address(swapToken),       BURN_ADDRESS, type(uint256).max);
         _withdraw(address(creditToken),     BURN_ADDRESS, type(uint256).max);
 
-        // Withdraw fee claimer position
+        // Withdraw fee claimer position, which setFeeClaimer does not permission on its own
+        _allowAllAssets(FEE_CLAIMER);
+
         _withdraw(address(collateralToken), FEE_CLAIMER, type(uint256).max);
         _withdraw(address(swapToken),       FEE_CLAIMER, type(uint256).max);
         _withdraw(address(creditToken),     FEE_CLAIMER, type(uint256).max);
@@ -639,6 +645,9 @@ contract GroveBasinInvariants_TimeBasedRateSetting_NoTransfer is GroveBasinInvar
         groveBasin.setFeeBounds(0, 500);  // 0-5% fees
         vm.stopPrank();
 
+        // The redeployed Basin only grants the provider the role, so its allowances are set here
+        _allowAllAssets(lp);
+
         // NOTE: Don't need to set GroveBasin as pocket for this suite as its default on deploy
 
         // Initial LP deposit for baseline liquidity
@@ -743,6 +752,9 @@ contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinIn
         groveBasin.setFeeClaimer(FEE_CLAIMER);
         groveBasin.setFeeBounds(0, 500);  // 0-5% fees
         vm.stopPrank();
+
+        // The redeployed Basin only grants the provider the role, so its allowances are set here
+        _allowAllAssets(lp);
 
         // NOTE: This base test suite tests the case of the GroveBasin being the pocket for the whole time,
         //       where the other suites are testing with an external `pocket`.

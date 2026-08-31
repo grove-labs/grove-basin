@@ -22,6 +22,19 @@ contract GroveBasinPreviewWithdraw_FailureTests is GroveBasinTestBase {
         groveBasin.previewWithdraw(address(collateralToken), 0);
     }
 
+    function test_previewWithdraw_globallyPaused() public {
+        address pauser = makeAddr("pauser");
+        vm.startPrank(owner);
+        groveBasin.grantRole(groveBasin.PAUSER_ROLE(), pauser);
+        vm.stopPrank();
+
+        vm.prank(pauser);
+        groveBasin.setPaused(bytes4(0));
+
+        vm.expectRevert(IGroveBasin.Paused.selector);
+        groveBasin.previewWithdraw(address(collateralToken), 1e18);
+    }
+
 }
 
 contract GroveBasinPreviewWithdraw_ZeroTotalValueTests is Test {

@@ -28,32 +28,56 @@ contract GroveBasinFactory {
     uint256 public constant MAX_AUTO_SALT = type(uint256).max / 2;
 
     /**
-     * @param liquidityProvider           Granted LIQUIDITY_PROVIDER_ROLE by the Basin constructor.
-     * @param extraLiquidityProviders     Further addresses granted LIQUIDITY_PROVIDER_ROLE during init; empty grants none. Each must be non-zero and not the factory itself.
+     * @param liquidityProvider Address of the liquidity provider or share receiver being
+     *                          configured. Must not be the factory itself.
+     * @param isDepositor       True grants LIQUIDITY_PROVIDER_ROLE; false permissions the address
+     *                          as a share receiver only.
+     * @param allowed           Whether the address may deposit and withdraw each Basin asset, in
+     *                          the order the assets are declared on the Basin
+     *                          ([swapToken, collateralToken, creditToken]); the Basin rejects any
+     *                          other length.
+     */
+    struct LpConfig {
+        address liquidityProvider;
+        bool    isDepositor;
+        bool[]  allowed;
+    }
+
+    /**
+     * @param lpConfigs                   Liquidity providers and share receivers to configure, so
+     *                                    LPs and their share receivers are set up together. Must
+     *                                    not be empty. 
      * @param swapToken                   Basin swap token.
      * @param collateralToken             Basin collateral token.
      * @param creditToken                 Basin credit token.
      * @param swapTokenRateProvider       Rate provider for the swap token.
      * @param collateralTokenRateProvider Rate provider for the collateral token.
      * @param creditTokenRateProvider     Rate provider for the credit token.
-     * @param pocketAddress1              UsdsUsdc: PSM wrapper | MorphoUsdt: ERC-4626 vault | AaveUsdt: aUSDT token.
+     * @param pocketAddress1              UsdsUsdc: PSM wrapper | MorphoUsdt: ERC-4626 vault |
+     *                                    AaveUsdt: aUSDT token.
      * @param pocketAddress2              AaveUsdt: Aave V3 pool | otherwise unused.
-     * @param managerAdmin                Granted MANAGER_ADMIN_ROLE; UsdsUsdc pocket owner and timelock executor. Must be non-zero: a zero value would open timelock execution to any account.
+     * @param managerAdmin                Granted MANAGER_ADMIN_ROLE; UsdsUsdc pocket owner and
+     *                                    timelock executor. Must be non-zero: a zero value would
+     *                                    open timelock execution to any account.
      * @param manager                     Granted MANAGER_ROLE.
      * @param pauser                      Granted PAUSER_ROLE; timelock canceller.
-     * @param redemptionAddress           Non-zero deploys a TransferTokenRedeemer with this redemption address and registers it.
-     * @param tokenRedeemer               Pre-deployed token redeemer to register (used only when redemptionAddress == address(0); address(0) skips).
+     * @param redemptionAddress           Non-zero deploys a TransferTokenRedeemer with this
+     *                                    redemption address and registers it.
+     * @param tokenRedeemer               Pre-deployed token redeemer to register (used only when
+     *                                    redemptionAddress == address(0); address(0) skips).
      * @param issuerRedeemer              Address granted REDEEMER_ROLE (address(0) skips).
      * @param minFee                      Lower fee bound applied to the Basin, in basis points.
      * @param maxFee                      Upper fee bound applied to the Basin, in basis points.
-     * @param swapAllowlistEnabled        True enables the global swap allowlist before the factory relinquishes MANAGER_ADMIN_ROLE.
-     * @param pocketType                  Which pocket implementation to deploy and wire up (None deploys no pocket).
+     * @param swapAllowlistEnabled        True enables the global swap allowlist before the factory
+     *                                    relinquishes MANAGER_ADMIN_ROLE.
+     * @param pocketType                  Which pocket implementation to deploy and wire up (None
+     *                                    deploys no pocket).
      * @param pausedFlags                 Flags applied via setPaused; empty pauses nothing.
-     * @param allowlistManagers           Addresses granted ALLOWLIST_MANAGER_ROLE; empty grants none.
+     * @param allowlistManagers           Addresses granted ALLOWLIST_MANAGER_ROLE; empty grants
+     *                                    none.
      */
     struct DeployParams {
-        address    liquidityProvider;
-        address[]  extraLiquidityProviders;
+        LpConfig[] lpConfigs;
         address    swapToken;
         address    collateralToken;
         address    creditToken;
@@ -212,13 +236,14 @@ contract GroveBasinFactory {
         public returns (address basin, address pocket, address redeemer)
     {
         if (adminTimelock == address(0) || adminTimelock == address(this)) revert InvalidAdminTimelock();
-        if (params.liquidityProvider == address(this))                     revert InvalidLiquidityProvider();
+        if (params.lpConfigs.length == 0)                                  revert InvalidLiquidityProvider();
+        if (params.lpConfigs[0].liquidityProvider == address(this))        revert InvalidLiquidityProvider();
         if (params.managerAdmin == address(0))                             revert InvalidManagerAdmin();
 
         basin = _deploy({
             salt                        : bytes32(nonce++),
             owner                       : address(this),
-            liquidityProvider           : params.liquidityProvider,
+            liquidityProvider           : params.lpConfigs[0].liquidityProvider,
             swapToken                   : params.swapToken,
             collateralToken             : params.collateralToken,
             creditToken                 : params.creditToken,
@@ -301,12 +326,24 @@ contract GroveBasinFactory {
             groveBasin.grantRole(groveBasin.ALLOWLIST_MANAGER_ROLE(), params.allowlistManagers[i]);
         }
 
-        for (uint256 i; i < params.extraLiquidityProviders.length; ++i) {
-            address provider = params.extraLiquidityProviders[i];
+        address[] memory tokens = new address[](3);
 
-            if (provider == address(0) || provider == address(this)) revert InvalidLiquidityProvider();
+        tokens[0] = params.swapToken;
+        tokens[1] = params.collateralToken;
+        tokens[2] = params.creditToken;
 
-            groveBasin.grantRole(groveBasin.LIQUIDITY_PROVIDER_ROLE(), provider);
+        // liquidityProvider constructor allowlists all tokens by default; apply allowlists here
+        for (uint256 i; i < params.lpConfigs.length; ++i) {
+            LpConfig calldata config = params.lpConfigs[i];
+
+            if (config.liquidityProvider == address(0) || config.liquidityProvider == address(this)) revert InvalidLiquidityProvider();
+
+            groveBasin.setLiquidityProvider(
+                config.liquidityProvider,
+                config.isDepositor,
+                tokens,
+                config.allowed
+            );
         }
 
         if (params.issuerRedeemer != address(0)) {

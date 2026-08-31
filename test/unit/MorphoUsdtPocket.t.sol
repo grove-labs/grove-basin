@@ -13,7 +13,9 @@ import { IGroveBasinPocket }   from "src/interfaces/IGroveBasinPocket.sol";
 import { MockRateProvider }   from "test/mocks/MockRateProvider.sol";
 import { MockERC4626Vault }   from "test/mocks/MockERC4626Vault.sol";
 
-contract MorphoUsdtPocketTestBase is Test {
+import { AssetAllowlistHelper } from "test/AssetAllowlistHelper.sol";
+
+contract MorphoUsdtPocketTestBase is AssetAllowlistHelper {
 
     address public owner   = makeAddr("owner");
     address public lp      = makeAddr("liquidityProvider");
@@ -76,6 +78,8 @@ contract MorphoUsdtPocketTestBase is Test {
 
         vm.prank(manager);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
+
+        _allowAllAssets(groveBasin, owner, lp);
     }
 
 }

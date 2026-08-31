@@ -15,14 +15,9 @@ import { ITokenRedeemer, RedeemRequest } from "./interfaces/ITokenRedeemer.sol";
 /**
  * @title  GroveBasin
  * @notice Multi-asset liquidity pool that facilitates swaps between a swap token, collateral
- *         token, and a yield-bearing credit token. Liquidity providers deposit assets in exchange
- *         for shares that represent pro-rata ownership of the pool's total value.
- * @dev    Uses AccessControl for role-based permissioning across owner, manager admin, manager,
- *         allowlist manager, liquidity provider, and redeemer roles. `LIQUIDITY_PROVIDER_ROLE` is
- *         administered by MANAGER_ADMIN_ROLE and can additionally be revoked by PAUSER_ROLE to
- *         freeze a provider. Asset values are determined by external rate providers that return
- *         conversion rates. Swap token custody can be delegated to a pocket contract for yield
- *         generation.
+ *         token, and a yield-bearing credit token. Allowlisted liquidity providers can deposit
+ *         and withdraw assets in exchange for shares that represent pro-rata ownership of the 
+ *         pool's total value. 
  */
 contract GroveBasin is IGroveBasin, AccessControl {
 
@@ -44,8 +39,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
     bytes4 public constant PAUSED_SWAP_CREDIT_TO_SWAP       = bytes4(keccak256("PAUSED_SWAP_CREDIT_TO_SWAP"));
     bytes4 public constant PAUSED_SWAP_COLLATERAL_TO_CREDIT = bytes4(keccak256("PAUSED_SWAP_COLLATERAL_TO_CREDIT"));
     bytes4 public constant PAUSED_SWAP_SWAP_TO_CREDIT       = bytes4(keccak256("PAUSED_SWAP_SWAP_TO_CREDIT"));
-    bytes4 public constant PAUSED_DEPOSIT_CREDIT            = bytes4(keccak256("PAUSED_DEPOSIT_CREDIT"));
-    bytes4 public constant PAUSED_WITHDRAW_CREDIT           = bytes4(keccak256("PAUSED_WITHDRAW_CREDIT"));
 
     /// @dev Route key reserved for the global swap allowlist, which gates every route that carries
     ///      no gate of its own.
@@ -97,6 +90,12 @@ contract GroveBasin is IGroveBasin, AccessControl {
     mapping(bytes32 routeKey => bool isEnabled)                            public override swapAllowlistEnabled;
     mapping(bytes32 routeKey => mapping(address caller => bool isAllowed)) public override swapAllowlist;
 
+    /// @dev Maps an address to token address to whether deposits and withdrawals of that token are
+    ///      allowed. Default (false) means the address can neither deposit nor withdraw the token,
+    ///      and cannot receive shares from a deposit of it, so shares are only redeemable for
+    ///      tokens the holder is allowed.
+    mapping(address provider => mapping(address token => bool isAllowed)) public override lpAssetAllowed;
+
     constructor(
         address owner_,
         address liquidityProvider_,
@@ -110,7 +109,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
         if (owner_ == address(0)) revert InvalidOwner();
         _grantRole(OWNER_ROLE, owner_);
 
-        if (liquidityProvider_ == address(0)) revert InvalidLiquidityProvider();
         if (
             swapToken_       == address(0) ||
             collateralToken_ == address(0) ||
@@ -171,7 +169,11 @@ contract GroveBasin is IGroveBasin, AccessControl {
         _setRoleAdmin(REDEEMER_ROLE,           MANAGER_ADMIN_ROLE);
         _setRoleAdmin(LIQUIDITY_PROVIDER_ROLE, MANAGER_ADMIN_ROLE);
 
+        if (liquidityProvider_ == address(0)) revert InvalidLiquidityProvider();
+
         _grantRole(LIQUIDITY_PROVIDER_ROLE, liquidityProvider_);
+
+        emit LiquidityProviderSet(liquidityProvider_, true);
     }
 
     /**********************************************************************************************/
@@ -325,6 +327,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function setFeeClaimer(address newFeeClaimer) external override onlyRole(MANAGER_ADMIN_ROLE) {
         address oldFeeClaimer = feeClaimer;
         feeClaimer = newFeeClaimer;
+
         emit FeeClaimerSet(oldFeeClaimer, newFeeClaimer);
     }
 
@@ -343,6 +346,55 @@ contract GroveBasin is IGroveBasin, AccessControl {
         _setSwapAllowlistEnabled(getSwapRouteKey(assetIn, assetOut), enabled);
     }
 
+    /// @inheritdoc IGroveBasin
+    function setLiquidityProvider(
+        address            provider,
+        bool               isDepositor,
+        address[] calldata tokens,
+        bool[]    calldata allowed
+    )
+        external override onlyRole(MANAGER_ADMIN_ROLE)
+    {
+        // Every supported asset has to be listed exactly once, in the order the tokens are declared
+        // on the basin, so a call always states the full permission set of `provider` instead of
+        // layering onto whatever was set before.
+        if (tokens.length != 3 || allowed.length != 3) revert InvalidAssetListLength();
+        if (
+            tokens[0] != swapToken       ||
+            tokens[1] != collateralToken ||
+            tokens[2] != creditToken
+        ) revert InvalidAsset();
+
+        if (isDepositor) _grantRole(LIQUIDITY_PROVIDER_ROLE,  provider);
+        else             _revokeRole(LIQUIDITY_PROVIDER_ROLE, provider);
+
+        for (uint256 i; i < 3; ++i) {
+            _setLpAssetAllowedToken(provider, tokens[i], allowed[i]);
+        }
+
+        emit LiquidityProviderSet(provider, isDepositor);
+    }
+
+    /// @inheritdoc IGroveBasin
+    function setUnpaused(bytes4 key) external override onlyRole(MANAGER_ADMIN_ROLE) {
+        paused[key] = false;
+        emit PausedSet(key, false);
+    }
+
+    /**********************************************************************************************/
+    /*** Manager admin and pauser functions                                                     ***/
+    /**********************************************************************************************/
+
+    /// @inheritdoc IGroveBasin
+    function removeAssetAllowed(address provider) external override {
+        if (!hasRole(MANAGER_ADMIN_ROLE, msg.sender) && !hasRole(PAUSER_ROLE, msg.sender)) {
+            revert NotAuthorizedToRemoveAssetAllowed();
+        }
+
+        _setLpAssetAllowedToken(provider, swapToken,       false);
+        _setLpAssetAllowedToken(provider, collateralToken, false);
+        _setLpAssetAllowedToken(provider, creditToken,     false);
+    }
 
     /**********************************************************************************************/
     /*** Owner functions                                                                        ***/
@@ -425,12 +477,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function setPaused(bytes4 key) external override onlyRole(PAUSER_ROLE) {
         paused[key] = true;
         emit PausedSet(key, true);
-    }
-
-    /// @inheritdoc IGroveBasin
-    function setUnpaused(bytes4 key) external override onlyRole(MANAGER_ADMIN_ROLE) {
-        paused[key] = false;
-        emit PausedSet(key, false);
     }
 
     /**********************************************************************************************/
@@ -531,17 +577,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         if (totalShares != 0)                                 revert AlreadySeeded();
         if (assetsToDeposit < 10 ** IERC20(asset).decimals()) revert InsufficientInitialDeposit();
 
-        newShares = previewDeposit(asset, assetsToDeposit);
-
-        if (newShares == 0) revert NoNewShares();
-
-        shares[address(0)] += newShares;
-        totalShares        += newShares;
-
-        _pullAsset(asset, assetsToDeposit);
-        _depositLiquidityInPocket(assetsToDeposit, asset);
-
-        emit Deposit(asset, msg.sender, address(0), assetsToDeposit, newShares);
+        newShares = _deposit(asset, address(0), assetsToDeposit);
     }
 
     /// @inheritdoc IGroveBasin
@@ -551,18 +587,11 @@ contract GroveBasin is IGroveBasin, AccessControl {
         _checkPaused(msg.sig);
         if (assetsToDeposit == 0)                          revert ZeroAmount();
         if (!hasRole(LIQUIDITY_PROVIDER_ROLE, msg.sender)) revert NotLiquidityProvider();
+        if (!lpAssetAllowed[msg.sender][asset] || !lpAssetAllowed[receiver][asset]) {
+            revert LpTokenDepositNotAllowed();
+        }
 
-        newShares = previewDeposit(asset, assetsToDeposit);
-
-        if (newShares == 0) revert NoNewShares();
-
-        shares[receiver] += newShares;
-        totalShares      += newShares;
-
-        _pullAsset(asset, assetsToDeposit);
-        _depositLiquidityInPocket(assetsToDeposit, asset);
-
-        emit Deposit(asset, msg.sender, receiver, assetsToDeposit, newShares);
+        newShares = _deposit(asset, receiver, assetsToDeposit);
     }
 
     /// @inheritdoc IGroveBasin
@@ -570,6 +599,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
         external override returns (uint256 assetsWithdrawn)
     {
         if (maxAssetsToWithdraw == 0) revert ZeroAmount();
+
+        if (!lpAssetAllowed[msg.sender][asset]) revert LpTokenWithdrawNotAllowed();
 
         uint256 sharesToBurn;
 
@@ -596,7 +627,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
         public view override returns (uint256)
     {
         _checkPaused(IGroveBasin.deposit.selector);
-        if (asset == creditToken) _checkPaused(PAUSED_DEPOSIT_CREDIT);
         if (assetsToDeposit == 0) revert ZeroAmount();
 
         // Convert amount to 1e18 precision denominated in value of USD then convert to shares.
@@ -608,7 +638,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function previewWithdraw(address asset, uint256 maxAssetsToWithdraw)
         public view override returns (uint256 sharesToBurn, uint256 assetsWithdrawn)
     {
-        if (asset == creditToken) _checkPaused(PAUSED_WITHDRAW_CREDIT);
+        _checkPaused(bytes4(0));
         if (maxAssetsToWithdraw == 0) revert ZeroAmount();
 
         uint256 assetBalance = _getAvailableBalance(asset);
@@ -781,10 +811,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /**********************************************************************************************/
 
     /// @dev Extends revokeRole to allow PAUSER_ROLE holders to revoke MANAGER_ROLE,
-    ///      ALLOWLIST_MANAGER_ROLE, REDEEMER_ROLE, and LIQUIDITY_PROVIDER_ROLE. Freezing a
-    ///      liquidity provider only stops new deposits: `withdraw` is gated on share ownership,
-    ///      not on the role, so the frozen provider keeps access to the value of the shares it
-    ///      already holds.
+    ///      ALLOWLIST_MANAGER_ROLE, REDEEMER_ROLE, and LIQUIDITY_PROVIDER_ROLE. Revoking a
+    ///      liquidity provider only stops new deposits. Use `removeAssetAllowed` to cut 
+    ///      off withdrawals as well.
     function revokeRole(bytes32 role, address account) public override {
         if (
             (role == MANAGER_ROLE || role == ALLOWLIST_MANAGER_ROLE || role == REDEEMER_ROLE || role == LIQUIDITY_PROVIDER_ROLE) &&
@@ -999,6 +1028,31 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /// @dev Returns true if an external pocket is configured (i.e., pocket != address(this)).
     function _hasPocket() internal view returns (bool) {
         return pocket != address(this);
+    }
+
+    /// @dev Credits `newShares` to `receiver` and pulls `assetsToDeposit` into the custodian of the
+    ///      asset.
+    function _deposit(address asset, address receiver, uint256 assetsToDeposit)
+        internal returns (uint256 newShares)
+    {
+        newShares = previewDeposit(asset, assetsToDeposit);
+
+        if (newShares == 0) revert NoNewShares();
+
+        shares[receiver] += newShares;
+        totalShares      += newShares;
+
+        _pullAsset(asset, assetsToDeposit);
+        _depositLiquidityInPocket(assetsToDeposit, asset);
+
+        emit Deposit(asset, msg.sender, receiver, assetsToDeposit, newShares);
+    }
+
+    /// @dev Sets whether `provider` can deposit and withdraw `token`. Tokens are assumed validated
+    function _setLpAssetAllowedToken(address provider, address token, bool allowed) internal {
+        lpAssetAllowed[provider][token] = allowed;
+
+        emit LpAssetAllowedSet(provider, token, allowed);
     }
 
     /// @dev Reverts if `asset` is not one of the three supported tokens.
