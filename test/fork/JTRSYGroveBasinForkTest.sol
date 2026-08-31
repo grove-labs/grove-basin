@@ -47,6 +47,8 @@ abstract contract JTRSYGroveBasinForkTestBase is JTRSYForkTestBase {
         pocket = address(groveBasin);
         vm.stopPrank();
 
+        _allowAllAssets(lp);
+
         _postDeploy();
 
         // Predict redeemer address and allowlist it before deployment

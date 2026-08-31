@@ -78,6 +78,8 @@ abstract contract AaveV3UsdtPocketForkTestBase is AssetAllowlistHelper {
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
         groveBasin.setPocket(address(pocket));
         vm.stopPrank();
+
+        _allowAllAssets(groveBasin, owner, lp);
     }
 
     function _getBlock() internal pure virtual returns (uint256) {
