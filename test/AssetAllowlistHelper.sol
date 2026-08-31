@@ -19,6 +19,17 @@ abstract contract AssetAllowlistHelper is Test {
         _allowAssets(basin, managerAdmin, user, assets);
     }
 
+    /// @dev The Basin constructor only grants LIQUIDITY_PROVIDER_ROLE, so the asset allowances of
+    ///      the provider it is given have to be set explicitly by the deployer.
+    function _allowAllAssets(GroveBasin basin, address managerAdmin, address user) internal {
+        address[] memory assets = new address[](3);
+        assets[0] = basin.swapToken();
+        assets[1] = basin.collateralToken();
+        assets[2] = basin.creditToken();
+
+        _allowAssets(basin, managerAdmin, user, assets);
+    }
+
     /// @dev setLiquidityProvider states the whole permission set of an address in one call, so the
     ///      allowances and the role the user already has are read back and preserved to keep the
     ///      helper additive.

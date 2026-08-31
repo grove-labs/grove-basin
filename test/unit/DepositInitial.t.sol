@@ -237,6 +237,14 @@ contract DepositInitialTests is GroveBasinTestBase {
         assertEq(freshBasin.shares(address(0)), 10e18);
         assertEq(freshBasin.shares(lp),         0);
 
+        // The constructor only grants the role, so the LP's allowances are set explicitly
+        bytes32 managerAdminRole = freshBasin.MANAGER_ADMIN_ROLE();
+
+        vm.prank(owner);
+        freshBasin.grantRole(managerAdminRole, owner);
+
+        _allowAllAssets(freshBasin, owner, lp);
+
         // LP can still use regular deposit
         swapToken.mint(lp, 90e6);
         vm.startPrank(lp);

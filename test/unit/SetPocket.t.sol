@@ -10,7 +10,8 @@ import { IGroveBasin } from "src/interfaces/IGroveBasin.sol";
 import { UsdsUsdcPocket }   from "src/pockets/UsdsUsdcPocket.sol";
 import { AaveV3UsdtPocket } from "src/pockets/AaveV3UsdtPocket.sol";
 
-import { GroveBasinTestBase } from "test/GroveBasinTestBase.sol";
+import { AssetAllowlistHelper } from "test/AssetAllowlistHelper.sol";
+import { GroveBasinTestBase }   from "test/GroveBasinTestBase.sol";
 import { MockPocket }         from "test/mocks/MockPocket.sol";
 import { MockRateProvider }   from "test/mocks/MockRateProvider.sol";
 import { MockPSM }            from "test/mocks/MockPSM.sol";
@@ -170,7 +171,7 @@ contract GroveBasinSetPocketSuccessTests is GroveBasinTestBase {
 
 }
 
-contract GroveBasinSetPocketYieldDeployedTests is Test {
+contract GroveBasinSetPocketYieldDeployedTests is AssetAllowlistHelper {
 
     address public owner      = makeAddr("owner");
     address public lp         = makeAddr("liquidityProvider");
@@ -252,6 +253,8 @@ contract GroveBasinSetPocketYieldDeployedTests is Test {
 
         groveBasin.setPocket(address(pocket1));
         vm.stopPrank();
+
+        _allowAllAssets(groveBasin, owner, lp);
     }
 
     function test_setPocket_swapTokenFullyDeployedToYield() public {

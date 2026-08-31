@@ -82,6 +82,7 @@ contract PocketDepositWithdrawTestBase is AssetAllowlistHelper {
         groveBasin.setPocket(address(pocket));
         vm.stopPrank();
 
+        _allowAllAssets(groveBasin, owner, lp);
     }
 
     function _deposit(address asset, address user, uint256 amount) internal {
@@ -307,7 +308,7 @@ contract BasinWithdrawThroughPocketTests is PocketDepositWithdrawTestBase {
 /*** Basin deposit through pocket with USDT collateral tests                                ***/
 /**********************************************************************************************/
 
-contract BasinUsdtCollateralPocketTests is Test {
+contract BasinUsdtCollateralPocketTests is AssetAllowlistHelper {
 
     address public owner      = makeAddr("owner");
     address public lp         = makeAddr("liquidityProvider");
@@ -377,6 +378,7 @@ contract BasinUsdtCollateralPocketTests is Test {
         groveBasin.setPocket(address(pocket));
         vm.stopPrank();
 
+        _allowAllAssets(groveBasin, owner, lp);
     }
 
     function test_deposit_usdc_staysInBasin() public {

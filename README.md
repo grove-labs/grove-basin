@@ -68,7 +68,7 @@ The `depositInitial` function is provided for this purpose -- it mints shares to
 - **`PAUSER_ROLE`**: Can pause individual functions or the entire contract, and call `removeAssetAllowed`. Can also revoke `MANAGER_ROLE`, `ALLOWLIST_MANAGER_ROLE`, `REDEEMER_ROLE`, and `LIQUIDITY_PROVIDER_ROLE`.
 - **`REDEEMER_ROLE`**: Can initiate and complete credit token redemptions.
 - **`REDEEMER_CONTRACT_ROLE`**: Granted to token redeemer contracts that handle the actual redemption logic.
-- **`LIQUIDITY_PROVIDER_ROLE`**: Required to call `deposit`. Granted at deployment to the address passed to the constructor (along with allowances for all three assets), and afterwards set by `MANAGER_ADMIN_ROLE` via `setLiquidityProvider`; `PAUSER_ROLE` can also revoke it to freeze a provider. Revoking only blocks new deposits, since `withdraw` is gated on share ownership and the asset allowlist rather than on the role.
+- **`LIQUIDITY_PROVIDER_ROLE`**: Required to call `deposit`. Granted at deployment to the address passed to the constructor, which grants the role only and leaves every asset allowance false, and afterwards set by `MANAGER_ADMIN_ROLE` via `setLiquidityProvider`; `PAUSER_ROLE` can also revoke it to freeze a provider. Revoking only blocks new deposits, since `withdraw` is gated on share ownership and the asset allowlist rather than on the role.
 
 ### LP Asset Allowlist
 

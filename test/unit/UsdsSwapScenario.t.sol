@@ -11,7 +11,9 @@ import { MockERC20 } from "erc20-helpers/MockERC20.sol";
 import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 import { MockPSM }          from "test/mocks/MockPSM.sol";
 
-contract UsdsSwapScenarioTestBase is Test {
+import { AssetAllowlistHelper } from "test/AssetAllowlistHelper.sol";
+
+contract UsdsSwapScenarioTestBase is AssetAllowlistHelper {
 
     address public owner      = makeAddr("owner");
     address public grove      = makeAddr("grove");
@@ -76,6 +78,7 @@ contract UsdsSwapScenarioTestBase is Test {
         groveBasin.setPocket(address(pocket));
         vm.stopPrank();
 
+        _allowAllAssets(groveBasin, owner, grove);
     }
 
 }

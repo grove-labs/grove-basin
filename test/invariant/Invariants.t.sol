@@ -645,6 +645,9 @@ contract GroveBasinInvariants_TimeBasedRateSetting_NoTransfer is GroveBasinInvar
         groveBasin.setFeeBounds(0, 500);  // 0-5% fees
         vm.stopPrank();
 
+        // The redeployed Basin only grants the provider the role, so its allowances are set here
+        _allowAllAssets(lp);
+
         // NOTE: Don't need to set GroveBasin as pocket for this suite as its default on deploy
 
         // Initial LP deposit for baseline liquidity
@@ -749,6 +752,9 @@ contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinIn
         groveBasin.setFeeClaimer(FEE_CLAIMER);
         groveBasin.setFeeBounds(0, 500);  // 0-5% fees
         vm.stopPrank();
+
+        // The redeployed Basin only grants the provider the role, so its allowances are set here
+        _allowAllAssets(lp);
 
         // NOTE: This base test suite tests the case of the GroveBasin being the pocket for the whole time,
         //       where the other suites are testing with an external `pocket`.

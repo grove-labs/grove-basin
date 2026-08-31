@@ -35,6 +35,17 @@ contract ConstructorSeedDepositTests is GroveBasinTestBase {
         ));
     }
 
+    /// @dev The Basin constructor only grants LIQUIDITY_PROVIDER_ROLE, so the asset allowances of
+    ///      the provider have to be set explicitly after deployment.
+    function _permissionLp(GroveBasin basin) internal {
+        bytes32 managerAdminRole = basin.MANAGER_ADMIN_ROLE();
+
+        vm.prank(owner);
+        basin.grantRole(managerAdminRole, owner);
+
+        _allowAllAssets(basin, owner, lp);
+    }
+
     function test_constructor_liquidityProviderIsSet() public {
         GroveBasin newGroveBasin = _deploy();
         assertTrue(newGroveBasin.hasRole(newGroveBasin.LIQUIDITY_PROVIDER_ROLE(), lp));
@@ -51,6 +62,8 @@ contract ConstructorSeedDepositTests is GroveBasinTestBase {
 
     function test_deploy_lpCanDepositAfterSeed() public {
         GroveBasin newGroveBasin = _deploy();
+
+        _permissionLp(newGroveBasin);
 
         swapToken.mint(lp, 10e6);
         vm.startPrank(lp);

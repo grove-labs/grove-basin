@@ -97,6 +97,8 @@ contract PocketInvariantTest is AssetAllowlistHelper {
         groveBasin.setPocket(address(pocket));
         vm.stopPrank();
 
+        _allowAllAssets(groveBasin, owner, lp);
+
         // Initial LP deposit for baseline liquidity, the seed receiver has to be allowed the asset
         _allowAsset(groveBasin, owner, BURN_ADDRESS, address(swapToken));
 
@@ -234,6 +236,8 @@ contract AaveV3PocketInvariantTest is AssetAllowlistHelper {
         groveBasin.setPocket(address(pocket));
         vm.stopPrank();
 
+        _allowAllAssets(groveBasin, owner, lp);
+
         // Initial LP deposit for baseline liquidity, the seed receiver has to be allowed the asset
         _allowAsset(groveBasin, owner, BURN_ADDRESS, address(swapToken));
 
@@ -362,6 +366,8 @@ contract MorphoPocketInvariantTest is AssetAllowlistHelper {
 
         groveBasin.setPocket(address(pocket));
         vm.stopPrank();
+
+        _allowAllAssets(groveBasin, owner, lp);
 
         // Initial LP deposit for baseline liquidity, the seed receiver has to be allowed the asset
         _allowAsset(groveBasin, owner, BURN_ADDRESS, address(swapToken));

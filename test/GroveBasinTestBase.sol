@@ -97,6 +97,10 @@ contract GroveBasinTestBase is AssetAllowlistHelper {
         groveBasin.setPocket(pocket);
         vm.stopPrank();
 
+        // The constructor only grants LIQUIDITY_PROVIDER_ROLE, so the asset allowances of the
+        // provider have to be set explicitly
+        _allowAllAssets(lp);
+
         vm.label(address(swapToken),       "swapToken");
         vm.label(address(collateralToken), "collateralToken");
         vm.label(address(creditToken),     "creditToken");
@@ -130,12 +134,7 @@ contract GroveBasinTestBase is AssetAllowlistHelper {
     /// @dev Withdrawals are gated on the same allowlist as deposits, so tests that move a user's
     ///      value from one asset into another have to allow the user every asset up front.
     function _allowAllAssets(address user) internal {
-        address[] memory tokens = new address[](3);
-        tokens[0] = address(swapToken);
-        tokens[1] = address(collateralToken);
-        tokens[2] = address(creditToken);
-
-        _allowAssets(groveBasin, owner, user, tokens);
+        _allowAllAssets(groveBasin, owner, user);
     }
 
     function _withdraw(address asset, address user, uint256 amount) internal {

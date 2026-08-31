@@ -14,7 +14,9 @@ import { MockRateProvider } from "test/mocks/MockRateProvider.sol";
 import { MockAaveV3Pool }  from "test/mocks/MockAaveV3Pool.sol";
 import { MockAToken }      from "test/mocks/MockAToken.sol";
 
-contract AaveV3UsdtPocketTestBase is Test {
+import { AssetAllowlistHelper } from "test/AssetAllowlistHelper.sol";
+
+contract AaveV3UsdtPocketTestBase is AssetAllowlistHelper {
 
     address public owner   = makeAddr("owner");
     address public lp      = makeAddr("liquidityProvider");
@@ -82,6 +84,8 @@ contract AaveV3UsdtPocketTestBase is Test {
 
         vm.prank(manager);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
+
+        _allowAllAssets(groveBasin, owner, lp);
     }
 
 }

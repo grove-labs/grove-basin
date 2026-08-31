@@ -173,11 +173,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         _grantRole(LIQUIDITY_PROVIDER_ROLE, liquidityProvider_);
 
-        // The three tokens were validated above.
-        _setLpAssetAllowedToken(liquidityProvider_, swapToken_,       true);
-        _setLpAssetAllowedToken(liquidityProvider_, collateralToken_, true);
-        _setLpAssetAllowedToken(liquidityProvider_, creditToken_,     true);
-
         emit LiquidityProviderSet(liquidityProvider_, true);
     }
 
