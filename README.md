@@ -80,6 +80,15 @@ The `depositInitial` function is provided for this purpose -- it mints shares to
 - Share receivers that never deposit are permissioned with `setLiquidityProvider(provider, false, ...)`. This is also how the fee claimer is permissioned to withdraw the shares it accrues.
 
 
+### Liquidity Provision Compared to Swaps
+
+`deposit` and `withdraw` are permissioned liquidity operations rather than swaps, and by design they carry none of the swap controls. An address allowed two assets can therefore deposit one and withdraw the other, converting between them at the rate providers' rates.
+
+LPs are assumed trusted via commercial agreements that can either prevent malicious behavior, or coordinate a shutdown procedure that would supersede any allowlist that prevents LPs from redeeming their LP shares
+
+In practice, we expect there to be two types of LPs: ones that can deposit/withdraw stablecoins, and ones that can deposit/withdraw credit tokens.
+
+
 ### Functions
 
 #### Manager Admin Functions
