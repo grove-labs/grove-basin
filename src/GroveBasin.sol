@@ -328,6 +328,12 @@ contract GroveBasin is IGroveBasin, AccessControl {
         address oldFeeClaimer = feeClaimer;
         feeClaimer = newFeeClaimer;
 
+        if (newFeeClaimer != address(0)) {
+            _setLpAssetAllowedToken(newFeeClaimer, swapToken,       true);
+            _setLpAssetAllowedToken(newFeeClaimer, collateralToken, true);
+            _setLpAssetAllowedToken(newFeeClaimer, creditToken,     true);
+        }
+
         emit FeeClaimerSet(oldFeeClaimer, newFeeClaimer);
     }
 

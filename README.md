@@ -77,7 +77,8 @@ The `depositInitial` function is provided for this purpose -- it mints shares to
 - `deposit` requires the caller to hold `LIQUIDITY_PROVIDER_ROLE` and requires both the caller and the receiver to be allowed the asset, since withdrawals are gated on the same mapping.
 - `withdraw` requires the caller to be allowed the asset, so shares can only be redeemed for assets the address is permissioned for. Disallowing an asset for an address that still holds shares leaves it to redeem in the assets it is still allowed.
 - Allowances are set only through `setLiquidityProvider` (or cleared via `removeAssetAllowed`). Granting the role with the inherited `grantRole` leaves the mapping untouched.
-- Share receivers that never deposit are permissioned with `setLiquidityProvider(provider, false, ...)`. This is also how the fee claimer is permissioned to withdraw the shares it accrues.
+- Share receivers that never deposit are permissioned with `setLiquidityProvider(provider, false, ...)`.
+- `setFeeClaimer` allows a new non-zero fee claimer to withdraw all three assets without granting `LIQUIDITY_PROVIDER_ROLE`. A previous fee claimer's allowances remain until changed through `setLiquidityProvider`.
 
 
 ### Liquidity Provision Compared to Swaps
@@ -100,7 +101,7 @@ In practice, we expect there to be two types of LPs: ones that can deposit/withd
 - **`setPocket`**: Sets the `pocket` address, transferring the entire swap token balance to the new pocket. Only callable by `MANAGER_ADMIN_ROLE`.
 - **`addTokenRedeemer`**: Adds a token redeemer contract, granting it `REDEEMER_CONTRACT_ROLE` and calling its `setUp` function. Only callable by `MANAGER_ADMIN_ROLE`.
 - **`removeTokenRedeemer`**: Removes a token redeemer contract, revoking `REDEEMER_CONTRACT_ROLE` and calling its `tearDown` function. Only callable by `MANAGER_ADMIN_ROLE`.
-- **`setFeeClaimer`**: Sets the address that accrues fee shares on swaps. Shares and asset allowances already held by the previous claimer are left in place so it can still withdraw them. Only callable by `MANAGER_ADMIN_ROLE`.
+- **`setFeeClaimer`**: Sets the address that accrues fee shares on swaps and allows a new non-zero claimer to withdraw all three assets. Shares and asset allowances already held by the previous claimer are left in place so it can still withdraw them. Only callable by `MANAGER_ADMIN_ROLE`.
 - **`setLiquidityProvider`**: Sets whether an address holds `LIQUIDITY_PROVIDER_ROLE` and which assets it may deposit and withdraw. `tokens` must be exactly `[swapToken, collateralToken, creditToken]`, so every call states the address's full permission set. Only callable by `MANAGER_ADMIN_ROLE`.
 - **`setUnpaused`**: Unsets a pause flag. Supports global pause (`bytes4(0)`) and per-function/per-direction pause keys. Only callable by `MANAGER_ADMIN_ROLE`.
 

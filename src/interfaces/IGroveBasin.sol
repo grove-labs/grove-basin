@@ -596,8 +596,8 @@ interface IGroveBasin {
      *          the inherited AccessControl grantRole leaves this mapping untouched, so use
      *          setLiquidityProvider to grant the role and set allowed tokens atomically. Deposits
      *          on behalf of a receiver require the receiver to be allowed the token as well.
-     *          Allowances are set by MANAGER_ADMIN_ROLE through setLiquidityProvider, which is also
-     *          how the fee claimer is permissioned to withdraw the shares it accrues.
+     *          Allowances are set by MANAGER_ADMIN_ROLE through setLiquidityProvider.
+     *          setFeeClaimer also allows a non-zero fee claimer to withdraw all three tokens.
      *  @param  provider  Address to query.
      *  @param  token     Address of the token (swapToken, collateralToken, or creditToken).
      *  @return isAllowed Whether the address is allowed to deposit and withdraw the token.
@@ -838,9 +838,8 @@ interface IGroveBasin {
 
     /**
      *  @dev    Sets the address that accrues fee shares on swaps. Callable only by MANAGER_ADMIN_ROLE.
-     *          Pair it with a setLiquidityProvider call allowing the new claimer the assets it should 
-     *          be able to withdraw its fee shares in, since fee shares are a claim on value rather 
-     *          than on any one asset. Pass the zero address to stop fee accrual.
+     *          A non-zero claimer is allowed to withdraw all three Basin assets, but is not granted
+     *          LIQUIDITY_PROVIDER_ROLE. Pass the zero address to stop fee accrual.
      *          Note: if the previous fee claimer holds shares, those shares remain; they are not
      *          transferred or burned. Its allowances are left in place as well, so it can still
      *          withdraw them. Clear them with setLiquidityProvider once it has claimed.
