@@ -335,17 +335,16 @@ contract SwapAllowlistRouteKeyTests is SwapAllowlistTestBase {
         assertEq(groveBasin.GLOBAL_ROUTE_KEY(), bytes32(0));
     }
 
-    /// @dev Gating a route that cannot be swapped has no effect on the routes that can.
-    function test_setSwapAllowlistEnabled_unreachableRouteIsInert() public {
-        bytes32 unreachableRoute = _routeKey(address(swapToken), address(collateralToken));
-
+    function test_setSwapAllowlistEnabled_invalidSwapRoute() public {
+        vm.expectRevert(IGroveBasin.InvalidSwap.selector);
         vm.prank(owner);
         groveBasin.setSwapAllowlistEnabled(address(swapToken), address(collateralToken), true);
+    }
 
-        assertEq(groveBasin.swapAllowlistEnabled(unreachableRoute), true);
-
-        vm.prank(swapper);
-        groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, receiver, 0);
+    function test_setSwapAllowlistEnabled_sameAsset() public {
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
+        vm.prank(owner);
+        groveBasin.setSwapAllowlistEnabled(address(creditToken), address(creditToken), true);
     }
 
     function test_setSwapAllowlistEnabled_invalidAssetIn() public {

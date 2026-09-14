@@ -732,7 +732,8 @@ interface IGroveBasin {
      *  @dev   Enables or disables the allowlist of a single route, superseding the global allowlist
      *         on that route. Routes are unidirectional, so gating (assetIn, assetOut) leaves
      *         (assetOut, assetIn) untouched. All routes are ungated on deployment. Callable only by
-     *         MANAGER_ADMIN_ROLE. Reverts if either asset is not a basin asset.
+     *         MANAGER_ADMIN_ROLE. Reverts if either asset is not a basin asset, if both assets are
+     *         the same, or if neither asset is the credit token.
      *  @param assetIn  Address of the asset swapped in on the route.
      *  @param assetOut Address of the asset swapped out on the route.
      *  @param enabled  Whether to restrict the route to allowlisted callers.

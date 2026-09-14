@@ -342,6 +342,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     {
         _requireValidAsset(assetIn);
         _requireValidAsset(assetOut);
+        _requireValidSwapRoute(assetIn, assetOut);
 
         _setSwapAllowlistEnabled(getSwapRouteKey(assetIn, assetOut), enabled);
     }
@@ -931,9 +932,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     {
         _requireValidAsset(asset);
         _requireValidAsset(quoteAsset);
-
-        if (asset == quoteAsset)                               revert InvalidAsset();
-        if (asset != creditToken && quoteAsset != creditToken) revert InvalidSwap();
+        _requireValidSwapRoute(asset, quoteAsset);
 
         (uint256 rateIn,  uint256 ratePrecisionIn,  uint256 tokenPrecisionIn)  = _getTokenRateAndPrecision(asset);
         (uint256 rateOut, uint256 ratePrecisionOut, uint256 tokenPrecisionOut) = _getTokenRateAndPrecision(quoteAsset);
@@ -1062,6 +1061,12 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /// @dev Reverts if `asset` is not one of the three supported tokens.
     function _requireValidAsset(address asset) internal view {
         if (asset != swapToken && asset != collateralToken && asset != creditToken) revert InvalidAsset();
+    }
+
+    /// @dev Reverts if the route does not swap between the credit token and another supported asset.
+    function _requireValidSwapRoute(address assetIn, address assetOut) internal view {
+        if (assetIn == assetOut)                               revert InvalidAsset();
+        if (assetIn != creditToken && assetOut != creditToken) revert InvalidSwap();
     }
 
     /// @dev Reverts if the route is gated and `msg.sender` is not allowlisted for it.
