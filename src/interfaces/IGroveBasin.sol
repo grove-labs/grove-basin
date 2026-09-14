@@ -53,6 +53,7 @@ interface IGroveBasin {
     error LpTokenDepositNotAllowed();
     error LpTokenWithdrawNotAllowed();
     error NotAuthorizedToRemoveAssetAllowed();
+    error NotAuthorizedToRemoveFromSwapAllowlist();
     error InvalidAssetListLength();
 
     /**********************************************************************************************/
@@ -809,7 +810,7 @@ interface IGroveBasin {
     function setStalenessThreshold(uint256 newThreshold) external;
 
     /**********************************************************************************************/
-    /*** Allowlist manager functions                                                            ***/
+    /*** Allowlist manager and pauser functions                                                 ***/
     /**********************************************************************************************/
 
     /**
@@ -823,8 +824,8 @@ interface IGroveBasin {
     function addToSwapAllowlist(bytes32 routeKey, address caller) external;
 
     /**
-     *  @dev   Removes a caller from the allowlist of a route key. Callable only by
-     *         ALLOWLIST_MANAGER_ROLE.
+     *  @dev   Removes a caller from the allowlist of a route key. Callable by
+     *         ALLOWLIST_MANAGER_ROLE or PAUSER_ROLE.
      *  @param routeKey The route key, obtained from `getSwapRouteKey`.
      *  @param caller   Address to remove from the allowlist.
      */

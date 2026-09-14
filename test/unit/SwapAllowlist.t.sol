@@ -155,18 +155,12 @@ contract SwapAllowlistAccessControlTests is SwapAllowlistTestBase {
         groveBasin.addToSwapAllowlist(routeKey, swapper);
     }
 
-    function test_removeFromSwapAllowlist_notAllowlistManager() public {
+    function test_removeFromSwapAllowlist_notAuthorized() public {
         bytes32 routeKey = _routeKey(address(swapToken), address(creditToken));
 
         _allow(address(swapToken), address(creditToken), swapper);
 
-        vm.expectRevert(
-            abi.encodeWithSignature(
-                "AccessControlUnauthorizedAccount(address,bytes32)",
-                swapper,
-                groveBasin.ALLOWLIST_MANAGER_ROLE()
-            )
-        );
+        vm.expectRevert(IGroveBasin.NotAuthorizedToRemoveFromSwapAllowlist.selector);
         vm.prank(swapper);
         groveBasin.removeFromSwapAllowlist(routeKey, swapper);
     }
@@ -176,13 +170,7 @@ contract SwapAllowlistAccessControlTests is SwapAllowlistTestBase {
 
         _allow(address(swapToken), address(creditToken), swapper);
 
-        vm.expectRevert(
-            abi.encodeWithSignature(
-                "AccessControlUnauthorizedAccount(address,bytes32)",
-                manager,
-                groveBasin.ALLOWLIST_MANAGER_ROLE()
-            )
-        );
+        vm.expectRevert(IGroveBasin.NotAuthorizedToRemoveFromSwapAllowlist.selector);
         vm.prank(manager);
         groveBasin.removeFromSwapAllowlist(routeKey, swapper);
     }
@@ -193,6 +181,22 @@ contract SwapAllowlistAccessControlTests is SwapAllowlistTestBase {
         _allow(address(swapToken), address(creditToken), swapper);
 
         vm.prank(allowlistManager);
+        groveBasin.removeFromSwapAllowlist(routeKey, swapper);
+
+        assertEq(groveBasin.swapAllowlist(routeKey, swapper), false);
+    }
+
+    function test_removeFromSwapAllowlist_pauser() public {
+        address pauser = makeAddr("pauser");
+        bytes32 pauserRole = groveBasin.PAUSER_ROLE();
+        bytes32 routeKey = _routeKey(address(swapToken), address(creditToken));
+
+        _allow(address(swapToken), address(creditToken), swapper);
+
+        vm.prank(owner);
+        groveBasin.grantRole(pauserRole, pauser);
+
+        vm.prank(pauser);
         groveBasin.removeFromSwapAllowlist(routeKey, swapper);
 
         assertEq(groveBasin.swapAllowlist(routeKey, swapper), false);

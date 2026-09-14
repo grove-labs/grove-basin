@@ -65,7 +65,7 @@ The `depositInitial` function is provided for this purpose -- it mints shares to
 - **`MANAGER_ADMIN_ROLE`**: Can set rate providers, swap size bounds, staleness threshold bounds, fee bounds, pocket, fee claimer, unpause individual functions or the entire contract, add/remove token redeemers, and configure liquidity providers and their asset permissions. Admin of `MANAGER_ROLE`, `ALLOWLIST_MANAGER_ROLE`, `PAUSER_ROLE`, `REDEEMER_ROLE`, `REDEEMER_CONTRACT_ROLE`, and `LIQUIDITY_PROVIDER_ROLE`.
 - **`MANAGER_ROLE`**: Can set max swap size and staleness threshold within their respective bounds.
 - **`ALLOWLIST_MANAGER_ROLE`**: Can add and remove callers from the swap allowlist.
-- **`PAUSER_ROLE`**: Can pause individual functions or the entire contract, and call `removeAssetAllowed`. Can also revoke `MANAGER_ROLE`, `ALLOWLIST_MANAGER_ROLE`, `REDEEMER_ROLE`, and `LIQUIDITY_PROVIDER_ROLE`.
+- **`PAUSER_ROLE`**: Can pause individual functions or the entire contract, remove callers from swap allowlists, and call `removeAssetAllowed`. Can also revoke `MANAGER_ROLE`, `ALLOWLIST_MANAGER_ROLE`, `REDEEMER_ROLE`, and `LIQUIDITY_PROVIDER_ROLE`.
 - **`REDEEMER_ROLE`**: Can initiate and complete credit token redemptions.
 - **`REDEEMER_CONTRACT_ROLE`**: Granted to token redeemer contracts that handle the actual redemption logic.
 - **`LIQUIDITY_PROVIDER_ROLE`**: Required to call `deposit`. `deployAndInit` or `setLiquidityProvider` must be called before a provider can deposit or withdraw.

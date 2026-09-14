@@ -454,7 +454,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     /**********************************************************************************************/
-    /*** Allowlist manager functions                                                            ***/
+    /*** Allowlist manager and pauser functions                                                 ***/
     /**********************************************************************************************/
 
     /// @inheritdoc IGroveBasin
@@ -464,7 +464,11 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     /// @inheritdoc IGroveBasin
-    function removeFromSwapAllowlist(bytes32 routeKey, address caller) external override onlyRole(ALLOWLIST_MANAGER_ROLE) {
+    function removeFromSwapAllowlist(bytes32 routeKey, address caller) external override {
+        if (!hasRole(ALLOWLIST_MANAGER_ROLE, msg.sender) && !hasRole(PAUSER_ROLE, msg.sender)) {
+            revert NotAuthorizedToRemoveFromSwapAllowlist();
+        }
+
         swapAllowlist[routeKey][caller] = false;
         emit SwapAllowlistSet(routeKey, caller, false);
     }
