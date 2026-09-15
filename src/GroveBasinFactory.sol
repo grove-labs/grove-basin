@@ -332,7 +332,8 @@ contract GroveBasinFactory {
         tokens[1] = params.collateralToken;
         tokens[2] = params.creditToken;
 
-        // liquidityProvider constructor allowlists all tokens by default; apply allowlists here
+        // The Basin constructor grants LIQUIDITY_PROVIDER_ROLE only and leaves every asset
+        // allowance false, so each config's full permission set is applied here.
         for (uint256 i; i < params.lpConfigs.length; ++i) {
             LpConfig calldata config = params.lpConfigs[i];
 

@@ -40,9 +40,9 @@ contract GroveBasin is IGroveBasin, AccessControl {
     bytes4 public constant PAUSED_SWAP_COLLATERAL_TO_CREDIT = bytes4(keccak256("PAUSED_SWAP_COLLATERAL_TO_CREDIT"));
     bytes4 public constant PAUSED_SWAP_SWAP_TO_CREDIT       = bytes4(keccak256("PAUSED_SWAP_SWAP_TO_CREDIT"));
 
-    /// @dev Route key reserved for the global swap allowlist, which gates every route that carries
+    /// @dev Route key reserved for the default swap allowlist, which gates every route that carries
     ///      no gate of its own.
-    bytes32 public constant override GLOBAL_ROUTE_KEY = bytes32(0);
+    bytes32 public constant override DEFAULT_ROUTE_KEY = bytes32(0);
 
     uint256 internal immutable _swapTokenPrecision;
     uint256 internal immutable _collateralTokenPrecision;
@@ -76,6 +76,8 @@ contract GroveBasin is IGroveBasin, AccessControl {
     
     address public override feeClaimer;
 
+    bool public override allowlistsActive = true;
+
     /// @dev Mapping of pause keys to pause state. Keys can be function selectors or arbitrary
     ///      bytes4 values. bytes4(0) is reserved for global pause.
     mapping(bytes4 pauseKey   => bool isPaused)         public override paused;
@@ -84,7 +86,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     mapping(address redeemer  => uint256 count)         public override pendingRedemptions;
 
     /// @dev Mapping of route keys to allowlist state. Keys come from `getSwapRouteKey` and are
-    ///      unidirectional. GLOBAL_ROUTE_KEY holds both the flag and the caller set that apply to
+    ///      unidirectional. DEFAULT_ROUTE_KEY holds both the flag and the caller set that apply to
     ///      every route whose own flag is unset; a route whose flag is set reads only its own
     ///      entries.
     mapping(bytes32 routeKey => bool isEnabled)                            public override swapAllowlistEnabled;
@@ -173,7 +175,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
 
         _grantRole(LIQUIDITY_PROVIDER_ROLE, liquidityProvider_);
 
-        emit LiquidityProviderSet(liquidityProvider_, true);
     }
 
     /**********************************************************************************************/
@@ -328,12 +329,24 @@ contract GroveBasin is IGroveBasin, AccessControl {
         address oldFeeClaimer = feeClaimer;
         feeClaimer = newFeeClaimer;
 
+        if (newFeeClaimer != address(0)) {
+            _setLpAssetAllowedToken(newFeeClaimer, swapToken,       true);
+            _setLpAssetAllowedToken(newFeeClaimer, collateralToken, true);
+            _setLpAssetAllowedToken(newFeeClaimer, creditToken,     true);
+        }
+
         emit FeeClaimerSet(oldFeeClaimer, newFeeClaimer);
     }
 
     /// @inheritdoc IGroveBasin
     function setGlobalSwapAllowlistEnabled(bool enabled) external override onlyRole(MANAGER_ADMIN_ROLE) {
-        _setSwapAllowlistEnabled(GLOBAL_ROUTE_KEY, enabled);
+        _setSwapAllowlistEnabled(DEFAULT_ROUTE_KEY, enabled);
+    }
+
+    /// @inheritdoc IGroveBasin
+    function setAllowlistsActive(bool active) external override onlyRole(MANAGER_ADMIN_ROLE) {
+        allowlistsActive = active;
+        emit AllowlistsActiveSet(active);
     }
 
     /// @inheritdoc IGroveBasin
@@ -342,6 +355,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     {
         _requireValidAsset(assetIn);
         _requireValidAsset(assetOut);
+        _requireValidSwapRoute(assetIn, assetOut);
 
         _setSwapAllowlistEnabled(getSwapRouteKey(assetIn, assetOut), enabled);
     }
@@ -372,7 +386,6 @@ contract GroveBasin is IGroveBasin, AccessControl {
             _setLpAssetAllowedToken(provider, tokens[i], allowed[i]);
         }
 
-        emit LiquidityProviderSet(provider, isDepositor);
     }
 
     /// @inheritdoc IGroveBasin
@@ -454,7 +467,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     /**********************************************************************************************/
-    /*** Allowlist manager functions                                                            ***/
+    /*** Allowlist manager and pauser functions                                                 ***/
     /**********************************************************************************************/
 
     /// @inheritdoc IGroveBasin
@@ -464,7 +477,11 @@ contract GroveBasin is IGroveBasin, AccessControl {
     }
 
     /// @inheritdoc IGroveBasin
-    function removeFromSwapAllowlist(bytes32 routeKey, address caller) external override onlyRole(ALLOWLIST_MANAGER_ROLE) {
+    function removeFromSwapAllowlist(bytes32 routeKey, address caller) external override {
+        if (!hasRole(ALLOWLIST_MANAGER_ROLE, msg.sender) && !hasRole(PAUSER_ROLE, msg.sender)) {
+            revert NotAuthorizedToRemoveFromSwapAllowlist();
+        }
+
         swapAllowlist[routeKey][caller] = false;
         emit SwapAllowlistSet(routeKey, caller, false);
     }
@@ -728,10 +745,12 @@ contract GroveBasin is IGroveBasin, AccessControl {
     function isSwapCallerAllowlisted(address assetIn, address assetOut, address caller)
         public view override returns (bool)
     {
+        if (!allowlistsActive) return true;
+
         bytes32 routeKey = getSwapRouteKey(assetIn, assetOut);
 
-        if (swapAllowlistEnabled[routeKey])         return swapAllowlist[routeKey][caller];
-        if (swapAllowlistEnabled[GLOBAL_ROUTE_KEY]) return swapAllowlist[GLOBAL_ROUTE_KEY][caller];
+        if (swapAllowlistEnabled[routeKey])          return swapAllowlist[routeKey][caller];
+        if (swapAllowlistEnabled[DEFAULT_ROUTE_KEY]) return swapAllowlist[DEFAULT_ROUTE_KEY][caller];
 
         return true;
     }
@@ -927,9 +946,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
     {
         _requireValidAsset(asset);
         _requireValidAsset(quoteAsset);
-
-        if (asset == quoteAsset)                               revert InvalidAsset();
-        if (asset != creditToken && quoteAsset != creditToken) revert InvalidSwap();
+        _requireValidSwapRoute(asset, quoteAsset);
 
         (uint256 rateIn,  uint256 ratePrecisionIn,  uint256 tokenPrecisionIn)  = _getTokenRateAndPrecision(asset);
         (uint256 rateOut, uint256 ratePrecisionOut, uint256 tokenPrecisionOut) = _getTokenRateAndPrecision(quoteAsset);
@@ -1058,6 +1075,12 @@ contract GroveBasin is IGroveBasin, AccessControl {
     /// @dev Reverts if `asset` is not one of the three supported tokens.
     function _requireValidAsset(address asset) internal view {
         if (asset != swapToken && asset != collateralToken && asset != creditToken) revert InvalidAsset();
+    }
+
+    /// @dev Reverts if the route does not swap between the credit token and another supported asset.
+    function _requireValidSwapRoute(address assetIn, address assetOut) internal view {
+        if (assetIn == assetOut)                               revert InvalidAsset();
+        if (assetIn != creditToken && assetOut != creditToken) revert InvalidSwap();
     }
 
     /// @dev Reverts if the route is gated and `msg.sender` is not allowlisted for it.

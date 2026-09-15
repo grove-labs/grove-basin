@@ -46,11 +46,11 @@ contract SwapAllowlistTestBase is GroveBasinTestBase {
         groveBasin.addToSwapAllowlist(routeKey, caller);
     }
 
-    function _allowGlobally(address caller) internal {
-        bytes32 globalRouteKey = groveBasin.GLOBAL_ROUTE_KEY();
+    function _allowDefault(address caller) internal {
+        bytes32 defaultRouteKey = groveBasin.DEFAULT_ROUTE_KEY();
 
         vm.prank(allowlistManager);
-        groveBasin.addToSwapAllowlist(globalRouteKey, caller);
+        groveBasin.addToSwapAllowlist(defaultRouteKey, caller);
     }
 
     function _gateRoute(address assetIn, address assetOut) internal {
@@ -58,7 +58,7 @@ contract SwapAllowlistTestBase is GroveBasinTestBase {
         groveBasin.setSwapAllowlistEnabled(assetIn, assetOut, true);
     }
 
-    function _gateGlobally() internal {
+    function _gateDefault() internal {
         vm.prank(owner);
         groveBasin.setGlobalSwapAllowlistEnabled(true);
     }
@@ -101,6 +101,18 @@ contract SwapAllowlistAccessControlTests is SwapAllowlistTestBase {
         );
         vm.prank(manager);
         groveBasin.setGlobalSwapAllowlistEnabled(true);
+    }
+
+    function test_setAllowlistsActive_notManagerAdmin() public {
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorizedAccount(address,bytes32)",
+                manager,
+                groveBasin.MANAGER_ADMIN_ROLE()
+            )
+        );
+        vm.prank(manager);
+        groveBasin.setAllowlistsActive(false);
     }
 
     function test_setSwapAllowlistEnabled_notAllowlistManager() public {
@@ -155,18 +167,12 @@ contract SwapAllowlistAccessControlTests is SwapAllowlistTestBase {
         groveBasin.addToSwapAllowlist(routeKey, swapper);
     }
 
-    function test_removeFromSwapAllowlist_notAllowlistManager() public {
+    function test_removeFromSwapAllowlist_notAuthorized() public {
         bytes32 routeKey = _routeKey(address(swapToken), address(creditToken));
 
         _allow(address(swapToken), address(creditToken), swapper);
 
-        vm.expectRevert(
-            abi.encodeWithSignature(
-                "AccessControlUnauthorizedAccount(address,bytes32)",
-                swapper,
-                groveBasin.ALLOWLIST_MANAGER_ROLE()
-            )
-        );
+        vm.expectRevert(IGroveBasin.NotAuthorizedToRemoveFromSwapAllowlist.selector);
         vm.prank(swapper);
         groveBasin.removeFromSwapAllowlist(routeKey, swapper);
     }
@@ -176,13 +182,7 @@ contract SwapAllowlistAccessControlTests is SwapAllowlistTestBase {
 
         _allow(address(swapToken), address(creditToken), swapper);
 
-        vm.expectRevert(
-            abi.encodeWithSignature(
-                "AccessControlUnauthorizedAccount(address,bytes32)",
-                manager,
-                groveBasin.ALLOWLIST_MANAGER_ROLE()
-            )
-        );
+        vm.expectRevert(IGroveBasin.NotAuthorizedToRemoveFromSwapAllowlist.selector);
         vm.prank(manager);
         groveBasin.removeFromSwapAllowlist(routeKey, swapper);
     }
@@ -193,6 +193,22 @@ contract SwapAllowlistAccessControlTests is SwapAllowlistTestBase {
         _allow(address(swapToken), address(creditToken), swapper);
 
         vm.prank(allowlistManager);
+        groveBasin.removeFromSwapAllowlist(routeKey, swapper);
+
+        assertEq(groveBasin.swapAllowlist(routeKey, swapper), false);
+    }
+
+    function test_removeFromSwapAllowlist_pauser() public {
+        address pauser = makeAddr("pauser");
+        bytes32 pauserRole = groveBasin.PAUSER_ROLE();
+        bytes32 routeKey = _routeKey(address(swapToken), address(creditToken));
+
+        _allow(address(swapToken), address(creditToken), swapper);
+
+        vm.prank(owner);
+        groveBasin.grantRole(pauserRole, pauser);
+
+        vm.prank(pauser);
         groveBasin.removeFromSwapAllowlist(routeKey, swapper);
 
         assertEq(groveBasin.swapAllowlist(routeKey, swapper), false);
@@ -323,25 +339,24 @@ contract SwapAllowlistRouteKeyTests is SwapAllowlistTestBase {
         );
     }
 
-    function test_getSwapRouteKey_isNeverGlobalRouteKey() public view {
-        assertTrue(groveBasin.getSwapRouteKey(address(0), address(0)) != groveBasin.GLOBAL_ROUTE_KEY());
+    function test_getSwapRouteKey_isNeverDefaultRouteKey() public view {
+        assertTrue(groveBasin.getSwapRouteKey(address(0), address(0)) != groveBasin.DEFAULT_ROUTE_KEY());
     }
 
-    function test_globalRouteKey() public view {
-        assertEq(groveBasin.GLOBAL_ROUTE_KEY(), bytes32(0));
+    function test_defaultRouteKey() public view {
+        assertEq(groveBasin.DEFAULT_ROUTE_KEY(), bytes32(0));
     }
 
-    /// @dev Gating a route that cannot be swapped has no effect on the routes that can.
-    function test_setSwapAllowlistEnabled_unreachableRouteIsInert() public {
-        bytes32 unreachableRoute = _routeKey(address(swapToken), address(collateralToken));
-
+    function test_setSwapAllowlistEnabled_invalidSwapRoute() public {
+        vm.expectRevert(IGroveBasin.InvalidSwap.selector);
         vm.prank(owner);
         groveBasin.setSwapAllowlistEnabled(address(swapToken), address(collateralToken), true);
+    }
 
-        assertEq(groveBasin.swapAllowlistEnabled(unreachableRoute), true);
-
-        vm.prank(swapper);
-        groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, receiver, 0);
+    function test_setSwapAllowlistEnabled_sameAsset() public {
+        vm.expectRevert(IGroveBasin.InvalidAsset.selector);
+        vm.prank(owner);
+        groveBasin.setSwapAllowlistEnabled(address(creditToken), address(creditToken), true);
     }
 
     function test_setSwapAllowlistEnabled_invalidAssetIn() public {
@@ -361,23 +376,41 @@ contract SwapAllowlistRouteKeyTests is SwapAllowlistTestBase {
 contract SwapAllowlistConfigTests is SwapAllowlistTestBase {
 
     function test_setGlobalSwapAllowlistEnabled() public {
-        bytes32 globalRouteKey = groveBasin.GLOBAL_ROUTE_KEY();
+        bytes32 defaultRouteKey = groveBasin.DEFAULT_ROUTE_KEY();
 
-        assertEq(groveBasin.swapAllowlistEnabled(globalRouteKey), false);
+        assertEq(groveBasin.swapAllowlistEnabled(defaultRouteKey), false);
 
         vm.expectEmit(address(groveBasin));
-        emit IGroveBasin.SwapAllowlistEnabledSet(globalRouteKey, true);
+        emit IGroveBasin.SwapAllowlistEnabledSet(defaultRouteKey, true);
         vm.prank(owner);
         groveBasin.setGlobalSwapAllowlistEnabled(true);
 
-        assertEq(groveBasin.swapAllowlistEnabled(globalRouteKey), true);
+        assertEq(groveBasin.swapAllowlistEnabled(defaultRouteKey), true);
 
         vm.expectEmit(address(groveBasin));
-        emit IGroveBasin.SwapAllowlistEnabledSet(globalRouteKey, false);
+        emit IGroveBasin.SwapAllowlistEnabledSet(defaultRouteKey, false);
         vm.prank(owner);
         groveBasin.setGlobalSwapAllowlistEnabled(false);
 
-        assertEq(groveBasin.swapAllowlistEnabled(globalRouteKey), false);
+        assertEq(groveBasin.swapAllowlistEnabled(defaultRouteKey), false);
+    }
+
+    function test_setAllowlistsActive() public {
+        assertTrue(groveBasin.allowlistsActive());
+
+        vm.expectEmit(address(groveBasin));
+        emit IGroveBasin.AllowlistsActiveSet(false);
+        vm.prank(owner);
+        groveBasin.setAllowlistsActive(false);
+
+        assertFalse(groveBasin.allowlistsActive());
+
+        vm.expectEmit(address(groveBasin));
+        emit IGroveBasin.AllowlistsActiveSet(true);
+        vm.prank(owner);
+        groveBasin.setAllowlistsActive(true);
+
+        assertTrue(groveBasin.allowlistsActive());
     }
 
     function test_setSwapAllowlistEnabled_route() public {
@@ -408,7 +441,7 @@ contract SwapAllowlistConfigTests is SwapAllowlistTestBase {
     }
 
     function test_setGlobalSwapAllowlistEnabled_doesNotSetRouteKeys() public {
-        _gateGlobally();
+        _gateDefault();
 
         assertEq(groveBasin.swapAllowlistEnabled(_routeKey(address(swapToken), address(creditToken))), false);
     }
@@ -462,23 +495,23 @@ contract SwapAllowlistConfigTests is SwapAllowlistTestBase {
         assertEq(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), swapper), true);
     }
 
-    function test_isSwapCallerAllowlisted_globalKeyGatesRoutesWithoutOwnGate() public {
-        _gateGlobally();
+    function test_isSwapCallerAllowlisted_defaultKeyGatesRoutesWithoutOwnGate() public {
+        _gateDefault();
 
         assertEq(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), swapper), false);
         assertEq(groveBasin.isSwapCallerAllowlisted(address(creditToken), address(swapToken), swapper), false);
 
-        _allowGlobally(swapper);
+        _allowDefault(swapper);
 
         assertEq(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), swapper), true);
         assertEq(groveBasin.isSwapCallerAllowlisted(address(creditToken), address(swapToken), swapper), true);
     }
 
-    /// @dev A route with its own gate reads only its own entries, so the global set can neither
+    /// @dev A route with its own gate reads only its own entries, so the default set can neither
     ///      widen nor narrow it.
-    function test_isSwapCallerAllowlisted_routeKeySupersedesGlobalKey() public {
-        _gateGlobally();
-        _allowGlobally(swapper);
+    function test_isSwapCallerAllowlisted_routeKeySupersedesDefaultKey() public {
+        _gateDefault();
+        _allowDefault(swapper);
 
         _gateRoute(address(creditToken), address(swapToken));
 
@@ -490,23 +523,48 @@ contract SwapAllowlistConfigTests is SwapAllowlistTestBase {
         assertEq(groveBasin.isSwapCallerAllowlisted(address(creditToken), address(swapToken), swapper), true);
     }
 
-    /// @dev Route entries stay dormant until the route is gated, so the global set governs a route
-    ///      that only the global gate covers.
-    function test_isSwapCallerAllowlisted_routeEntryDormantUnderGlobalGateOnly() public {
+    /// @dev Route entries stay dormant until the route is gated, so the default set governs a route
+    ///      that only the default gate covers.
+    function test_isSwapCallerAllowlisted_routeEntryDormantUnderDefaultGateOnly() public {
         _allow(address(swapToken), address(creditToken), swapper);
 
-        _gateGlobally();
+        _gateDefault();
 
         assertEq(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), swapper), false);
     }
 
-    /// @dev Global entries never bypass a route that carries its own gate.
-    function test_isSwapCallerAllowlisted_globalEntryDoesNotBypassRouteGate() public {
-        _allowGlobally(swapper);
+    /// @dev Default entries never bypass a route that carries its own gate.
+    function test_isSwapCallerAllowlisted_defaultEntryDoesNotBypassRouteGate() public {
+        _allowDefault(swapper);
 
         _gateRoute(address(swapToken), address(creditToken));
 
         assertEq(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), swapper), false);
+    }
+
+    function test_inactiveAllowlistsBypassAndPreserveEveryGate() public {
+        bytes32 defaultRouteKey = groveBasin.DEFAULT_ROUTE_KEY();
+        bytes32 routeKey = _routeKey(address(creditToken), address(swapToken));
+
+        _gateDefault();
+        _gateRoute(address(creditToken), address(swapToken));
+
+        assertFalse(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), swapper));
+        assertFalse(groveBasin.isSwapCallerAllowlisted(address(creditToken), address(swapToken), swapper));
+
+        vm.prank(owner);
+        groveBasin.setAllowlistsActive(false);
+
+        assertTrue(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), swapper));
+        assertTrue(groveBasin.isSwapCallerAllowlisted(address(creditToken), address(swapToken), swapper));
+        assertTrue(groveBasin.swapAllowlistEnabled(defaultRouteKey));
+        assertTrue(groveBasin.swapAllowlistEnabled(routeKey));
+
+        vm.prank(owner);
+        groveBasin.setAllowlistsActive(true);
+
+        assertFalse(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), swapper));
+        assertFalse(groveBasin.isSwapCallerAllowlisted(address(creditToken), address(swapToken), swapper));
     }
 
     function test_allowlistEntriesSurviveGateToggle() public {
@@ -586,8 +644,8 @@ contract SwapAllowlistEnforcementTests is SwapAllowlistTestBase {
         groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, receiver, 0);
     }
 
-    function test_swapExactIn_globalKeyGatesEveryRoute() public {
-        _gateGlobally();
+    function test_swapExactIn_defaultKeyGatesEveryRoute() public {
+        _gateDefault();
 
         vm.expectRevert(IGroveBasin.NotAllowlisted.selector);
         vm.prank(swapper);
@@ -598,9 +656,9 @@ contract SwapAllowlistEnforcementTests is SwapAllowlistTestBase {
         groveBasin.swapExactIn(address(creditToken), address(swapToken), 80e18, 0, receiver, 0);
     }
 
-    function test_swapExactIn_globalKeyWithGlobalAllowlistEntry() public {
-        _gateGlobally();
-        _allowGlobally(swapper);
+    function test_swapExactIn_defaultKeyWithDefaultAllowlistEntry() public {
+        _gateDefault();
+        _allowDefault(swapper);
 
         vm.prank(swapper);
         groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, receiver, 0);
@@ -612,10 +670,10 @@ contract SwapAllowlistEnforcementTests is SwapAllowlistTestBase {
         assertEq(swapToken.balanceOf(receiver),   100e6);
     }
 
-    function test_swapExactIn_globalKeyWithRouteAllowlistEntry() public {
+    function test_swapExactIn_defaultKeyWithRouteAllowlistEntry() public {
         _allow(address(swapToken), address(creditToken), swapper);
 
-        _gateGlobally();
+        _gateDefault();
 
         vm.expectRevert(IGroveBasin.NotAllowlisted.selector);
         vm.prank(swapper);
@@ -629,7 +687,7 @@ contract SwapAllowlistEnforcementTests is SwapAllowlistTestBase {
         assertEq(creditToken.balanceOf(receiver), 80e18);
     }
 
-    function test_swapExactIn_globalKeyDisabledLeavesRouteKeyActive() public {
+    function test_swapExactIn_defaultKeyDisabledLeavesRouteKeyActive() public {
         _gateRoute(address(swapToken), address(creditToken));
 
         vm.startPrank(owner);
@@ -735,12 +793,12 @@ contract SwapAllowlistPreviewTests is SwapAllowlistTestBase {
 
 }
 
-contract SwapAllowlistGlobalEnabledTests is SwapAllowlistTestBase {
+contract SwapAllowlistDefaultEnabledTests is SwapAllowlistTestBase {
 
     function setUp() public override {
         super.setUp();
 
-        _gateGlobally();
+        _gateDefault();
     }
 
     function test_deposit_notGatedByAllowlist() public {
@@ -761,7 +819,7 @@ contract SwapAllowlistGlobalEnabledTests is SwapAllowlistTestBase {
 }
 
 /// @dev Basin with permissionless subscriptions and every redemption route flowing through the
-///      advance rate module. No global gate, so only the two redemption routes carry an allowlist.
+///      advance rate module. No default gate, so only the two redemption routes carry an allowlist.
 contract SwapAllowlistOpenSubscriptionTests is SwapAllowlistTestBase {
 
     address public customer          = makeAddr("customer");
@@ -816,9 +874,9 @@ contract SwapAllowlistOpenSubscriptionTests is SwapAllowlistTestBase {
 
 /// @dev Basin where every subscription route serves the same customer set and every redemption
 ///      route flows through the advance rate module. The customer set is stored once under
-///      GLOBAL_ROUTE_KEY and the two redemption routes hold only the module, so a route-specific
-///      allowlist takes precedence over the global one rather than being unioned with it.
-contract SwapAllowlistGlobalCustomerSetTests is SwapAllowlistTestBase {
+///      DEFAULT_ROUTE_KEY and the two redemption routes hold only the module, so a route-specific
+///      allowlist takes precedence over the default one rather than being unioned with it.
+contract SwapAllowlistDefaultCustomerSetTests is SwapAllowlistTestBase {
 
     address public customerA         = makeAddr("customerA");
     address public customerB         = makeAddr("customerB");
@@ -831,17 +889,17 @@ contract SwapAllowlistGlobalCustomerSetTests is SwapAllowlistTestBase {
         _fundAllAssets(customerB);
         _fundAllAssets(advanceRateModule);
 
-        _gateGlobally();
+        _gateDefault();
         _gateRoute(address(creditToken), address(swapToken));
         _gateRoute(address(creditToken), address(collateralToken));
 
-        _allowGlobally(customerA);
-        _allowGlobally(customerB);
+        _allowDefault(customerA);
+        _allowDefault(customerB);
         _allow(address(creditToken), address(swapToken),       advanceRateModule);
         _allow(address(creditToken), address(collateralToken), advanceRateModule);
     }
 
-    function test_globalCustomerSetGatesSubscriptionRoutes() public view {
+    function test_defaultCustomerSetGatesSubscriptionRoutes() public view {
         assertEq(groveBasin.isSwapCallerAllowlisted(address(swapToken),       address(creditToken), customerA), true);
         assertEq(groveBasin.isSwapCallerAllowlisted(address(collateralToken), address(creditToken), customerA), true);
         assertEq(groveBasin.isSwapCallerAllowlisted(address(swapToken),       address(creditToken), customerB), true);
@@ -851,7 +909,7 @@ contract SwapAllowlistGlobalCustomerSetTests is SwapAllowlistTestBase {
         assertEq(groveBasin.isSwapCallerAllowlisted(address(collateralToken), address(creditToken), swapper), false);
     }
 
-    function test_redemptionRoutesOverrideGlobalCustomerSet() public view {
+    function test_redemptionRoutesOverrideDefaultCustomerSet() public view {
         assertEq(groveBasin.isSwapCallerAllowlisted(address(creditToken), address(swapToken),       advanceRateModule), true);
         assertEq(groveBasin.isSwapCallerAllowlisted(address(creditToken), address(collateralToken), advanceRateModule), true);
 

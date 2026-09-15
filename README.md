@@ -62,13 +62,13 @@ The `depositInitial` function is provided for this purpose -- it mints shares to
 ### Roles
 
 - **`OWNER_ROLE`**: Equivalent to `DEFAULT_ADMIN_ROLE`. Can set purchase and redemption fees within bounds, and manage all other roles.
-- **`MANAGER_ADMIN_ROLE`**: Can set rate providers, swap size bounds, staleness threshold bounds, fee bounds, pocket, fee claimer, unpause individual functions or the entire contract, add/remove token redeemers, and configure liquidity providers and their asset permissions. Admin of `MANAGER_ROLE`, `ALLOWLIST_MANAGER_ROLE`, `PAUSER_ROLE`, `REDEEMER_ROLE`, `REDEEMER_CONTRACT_ROLE`, and `LIQUIDITY_PROVIDER_ROLE`.
+- **`MANAGER_ADMIN_ROLE`**: Can set rate providers, swap size bounds, staleness threshold bounds, fee bounds, pocket, fee claimer, swap allowlist enforcement, unpause individual functions or the entire contract, add/remove token redeemers, and configure liquidity providers and their asset permissions. Admin of `MANAGER_ROLE`, `ALLOWLIST_MANAGER_ROLE`, `PAUSER_ROLE`, `REDEEMER_ROLE`, `REDEEMER_CONTRACT_ROLE`, and `LIQUIDITY_PROVIDER_ROLE`.
 - **`MANAGER_ROLE`**: Can set max swap size and staleness threshold within their respective bounds.
 - **`ALLOWLIST_MANAGER_ROLE`**: Can add and remove callers from the swap allowlist.
-- **`PAUSER_ROLE`**: Can pause individual functions or the entire contract, and call `removeAssetAllowed`. Can also revoke `MANAGER_ROLE`, `ALLOWLIST_MANAGER_ROLE`, `REDEEMER_ROLE`, and `LIQUIDITY_PROVIDER_ROLE`.
+- **`PAUSER_ROLE`**: Can pause individual functions or the entire contract, remove callers from swap allowlists, and call `removeAssetAllowed`. Can also revoke `MANAGER_ROLE`, `ALLOWLIST_MANAGER_ROLE`, `REDEEMER_ROLE`, and `LIQUIDITY_PROVIDER_ROLE`.
 - **`REDEEMER_ROLE`**: Can initiate and complete credit token redemptions.
 - **`REDEEMER_CONTRACT_ROLE`**: Granted to token redeemer contracts that handle the actual redemption logic.
-- **`LIQUIDITY_PROVIDER_ROLE`**: Required to call `deposit`. Granted at deployment to the address passed to the constructor, which grants the role only and leaves every asset allowance false, and afterwards set by `MANAGER_ADMIN_ROLE` via `setLiquidityProvider`; `PAUSER_ROLE` can also revoke it to freeze a provider. Revoking only blocks new deposits, since `withdraw` is gated on share ownership and the asset allowlist rather than on the role.
+- **`LIQUIDITY_PROVIDER_ROLE`**: Required to call `deposit`. `deployAndInit` or `setLiquidityProvider` must be called before a provider can deposit or withdraw.
 
 ### LP Asset Allowlist
 
@@ -77,7 +77,17 @@ The `depositInitial` function is provided for this purpose -- it mints shares to
 - `deposit` requires the caller to hold `LIQUIDITY_PROVIDER_ROLE` and requires both the caller and the receiver to be allowed the asset, since withdrawals are gated on the same mapping.
 - `withdraw` requires the caller to be allowed the asset, so shares can only be redeemed for assets the address is permissioned for. Disallowing an asset for an address that still holds shares leaves it to redeem in the assets it is still allowed.
 - Allowances are set only through `setLiquidityProvider` (or cleared via `removeAssetAllowed`). Granting the role with the inherited `grantRole` leaves the mapping untouched.
-- Share receivers that never deposit are permissioned with `setLiquidityProvider(provider, false, ...)`. This is also how the fee claimer is permissioned to withdraw the shares it accrues.
+- Share receivers that never deposit are permissioned with `setLiquidityProvider(provider, false, ...)`.
+- `setFeeClaimer` allows a new non-zero fee claimer to withdraw all three assets without granting `LIQUIDITY_PROVIDER_ROLE`. A previous fee claimer's allowances remain until changed through `setLiquidityProvider`.
+
+
+### Liquidity Provision Compared to Swaps
+
+`deposit` and `withdraw` are permissioned liquidity operations rather than swaps, and by design they carry none of the swap controls. An address allowed two assets can therefore deposit one and withdraw the other, converting between them at the rate providers' rates.
+
+LPs are assumed trusted via commercial agreements that can either prevent malicious behavior, or coordinate a shutdown procedure that would supersede any allowlist that prevents LPs from redeeming their LP shares
+
+In practice, we expect there to be two types of LPs: ones that can deposit/withdraw stablecoins, and ones that can deposit/withdraw credit tokens.
 
 
 ### Functions
@@ -91,7 +101,10 @@ The `depositInitial` function is provided for this purpose -- it mints shares to
 - **`setPocket`**: Sets the `pocket` address, transferring the entire swap token balance to the new pocket. Only callable by `MANAGER_ADMIN_ROLE`.
 - **`addTokenRedeemer`**: Adds a token redeemer contract, granting it `REDEEMER_CONTRACT_ROLE` and calling its `setUp` function. Only callable by `MANAGER_ADMIN_ROLE`.
 - **`removeTokenRedeemer`**: Removes a token redeemer contract, revoking `REDEEMER_CONTRACT_ROLE` and calling its `tearDown` function. Only callable by `MANAGER_ADMIN_ROLE`.
-- **`setFeeClaimer`**: Sets the address that accrues fee shares on swaps. Shares and asset allowances already held by the previous claimer are left in place so it can still withdraw them. Only callable by `MANAGER_ADMIN_ROLE`.
+- **`setFeeClaimer`**: Sets the address that accrues fee shares on swaps and allows a new non-zero claimer to withdraw all three assets. Shares and asset allowances already held by the previous claimer are left in place so it can still withdraw them. Only callable by `MANAGER_ADMIN_ROLE`.
+- **`setGlobalSwapAllowlistEnabled`**: Enables or disables the default allowlist for routes without their own allowlist. Only callable by `MANAGER_ADMIN_ROLE`.
+- **`setSwapAllowlistEnabled`**: Enables or disables the allowlist for one swap route. Only callable by `MANAGER_ADMIN_ROLE`.
+- **`setAllowlistsActive`**: Enables or disables enforcement of every swap allowlist without changing route flags or entries. Only callable by `MANAGER_ADMIN_ROLE`.
 - **`setLiquidityProvider`**: Sets whether an address holds `LIQUIDITY_PROVIDER_ROLE` and which assets it may deposit and withdraw. `tokens` must be exactly `[swapToken, collateralToken, creditToken]`, so every call states the address's full permission set. Only callable by `MANAGER_ADMIN_ROLE`.
 - **`setUnpaused`**: Unsets a pause flag. Supports global pause (`bytes4(0)`) and per-function/per-direction pause keys. Only callable by `MANAGER_ADMIN_ROLE`.
 
