@@ -62,7 +62,7 @@ The `depositInitial` function is provided for this purpose -- it mints shares to
 ### Roles
 
 - **`OWNER_ROLE`**: Equivalent to `DEFAULT_ADMIN_ROLE`. Can set purchase and redemption fees within bounds, and manage all other roles.
-- **`MANAGER_ADMIN_ROLE`**: Can set rate providers, swap size bounds, staleness threshold bounds, fee bounds, pocket, fee claimer, unpause individual functions or the entire contract, add/remove token redeemers, and configure liquidity providers and their asset permissions. Admin of `MANAGER_ROLE`, `ALLOWLIST_MANAGER_ROLE`, `PAUSER_ROLE`, `REDEEMER_ROLE`, `REDEEMER_CONTRACT_ROLE`, and `LIQUIDITY_PROVIDER_ROLE`.
+- **`MANAGER_ADMIN_ROLE`**: Can set rate providers, swap size bounds, staleness threshold bounds, fee bounds, pocket, fee claimer, swap allowlist enforcement, unpause individual functions or the entire contract, add/remove token redeemers, and configure liquidity providers and their asset permissions. Admin of `MANAGER_ROLE`, `ALLOWLIST_MANAGER_ROLE`, `PAUSER_ROLE`, `REDEEMER_ROLE`, `REDEEMER_CONTRACT_ROLE`, and `LIQUIDITY_PROVIDER_ROLE`.
 - **`MANAGER_ROLE`**: Can set max swap size and staleness threshold within their respective bounds.
 - **`ALLOWLIST_MANAGER_ROLE`**: Can add and remove callers from the swap allowlist.
 - **`PAUSER_ROLE`**: Can pause individual functions or the entire contract, remove callers from swap allowlists, and call `removeAssetAllowed`. Can also revoke `MANAGER_ROLE`, `ALLOWLIST_MANAGER_ROLE`, `REDEEMER_ROLE`, and `LIQUIDITY_PROVIDER_ROLE`.
@@ -102,6 +102,9 @@ In practice, we expect there to be two types of LPs: ones that can deposit/withd
 - **`addTokenRedeemer`**: Adds a token redeemer contract, granting it `REDEEMER_CONTRACT_ROLE` and calling its `setUp` function. Only callable by `MANAGER_ADMIN_ROLE`.
 - **`removeTokenRedeemer`**: Removes a token redeemer contract, revoking `REDEEMER_CONTRACT_ROLE` and calling its `tearDown` function. Only callable by `MANAGER_ADMIN_ROLE`.
 - **`setFeeClaimer`**: Sets the address that accrues fee shares on swaps and allows a new non-zero claimer to withdraw all three assets. Shares and asset allowances already held by the previous claimer are left in place so it can still withdraw them. Only callable by `MANAGER_ADMIN_ROLE`.
+- **`setGlobalSwapAllowlistEnabled`**: Enables or disables the default allowlist for routes without their own allowlist. Only callable by `MANAGER_ADMIN_ROLE`.
+- **`setSwapAllowlistEnabled`**: Enables or disables the allowlist for one swap route. Only callable by `MANAGER_ADMIN_ROLE`.
+- **`setAllowlistsActive`**: Enables or disables enforcement of every swap allowlist without changing route flags or entries. Only callable by `MANAGER_ADMIN_ROLE`.
 - **`setLiquidityProvider`**: Sets whether an address holds `LIQUIDITY_PROVIDER_ROLE` and which assets it may deposit and withdraw. `tokens` must be exactly `[swapToken, collateralToken, creditToken]`, so every call states the address's full permission set. Only callable by `MANAGER_ADMIN_ROLE`.
 - **`setUnpaused`**: Unsets a pause flag. Supports global pause (`bytes4(0)`) and per-function/per-direction pause keys. Only callable by `MANAGER_ADMIN_ROLE`.
 

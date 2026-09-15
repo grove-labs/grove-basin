@@ -371,7 +371,7 @@ contract GroveBasinFactorySetupTests is Test {
 
         (address basin,,) = factory.deployAndInit(_baseParams(GroveBasinFactory.PocketType.None), adminTimelock);
 
-        assertFalse(GroveBasin(basin).swapAllowlistEnabled(GroveBasin(basin).GLOBAL_ROUTE_KEY()));
+        assertFalse(GroveBasin(basin).swapAllowlistEnabled(GroveBasin(basin).DEFAULT_ROUTE_KEY()));
     }
 
     function test_deploy_swapAllowlistEnabled() public {
@@ -384,7 +384,7 @@ contract GroveBasinFactorySetupTests is Test {
 
         GroveBasin groveBasin = GroveBasin(basin);
 
-        assertTrue(groveBasin.swapAllowlistEnabled(groveBasin.GLOBAL_ROUTE_KEY()));
+        assertTrue(groveBasin.swapAllowlistEnabled(groveBasin.DEFAULT_ROUTE_KEY()));
 
         // Enabling is atomic with deployment, so no caller is allowlisted on arrival.
         assertFalse(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), almRelayer));
@@ -417,16 +417,16 @@ contract GroveBasinFactorySetupTests is Test {
 
         GroveBasin groveBasin = GroveBasin(basin);
 
-        // The deployment enables the global allowlist only, so the global set governs every route.
-        bytes32 globalRouteKey = groveBasin.GLOBAL_ROUTE_KEY();
+        // The deployment enables the default allowlist only, so the default set governs every route.
+        bytes32 defaultRouteKey = groveBasin.DEFAULT_ROUTE_KEY();
 
         vm.prank(allowlistManager1);
-        groveBasin.addToSwapAllowlist(globalRouteKey, almRelayer);
+        groveBasin.addToSwapAllowlist(defaultRouteKey, almRelayer);
 
         assertTrue(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), almRelayer));
 
         vm.prank(allowlistManager2);
-        groveBasin.removeFromSwapAllowlist(globalRouteKey, almRelayer);
+        groveBasin.removeFromSwapAllowlist(defaultRouteKey, almRelayer);
 
         assertFalse(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), almRelayer));
     }
