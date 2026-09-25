@@ -54,6 +54,7 @@ abstract contract ForkTestBase is AssetAllowlistHelper {
         } else {
             pocket = address(groveBasin);
         }
+        groveBasin.setAllowlistsActive(false);
         vm.stopPrank();
 
         // The constructor only grants LIQUIDITY_PROVIDER_ROLE, so the asset allowances of the

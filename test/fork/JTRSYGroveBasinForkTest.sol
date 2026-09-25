@@ -45,6 +45,7 @@ abstract contract JTRSYGroveBasinForkTestBase is JTRSYForkTestBase {
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
 
         pocket = address(groveBasin);
+        groveBasin.setAllowlistsActive(false);
         vm.stopPrank();
 
         _allowAllAssets(lp);

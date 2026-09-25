@@ -18,6 +18,7 @@ contract SwapAllowlistTestBase is GroveBasinTestBase {
         super.setUp();
 
         vm.startPrank(owner);
+        groveBasin.setAllowlistsActive(true);
         groveBasin.grantRole(groveBasin.MANAGER_ROLE(),           manager);
         groveBasin.grantRole(groveBasin.ALLOWLIST_MANAGER_ROLE(), allowlistManager);
         vm.stopPrank();
@@ -479,16 +480,16 @@ contract SwapAllowlistConfigTests is SwapAllowlistTestBase {
         assertEq(groveBasin.swapAllowlist(routeKey, swapper), false);
     }
 
-    function test_isSwapCallerAllowlisted_ungatedRouteAllowsEveryone() public view {
-        assertEq(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), swapper), true);
-        assertEq(groveBasin.isSwapCallerAllowlisted(address(creditToken), address(swapToken), swapper), true);
+    function test_isSwapCallerAllowlisted_ungatedRouteDeniesEveryone() public view {
+        assertEq(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), swapper), false);
+        assertEq(groveBasin.isSwapCallerAllowlisted(address(creditToken), address(swapToken), swapper), false);
     }
 
     function test_isSwapCallerAllowlisted_gatedRoute() public {
         _gateRoute(address(swapToken), address(creditToken));
 
         assertEq(groveBasin.isSwapCallerAllowlisted(address(swapToken), address(creditToken), swapper), false);
-        assertEq(groveBasin.isSwapCallerAllowlisted(address(creditToken), address(swapToken), swapper), true);
+        assertEq(groveBasin.isSwapCallerAllowlisted(address(creditToken), address(swapToken), swapper), false);
 
         _allow(address(swapToken), address(creditToken), swapper);
 
@@ -587,11 +588,10 @@ contract SwapAllowlistConfigTests is SwapAllowlistTestBase {
 
 contract SwapAllowlistEnforcementTests is SwapAllowlistTestBase {
 
-    function test_swapExactIn_ungatedRoute() public {
+    function test_swapExactIn_ungatedRoute_reverts() public {
+        vm.expectRevert(IGroveBasin.NotAllowlisted.selector);
         vm.prank(swapper);
         groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, receiver, 0);
-
-        assertEq(creditToken.balanceOf(receiver), 80e18);
     }
 
     function test_swapExactIn_gatedRoute_notAllowlisted() public {
@@ -612,13 +612,12 @@ contract SwapAllowlistEnforcementTests is SwapAllowlistTestBase {
         assertEq(creditToken.balanceOf(receiver), 80e18);
     }
 
-    function test_swapExactIn_gatedRoute_reverseRouteStaysOpen() public {
+    function test_swapExactIn_gatedRoute_reverseRouteAlsoBlocked() public {
         _gateRoute(address(swapToken), address(creditToken));
 
+        vm.expectRevert(IGroveBasin.NotAllowlisted.selector);
         vm.prank(swapper);
         groveBasin.swapExactIn(address(creditToken), address(swapToken), 80e18, 0, receiver, 0);
-
-        assertEq(swapToken.balanceOf(receiver), 100e6);
     }
 
     function test_swapExactIn_allowlistedOnReverseRouteOnly() public {
@@ -784,11 +783,12 @@ contract SwapAllowlistPreviewTests is SwapAllowlistTestBase {
         assertEq(groveBasin.previewSwapExactOut(address(swapToken), address(creditToken), 80e18), 100e6);
     }
 
-    function test_previewSwapExactIn_reverseRouteStaysOpen() public {
+    function test_previewSwapExactIn_reverseRouteAlsoBlocked() public {
         _gateRoute(address(swapToken), address(creditToken));
 
+        vm.expectRevert(IGroveBasin.NotAllowlisted.selector);
         vm.prank(swapper);
-        assertEq(groveBasin.previewSwapExactIn(address(creditToken), address(swapToken), 80e18), 100e6);
+        groveBasin.previewSwapExactIn(address(creditToken), address(swapToken), 80e18);
     }
 
 }
@@ -818,8 +818,8 @@ contract SwapAllowlistDefaultEnabledTests is SwapAllowlistTestBase {
 
 }
 
-/// @dev Basin with permissionless subscriptions and every redemption route flowing through the
-///      advance rate module. No default gate, so only the two redemption routes carry an allowlist.
+/// @dev Basin where only two redemption routes carry an allowlist.  Deny-by-default means the
+///      ungated subscription routes are also blocked.
 contract SwapAllowlistOpenSubscriptionTests is SwapAllowlistTestBase {
 
     address public customer          = makeAddr("customer");
@@ -838,17 +838,14 @@ contract SwapAllowlistOpenSubscriptionTests is SwapAllowlistTestBase {
         _allow(address(creditToken), address(collateralToken), advanceRateModule);
     }
 
-    function test_swapExactIn_subscriptionsArePermissionless() public {
+    function test_swapExactIn_subscriptionsBlockedWithoutGate() public {
+        vm.expectRevert(IGroveBasin.NotAllowlisted.selector);
         vm.prank(customer);
         groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, receiver, 0);
 
+        vm.expectRevert(IGroveBasin.NotAllowlisted.selector);
         vm.prank(customer);
         groveBasin.swapExactIn(address(collateralToken), address(creditToken), 100e18, 0, receiver, 0);
-
-        vm.prank(swapper);
-        groveBasin.swapExactIn(address(swapToken), address(creditToken), 100e6, 0, receiver, 0);
-
-        assertEq(creditToken.balanceOf(receiver), 240e18);
     }
 
     function test_swapExactIn_redemptionsRestrictedToAdvanceRateModule() public {

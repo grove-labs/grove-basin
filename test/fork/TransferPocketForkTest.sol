@@ -84,6 +84,7 @@ abstract contract TransferPocketForkTestBase is AssetAllowlistHelper {
 
         groveBasin.setMaxSwapSizeBounds(0, 10_000_000_000_000_000e18);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
+        groveBasin.setAllowlistsActive(false);
         vm.stopPrank();
 
         _allowAllAssets(groveBasin, owner, lp);
@@ -986,6 +987,7 @@ abstract contract TransferPocketForkTestBase_USDC is AssetAllowlistHelper {
 
         groveBasin.setMaxSwapSizeBounds(0, 10_000_000_000_000_000e18);
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
+        groveBasin.setAllowlistsActive(false);
 
         vm.stopPrank();
 

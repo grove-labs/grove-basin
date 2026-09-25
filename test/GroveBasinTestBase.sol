@@ -95,6 +95,10 @@ contract GroveBasinTestBase is AssetAllowlistHelper {
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
 
         groveBasin.setPocket(pocket);
+
+        // Deny-by-default: disable allowlists so non-allowlist tests can swap freely.
+        // SwapAllowlistTestBase re-enables them.
+        groveBasin.setAllowlistsActive(false);
         vm.stopPrank();
 
         // The constructor only grants LIQUIDITY_PROVIDER_ROLE, so the asset allowances of the

@@ -640,6 +640,7 @@ contract GroveBasinInvariants_TimeBasedRateSetting_NoTransfer is GroveBasinInvar
         // Set up fee claimer and bounds for this test suite
         groveBasin.setFeeClaimer(FEE_CLAIMER);
         groveBasin.setFeeBounds(0, 500);  // 0-5% fees
+        groveBasin.setAllowlistsActive(false);
         vm.stopPrank();
 
         // The redeployed Basin only grants the provider the role, so its allowances are set here
@@ -748,6 +749,7 @@ contract GroveBasinInvariants_TimeBasedRateSetting_WithTransfers is GroveBasinIn
         // Set up fee claimer and bounds for this test suite
         groveBasin.setFeeClaimer(FEE_CLAIMER);
         groveBasin.setFeeBounds(0, 500);  // 0-5% fees
+        groveBasin.setAllowlistsActive(false);
         vm.stopPrank();
 
         // The redeployed Basin only grants the provider the role, so its allowances are set here

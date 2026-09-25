@@ -752,7 +752,7 @@ contract GroveBasin is IGroveBasin, AccessControl {
         if (swapAllowlistEnabled[routeKey])          return swapAllowlist[routeKey][caller];
         if (swapAllowlistEnabled[DEFAULT_ROUTE_KEY]) return swapAllowlist[DEFAULT_ROUTE_KEY][caller];
 
-        return true;
+        return false;
     }
 
     /**********************************************************************************************/
