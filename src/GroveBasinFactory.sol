@@ -305,8 +305,9 @@ contract GroveBasinFactory {
         }
     }
 
-    /// @dev Mirrors the BasinSetup.performBasinInit sequence, then revokes the factory's own
-    ///      OWNER_ROLE and MANAGER_ADMIN_ROLE so the deployer retains no admin power.
+    /// @dev Registers the token redeemer, grants operational roles, applies pause flags, swap
+    ///      allowlist and fee settings, hands OWNER_ROLE to `adminTimelock`, then revokes the
+    ///      factory's own OWNER_ROLE and MANAGER_ADMIN_ROLE so the deployer retains no admin power.
     function _initBasin(
         GroveBasin            groveBasin,
         DeployParams calldata params,

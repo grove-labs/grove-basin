@@ -57,6 +57,20 @@ The DOS attack is performed by:
 
 The `depositInitial` function is provided for this purpose -- it mints shares to the zero address as a permanent seed deposit. The `GroveBasinFactory` (`src/GroveBasinFactory.sol`) calls `depositInitial` during deployment, so it is **HIGHLY RECOMMENDED** to use the factory when deploying Grove Basin. Reasoning for the technical implementation approach taken is outlined in more detail [here](https://github.com/marsfoundation/spark-psm/pull/2).
 
+## Deployment
+
+Basins are deployed and configured through `GroveBasinFactory.deployAndInit` (existing admin timelock) or `deployWithTimelockAndInit` (deploys a new admin timelock). The caller must first approve the factory for `10 ** decimals` of the swap token, which the factory pulls as the seed deposit. The factory deploys the Basin, the pocket selected by `pocketType`, and, when `redemptionAddress` is non-zero, a `TransferTokenRedeemer`; it then hands `OWNER_ROLE` to the admin timelock and retains no roles. Rate providers, the admin timelock passed to `deployAndInit`, and `GroveBasinUnpauser` are deployed separately with the scripts in `script/`.
+
+### JTRSY Basins
+
+`JTRSYTokenRedeemer` validates the Basin's credit and collateral tokens in its constructor, so it can only be deployed after the Basin exists and cannot be registered by the factory. Deploying a JTRSY Basin takes three steps:
+
+1. Call `deployAndInit` with `creditToken` set to JTRSY, `redemptionAddress` and `tokenRedeemer` set to `address(0)`, and `issuerRedeemer` set to the address that initiates and completes redemptions (granted `REDEEMER_ROLE` by the factory).
+2. Deploy `new JTRSYTokenRedeemer(jtrsyToken, jtrsyVault, basin)`, where `jtrsyVault` is the Centrifuge ERC-7540 vault whose `asset()` equals the Basin's collateral token.
+3. From the `managerAdmin` address (`MANAGER_ADMIN_ROLE`), call `basin.addTokenRedeemer(redeemer)`.
+
+Redemptions through the Basin are unavailable until step 3 executes.
+
 ## Grove Basin Contract Details
 
 ### Roles

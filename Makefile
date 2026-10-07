@@ -1,3 +1,3 @@
-.PHONY: deploy
-deploy-ethereum :; forge script script/Deploy.s.sol:DeployEthereum --sender ${ETH_FROM} --broadcast --verify
+.PHONY: deploy-ethereum
+deploy-ethereum :; forge script script/DeployGroveBasinFactory.s.sol:DeployGroveBasinFactory --sender ${ETH_FROM} --broadcast --verify
 
