@@ -74,6 +74,7 @@ contract MorphoUsdtPocketTestBase is AssetAllowlistHelper {
         groveBasin.grantRole(groveBasin.MANAGER_ROLE(), manager);
         groveBasin.setMaxSwapSizeBounds(0, 10_000_000_000_000_000e18);
         groveBasin.setPocket(address(pocket));
+        groveBasin.setAllowlistsActive(false);
         vm.stopPrank();
 
         vm.prank(manager);

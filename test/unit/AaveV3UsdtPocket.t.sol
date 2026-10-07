@@ -80,6 +80,7 @@ contract AaveV3UsdtPocketTestBase is AssetAllowlistHelper {
         groveBasin.setMaxSwapSizeBounds(0, 10_000_000_000_000_000e18);
 
         groveBasin.setPocket(address(pocket));
+        groveBasin.setAllowlistsActive(false);
         vm.stopPrank();
 
         vm.prank(manager);

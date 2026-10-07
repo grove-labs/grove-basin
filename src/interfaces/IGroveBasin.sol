@@ -53,6 +53,7 @@ interface IGroveBasin {
     error LpTokenDepositNotAllowed();
     error LpTokenWithdrawNotAllowed();
     error NotAuthorizedToRemoveAssetAllowed();
+    error NotAuthorizedToRemoveFromSwapAllowlist();
     error InvalidAssetListLength();
 
     /**********************************************************************************************/
@@ -229,13 +230,6 @@ interface IGroveBasin {
     event PausedSet(bytes4 indexed key, bool paused);
 
     /**
-     *  @dev   Emitted when an address is configured via setLiquidityProvider.
-     *  @param provider    Address that was configured.
-     *  @param isDepositor Whether the address holds LIQUIDITY_PROVIDER_ROLE after the call.
-     */
-    event LiquidityProviderSet(address indexed provider, bool isDepositor);
-
-    /**
      *  @dev   Emitted when an asset allowance is toggled for an address.
      *  @param provider Address whose asset allowance changed.
      *  @param token    Address of the token.
@@ -245,19 +239,25 @@ interface IGroveBasin {
 
     /**
      *  @dev   Emitted when the allowlist flag for a route key is toggled.
-     *  @param routeKey The route key being toggled, or GLOBAL_ROUTE_KEY for the global allowlist.
+     *  @param routeKey The route key being toggled, or DEFAULT_ROUTE_KEY for the default allowlist.
      *  @param enabled  Whether the route key is restricted to allowlisted callers.
      */
     event SwapAllowlistEnabledSet(bytes32 indexed routeKey, bool enabled);
 
     /**
      *  @dev   Emitted when a caller is added to or removed from the allowlist of a route.
-     *  @param routeKey The route key whose allowlist changed, or GLOBAL_ROUTE_KEY for the global
+     *  @param routeKey The route key whose allowlist changed, or DEFAULT_ROUTE_KEY for the default
      *                  allowlist.
      *  @param caller   Address whose allowlist entry changed.
      *  @param allowed  Whether the caller is allowlisted for the route.
      */
     event SwapAllowlistSet(bytes32 indexed routeKey, address indexed caller, bool allowed);
+
+    /**
+     *  @dev   Emitted when enforcement of all swap allowlists is toggled.
+     *  @param active Whether swap allowlists are enforced.
+     */
+    event AllowlistsActiveSet(bool active);
 
     /**
      *  @dev   Emitted when an asset is deposited into the GroveBasin.
@@ -562,17 +562,23 @@ interface IGroveBasin {
     function maxFee() external view returns (uint256);
 
     /**
-     *  @dev    Returns the route key reserved for the global allowlist, which gates every route
+     *  @dev    Returns the route key reserved for the default allowlist, which gates every route
      *          that carries no gate of its own.
-     *  @return The global route key.
+     *  @return The default route key.
      */
-    function GLOBAL_ROUTE_KEY() external view returns (bytes32);
+    function DEFAULT_ROUTE_KEY() external view returns (bytes32);
+
+    /**
+     *  @dev    Returns whether swap allowlists are enforced. Defaults to true.
+     *  @return Whether swap allowlists are enforced.
+     */
+    function allowlistsActive() external view returns (bool);
 
     /**
      *  @dev    Returns whether a route key is restricted to allowlisted callers. Use
-     *          GLOBAL_ROUTE_KEY to check the global allowlist, which gates every route that
+     *          DEFAULT_ROUTE_KEY to check the default allowlist, which gates every route that
      *          carries no gate of its own.
-     *  @param  routeKey The route key, or GLOBAL_ROUTE_KEY for the global allowlist.
+     *  @param  routeKey The route key, or DEFAULT_ROUTE_KEY for the default allowlist.
      *  @return Whether the route key is restricted to allowlisted callers.
      */
     function swapAllowlistEnabled(bytes32 routeKey) external view returns (bool);
@@ -580,7 +586,7 @@ interface IGroveBasin {
     /**
      *  @dev    Returns whether a caller is allowlisted for a route key. Entries are retained while
      *          a route is ungated and take effect again as soon as the route is gated. Entries
-     *          under GLOBAL_ROUTE_KEY form the set applied to every route that carries no gate of
+     *          under DEFAULT_ROUTE_KEY form the set applied to every route that carries no gate of
      *          its own.
      *  @param  routeKey The route key.
      *  @param  caller   Address to query.
@@ -595,8 +601,8 @@ interface IGroveBasin {
      *          the inherited AccessControl grantRole leaves this mapping untouched, so use
      *          setLiquidityProvider to grant the role and set allowed tokens atomically. Deposits
      *          on behalf of a receiver require the receiver to be allowed the token as well.
-     *          Allowances are set by MANAGER_ADMIN_ROLE through setLiquidityProvider, which is also
-     *          how the fee claimer is permissioned to withdraw the shares it accrues.
+     *          Allowances are set by MANAGER_ADMIN_ROLE through setLiquidityProvider.
+     *          setFeeClaimer also allows a non-zero fee claimer to withdraw all three tokens.
      *  @param  provider  Address to query.
      *  @param  token     Address of the token (swapToken, collateralToken, or creditToken).
      *  @return isAllowed Whether the address is allowed to deposit and withdraw the token.
@@ -613,9 +619,10 @@ interface IGroveBasin {
     function getSwapRouteKey(address assetIn, address assetOut) external pure returns (bytes32);
 
     /**
-     *  @dev    Returns whether `caller` may swap along a route. A gated route reads only its own
-     *          allowlist, superseding the global one; otherwise the global allowlist applies while
-     *          it is enabled. Always true while neither gate covers the route.
+     *  @dev    Returns whether `caller` may swap along a route. Always true while allowlistsActive
+     *          is false. Otherwise, a gated route reads only its own allowlist, superseding the
+     *          default one; the default allowlist applies to any route without its own gate.
+     *          Always true while neither gate covers the route.
      *  @param  assetIn  Address of the asset swapped in on the route.
      *  @param  assetOut Address of the asset swapped out on the route.
      *  @param  caller   Address to query.
@@ -721,17 +728,25 @@ interface IGroveBasin {
     function removeAssetAllowed(address provider) external;
 
     /**
-     *  @dev   Enables or disables the global allowlist, which gates every route that carries no
+     *  @dev   Enables or disables the default allowlist, which gates every route that carries no
      *         gate of its own. Disabled on deployment. Callable only by MANAGER_ADMIN_ROLE.
      *  @param enabled Whether to restrict every route to allowlisted callers.
      */
     function setGlobalSwapAllowlistEnabled(bool enabled) external;
 
     /**
-     *  @dev   Enables or disables the allowlist of a single route, superseding the global allowlist
+     *  @dev   Enables or disables enforcement of every swap allowlist without changing any
+     *         allowlist flags or entries. Callable only by MANAGER_ADMIN_ROLE.
+     *  @param active Whether swap allowlists should be enforced.
+     */
+    function setAllowlistsActive(bool active) external;
+
+    /**
+     *  @dev   Enables or disables the allowlist of a single route, superseding the default allowlist
      *         on that route. Routes are unidirectional, so gating (assetIn, assetOut) leaves
      *         (assetOut, assetIn) untouched. All routes are ungated on deployment. Callable only by
-     *         MANAGER_ADMIN_ROLE. Reverts if either asset is not a basin asset.
+     *         MANAGER_ADMIN_ROLE. Reverts if either asset is not a basin asset, if both assets are
+     *         the same, or if neither asset is the credit token.
      *  @param assetIn  Address of the asset swapped in on the route.
      *  @param assetOut Address of the asset swapped out on the route.
      *  @param enabled  Whether to restrict the route to allowlisted callers.
@@ -809,22 +824,22 @@ interface IGroveBasin {
     function setStalenessThreshold(uint256 newThreshold) external;
 
     /**********************************************************************************************/
-    /*** Allowlist manager functions                                                            ***/
+    /*** Allowlist manager and pauser functions                                                 ***/
     /**********************************************************************************************/
 
     /**
      *  @dev   Adds a caller to the allowlist of a route key. A route entry takes effect only while
-     *         that route is gated; a GLOBAL_ROUTE_KEY entry takes effect only while the global
+     *         that route is gated; a DEFAULT_ROUTE_KEY entry takes effect only while the default
      *         allowlist is enabled and the route carries no gate of its own. Callable only by
      *         ALLOWLIST_MANAGER_ROLE.
-     *  @param routeKey The route key, obtained from `getSwapRouteKey`, or GLOBAL_ROUTE_KEY.
+     *  @param routeKey The route key, obtained from `getSwapRouteKey`, or DEFAULT_ROUTE_KEY.
      *  @param caller   Address to add to the allowlist.
      */
     function addToSwapAllowlist(bytes32 routeKey, address caller) external;
 
     /**
-     *  @dev   Removes a caller from the allowlist of a route key. Callable only by
-     *         ALLOWLIST_MANAGER_ROLE.
+     *  @dev   Removes a caller from the allowlist of a route key. Callable by
+     *         ALLOWLIST_MANAGER_ROLE or PAUSER_ROLE.
      *  @param routeKey The route key, obtained from `getSwapRouteKey`.
      *  @param caller   Address to remove from the allowlist.
      */
@@ -836,9 +851,8 @@ interface IGroveBasin {
 
     /**
      *  @dev    Sets the address that accrues fee shares on swaps. Callable only by MANAGER_ADMIN_ROLE.
-     *          Pair it with a setLiquidityProvider call allowing the new claimer the assets it should 
-     *          be able to withdraw its fee shares in, since fee shares are a claim on value rather 
-     *          than on any one asset. Pass the zero address to stop fee accrual.
+     *          A non-zero claimer is allowed to withdraw all three Basin assets, but is not granted
+     *          LIQUIDITY_PROVIDER_ROLE. Pass the zero address to stop fee accrual.
      *          Note: if the previous fee claimer holds shares, those shares remain; they are not
      *          transferred or burned. Its allowances are left in place as well, so it can still
      *          withdraw them. Clear them with setLiquidityProvider once it has claimed.

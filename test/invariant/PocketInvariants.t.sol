@@ -95,6 +95,7 @@ contract PocketInvariantTest is AssetAllowlistHelper {
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
 
         groveBasin.setPocket(address(pocket));
+        groveBasin.setAllowlistsActive(false);
         vm.stopPrank();
 
         _allowAllAssets(groveBasin, owner, lp);
@@ -234,6 +235,7 @@ contract AaveV3PocketInvariantTest is AssetAllowlistHelper {
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
 
         groveBasin.setPocket(address(pocket));
+        groveBasin.setAllowlistsActive(false);
         vm.stopPrank();
 
         _allowAllAssets(groveBasin, owner, lp);
@@ -365,6 +367,7 @@ contract MorphoPocketInvariantTest is AssetAllowlistHelper {
         groveBasin.setMaxSwapSize(10_000_000_000_000_000e18);
 
         groveBasin.setPocket(address(pocket));
+        groveBasin.setAllowlistsActive(false);
         vm.stopPrank();
 
         _allowAllAssets(groveBasin, owner, lp);

@@ -305,8 +305,9 @@ contract GroveBasinFactory {
         }
     }
 
-    /// @dev Mirrors the BasinSetup.performBasinInit sequence, then revokes the factory's own
-    ///      OWNER_ROLE and MANAGER_ADMIN_ROLE so the deployer retains no admin power.
+    /// @dev Registers the token redeemer, grants operational roles, applies pause flags, swap
+    ///      allowlist and fee settings, hands OWNER_ROLE to `adminTimelock`, then revokes the
+    ///      factory's own OWNER_ROLE and MANAGER_ADMIN_ROLE so the deployer retains no admin power.
     function _initBasin(
         GroveBasin            groveBasin,
         DeployParams calldata params,
@@ -332,7 +333,8 @@ contract GroveBasinFactory {
         tokens[1] = params.collateralToken;
         tokens[2] = params.creditToken;
 
-        // liquidityProvider constructor allowlists all tokens by default; apply allowlists here
+        // The Basin constructor grants LIQUIDITY_PROVIDER_ROLE only and leaves every asset
+        // allowance false, so each config's full permission set is applied here.
         for (uint256 i; i < params.lpConfigs.length; ++i) {
             LpConfig calldata config = params.lpConfigs[i];
 
