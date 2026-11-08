@@ -30,13 +30,14 @@ interface ITokenRedeemer {
 
     /**
      *  @dev   Emitted when a redemption is initiated.
-     *  @param creditTokenAmount Amount of credit tokens sent to the vault for redemption.
+     *  @param creditTokenAmount Amount of credit tokens sent for redemption (to the vault, or to the
+     *                           external redemption address, depending on the redeemer).
      */
     event RedeemInitiated(uint256 creditTokenAmount);
 
     /**
      *  @dev   Emitted when a redemption is completed.
-     *  @param collateralTokenAmount Amount of collateral assets received from the vault.
+     *  @param collateralTokenAmount Amount of collateral assets received from the redemption.
      */
     event RedeemCompleted(uint256 collateralTokenAmount);
 
@@ -58,8 +59,10 @@ interface ITokenRedeemer {
     function creditToken() external view returns (address);
 
     /**
-     *  @dev    Returns the address of the async vault used for redemption.
-     *  @return The address of the vault.
+     *  @dev    Returns the address that redemptions are made against. For vault-based redeemers
+     *          this is the async vault; for TransferTokenRedeemer it is the external redemption
+     *          address that receives the credit tokens for offchain settlement.
+     *  @return The address of the vault or redemption address.
      */
     function vault() external view returns (address);
 
@@ -82,15 +85,18 @@ interface ITokenRedeemer {
     function tearDown(address basin) external;
 
     /**
-     *  @dev   Initiates a redemption by transferring credit tokens from the caller and calling
-     *         requestRedeem on the vault.
+     *  @dev   Initiates a redemption by transferring credit tokens from the caller and starting
+     *         the redemption: vault-based redeemers call requestRedeem on the vault, while
+     *         TransferTokenRedeemer forwards the credit tokens to its redemption address.
      *  @param creditTokenAmount Amount of credit tokens to redeem.
      */
     function initiateRedeem(uint256 creditTokenAmount) external;
 
     /**
-     *  @dev    Completes a redemption by withdrawing collateral assets from the vault and
-     *          transferring them back to the caller.
+     *  @dev    Completes a redemption by collecting the collateral assets and transferring them
+     *          back to the caller: vault-based redeemers withdraw them from the vault, while
+     *          TransferTokenRedeemer returns its entire collateral token balance and ignores
+     *          `request`.
      *  @param  request The RedeemRequest struct containing the redemption details.
      *  @return collateralTokenReturned Amount of collateral assets sent back to the caller.
      */
